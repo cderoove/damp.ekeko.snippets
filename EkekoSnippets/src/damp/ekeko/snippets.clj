@@ -28,46 +28,46 @@
   [n]
   (not (jdt-node-malformed? n)))
 
-(declare jdt-parse-snippet)
+(declare jdt-parse-string)
 
 (defn 
-  parse-snippet-statements
+  parse-string-statements
   "Parses the given string as a sequence of Java statements."
-  [snippet]
-  (jdt-parse-snippet snippet (ASTParser/K_STATEMENTS)))
+  [string]
+  (jdt-parse-string string (ASTParser/K_STATEMENTS)))
 
 (defn 
-  parse-snippet-expression 
+  parse-string-expression 
   "Parses the given string as a Java expression."
-  [snippet]
-  (jdt-parse-snippet snippet (ASTParser/K_EXPRESSION)))
+  [string]
+  (jdt-parse-string string (ASTParser/K_EXPRESSION)))
 
 (defn 
-  parse-snippet-unit 
+  parse-string-unit 
   "Parses the given string as a Java compilation unit."
-  [snippet]
-  (jdt-parse-snippet snippet (ASTParser/K_COMPILATION_UNIT)))
+  [string]
+  (jdt-parse-string string (ASTParser/K_COMPILATION_UNIT)))
 
 (defn 
-  parse-snippet-declarations 
+  parse-string-declarations 
   "Parses the given string as a sequence of Java class body declarations."
-  [snippet]
-  (jdt-parse-snippet snippet (ASTParser/K_CLASS_BODY_DECLARATIONS)))
+  [string]
+  (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS)))
 
 (defn 
-  jdt-parse-snippet 
+  jdt-parse-string 
   "Parses the given string as a Java construct of the given kind
    (expression, statements, class body declarations, compilation unit),
    or as the first kind for which the JDT parser returns a valid ASTNode."
-  ([^String snippet snippet-kind]
+  ([^String string string-kind]
     (let [parser (ASTParser/newParser AST/JLS3)]                
-      (.setSource parser (.toCharArray snippet))
-      (.setKind parser snippet-kind)
+      (.setSource parser (.toCharArray string))
+      (.setKind parser string-kind)
       (.createAST parser nil)))
-  ([snippet]
+  ([string]
     (let [kinds (list (ASTParser/K_EXPRESSION) (ASTParser/K_STATEMENTS) (ASTParser/K_CLASS_BODY_DECLARATIONS) (ASTParser/K_COMPILATION_UNIT))]
       (some (fn [k] 
-              (let [result (jdt-parse-snippet snippet k)]
+              (let [result (jdt-parse-string string k)]
                 (when (jdt-node-valid? result)
                   result)))
             kinds))))
@@ -371,7 +371,7 @@
   ;;--------------------------------------------
 
   
-  (snippet-query (jdt-node-as-snippet (parse-snippet-expression "fLocator.locate(owner())")))
+  (snippet-query (jdt-node-as-snippet (parse-string-expression "fLocator.locate(owner())")))
   
   )
 
