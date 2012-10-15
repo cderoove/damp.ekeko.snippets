@@ -4,7 +4,7 @@
   damp.ekeko.snippets
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
-  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode CompilationUnit])
+  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit])
   (:use [damp ekeko])
   (:use [damp.ekeko logic])
   (:use [damp.ekeko.jdt reification astnode]))
@@ -184,7 +184,12 @@
 
 (defn 
   make-grounding-function
-  "Returns a function that will generate grounding conditions for the given AST node of a code snippet."
+  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
+   - if the AST node is a root node: ((ast :kind-of-node ?var-for-node-match)) 
+   - if the AST node is the value of a property: ((has :property ?var-for-owner-match ?var-for-node-match))
+   - it its AST node is the element of a list-valued property at index idx:  
+     ((has :property ?var-for-owner-match ?var-for-list)
+      (equals ?var-for-node-match (.get ?var-for-list idx))"
   [template-ast]
   (let [template-owner 
         ;owner (i.e., parent) of the AST node 
@@ -193,35 +198,57 @@
         template-keyw
         (ekeko-keyword-for-class-of template-ast)  
         ]
+    ;returned grounding function takes a Snippet datastructure as its argument
+    ;note that it has an AST node of the snippet in its closure (template-ast)
     (fn [snippet] 
-      (let [var-match (snippet-var-for-node snippet template-ast)] 
+      (let [var-match
+            ;logic variable to be bound to a matching ast node from the Java project
+            (snippet-var-for-node snippet template-ast)] 
           (if 
             (nil? template-owner)
-            `((ast ~template-keyw ~var-match))
-            (let [var-match-owner (snippet-var-for-node snippet template-owner)
-                  owner-property (owner-property template-ast) 
-                  owner-property-keyw (ekeko-keyword-for-property-descriptor owner-property)]
+            ;root nodes of the AST have no owner, so candidate matches are all AST nodes of the same kind
+            ;generates a list  with a single condition such as (ast :MethodDeclaration ?var-match)
+            `((ast ~template-keyw ~var-match)) 
+            ;;otherwise, a candidate match is the corresponding child of the match for the owner
+            (let [;logic variable that will be bound to the match for the owner
+                  var-match-owner
+                  (snippet-var-for-node snippet template-owner)
+                  ;property of the owner that has template-ast as its value
+                  owner-property 
+                  (owner-property template-ast) 
+                  ;Ekeko keyword of the owner's property that has template-ast as its value 
+                  ;to be used in conditions such as (has :name ?var-match-owner ?var-match)
+                  owner-property-keyw 
+                  (ekeko-keyword-for-property-descriptor owner-property)]
+              ;dispatch over the property kind
               (cond
+                ;property of owner has an ASTNode as its value 
+                ;generate singleton list (has :owner-property-keyword ?var-match-owner ?var-match)
                 (property-descriptor-child? owner-property) 
                 `((has ~owner-property-keyw ~var-match-owner ~var-match))
+                ;property of owner has a ASTNode$NodeList as its value
                 (property-descriptor-list? owner-property) 
                 (if 
-                  (instance? ASTNode template-ast)
-                  (let [template-list (node-property-value template-owner owner-property)
-                        var-list (snippet-var-for-node snippet template-list)
-                        template-position (.indexOf template-list template-ast)]
+                  ;snippet's node is the list itself
+                  (instance? ASTNode$NodeList template-ast)
+                  `((has ~owner-property-keyw ~var-match-owner ~var-match))
+                  ;;snippet's node is an element from the list
+                  (let [;list in the snippet of which the node is an element
+                        template-list 
+                        (node-property-value template-owner owner-property)
+                        ;logic variable that will be bound to a matching list from the Java project
+                        var-list
+                        (snippet-var-for-node snippet template-list)
+                        ;index of template-ast in the list
+                        template-position 
+                        (.indexOf template-list template-ast)]
+                    ;the actual match for the list element 
                     `((has ~owner-property-keyw ~var-match-owner ~var-list)
-                       (equals ~var-match (.get ~var-list ~template-position))))
-                  `((has ~owner-property-keyw ~var-match-owner ~var-match)))
-                :else (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
+                       (equals ~var-match (.get ~var-list ~template-position)))))
+                :else 
+                (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
 
           
-(defn assoc-snippet-ast [snippet ast]
-  (->
-    snippet
-    (assoc-in [:ast2var ast] (gen-lvar))
-    (assoc-in [:ast2groundf ast] (make-grounding-function ast))
-    (assoc-in [:ast2constrainf ast] (make-constraining-function ast))))
 
 
 (defn walk-jdt-node [ast node-f list-f primitive-f]
@@ -246,6 +273,12 @@
     
     
 (defn jdt-node-as-snippet [n]
+  (defn assoc-snippet-ast [snippet ast]
+    (->
+      snippet
+      (assoc-in [:ast2var ast] (gen-lvar))
+      (assoc-in [:ast2groundf ast] (make-grounding-function ast))
+      (assoc-in [:ast2constrainf ast] (make-constraining-function ast))))
   (let [snippet (atom (Snippet. n {} {} {}))]
     (walk-jdt-node 
       n
