@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: damp.ekeko.snippets.plugin
 Bundle-SymbolicName: EkekoSnippets
 Bundle-Version: 1.0.0.qualifier
-Export-Package: damp.ekeko.snippets
+Export-Package: damp.ekeko
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  damp.ekeko.plugin;bundle-version="1.0.3",
