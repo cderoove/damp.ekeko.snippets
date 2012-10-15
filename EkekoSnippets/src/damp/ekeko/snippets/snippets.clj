@@ -1,4 +1,7 @@
-(ns damp.ekeko.snippets.snippets
+(ns 
+  ^{:doc "Snippet-driven querying of Java projects."
+    :author "Coen De Roover, Siltvani"}
+  damp.ekeko.snippets.snippets
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
   (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode CompilationUnit])
@@ -7,36 +10,55 @@
   (:use [damp.ekeko.jdt reification astnode]))
 
 
-; Parsing strings as snippets
-; ---------------------------
+; Parsing strings as Java code
+; ----------------------------
 
 (defn 
   jdt-node-malformed?
-  "Returns whether a JDT node has its MALFORMED bit set or is a CU which has an IProblem which is an error."
+  "Returns whether a JDT ASTNode has its MALFORMED bit set or is a CU which has an IProblem which is an error."
   [^ASTNode n]
    (or (not= 0 (bit-and (.getFlags n) (ASTNode/MALFORMED)))
        (and (instance? CompilationUnit n)
             (some (fn [p] (.isError p))
                   (.getProblems n)))))
 
-(defn jdt-node-valid? [n]
+(defn 
+  jdt-node-valid? 
+  "Returns whether a JDT ASTNode is valid (i.e., is not malformed)."
+  [n]
   (not (jdt-node-malformed? n)))
 
 (declare jdt-parse-snippet)
 
-(defn parse-snippet-statements [snippet]
+(defn 
+  parse-snippet-statements
+  "Parses the given string as a sequence of Java statements."
+  [snippet]
   (jdt-parse-snippet snippet (ASTParser/K_STATEMENTS)))
 
-(defn parse-snippet-expression [snippet]
+(defn 
+  parse-snippet-expression 
+  "Parses the given string as a Java expression."
+  [snippet]
   (jdt-parse-snippet snippet (ASTParser/K_EXPRESSION)))
 
-(defn parse-snippet-unit [snippet]
+(defn 
+  parse-snippet-unit 
+  "Parses the given string as a Java compilation unit."
+  [snippet]
   (jdt-parse-snippet snippet (ASTParser/K_COMPILATION_UNIT)))
 
-(defn parse-snippet-declarations [snippet]
+(defn 
+  parse-snippet-declarations 
+  "Parses the given string as a sequence of Java class body declarations."
+  [snippet]
   (jdt-parse-snippet snippet (ASTParser/K_CLASS_BODY_DECLARATIONS)))
 
-(defn jdt-parse-snippet 
+(defn 
+  jdt-parse-snippet 
+  "Parses the given string as a Java construct of the given kind
+   (expression, statements, class body declarations, compilation unit),
+   or as the first kind for which the JDT parser returns a valid ASTNode."
   ([^String snippet snippet-kind]
     (let [parser (ASTParser/newParser AST/JLS3)]                
       (.setSource parser (.toCharArray snippet))
@@ -55,7 +77,11 @@
 ; ---------------
 
 
-(defn gen-lvar [] 
+(defn 
+  gen-lvar
+  "Generates a unique symbol starting with ?v 
+   (i.e., a symbol to be used as the name for a logic variable)."
+  [] 
   (gensym '?v))
 
 ;(defn snippet []
