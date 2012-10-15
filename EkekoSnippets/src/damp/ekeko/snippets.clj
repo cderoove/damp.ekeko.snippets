@@ -230,7 +230,9 @@
                 (property-descriptor-list? owner-property) 
                 (if 
                   ;snippet's node is the list itself
-                  (instance? ASTNode$NodeList template-ast)
+                  ;(note: could not use ASTNode$NodeList here, gives rise to following exception:
+                  ;IllegalAccessError tried to access class org.eclipse.jdt.core.dom.ASTNode$NodeList from class damp.ekeko.snippets$make_grounding_function$fn__13774)
+                  (instance? java.util.AbstractList template-ast)
                   `((has ~owner-property-keyw ~var-match-owner ~var-match))
                   ;;snippet's node is an element from the list
                   (let [;list in the snippet of which the node is an element
@@ -247,8 +249,6 @@
                        (equals ~var-match (.get ~var-list ~template-position)))))
                 :else 
                 (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
-
-          
 
 
 (defn walk-jdt-node [ast node-f list-f primitive-f]
@@ -344,8 +344,14 @@
 
 
 (comment 
+  (use 'damp.ekeko.snippets)
+  (in-ns 'damp.ekeko.snippets)
   
   ;;Example REPL session against JHotDraw51
+  
+  
+  ;;Example 1: snippet linked to program it originates from
+  ;;-------------------------------------------------------
   
   ;; select an AST node from the program as the starting point for the snippet
   (def selected (first (first 
@@ -360,6 +366,12 @@
   
   ;; convert the snippet to an Ekeko query
   (def query (snippet-query snippet))
+  
+  ;;Example 2: snippet originating from a string 
+  ;;--------------------------------------------
+
+  
+  (snippet-query (jdt-node-as-snippet (parse-snippet-expression "fLocator.locate(owner())")))
   
   )
 
