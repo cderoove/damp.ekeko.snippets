@@ -144,45 +144,6 @@
 
 
 (defn 
-  ast-primitive-as-string
-  [primitive]
-  ;used on things like Modifier.ModifierKeyword                        
-  ;could dispatch on this as well
-  (cond (nil? primitive)  nil
-        (or (true? primitive)  (false? primitive)) primitive
-        :else (str "\"" (.toString primitive) "\"")))
-
-(defn 
-  make-constraining-function
-  [template-ast]
-  (if 
-    (instance? ASTNode template-ast)
-    (let [template-keyw (ekeko-keyword-for-class-of template-ast)
-          template-properties (node-ekeko-properties template-ast)]
-      (fn [snippet]
-        (let [var-match (snippet-var-for-node snippet template-ast)
-              child-conditions (for [[property-keyw retrievalf] 
-                                     (seq template-properties)
-                                     :let [child (retrievalf)
-                                           var-child (or (snippet-var-for-node snippet child)
-                                                         (ast-primitive-as-string child))]]
-                                 `(has ~property-keyw ~var-match ~var-child))]
-          `((ast ~template-keyw ~var-match)
-             ~@child-conditions))))
-    (let [template-list-size (.size template-ast)]
-      (fn [snippet]
-        (let [var-match (snippet-var-for-node snippet template-ast)
-              element-conditions (for [element template-ast
-                                       :let [idx-el (.indexOf template-ast element)
-                                             var-el (or 
-                                                     (snippet-var-for-node snippet element)
-                                                     (ast-primitive-as-string element))]]
-                                   `(equals ~var-el (get ~var-match ~idx-el)))]
-          `((equals ~template-list-size (.size ~var-match))
-             ~@element-conditions))))))
-
-
-(defn 
   make-grounding-function
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
    - if the AST node is a root node: ((ast :kind-of-node ?var-for-node-match)) 
@@ -249,6 +210,89 @@
                        (equals ~var-match (.get ~var-list ~template-position)))))
                 :else 
                 (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
+
+
+(declare ast-primitive-as-string)
+
+
+(defn 
+  make-constraining-function
+    "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
+     - for ASTNode$NodeList instances: ((equals size-of-snippet-node (.size ?var-for-node-match))
+                                        (equals ?var-for-element0-match (get ?var-for-node-match 0))
+                                        (equals ?var-for-element1-match ''primitive-valued-element-as-string''))
+                                        ....
+                                        (equals ?var-for-elementn-match (get ?var-for-node-match n))
+
+     - for ASTNode instances: ((ast :kind-of-node ?var-for-node-match)  
+                               (has :property1 ?var-for-node-match ?var-for-child1-match)
+                               (has :property2 ?var-for-node-match ''primitive-valued-child-as-string''))
+                               ....
+                               (has :propertyn ?var-for-node-match ?var-for-childn-match))"
+  [template-ast]
+  (if 
+    (instance? ASTNode template-ast)
+    (let [;ekeko keyword for the node's kind (e.g., :MethodDeclaration)
+          template-keyw 
+          (ekeko-keyword-for-class-of template-ast)
+          ;a map from keywords to functions, 
+          ;keyword is the name of an AST node property (e.g., :name), 
+          ;while the corrresponding function retrieves the value of this property
+          template-properties
+          (node-ekeko-properties template-ast)]
+      (fn [snippet]
+        (let [;logic variable that will be bound to a matching node from the Java project
+              var-match
+              (snippet-var-for-node snippet template-ast)
+              ;logic conditions that constrain the match through its children
+              ;the children of the match have to match the children of the snippet's node
+              child-conditions 
+              (for [[property-keyw retrievalf] 
+                    (seq template-properties)
+                    :let [;one child node of snippet's node
+                          child 
+                          (retrievalf) 
+                          ;variable that will be bound to the corresponding child of the match
+                          ;or the string representation of a primitive-valued child
+                          var-child (or 
+                                      (snippet-var-for-node snippet child)
+                                      (ast-primitive-as-string child))]]
+                `(has ~property-keyw ~var-match ~var-child))]
+          `((ast ~template-keyw ~var-match)
+             ~@child-conditions))))
+    (let [template-list-size (.size template-ast)]
+      (fn [snippet]
+        (let [;logic variable that will be bound to a matching list from the Java project
+              var-match 
+              (snippet-var-for-node snippet template-ast)
+              ;logic conditions that constrain the match through the list's elements
+              ;the elements of the snippet's list and the project's list have to correspond one-to-one
+              element-conditions 
+              (for [element
+                    template-ast
+                    :let [;index of the element in the snippet's list
+                          idx-el 
+                          (.indexOf template-ast element)
+                          ;variable that will be bound to the corresponding element of the match
+                          ;or the string representation of a primitive-valued element
+                          var-el (or 
+                                   (snippet-var-for-node snippet element)
+                                   (ast-primitive-as-string element))]]
+                `(equals ~var-el (get ~var-match ~idx-el)))]
+          `((equals ~template-list-size (.size ~var-match))
+             ~@element-conditions))))))
+
+
+(defn 
+  ast-primitive-as-string
+  "Returns the string representation of a primitive-valued JDT node (e.g., instances of Modifier.ModifierKeyword)."
+  [primitive]
+  ;could dispatch on this as well
+  (cond (nil? primitive) 
+        nil
+        (or (true? primitive) (false? primitive))
+        primitive
+        :else (str "\"" (.toString primitive) "\"")))
 
 
 (defn walk-jdt-node [ast node-f list-f primitive-f]
