@@ -314,6 +314,19 @@
   
   ;;Example REPL session against JHotDraw51
   
+  ;; select an AST node from the program as the starting point for the snippet
+  (def selected (first (first 
+                          (damp.ekeko/ekeko [?m] 
+                                            (ast :MethodDeclaration ?m) 
+                                            (fresh [?n]
+                                                   (has :name ?m ?n)
+                                                   (has :identifier ?n "LocatorHandle"))))))
+  
+  ;; create a snippet from the selected AST node 
+  (def snippet (jdt-node-as-snippet selected))
+  
+  ;; convert the snippet to an Ekeko query
+  (def query (snippet-query snippet))
   
   )
 
