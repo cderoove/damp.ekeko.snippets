@@ -143,6 +143,16 @@
   (vals (:ast2var snippet)))
 
 
+(defn
+  make-epsilon-function
+  "Returns a function that does not generate any conditions for the given AST node of a code snippet."
+  [template-ast]
+  (fn [template-owner]
+    '()))
+
+
+(comment
+
 (defn 
   make-grounding-function
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
@@ -211,12 +221,15 @@
                 :else 
                 (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
 
+)
+
 
 (declare ast-primitive-as-string)
 
 
+  
 (defn 
-  make-constraining-function
+  make-constraining-function-exact
     "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
      - for ASTNode$NodeList instances: ((equals size-of-snippet-node (.size ?var-for-node-match))
                                         (equals ?var-for-element0-match (get ?var-for-node-match 0))
@@ -283,6 +296,43 @@
              ~@element-conditions))))))
 
 
+(defn
+  make-grounding-function-minimalistic
+  "Only generates grounding conditions for the root node of the snippet."
+  [snippet-ast]
+  (let [snippet-ast-keyw (ekeko-keyword-for-class-of snippet-ast) ]
+    (fn [snippet] 
+      (if 
+        (= snippet-ast (:ast snippet))
+        (let [var-match (snippet-var-for-node snippet snippet-ast)] 
+          `((ast ~snippet-ast-keyw ~var-match)))
+        '()))))
+  
+  
+(defn 
+  make-grounding-function
+  [type]
+  (cond 
+    (= type :minimalistic)
+    make-grounding-function-minimalistic
+    (= type :epsilon)
+    make-epsilon-function
+    :default
+    (throw (Exception. (str "Unknown grounding function type: " type)))))
+
+
+(defn
+  make-constraining-function
+  [type]
+  (cond
+    (= type :exact)
+    make-constraining-function-exact
+    (= type :epsilon)
+    make-epsilon-function
+    :default
+    (throw (Exception. (str "Unknown constraining function type: " type))))) 
+
+
 (defn 
   ast-primitive-as-string
   "Returns the string representation of a primitive-valued JDT node (e.g., instances of Modifier.ModifierKeyword)."
@@ -290,12 +340,16 @@
   ;could dispatch on this as well
   (cond (nil? primitive) 
         nil
-        (or (true? primitive) (false? primitive))
-        primitive
-        :else (str "\"" (.toString primitive) "\"")))
+        :else primitive))
+        ;(or (true? primitive) (false? primitive))
+        ;primitive
+        ;:else (str "\"" (.toString primitive) "\"")))
 
 
-(defn walk-jdt-node [ast node-f list-f primitive-f]
+
+(defn 
+  walk-jdt-node
+  [ast node-f list-f primitive-f]
   (defn walk-jdt-nodes [nodes]
     (when-not (empty? nodes)
       (let [ast (first nodes)
@@ -321,8 +375,8 @@
     (->
       snippet
       (assoc-in [:ast2var ast] (gen-lvar))
-      (assoc-in [:ast2groundf ast] (make-grounding-function ast))
-      (assoc-in [:ast2constrainf ast] (make-constraining-function ast))))
+      (assoc-in [:ast2groundf ast] :minimalistic)
+      (assoc-in [:ast2constrainf ast] :exact)))
   (let [snippet (atom (Snippet. n {} {} {}))]
     (walk-jdt-node 
       n
@@ -337,15 +391,17 @@
   snippet-query
   "Returns the Ekeko query that will retrieve matches for the given snippet."
   [snippet]
-  (defn conditions [ast-or-list]
-    (concat ((snippet-grounder-for-node snippet ast-or-list) snippet)
-            ((snippet-constrainer-for-node snippet ast-or-list) snippet)))
+  (defn 
+    conditions
+    [ast-or-list]
+    (concat (((make-grounding-function (snippet-grounder-for-node snippet ast-or-list)) ast-or-list) snippet)
+            (((make-constraining-function (snippet-constrainer-for-node snippet ast-or-list)) ast-or-list) snippet)))
   (let [ast (:ast snippet)
         query (atom '())]
     (walk-jdt-node 
       ast
-      (fn [ast] (swap! query concat (conditions ast)))
-      (fn [ast-list] (swap! query concat (conditions ast)))
+      (fn [ast-node] (swap! query concat (conditions ast-node)))
+      (fn [ast-list] (swap! query concat (conditions ast-list)))
       (fn [primitive]))
     @query))
 
@@ -362,7 +418,9 @@
     (println "Evaluating: " query)
     (eval query)))
       
-(defn eval-snippet-condition-by-condition [snippet]
+(defn 
+  eval-snippet-condition-by-condition
+  [snippet]
   (let [ast-var (snippet-var-for-node snippet (:ast snippet))
         conditions (snippet-query snippet)
         vars (disj (ekeko-extract-vars conditions) ast-var)]
@@ -418,15 +476,3 @@
   (snippet-query (jdt-node-as-snippet (parse-string-expression "fLocator.locate(owner())")))
   
   )
-
-
-
-
-
-
-
-
-                  
-  
-  
-
