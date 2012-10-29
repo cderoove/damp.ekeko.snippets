@@ -4,9 +4,13 @@
   damp.ekeko.snippets
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
-  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit])
+  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit]
+           [org.eclipse.jface.viewers TreeViewerColumn]
+           [org.eclipse.swt SWT]
+           [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
+           [org.eclipse.swt.widgets Display])
   (:use [damp ekeko])
-  (:use [damp.ekeko logic])
+  (:use [damp.ekeko logic gui])
   (:use [damp.ekeko.jdt reification astnode]))
 
 
@@ -340,10 +344,9 @@
   ;could dispatch on this as well
   (cond (nil? primitive) 
         nil
-        :else primitive))
-        ;(or (true? primitive) (false? primitive))
-        ;primitive
-        ;:else (str "\"" (.toString primitive) "\"")))
+        (or (true? primitive) (false? primitive))
+        primitive
+        :else  (.toString primitive) ))
 
 
 
@@ -371,6 +374,11 @@
     
     
 (defn
+  class-simplename
+  [clazz]
+  (last (.split #"\." (.getName clazz))))
+
+(defn
   gen-readable-lvar-for-node
   [ast]
   (gen-lvar
@@ -378,7 +386,7 @@
       (instance? java.util.AbstractList ast)
       "List"
       :else
-      (last (.split #"\." (.getName (class ast)))))))
+      (class-simplename (class ast)))))
 
 (defn 
   jdt-node-as-snippet
@@ -447,12 +455,141 @@
     (eval-conditions conditions)))  
 
 
+; Eclipse view on snippets
+; ------------------------
 
-; a compilationUnit
-; (ast :CompilationUnit ?ast)
-; (child ?ast ... ?child1)
-; (child ?ast ... ?childn)
+(defn
+  configure-viewer-for-snippet
+  [viewer snippet]
+  
+  (defn 
+    configure-column
+    [col text width provider]
+    (let [colcol (.getColumn col)
+          colprovider ()]
+      (do
+        (.setText colcol text)
+        (.setWidth colcol width)
+        (.setLabelProvider col provider))))
+  
+  (defn
+    labelprovider-for-column-node
+    [snippet]
+    (proxy 
+      [org.eclipse.jface.viewers.ColumnLabelProvider]
+      []
+      (getText [this element]
+               (.toString element))))
+  
+  (defn
+    labelprovider-for-column-kind
+    [snippet]
+    (proxy 
+      [org.eclipse.jface.viewers.ColumnLabelProvider]
+      []
+      (getText [this element]
+               (class-simplename (class element)))))
+  (defn
+    labelprovider-for-column-variable
+    [snippet]
+    (proxy 
+      [org.eclipse.jface.viewers.ColumnLabelProvider]
+      []
+      (getText [this element]
+               (str (snippet-var-for-node snippet element)))))
+  
+  (defn
+    labelprovider-for-column-grounding
+    [snippet]
+    (proxy 
+      [org.eclipse.jface.viewers.ColumnLabelProvider]
+      []
+      (getText [this element]
+               (str (snippet-grounder-for-node snippet element)))))
+  
+  (defn
+    labelprovider-for-column-constraining
+    [snippet]
+    (proxy 
+      [org.eclipse.jface.viewers.ColumnLabelProvider]
+      []
+      (getText [this element]
+               (str (snippet-constrainer-for-node snippet element)))))
 
+  (defn
+    contentprovider-for-snippet
+    [snippet]
+    (proxy
+      [org.eclipse.jface.viewers.ITreeContentProvider]
+      []
+      ;roots of treeview
+      (getElement [this input] 
+                  (if 
+                    (= input snippet)
+                    (to-array [(:ast snippet)])
+                    nil))
+      ;treeview children of given treeview parent
+      (getChildren [this p]
+                   (cond 
+                     (instance? ASTNode p) 
+                     (node-children p) 
+                     (instance? java.util.AbstractList p) 
+                     (to-array (seq p))
+                     :else 
+                     (to-array [])))
+      ;treeview parent of given treeview child
+      (getParent [this c]
+                 (cond 
+                     (instance? ASTNode c) 
+                     (owner c) 
+                     (instance? java.util.AbstractList c) 
+                     (owner c)
+                     :else 
+                     nil))
+      (hasChildren [this n] 
+                   (> (count (.getChildren this n)) 0))
+      (inputChanged [this viewer old new x]
+                    )
+      ))
+  
+  
+  (let [colwidth 200]
+    (do
+      (.setContentProvider viewer (contentprovider-for-snippet snippet))
+      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Node" colwidth (labelprovider-for-column-node snippet))
+      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Kind" colwidth (labelprovider-for-column-kind snippet))
+      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Variable" colwidth (labelprovider-for-column-variable snippet))
+      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Grounder" colwidth (labelprovider-for-column-grounding snippet))
+      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Constrainer" colwidth (labelprovider-for-column-constraining snippet))     
+      )))
+
+
+(def snippet-viewer-cnt (atom 0))
+
+(defn 
+  open-snippet-viewer
+  [snippet]
+  (let [page (-> (PlatformUI/getWorkbench)
+               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
+               .getActivePage)
+        qvid (damp.ekeko.SnippetViewer/ID)
+        uniqueid (str @snippet-viewer-cnt)
+        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
+    (swap! snippet-viewer-cnt inc)
+    (.setViewID viewpart uniqueid)
+    (configure-viewer-for-snippet (.getViewer viewpart) snippet)
+    (.setInput (.getViewer viewpart) snippet)
+    viewpart))
+
+
+
+(defn
+  view-snippet
+  [snippet]
+  (eclipse-uithread-return (fn [] (open-snippet-viewer snippet))))
+
+
+    
 
 
 ; next: use /* */ after or before concrete syntax of a node to specity what condition generator function to use for that node (since jdt uses that syntax)
@@ -487,5 +624,16 @@
 
   
   (snippet-query (jdt-node-as-snippet (parse-string-expression "fLocator.locate(owner())")))
+  
+  ;;Misc Examples
+  ;;-------------
+  
+  
+  (def s (jdt-node-as-snippet(parse-string-expression "m.b(1)")))
+  
+  (query-by-snippet s)
+  
+  (view-snippet s)
+
   
   )
