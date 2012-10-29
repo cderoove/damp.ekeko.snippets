@@ -407,7 +407,7 @@
 
 
 (defn
-  eval-snippet
+  query-by-snippet
   [snippet]
   (let [conditions (snippet-query snippet)
         ast-var (snippet-var-for-node snippet (:ast snippet))
@@ -419,7 +419,7 @@
     (eval query)))
       
 (defn 
-  eval-snippet-condition-by-condition
+  query-by-snippet-condition-by-condition
   [snippet]
   (let [ast-var (snippet-var-for-node snippet (:ast snippet))
         conditions (snippet-query snippet)
