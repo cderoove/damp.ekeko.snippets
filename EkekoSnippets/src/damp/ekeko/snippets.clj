@@ -81,8 +81,8 @@
   gen-lvar
   "Generates a unique symbol starting with ?v
    (i.e., a symbol to be used as the name for a logic variable)."
-  [] 
-  (gensym '?v))
+  ([] (gen-lvar "v"))
+  ([prefix] (gensym (str "?" prefix))))
 
 
 ; Datatype representing a code snippet that can be matched against Java projects.
@@ -370,11 +370,23 @@
   (walk-jdt-nodes (list ast)))
     
     
-(defn jdt-node-as-snippet [n]
+(defn
+  gen-readable-lvar-for-node
+  [ast]
+  (gen-lvar
+    (cond 
+      (instance? java.util.AbstractList ast)
+      "List"
+      :else
+      (last (.split #"\." (.getName (class ast)))))))
+
+(defn 
+  jdt-node-as-snippet
+  [n]
   (defn assoc-snippet-ast [snippet ast]
     (->
       snippet
-      (assoc-in [:ast2var ast] (gen-lvar))
+      (assoc-in [:ast2var ast] (gen-readable-lvar-for-node ast))
       (assoc-in [:ast2groundf ast] :minimalistic)
       (assoc-in [:ast2constrainf ast] :exact)))
   (let [snippet (atom (Snippet. n {} {} {}))]
@@ -408,6 +420,7 @@
 
 (defn
   query-by-snippet
+  "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
   (let [conditions (snippet-query snippet)
         ast-var (snippet-var-for-node snippet (:ast snippet))
