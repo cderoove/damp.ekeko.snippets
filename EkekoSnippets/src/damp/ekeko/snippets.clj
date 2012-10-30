@@ -41,6 +41,17 @@
   (jdt-parse-string string (ASTParser/K_STATEMENTS)))
 
 (defn 
+  parse-string-statement
+  "Parses the given string as a sequence of Java statements and return first statement."
+  [string]
+  (let [ast-node (parse-string-statements string)]
+    (first (first (damp.ekeko/ekeko [?stat]
+                                  (fresh [?stats]
+                                  (ast :Block ast-node)
+                                  (has :statements ast-node ?stats)
+                                  (equals ?stat (.get ?stats 0))))))))
+
+(defn 
   parse-string-expression 
   "Parses the given string as a Java expression."
   [string]
@@ -106,10 +117,11 @@
 ; - ast2constrainf:  map from an AST node of the snippet to a function that generates "constraining" conditions. 
 ;   These will constrain the bindings for the corresponding logic variable to an AST node of the Java project
 ;   that actually matches the AST node of the snippet. 
+; - var2ast: map from a logic variable to the an AST node which is bound to its match
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf])
+  [ast ast2var ast2groundf ast2constrainf var2ast])
 
 (defn 
   snippet-var-for-node 
@@ -131,6 +143,13 @@
    that will generate constraining conditions for the corresponding logic variable."
   [snippet template-ast]
   (get-in snippet [:ast2constrainf template-ast]))
+
+(defn 
+  snippet-node-for-var 
+  "For the logic variable of the given snippet, returns the AST node  
+   that is bound to a matching logic variable."
+  [snippet snippet-var]
+  (get-in snippet [:var2ast snippet-var]))
 
 (defn 
   snippet-nodes
@@ -225,12 +244,6 @@
                 :else 
                 (throw (Exception. "make-grounding-function should only be called for NodeLists and Nodes. Not simple values.")))))))))
 
-)
-
-
-(declare ast-primitive-as-string)
-
-
   
 (defn 
   make-constraining-function-exact
@@ -299,9 +312,15 @@
           `((equals ~template-list-size (.size ~var-match))
              ~@element-conditions))))))
 
+)
+
+
+(declare ast-primitive-as-string)
+
+;grounding function
 
 (defn
-  make-grounding-function-minimalistic
+  gf-minimalistic
   "Only generates grounding conditions for the root node of the snippet."
   [snippet-ast]
   (let [snippet-ast-keyw (ekeko-keyword-for-class-of snippet-ast) ]
@@ -312,17 +331,136 @@
           `((ast ~snippet-ast-keyw ~var-match)))
         '()))))
   
-  
+(defn 
+  gf-node-exact
+  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
+   For AST node is the value of a property: ((has :property ?var-for-owner-match ?var-for-node-match))"
+  [snippet-ast]
+  (fn [snippet] 
+      (let [snippet-owner  (owner snippet-ast)
+            var-match       (snippet-var-for-node snippet snippet-ast) 
+            var-match-owner (snippet-var-for-node snippet snippet-owner)
+            owner-property  (owner-property snippet-ast) 
+            owner-property-keyw (ekeko-keyword-for-property-descriptor owner-property)]
+        `((has ~owner-property-keyw ~var-match-owner ~var-match)))))
+
+(defn 
+  gf-node-deep
+  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
+   For AST node is the value of a property: ((child+ ?var-for-owner-match ?var-for-node-match))"
+  [snippet-ast]
+  (fn [snippet] 
+      (let [snippet-owner  (owner snippet-ast)
+            var-match       (snippet-var-for-node snippet snippet-ast) 
+            var-match-owner (snippet-var-for-node snippet snippet-owner)]
+        `((child+ ~var-match-owner ~var-match)))))
+
+ ;still not sure whether gf-node-exact & gf-node-deep is necessarry, because it maybe belongs to cf
 (defn 
   make-grounding-function
   [type]
   (cond 
     (= type :minimalistic)
-    make-grounding-function-minimalistic
+    gf-minimalistic
+    (= type :node-exact)
+    gf-node-exact
+    (= type :node-deep)
+    gf-node-deep
     (= type :epsilon)
     make-epsilon-function
     :default
     (throw (Exception. (str "Unknown grounding function type: " type)))))
+
+;constraining function
+
+(defn 
+  cf-node
+    "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
+     For   ASTNode instances: ((ast :kind-of-node ?var-for-node-match)  
+                               (has :property1 ?var-for-node-match ?var-for-child1-match)
+                               (has :property2 ?var-for-node-match ''primitive-valued-child-as-string''))
+                               ....
+     If ?lvar exist then       (has :property2 ?var-for-node-match ?lvar))"
+  [snippet-ast & [?lvar]]
+  (fn [snippet]
+    (let [snippet-keyw       (ekeko-keyword-for-class-of snippet-ast)
+          snippet-properties (node-ekeko-properties snippet-ast)
+          var-match          (snippet-var-for-node snippet snippet-ast)
+          child-conditions 
+              (for [[property-keyw retrievalf] 
+                    (seq snippet-properties)
+                    :let [child     (retrievalf) 
+                          var-child (or 
+                                      (snippet-var-for-node snippet child)
+                                      (if (nil? ?lvar)
+                                        (ast-primitive-as-string child)
+                                        ?lvar))]]
+                `(has ~property-keyw ~var-match ~var-child))]
+          `((ast ~snippet-keyw ~var-match)
+             ~@child-conditions))))
+
+(defn 
+  cf-node-exact
+  [snippet-ast]
+  (cf-node snippet-ast))
+
+;to introduce logic var, we need to add one argument
+;cannot add another argument for grounding and constraining function
+;temporary just use logic variable '?lvar
+;(defn 
+;  cf-node-with-lvar
+;  [snippet-ast ?lvar]
+;  (cf-node snippet-ast ?lvar))
+
+(defn 
+  cf-node-with-lvar
+  [snippet-ast]
+  (cf-node snippet-ast '?lvar))
+
+(defn 
+  cf-list-exact
+    "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
+     For ASTNode$NodeList instances: (equals size-of-snippet-node (.size ?var-for-node-match))"
+  [snippet-ast]
+  (fn [snippet]
+    (let [snippet-list-size (.size snippet-ast)
+          var-match (snippet-var-for-node snippet snippet-ast)
+          element-conditions 
+          (for [element
+                snippet-ast
+                :let [idx-el (.indexOf snippet-ast element)
+                      var-el (or 
+                               (snippet-var-for-node snippet element)
+                               (ast-primitive-as-string element))]]
+            `(equals ~var-el (get ~var-match ~idx-el)))]
+      `((equals ~snippet-list-size (.size ~var-match))
+         ~@element-conditions))))
+
+(defn 
+  cf-list-contains
+    "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
+     For ASTNode$NodeList instances: for each element in the list (contains ?var-for-node-match ?var-for-element)"
+  [snippet-ast]
+  (fn [snippet]
+    (let [snippet-list-size (.size snippet-ast)
+          var-match (snippet-var-for-node snippet snippet-ast)
+          element-conditions 
+          (for [element
+                snippet-ast
+                :let [var-el (or 
+                               (snippet-var-for-node snippet element)
+                               (ast-primitive-as-string element))]]
+            `(contains ~var-match ~var-el))]
+      `((equals ~snippet-list-size (.size ~var-match))
+         ~@element-conditions))))
+
+(defn 
+  cf-exact
+  [snippet-ast]
+  (if 
+    (instance? ASTNode snippet-ast)
+    (cf-node-exact snippet-ast)
+    (cf-list-exact snippet-ast)))
 
 
 (defn
@@ -330,7 +468,15 @@
   [type]
   (cond
     (= type :exact)
-    make-constraining-function-exact
+    cf-exact
+    (= type :node-exact)
+    cf-node-exact
+    (= type :node-with-lvar)
+    cf-node-with-lvar
+    (= type :list-exact)
+    cf-list-exact
+    (= type :list-contains)
+    cf-list-contains
     (= type :epsilon)
     make-epsilon-function
     :default
@@ -392,12 +538,14 @@
   jdt-node-as-snippet
   [n]
   (defn assoc-snippet-ast [snippet ast]
-    (->
-      snippet
-      (assoc-in [:ast2var ast] (gen-readable-lvar-for-node ast))
-      (assoc-in [:ast2groundf ast] :minimalistic)
-      (assoc-in [:ast2constrainf ast] :exact)))
-  (let [snippet (atom (Snippet. n {} {} {}))]
+    (let [lvar (gen-readable-lvar-for-node ast)]
+      (->
+        snippet
+        (assoc-in [:ast2var ast] lvar)
+        (assoc-in [:ast2groundf ast] :minimalistic)
+        (assoc-in [:ast2constrainf ast] :exact)
+        (assoc-in [:var2ast lvar] ast))))
+  (let [snippet (atom (Snippet. n {} {} {} {}))]
     (walk-jdt-node 
       n
       (fn [ast] (swap! snippet assoc-snippet-ast ast))
@@ -405,7 +553,7 @@
       (fn [primitive]))
     @snippet))
     
-  
+;query
 
 (defn 
   snippet-query
@@ -453,6 +601,34 @@
           (eval query)
           (recur (butlast remaining)))))
     (eval-conditions conditions)))  
+
+;operator
+
+
+(defn update-groundf 
+  "Update grounding function of a given node in a given snippet with new grounding function of given type
+   Example: (update-groundf snippet node :node-deep)"
+  [snippet node type]
+  (update-in snippet [:ast2groundf node] (fn [x] type)))
+
+(defn update-constrainf 
+  "Update constraining function of a given node in a given snippet with the new constraining function of given type
+   Example: (update-constrainf snippet node :list-contains)"
+  [snippet node type]
+  (update-in snippet [:ast2constrainf node] (fn [x] type)))
+
+
+(defn ignore-elements-sequence 
+  "Ignore elements sequence in a given node(list)"
+  [snippet node]
+  (update-constrainf snippet node :list-contains))
+
+;need one more argument for the new lvar
+(defn introduce-logic-variable 
+  "Introduce logic variable to a given node"
+  [snippet node ?lvar]
+  (update-constrainf snippet node :node-with-lvar))
+
 
 
 ; Eclipse view on snippets
@@ -571,10 +747,50 @@
   
   ;;Example 2: snippet originating from a string 
   ;;--------------------------------------------
-
-  
+ 
   (snippet-query (jdt-node-as-snippet (parse-string-expression "fLocator.locate(owner())")))
   
+  ;;Example 3: introduce logic variable 
+  ;;--------------------------------------------
+
+  (def astnode (parse-string-statement "return foo;"))
+  (def snippet (jdt-node-as-snippet astnode))
+  (def query (snippet-query snippet))
+  
+  ;(damp.ekeko.jdt.reification/ast :ReturnStatement ?ReturnStatement14017) --> still double
+  ;(damp.ekeko.jdt.reification/ast :ReturnStatement ?ReturnStatement14017) 
+  ;(damp.ekeko.jdt.reification/has :expression ?ReturnStatement14017 ?SimpleName14018) 
+  ;(damp.ekeko.jdt.reification/ast :SimpleName ?SimpleName14018) 
+  ;(damp.ekeko.jdt.reification/has :identifier ?SimpleName14018 "foo")
+  
+  (def snippet2 (introduce-logic-variable snippet (snippet-node-for-var snippet '?SimpleName14018) '?vfoo))
+  (def query2 (snippet-query snippet2))
+  ;(damp.ekeko.jdt.reification/has :identifier ?SimpleName14018 ?lvar)
+
+  
+  ;;Example 4: ignore elements sequence of the list
+  ;;--------------------------------------------------------------------------------
+
+  (def astnode (parse-string-statement "{int y; int x;}"))
+  (def snippet (jdt-node-as-snippet astnode))
+  (def query (snippet-query snippet))
+  ;....
+  ;(damp.ekeko.jdt.reification/has :statements ?Block14974 ?List14975) 
+  ;(damp.ekeko.logic/equals 2 (.size ?List14975)) 
+  ;(damp.ekeko.logic/equals ?VariableDeclarationStatement14976 (clojure.core/get ?List14975 0)) 
+  ;(damp.ekeko.logic/equals ?VariableDeclarationStatement14982 (clojure.core/get ?List14975 1))
+  ;.... 
+  
+  (def snippet2 (ignore-elements-sequence snippet (snippet-node-for-var snippet '?List14975)))  
+  (def query2 (snippet-query snippet2))
+  ;....
+  ;(damp.ekeko.jdt.reification/has :statements ?Block14974 ?List14975) 
+  ;(damp.ekeko.logic/equals 2 (.size ?List14975)) 
+  ;(damp.ekeko.logic/contains ?List14975 ?VariableDeclarationStatement14976) 
+  ;(damp.ekeko.logic/contains ?List14975 ?VariableDeclarationStatement14982)  
+  ;....
+
+
   ;;Misc Examples
   ;;-------------
   
@@ -586,4 +802,4 @@
   (view-snippet s)
 
   
-  )
+)
