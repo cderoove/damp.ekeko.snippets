@@ -458,112 +458,63 @@
 ; Eclipse view on snippets
 ; ------------------------
 
+
 (defn
-  configure-viewer-for-snippet
-  [viewer snippet]
-  
-  (defn 
-    configure-column
-    [col text width provider]
-    (let [colcol (.getColumn col)
-          colprovider ()]
-      (do
-        (.setText colcol text)
-        (.setWidth colcol width)
-        (.setLabelProvider col provider))))
-  
-  (defn
-    labelprovider-for-column-node
-    [snippet]
-    (proxy 
-      [org.eclipse.jface.viewers.ColumnLabelProvider]
-      []
-      (getText [this element]
-               (.toString element))))
-  
-  (defn
-    labelprovider-for-column-kind
-    [snippet]
-    (proxy 
-      [org.eclipse.jface.viewers.ColumnLabelProvider]
-      []
-      (getText [this element]
-               (class-simplename (class element)))))
-  (defn
-    labelprovider-for-column-variable
-    [snippet]
-    (proxy 
-      [org.eclipse.jface.viewers.ColumnLabelProvider]
-      []
-      (getText [this element]
-               (str (snippet-var-for-node snippet element)))))
-  
-  (defn
-    labelprovider-for-column-grounding
-    [snippet]
-    (proxy 
-      [org.eclipse.jface.viewers.ColumnLabelProvider]
-      []
-      (getText [this element]
-               (str (snippet-grounder-for-node snippet element)))))
-  
-  (defn
-    labelprovider-for-column-constraining
-    [snippet]
-    (proxy 
-      [org.eclipse.jface.viewers.ColumnLabelProvider]
-      []
-      (getText [this element]
-               (str (snippet-constrainer-for-node snippet element)))))
-
-  (defn
-    contentprovider-for-snippet
-    [snippet]
-    (proxy
-      [org.eclipse.jface.viewers.ITreeContentProvider]
-      []
-      ;roots of treeview
-      (getElement [this input] 
-                  (if 
-                    (= input snippet)
-                    (to-array [(:ast snippet)])
-                    nil))
-      ;treeview children of given treeview parent
-      (getChildren [this p]
-                   (cond 
-                     (instance? ASTNode p) 
-                     (node-children p) 
-                     (instance? java.util.AbstractList p) 
-                     (to-array (seq p))
-                     :else 
-                     (to-array [])))
-      ;treeview parent of given treeview child
-      (getParent [this c]
-                 (cond 
-                     (instance? ASTNode c) 
-                     (owner c) 
-                     (instance? java.util.AbstractList c) 
-                     (owner c)
-                     :else 
-                     nil))
-      (hasChildren [this n] 
-                   (> (count (.getChildren this n)) 0))
-      (inputChanged [this viewer old new x]
-                    )
-      ))
-  
-  
-  (let [colwidth 200]
-    (do
-      (.setContentProvider viewer (contentprovider-for-snippet snippet))
-      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Node" colwidth (labelprovider-for-column-node snippet))
-      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Kind" colwidth (labelprovider-for-column-kind snippet))
-      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Variable" colwidth (labelprovider-for-column-variable snippet))
-      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Grounder" colwidth (labelprovider-for-column-grounding snippet))
-      (configure-column (TreeViewerColumn. viewer (SWT/NONE)) "Constrainer" colwidth (labelprovider-for-column-constraining snippet))     
-      )))
+  snippetviewer-elements
+  [snippet input]
+  ;roots of treeview
+  (if 
+    (= input snippet)
+    (to-array [(:ast snippet)])
+    nil))
 
 
+(defn
+  snippetviewer-children
+  [snippet p]
+  ;treeview children of given treeview parent
+  (cond 
+     (instance? ASTNode p) 
+     (to-array (node-children p)) 
+     (instance? java.util.AbstractList p) 
+     (to-array (seq p))
+     :else 
+     (to-array [])))
+
+
+(defn
+  snippetviewer-parent
+  [snippet c]
+  ;treeview parent of given treeview child
+  (cond 
+    (instance? ASTNode c) 
+    (owner c) 
+    (instance? java.util.AbstractList c) 
+    (owner c)
+    :else 
+    nil))
+
+(defn
+  snippetviewercolumn-kind
+  [snippet element]
+  (class-simplename (class element)))
+
+(defn
+  snippetviewercolumn-variable
+  [snippet element]
+  (str (snippet-var-for-node snippet element)))
+
+(defn
+  snippetviewercolumn-grounder
+  [snippet element]
+  (str (snippet-grounder-for-node snippet element)))
+
+(defn
+  snippetviewercolumn-constrainer
+  [snippet element]
+  (str (snippet-constrainer-for-node snippet element)))
+
+   
 (def snippet-viewer-cnt (atom 0))
 
 (defn 
@@ -577,7 +528,6 @@
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
     (swap! snippet-viewer-cnt inc)
     (.setViewID viewpart uniqueid)
-    (configure-viewer-for-snippet (.getViewer viewpart) snippet)
     (.setInput (.getViewer viewpart) snippet)
     viewpart))
 
