@@ -574,9 +574,10 @@
     @query))
 
 
+;todo: fix code duplication
 (defn
-  query-by-snippet
-  "Queries the Ekeko projects for matches for the given snippet."
+  query-by-snippet*
+  "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]
   (let [conditions (snippet-query snippet)
         ast-var (snippet-var-for-node snippet (:ast snippet))
@@ -586,6 +587,20 @@
                               ~@conditions))]
     (println "Evaluating: " query)
     (eval query)))
+
+(defn
+  query-by-snippet
+  "Queries the Ekeko projects for matches for the given snippet."
+  [snippet]
+  (let [conditions (snippet-query snippet)
+        ast-var (snippet-var-for-node snippet (:ast snippet))
+        vars (disj (ekeko-extract-vars conditions) ast-var)
+        query `(ekeko [~ast-var]
+                       (fresh [~@vars]
+                              ~@conditions))]
+    (println "Evaluating: " query)
+    (eval query)))
+
       
 (defn 
   query-by-snippet-condition-by-condition
