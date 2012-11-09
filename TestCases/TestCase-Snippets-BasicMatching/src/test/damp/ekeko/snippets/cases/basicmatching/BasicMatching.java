@@ -25,6 +25,16 @@ public class BasicMatching {
 		this.methodC();
 	}
 	
+	public void methodA1() {
+		this.methodM();
+		this.methodC();
+	}
+
+	public void methodA2() {
+		this.methodC();
+		this.methodM();
+	}
+
 	public Object methodM() {
 		return o.f;
 	}
@@ -36,6 +46,8 @@ public class BasicMatching {
 	public static void runTest() {
 		BasicMatching test = new BasicMatching();
 		test.methodA();
+		test.methodA1();
+		test.methodA2();
 		System.out.println(test.o.f);
 	}
 	

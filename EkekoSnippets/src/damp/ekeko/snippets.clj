@@ -118,10 +118,11 @@
 ;   These will constrain the bindings for the corresponding logic variable to an AST node of the Java project
 ;   that actually matches the AST node of the snippet. 
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
+; - var2uservar: map from logic variable to the user defined logic variable 
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast])
+  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar])
 
 (defn 
   snippet-var-for-node 
@@ -150,6 +151,12 @@
    that is bound to a matching logic variable."
   [snippet snippet-var]
   (get-in snippet [:var2ast snippet-var]))
+
+(defn 
+  snippet-uservar-for-var 
+  "For the givenlogis var of the given snippet, returns the name of the user defined logic variable."
+  [snippet snippet-var]
+  (get-in snippet [:var2uservar snippet-var]))
 
 (defn 
   snippet-nodes
@@ -392,30 +399,14 @@
                     :let [child     (retrievalf) 
                           var-child (or 
                                       (snippet-var-for-node snippet child)
-                                      (if (nil? ?lvar)
-                                        (ast-primitive-as-string child)
-                                        ?lvar))]]
+                                      (let [lvar (snippet-uservar-for-var snippet var-match)]
+                                        (if (nil? lvar)
+                                          (ast-primitive-as-string child)
+                                          lvar)))]]
                 `(has ~property-keyw ~var-match ~var-child))]
           `((ast ~snippet-keyw ~var-match)
              ~@child-conditions))))
 
-(defn 
-  cf-node-exact
-  [snippet-ast]
-  (cf-node snippet-ast))
-
-;to introduce logic var, we need to add one argument
-;cannot add another argument for grounding and constraining function
-;temporary just use logic variable '?lvar
-;(defn 
-;  cf-node-with-lvar
-;  [snippet-ast ?lvar]
-;  (cf-node snippet-ast ?lvar))
-
-(defn 
-  cf-node-with-lvar
-  [snippet-ast]
-  (cf-node snippet-ast '?lvar))
 
 (defn 
   cf-list-exact
@@ -459,7 +450,7 @@
   [snippet-ast]
   (if 
     (instance? ASTNode snippet-ast)
-    (cf-node-exact snippet-ast)
+    (cf-node snippet-ast)
     (cf-list-exact snippet-ast)))
 
 
@@ -469,10 +460,8 @@
   (cond
     (= type :exact)
     cf-exact
-    (= type :node-exact)
-    cf-node-exact
-    (= type :node-with-lvar)
-    cf-node-with-lvar
+    (= type :node)
+    cf-node
     (= type :list-exact)
     cf-list-exact
     (= type :list-contains)
@@ -545,7 +534,7 @@
         (assoc-in [:ast2groundf ast] :minimalistic)
         (assoc-in [:ast2constrainf ast] :exact)
         (assoc-in [:var2ast lvar] ast))))
-  (let [snippet (atom (Snippet. n {} {} {} {}))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {}))]
     (walk-jdt-node 
       n
       (fn [ast] (swap! snippet assoc-snippet-ast ast))
@@ -619,7 +608,6 @@
 
 ;operator
 
-
 (defn update-groundf 
   "Update grounding function of a given node in a given snippet with new grounding function of given type
    Example: (update-groundf snippet node :node-deep)"
@@ -638,11 +626,11 @@
   [snippet node]
   (update-constrainf snippet node :list-contains))
 
-;need one more argument for the new lvar
 (defn introduce-logic-variable 
   "Introduce logic variable to a given node"
-  [snippet node ?lvar]
-  (update-constrainf snippet node :node-with-lvar))
+  [snippet node uservar]
+  (let [newsnippet (assoc-in snippet [:var2uservar (snippet-var-for-node snippet node)] uservar)]
+    (update-constrainf newsnippet node :node)))
 
 
 
@@ -764,6 +752,7 @@
   ;;--------------------------------------------
  
   (snippet-query (jdt-node-as-snippet (parse-string-expression "fLocator.locate(owner())")))
+    
   
   ;;Example 3: introduce logic variable 
   ;;--------------------------------------------
@@ -810,7 +799,15 @@
   ;;-------------
   
   
-  (def s (jdt-node-as-snippet(parse-string-expression "m.b(1)")))
+  (def s (jdt-node-as-snippet(parse-string-expression "x.m()")))             ;ok
+  (def s (jdt-node-as-snippet(parse-string-statement "this.methodC();")))    ;ok
+  (def s (jdt-node-as-snippet(parse-string-expression "o.f")))               ;ok
+  (def s (jdt-node-as-snippet(parse-string-statement "o.f = x.m();")))       ;not ok
+  (def s (jdt-node-as-snippet(parse-string-declarations 
+                               "public void methodA() {
+	                                         this.methodM();
+		                                       this.methodC();
+	                                                               }")))       ;not ok
   
   (query-by-snippet s)
   
