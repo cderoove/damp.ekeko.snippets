@@ -404,8 +404,11 @@
                                           (ast-primitive-as-string child)
                                           lvar)))]]
                 `(has ~property-keyw ~var-match ~var-child))]
-          `((ast ~snippet-keyw ~var-match)
-             ~@child-conditions))))
+      (if 
+        (= snippet-ast (:ast snippet))
+        `(~@child-conditions)
+        `((ast ~snippet-keyw ~var-match)
+           ~@child-conditions)))))
 
 
 (defn 
@@ -480,6 +483,8 @@
   (cond (nil? primitive) 
         nil
         (or (true? primitive) (false? primitive))
+        primitive
+        (number? primitive)
         primitive
         :else  (.toString primitive) ))
 
@@ -803,11 +808,6 @@
   (def s (jdt-node-as-snippet(parse-string-statement "this.methodC();")))    ;ok
   (def s (jdt-node-as-snippet(parse-string-expression "o.f")))               ;ok
   (def s (jdt-node-as-snippet(parse-string-statement "o.f = x.m();")))       ;not ok
-  (def s (jdt-node-as-snippet(parse-string-declarations 
-                               "public void methodA() {
-	                                         this.methodM();
-		                                       this.methodC();
-	                                                               }")))       ;not ok
   
   (query-by-snippet s)
   

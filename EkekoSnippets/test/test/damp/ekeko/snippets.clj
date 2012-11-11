@@ -10,6 +10,16 @@
             [damp.ekeko.jdt [reification :as reification]]
             [damp.ekeko [snippets :as snippets]]))
 
+;; General queries
+(defn query-for-get-methods [methods]
+  "methods -> vector of methods name eg. [\"methodA\" \"methodA1\"]"
+          (damp.ekeko/ekeko [?m] 
+                    (reification/ast :MethodDeclaration ?m) 
+                    (fresh [?n ?id]
+                           (reification/has :name ?m ?n)
+                           (reification/has :identifier ?n ?id)
+                           (contains methods ?id))))
+
 ;; Individual tests
 
 (deftest
@@ -23,30 +33,26 @@
 
 ;; Snippet = methodA
 (defn selected-snippet []
-  (first (first 
-           (damp.ekeko/ekeko [?m] 
-                    (reification/ast :MethodDeclaration ?m) 
-                    (fresh [?n]
-                           (reification/has :name ?m ?n)
-                           (reification/has :identifier ?n "methodA"))))))
+  (first (first (query-for-get-methods ["methodA"]))))
         
-;; Node exact match
-;; methodA
+;; Test - Node exact match
+;; against methodA
 
+;; unit test
+(defn node-exactmatch-unittest []
+  (snippets/query-by-snippet 
+    (snippets/jdt-node-as-snippet (selected-snippet))))
+
+;; test
 (deftest
   node-exactmatch-test
-  (let [snippet     (snippets/jdt-node-as-snippet (selected-snippet))]
     (test/tuples-are 
-      (snippets/query-by-snippet snippet)
+      (node-exactmatch-unittest)
       (test/tuples-to-stringsetstring 
-          (damp.ekeko/ekeko [?m] 
-                    (reification/ast :MethodDeclaration ?m) 
-                    (fresh [?n]
-                           (reification/has :name ?m ?n)
-                           (reification/has :identifier ?n "methodA")))))))
+          (query-for-get-methods ["methodA"]))))
 
-;; Introduce logic variable 
-;; methodA & methodA1
+;; Test - Introduce logic variable 
+;; against methodA & methodA1
 
 ;; Node for a SimpleName of methodA
 (defn selected-node [?m]
@@ -55,23 +61,23 @@
                            (reification/has :name ?m ?s)
                            (reification/has :identifier ?s "methodA")))))
 
-(deftest
-  introduce-logic-variable-test
+;; unit test
+(defn introduce-logic-variable-unittest []
   (let [selected    (selected-snippet)
         snippet     (snippets/jdt-node-as-snippet selected)
         newsnippet  (snippets/introduce-logic-variable snippet (selected-node selected) '?m)]
-    (test/tuples-are 
-      (snippets/query-by-snippet newsnippet)
-      (test/tuples-to-stringsetstring 
-          (damp.ekeko/ekeko [?m] 
-                    (reification/ast :MethodDeclaration ?m) 
-                    (fresh [?n ?id]
-                           (reification/has :name ?m ?n)
-                           (reification/has :identifier ?n ?id)
-                           (contains ["methodA" "methodA1"] ?id)))))))
+    (snippets/query-by-snippet newsnippet)))
 
-;; List contains match
-;; methodA, methodA1 & methodA2
+;; test
+(deftest
+  introduce-logic-variable-test
+    (test/tuples-are 
+      (introduce-logic-variable-unittest)
+      (test/tuples-to-stringsetstring 
+          (query-for-get-methods ["methodA" "methodA1"]))))
+
+;; Test - List contains match
+;; against methodA, methodA1 & methodA2
 
 ;; list (statements) of methodA
 (defn selected-list [?m]
@@ -81,21 +87,21 @@
                            (reification/has :body ?m ?b)
                            (reification/has :statements ?b ?l))))))
 
-(deftest
-  list-contains-test
+;; unit test
+(defn list-contains-unittest []
   (let [selected    (selected-snippet)
         snippet     (snippets/jdt-node-as-snippet selected)
         newsnippet  (snippets/introduce-logic-variable snippet (selected-node selected) '?m)
         newsnippet  (snippets/ignore-elements-sequence newsnippet (selected-list selected))]
+    (snippets/query-by-snippet newsnippet)))
+
+;; test
+(deftest
+  list-contains-test
     (test/tuples-are 
-      (snippets/query-by-snippet newsnippet)
+      (list-contains-unittest)
       (test/tuples-to-stringsetstring 
-          (damp.ekeko/ekeko [?m] 
-                    (reification/ast :MethodDeclaration ?m) 
-                    (fresh [?n ?id]
-                           (reification/has :name ?m ?n)
-                           (reification/has :identifier ?n ?id)
-                           (contains ["methodA" "methodA1" "methodA2"] ?id)))))))
+          (query-for-get-methods ["methodA" "methodA1" "methodA2"]))))
 
 ;; Test suite
 
