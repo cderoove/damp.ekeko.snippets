@@ -65,11 +65,21 @@
 
 (defn 
   parse-string-declarations 
-  "Parses the given string as a sequence of Java class body declarations."
+  "Parses the given string as a sequence of Java class body declarations (type, method, field)."
   [string]
-  (when-let
-    [typedeclaration (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS))]
-    (.bodyDeclarations ^TypeDeclaration typedeclaration)))
+  (let [classdeclaration (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS))]
+    (when 
+      (instance? TypeDeclaration classdeclaration)
+      (.bodyDeclarations  classdeclaration))))
+
+(defn
+  parse-string-declaration
+  "Parses the given string as a Java class body declaration (type, method, field)."
+  [string]
+  (when-let [list (parse-string-declarations string)]
+    (when 
+      (= (count list) 1)
+      (first list))))
 
 (defn 
   jdt-parse-string 
