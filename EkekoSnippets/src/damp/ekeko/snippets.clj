@@ -4,7 +4,7 @@
   damp.ekeko.snippets
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
-  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit]
+  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit TypeDeclaration]
            [org.eclipse.jface.viewers TreeViewerColumn]
            [org.eclipse.swt SWT]
            [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
@@ -67,7 +67,9 @@
   parse-string-declarations 
   "Parses the given string as a sequence of Java class body declarations."
   [string]
-  (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS)))
+  (when-let
+    [typedeclaration (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS))]
+    (.bodyDeclarations ^TypeDeclaration typedeclaration)))
 
 (defn 
   jdt-parse-string 
