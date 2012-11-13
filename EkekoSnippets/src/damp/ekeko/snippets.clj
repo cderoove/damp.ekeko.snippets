@@ -137,7 +137,7 @@
   gen-lvar
   "Generates a unique symbol starting with ?v
    (i.e., a symbol to be used as the name for a logic variable)."
-  ([] (gen-lvar "v"))
+  ([] (gen-lvar "?v"))
   ([prefix] (gensym (str "?" prefix))))
 
 
@@ -467,7 +467,7 @@
                       var-el (or 
                                (snippet-var-for-node snippet element)
                                (ast-primitive-as-string element))]]
-            `(equals ~var-el (get ~var-match ~idx-el)))]
+            `(equals ~var-el (.get ~var-match ~idx-el)))]
       `((equals ~snippet-list-size (.size ~var-match))
          ~@element-conditions))))
 
