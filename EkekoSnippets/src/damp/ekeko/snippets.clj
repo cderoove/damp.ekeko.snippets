@@ -334,7 +334,7 @@
                           ;or the string representation of a primitive-valued child
                           var-child (or 
                                       (snippet-var-for-node snippet child)
-                                      (ast-primitive-as-string child))]]
+                                      (ast-primitive-as-expression child))]]
                 `(has ~property-keyw ~var-match ~var-child))]
           `((ast ~template-keyw ~var-match)
              ~@child-conditions))))
@@ -355,7 +355,7 @@
                           ;or the string representation of a primitive-valued element
                           var-el (or 
                                    (snippet-var-for-node snippet element)
-                                   (ast-primitive-as-string element))]]
+                                   (ast-primitive-as-expression element))]]
                 `(equals ~var-el (get ~var-match ~idx-el)))]
           `((equals ~template-list-size (.size ~var-match))
              ~@element-conditions))))))
@@ -363,7 +363,7 @@
 )
 
 
-(declare ast-primitive-as-string)
+(declare ast-primitive-as-expression)
 
 ;grounding function
 
@@ -442,7 +442,7 @@
                                       (snippet-var-for-node snippet child)
                                       (let [lvar (snippet-uservar-for-var snippet var-match)]
                                         (if (nil? lvar)
-                                          (ast-primitive-as-string child)
+                                          (ast-primitive-as-expression child)
                                           lvar)))]]
                 `(has ~property-keyw ~var-match ~var-child))]
       (if 
@@ -466,7 +466,7 @@
                 :let [idx-el (.indexOf snippet-ast element)
                       var-el (or 
                                (snippet-var-for-node snippet element)
-                               (ast-primitive-as-string element))]]
+                               (ast-primitive-as-expression element))]]
             `(equals ~var-el (.get ~var-match ~idx-el)))]
       `((equals ~snippet-list-size (.size ~var-match))
          ~@element-conditions))))
@@ -484,7 +484,7 @@
                 snippet-ast
                 :let [var-el (or 
                                (snippet-var-for-node snippet element)
-                               (ast-primitive-as-string element))]]
+                               (ast-primitive-as-expression element))]]
             `(contains ~var-match ~var-el))]
       `((equals ~snippet-list-size (.size ~var-match))
          ~@element-conditions))))
@@ -517,7 +517,7 @@
 
 
 (defn 
-  ast-primitive-as-string
+  ast-primitive-as-expression
   "Returns the string representation of a primitive-valued JDT node (e.g., instances of Modifier.ModifierKeyword)."
   [primitive]
   ;could dispatch on this as well
@@ -527,7 +527,13 @@
         primitive
         (number? primitive)
         primitive
-        :else  (.toString primitive) ))
+        (instance? org.eclipse.jdt.core.dom.Modifier$ModifierKeyword primitive)
+        `(org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/toKeyword ~(.toString primitive))
+        (instance? org.eclipse.jdt.core.dom.PrimitiveType$Code primitive)
+        `(org.eclipse.jdt.core.dom.PrimitiveType/toCode ~(.toString primitive))
+        (instance? org.eclipse.jdt.core.dom.Assignment$Operator primitive)
+        `(org.eclipse.jdt.core.dom.Assignment$Operator/toOperator ~(.toString primitive))
+        :else  (.toString primitive)))
 
 
 
