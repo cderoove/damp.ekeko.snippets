@@ -4,7 +4,8 @@
   damp.ekeko.snippets
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
-  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList CompilationUnit TypeDeclaration]
+  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
+            CompilationUnit TypeDeclaration Block Expression]
            [org.eclipse.jface.viewers TreeViewerColumn]
            [org.eclipse.swt SWT]
            [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
@@ -21,10 +22,16 @@
   jdt-node-malformed?
   "Returns whether a JDT ASTNode has its MALFORMED bit set or is a CU which has an IProblem which is an error."
   [^ASTNode n]
-   (or (not= 0 (bit-and (.getFlags n) (ASTNode/MALFORMED)))
-       (and (instance? CompilationUnit n)
-            (some (fn [p] (.isError p))
-                  (.getProblems n)))))
+  (letfn [(malformed [node] (not= 0 (bit-and (.getFlags node) (ASTNode/MALFORMED))))]
+         (or
+           (not n)
+           (and (instance? java.util.AbstractList n)
+                (some malformed n))
+           (and (instance? CompilationUnit n)
+                (some (fn [p] (.isError p))
+                      (.getProblems n)))
+           (and (instance? ASTNode n)
+                (malformed n)))))
 
 (defn 
   jdt-node-valid? 
@@ -38,30 +45,40 @@
   parse-string-statements
   "Parses the given string as a sequence of Java statements."
   [string]
-  (jdt-parse-string string (ASTParser/K_STATEMENTS)))
+  (let [block (jdt-parse-string string (ASTParser/K_STATEMENTS))]
+    (when 
+      (instance? Block block)
+      (let [list (.statements block)]
+        (when
+          (> (count list) 0)
+          list)))))
 
 (defn 
   parse-string-statement
-  "Parses the given string as a sequence of Java statements and return first statement."
+  "Parses the given string as single Java statement."
   [string]
-  (let [ast-node (parse-string-statements string)]
-    (first (first (damp.ekeko/ekeko [?stat]
-                                  (fresh [?stats]
-                                  (ast :Block ast-node)
-                                  (has :statements ast-node ?stats)
-                                  (equals ?stat (.get ?stats 0))))))))
+  (when-let [list (parse-string-statements string)]
+    (when 
+      (= (count list) 1)
+      (first list))))
 
 (defn 
   parse-string-expression 
   "Parses the given string as a Java expression."
   [string]
-  (jdt-parse-string string (ASTParser/K_EXPRESSION)))
+  (let [exp (jdt-parse-string string (ASTParser/K_EXPRESSION))]
+    (when 
+      (instance? Expression exp)
+      exp)))
 
 (defn 
   parse-string-unit 
   "Parses the given string as a Java compilation unit."
   [string]
-  (jdt-parse-string string (ASTParser/K_COMPILATION_UNIT)))
+  (let [unit (jdt-parse-string string (ASTParser/K_COMPILATION_UNIT))]
+    (when 
+      (instance? CompilationUnit unit)
+      unit)))
 
 (defn 
   parse-string-declarations 
@@ -70,7 +87,9 @@
   (let [classdeclaration (jdt-parse-string string (ASTParser/K_CLASS_BODY_DECLARATIONS))]
     (when 
       (instance? TypeDeclaration classdeclaration)
-      (.bodyDeclarations  classdeclaration))))
+      (let [list (.bodyDeclarations  classdeclaration)]
+        (when (> (count list) 0)
+          list)))))
 
 (defn
   parse-string-declaration
@@ -84,21 +103,31 @@
 (defn 
   jdt-parse-string 
   "Parses the given string as a Java construct of the given kind
-   (expression, statements, class body declarations, compilation unit),
-   or as the first kind for which the JDT parser returns a valid ASTNode."
-  ([^String string string-kind]
-    (let [parser (ASTParser/newParser AST/JLS3)]                
-      (.setSource parser (.toCharArray string))
-      (.setKind parser string-kind)
-      (.createAST parser nil)))
-  ([string]
-    (let [kinds (list (ASTParser/K_EXPRESSION) (ASTParser/K_STATEMENTS) (ASTParser/K_CLASS_BODY_DECLARATIONS) (ASTParser/K_COMPILATION_UNIT))]
-      (some (fn [k] 
-              (let [result (jdt-parse-string string k)]
-                (when (jdt-node-valid? result)
-                  result)))
-            kinds))))
+   (expression, statements, class body declarations, compilation unit)."
+  [^String string string-kind]
+  (let [parser (ASTParser/newParser AST/JLS3)]                
+    (.setSource parser (.toCharArray string))
+    (.setKind parser string-kind)
+    (.createAST parser nil)))
 
+(defn 
+  parse-string
+  "Attempts to parse the given string as a Java construct. 
+   When successful, returns a pair of the resulting ASTNode or NodeList and 
+   a keyword corresponding the construct's kind (:expression :statement :declaration
+   :statements :unit). Returns nil otherwise."
+  ([string]
+    (some (fn [pair]
+            (let [[parsef symbol] pair
+                  parsed (parsef string)]
+              (and 
+                (not (jdt-node-malformed? parsed))
+                [parsed symbol])))
+          [[parse-string-expression :expression]
+           [parse-string-statement :statement]
+           [parse-string-declaration :declaration]
+           [parse-string-statements :statements]
+           [parse-string-unit :unit]])))
 
 ; Actual snippets
 ; ---------------
