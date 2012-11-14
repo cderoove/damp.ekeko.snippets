@@ -44,12 +44,21 @@
 
 ;; Type Declarations
 
+(deftest
+  ^{:doc "Exact matching of type declaration snippet."}
+  methoddeclaration-exactmatch-typedeclaration
+  (test/tuples-correspond 
+    (snippets/query-by-snippet 
+      (snippets/jdt-node-as-snippet
+        (snippets/parse-string-declaration "private class X { public Integer m() { return new Integer(111); } }")))
+    "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\")}"))
+
 ;; Method Declarations
 
 (deftest
   ^{:doc "Exact matching of method declaration snippet."}
   methoddeclaration-exactmatch-methoddeclaration
-  (test/tuples-are 
+  (test/tuples-correspond 
     (snippets/query-by-snippet 
       (snippets/jdt-node-as-snippet
         (snippets/parse-string-declaration 
@@ -64,7 +73,7 @@
 
 (deftest
   methodinvocation-exactmatch-methodinvocation
-  (test/tuples-are 
+  (test/tuples-correspond 
     (snippets/query-by-snippet (snippets/jdt-node-as-snippet (snippets/parse-string-expression "x.m()")))
     "#{(\"x.m()\")}")) ;string obtained by evaluating (test/tuples-to-stringsetstring (snippets/query-by-snippet .....
      
@@ -96,7 +105,7 @@
 ;; test
 (deftest
   introduce-logic-variable-test
-    (test/tuples-are 
+    (test/tuples-correspond 
       (introduce-logic-variable-unittest)
       (test/tuples-to-stringsetstring 
           (query-for-get-methods ["methodA" "methodA1"]))))
@@ -123,7 +132,7 @@
 ;; test
 (deftest
   list-contains-test
-    (test/tuples-are 
+    (test/tuples-correspond 
       (list-contains-unittest)
       (test/tuples-to-stringsetstring 
           (query-for-get-methods ["methodA" "methodA1" "methodA2"]))))
@@ -139,6 +148,7 @@
    ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false node-exactmatch-node)
 
    (test/against-project-named "TestCase-Snippets-BasicMatching" false node-exactmatch-node)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false methoddeclaration-exactmatch-typedeclaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false methoddeclaration-exactmatch-methoddeclaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false methodinvocation-exactmatch-methodinvocation)
 
