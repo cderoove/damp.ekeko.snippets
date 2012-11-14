@@ -1,50 +1,81 @@
 (ns 
-  ^{:doc "Test suite for snippet-driven querying of Java projects."
+  ^{:doc "Test suite for matching strategies of snippets."
     :author "Siltvani, Coen De Roover"}
-  test.damp.ekeko.snippets
+  test.damp.ekeko.snippets.matching
   (:refer-clojure :exclude [== type declare])
   (:use [clojure.core.logic :exclude [is]] :reload)
+  (:use [damp ekeko])
   (:use [damp.ekeko logic])
   (:use clojure.test)
   (:require [test.damp [ekeko :as test]]
             [damp.ekeko.jdt [reification :as reification]]
             [damp.ekeko [snippets :as snippets]]))
 
-;; General queries
-(defn query-for-get-methods [methods]
-  "methods -> vector of methods name eg. [\"methodA\" \"methodA1\"]"
-          (damp.ekeko/ekeko [?m] 
-                    (reification/ast :MethodDeclaration ?m) 
-                    (fresh [?n ?id]
-                           (reification/has :name ?m ?n)
-                           (reification/has :identifier ?n ?id)
-                           (contains methods ?id))))
 
-;; Individual tests
+
+  
+;more reliable to use: basic/typedeclaration-identifier-methoddeclaration-identifier
+;; General queries
+;(defn query-for-get-methods [methods]
+;  "methods -> vector of methods name eg. [\"methodA\" \"methodA1\"]"
+;          (damp.ekeko/ekeko [?m] 
+;                    (reification/ast :MethodDeclaration ?m) 
+;                    (fresh [?n ?id]
+;                           (reification/has :name ?m ?n)
+;                           (reification/has :identifier ?n ?id)
+;                           (contains methods ?id))))
+
+
+;; Matching Strategy: Exact
+;; ------------------------
+
+;; ASTNodes in general
 
 (deftest
-  invocationsnippet-exactmatch-test
+  ^{:doc "For all nodes n, n should be included in the matches for snippet(n)."}
+  node-exactmatch-node 
+  (let [nodes 
+        (map first (ekeko [?ast] (fresh [?kind] (reification/ast ?kind ?ast))))
+        snippets
+        (map snippets/jdt-node-as-snippet nodes)]
+    (doseq [[node snippet] (map vector nodes snippets)]
+      (is (some #{node} (map first (snippets/query-by-snippet snippet)))))))
+    
+
+;; Type Declarations
+
+;; Method Declarations
+
+(deftest
+  ^{:doc "Exact matching of method declaration snippet."}
+  methoddeclaration-exactmatch-methoddeclaration
+  (test/tuples-are 
+    (snippets/query-by-snippet 
+      (snippets/jdt-node-as-snippet
+        (snippets/parse-string-declaration 
+          "public void methodA() {
+               this.methodM(); 
+               this.methodC();
+            } ")))
+    "#{(\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\")}"))
+  
+
+;; Expressions
+
+(deftest
+  methodinvocation-exactmatch-methodinvocation
   (test/tuples-are 
     (snippets/query-by-snippet (snippets/jdt-node-as-snippet (snippets/parse-string-expression "x.m()")))
     "#{(\"x.m()\")}")) ;string obtained by evaluating (test/tuples-to-stringsetstring (snippets/query-by-snippet .....
      
+;; Statements
 
-;; Project tests
-
-;; Snippet = methodA
-(defn selected-snippet []
-  (first (first (query-for-get-methods ["methodA"]))))
-        
-;; Test - Node exact match
-;; against methodA
-
-;; test
-(deftest
-  node-exactmatch-test
-    (test/tuples-are 
-      (snippets/query-by-snippet (snippets/jdt-node-as-snippet (selected-snippet)))
-      "#{(\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\")}"))
-
+      
+(comment
+;; Operator Tests
+;; --------------
+      
+      
 ;; Test - Introduce logic variable 
 ;; against methodA & methodA1
 
@@ -97,12 +128,20 @@
       (test/tuples-to-stringsetstring 
           (query-for-get-methods ["methodA" "methodA1" "methodA2"]))))
 
+)
+
 ;; Test suite
 
 (deftest
    test-suite 
-   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false invocationsnippet-exactmatch-test)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false node-exactmatch-test)
+   
+   ;this test discovers some shortcomings!
+   ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false node-exactmatch-node)
+
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false node-exactmatch-node)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false methoddeclaration-exactmatch-methoddeclaration)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false methodinvocation-exactmatch-methodinvocation)
+
    ;(test/against-project-named "TestCase-Snippets-BasicMatching" false introduce-logic-variable-test)
    ;(test/against-project-named "TestCase-Snippets-BasicMatching" false list-contains-test)
    )
