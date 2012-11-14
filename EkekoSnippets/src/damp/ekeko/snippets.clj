@@ -626,7 +626,7 @@
         query `(ekeko* [~ast-var]
                        (fresh [~@vars]
                               ~@conditions))]
-    (println "Evaluating: " query)
+    ;(println "Evaluating: " query)
     (eval query)))
 
 (defn
@@ -639,7 +639,7 @@
         query `(ekeko [~ast-var]
                        (fresh [~@vars]
                               ~@conditions))]
-    (println "Evaluating: " query)
+    ;(println "Evaluating: " query)
     (eval query)))
 
       
