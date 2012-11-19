@@ -31,7 +31,7 @@
   ;treeview children of given treeview parent
   (cond 
      (astnode/ast? p) 
-     (to-array (astnode/node-children p)) 
+     (to-array (astnode/node-propertyvalues p)) 
      (astnode/lstvalue? p) 
      (to-array (seq (:value p)))
      :else 
