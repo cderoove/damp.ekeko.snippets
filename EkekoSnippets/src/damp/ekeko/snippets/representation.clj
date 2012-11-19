@@ -1,10 +1,12 @@
 (ns
   ^{:doc "Core functionality related to the Snippet datatype used in snippet-driven queries."
     :author "Coen De Roover, Siltvani"}
-   damp.ekeko.snippets.representation)
+   damp.ekeko.snippets.representation
+  (:require [damp.ekeko.snippets [util :as util]]))
 
-; ---------------
 
+;; Snippet Datatype
+;; ----------------
 
 ; Datatype representing a code snippet that can be matched against Java projects.
 
@@ -78,10 +80,31 @@
   [snippet]
   (vals (:ast2var snippet)))
 
+;; Constructing Snippet instances
+;; ------------------------------
 
-(defn
-  make-epsilon-function
-  "Returns a function that does not generate any conditions for the given AST node of a code snippet."
-  [template-ast]
-  (fn [template-owner]
-    '()))
+
+(defn 
+  jdt-node-as-snippet
+  "Interpretes the given JDT ASTNode as a snippet with default matching 
+   strategies for the values of its properties."
+  [n]
+  (defn assoc-snippet-value [snippet value]
+    (let [lvar (util/gen-readable-lvar-for-value value)]
+      (->
+        snippet
+        (assoc-in [:ast2var value] lvar)
+        (assoc-in [:ast2groundf value] :minimalistic)
+        (assoc-in [:ast2constrainf value] :exact)
+        (assoc-in [:var2ast lvar] value))))
+  (let [snippet (atom (Snippet. n {} {} {} {} {}))]
+    (util/walk-jdt-node 
+      n
+      (fn [ast] (swap! snippet assoc-snippet-value ast))
+      (fn [ast-list] 
+        ;include the list wrapper 
+        (swap! snippet assoc-snippet-value ast-list)
+        ;and the raw list that was wrapped
+        ;(swap! snippet assoc-snippet-value (:value ast-list)))
+      (fn [primitive] (swap! snippet assoc-snippet-value primitive)))
+    @snippet))
