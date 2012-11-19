@@ -5,14 +5,12 @@
   (:refer-clojure :exclude [== type])
   (:use clojure.core.logic)
   (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
-            CompilationUnit TypeDeclaration Block Expression]
-           [org.eclipse.jface.viewers TreeViewerColumn]
-           [org.eclipse.swt SWT]
-           [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
-           [org.eclipse.swt.widgets Display])
-  (:require [damp.ekeko.snippets [parsing :as parsing]])
+            CompilationUnit TypeDeclaration Block Expression])
+  (:require [damp.ekeko.snippets 
+             [parsing :as parsing]
+             [util :as util]])
   (:use [damp ekeko])
-  (:use [damp.ekeko logic gui])
+  (:use [damp.ekeko logic])
   (:use [damp.ekeko.jdt reification astnode]))
 
 
@@ -447,10 +445,6 @@
   (walk-jdt-nodes (list ast)))
     
     
-(defn
-  class-simplename
-  [clazz]
-  (last (.split #"\." (.getName clazz))))
 
 (defn
   gen-readable-lvar-for-node
@@ -460,7 +454,7 @@
       (instance? java.util.AbstractList ast)
       "List"
       :else
-      (class-simplename (class ast)))))
+      (util/class-simplename (class ast)))))
 
 (defn 
   jdt-node-as-snippet
@@ -573,91 +567,6 @@
 
 
 
-; Eclipse view on snippets
-; ------------------------
-
-
-(defn
-  snippetviewer-elements
-  [snippet input]
-  ;roots of treeview
-  (if 
-    (= input snippet)
-    (to-array [(:ast snippet)])
-    nil))
-
-
-(defn
-  snippetviewer-children
-  [snippet p]
-  ;treeview children of given treeview parent
-  (cond 
-     (instance? ASTNode p) 
-     (to-array (node-children p)) 
-     (instance? java.util.AbstractList p) 
-     (to-array (seq p))
-     :else 
-     (to-array [])))
-
-
-(defn
-  snippetviewer-parent
-  [snippet c]
-  ;treeview parent of given treeview child
-  (cond 
-    (instance? ASTNode c) 
-    (owner c) 
-    (instance? java.util.AbstractList c) 
-    (owner c)
-    :else 
-    nil))
-
-(defn
-  snippetviewercolumn-kind
-  [snippet element]
-  (class-simplename (class element)))
-
-(defn
-  snippetviewercolumn-variable
-  [snippet element]
-  (str (snippet-var-for-node snippet element)))
-
-(defn
-  snippetviewercolumn-grounder
-  [snippet element]
-  (str (snippet-grounder-for-node snippet element)))
-
-(defn
-  snippetviewercolumn-constrainer
-  [snippet element]
-  (str (snippet-constrainer-for-node snippet element)))
-
-   
-(def snippet-viewer-cnt (atom 0))
-
-(defn 
-  open-snippet-viewer
-  [snippet]
-  (let [page (-> (PlatformUI/getWorkbench)
-               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
-               .getActivePage)
-        qvid (damp.ekeko.SnippetViewer/ID)
-        uniqueid (str @snippet-viewer-cnt)
-        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! snippet-viewer-cnt inc)
-    (.setViewID viewpart uniqueid)
-    (.setInput (.getViewer viewpart) snippet)
-    viewpart))
-
-
-
-(defn
-  view-snippet
-  [snippet]
-  (eclipse-uithread-return (fn [] (open-snippet-viewer snippet))))
-
-
-    
 
 
 ; next: use /* */ after or before concrete syntax of a node to specity what condition generator function to use for that node (since jdt uses that syntax)

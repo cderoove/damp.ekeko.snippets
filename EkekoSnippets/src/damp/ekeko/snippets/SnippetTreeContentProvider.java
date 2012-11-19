@@ -1,4 +1,4 @@
-package damp.ekeko;
+package damp.ekeko.snippets;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;

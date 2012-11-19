@@ -1,4 +1,4 @@
-package damp.ekeko;
+package damp.ekeko.snippets;
 
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -26,20 +26,21 @@ public class SnippetViewer extends ViewPart {
 
 	@Override
 	public void createPartControl(Composite parent) {
-		Composite container = new Composite(parent, SWT.NONE);
-		container.setLayout(new GridLayout(1, false));
 		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		viewer.getTree().setHeaderVisible(true);
 		viewer.getTree().setLinesVisible(true);
 		
 		contentProvider = new SnippetTreeContentProvider();
 		viewer.setContentProvider(getContentProvider());
-/*
+
+		/*
 		TreeViewerColumn nodeCol = new TreeViewerColumn(viewer, SWT.NONE);
 		nodeCol.getColumn().setText("Node");
 		nodeCol.getColumn().setWidth(150);
 		nodeCol.setLabelProvider(new SnippetTreeLabelProviders.NodeColumnLabelProvider(this));
-
+		 */
+		
+		/*
 		TreeViewerColumn kindCol = new TreeViewerColumn(viewer, SWT.NONE);
 		kindCol.getColumn().setText("Kind");
 		kindCol.getColumn().setWidth(150);
@@ -59,8 +60,7 @@ public class SnippetViewer extends ViewPart {
 		constrainerCol.getColumn().setText("Constrainer");
 		constrainerCol.getColumn().setWidth(150);
 		constrainerCol.setLabelProvider(new SnippetTreeLabelProviders.ConstrainerColumnLabelProvider(this));
-
-		*/
+*/
 		
 		createActions();
 		initializeToolBar();

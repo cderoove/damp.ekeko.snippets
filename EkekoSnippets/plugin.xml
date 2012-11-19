@@ -5,7 +5,7 @@
          point="org.eclipse.ui.views">
       <view
             allowMultiple="true"
-            class="damp.ekeko.SnippetViewer"
+            class="damp.ekeko.snippets.SnippetViewer"
             id="damp.ekeko.snippets.SnippetViewer"
             name="Ekeko Snippet Viewer">
       </view>

@@ -1,6 +1,6 @@
 (ns 
-  ^{:doc "Auxiliary functions for having the JDT parse strings as Java code, resulting in a JDT ASTNode."
-    :author "Coen De Roover"}
+  ^{:doc "Functions for parsing strings as Java code, resulting in a JDT ASTNode."
+    :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.parsing
   (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
             CompilationUnit TypeDeclaration Block Expression]))
@@ -122,9 +122,3 @@
              [parse-string-unit :unit]
              [parse-string-expression :expression]])))
        
-      
-             
-
-
-
-
