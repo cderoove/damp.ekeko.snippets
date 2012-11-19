@@ -10,3 +10,10 @@
   (last (.split #"\." (.getName clazz))))
 
 
+(defn 
+  gen-lvar
+  "Generates a unique symbol starting with ?v
+   (i.e., a symbol to be used as the name for a logic variable)."
+  ([] (gen-lvar "?v"))
+  ([prefix] (gensym (str "?" prefix))))
+
