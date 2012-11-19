@@ -1,14 +1,14 @@
 (ns 
   ^{:doc "Auxiliary functions for snippet-driven querying."
     :author "Coen De Roover, Siltvani."}
-  damp.ekeko.snippets.util)
+  damp.ekeko.snippets.util
+  (:require [damp.ekeko.jdt [astnode :as astnode]]))
 
 (defn
   class-simplename
   "Returns the unqualified name (a String) of the given java.lang.Class."
   [clazz]
   (last (.split #"\." (.getName clazz))))
-
 
 (defn 
   gen-lvar
@@ -17,3 +17,26 @@
   ([] (gen-lvar "?v"))
   ([prefix] (gensym (str "?" prefix))))
 
+(defn 
+  walk-jdt-node
+  "Recursive descent through a JDT node, applying given functions to the encountered 
+   ASTNode instances and Ekeko wrappers for their property values."
+  [ast node-f list-f primitive-f]
+  (defn walk-jdt-nodes [nodes]
+    (when-not (empty? nodes)
+      (let [val (first nodes)
+            others (rest nodes)]
+        (cond 
+          (astnode/ast? val)
+          (do
+            (node-f val)
+            (recur (concat (astnode/node-propertyvalues ast) others)))
+          (astnode/lstvalue? ast)
+          (do 
+            (list-f ast)
+            (recur (concat (:value ast) others)))
+          :else 
+          (do 
+            (primitive-f ast)
+            (recur others))))))
+  (walk-jdt-nodes (list ast)))
