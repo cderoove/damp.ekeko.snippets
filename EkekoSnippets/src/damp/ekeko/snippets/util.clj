@@ -17,6 +17,20 @@
   ([] (gen-lvar "?v"))
   ([prefix] (gensym (str "?" prefix))))
 
+(defn
+  gen-readable-lvar-for-value
+  "Generates a unique logic variable, of which the name 
+   gives a hint about the class of the given JDT property value."
+  [value]
+  (gen-lvar
+    (cond
+      (astnode/lstvalue? value)
+      "ListVal"
+      (astnode/primitivevalue? value)
+      "PrimVal"
+      :else
+      (class-simplename (class (:value value))))))
+
 (defn 
   walk-jdt-node
   "Recursive descent through a JDT node, applying given functions to the encountered 
