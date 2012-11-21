@@ -96,9 +96,12 @@
    test-suite 
    
    ;this test discovers some shortcomings!
-   ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false node-exactmatch-node)
+   ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false exactmatch-node)
 
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false node-exactmatch-node)
+   ;fails for some of the bigger nodes (e.g., compilation units) because the query gets too big 
+   ;(could work on this later, for instance by splitting the query into two)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-node)
+   
    (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-typedeclaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methoddeclaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methodinvocation)
