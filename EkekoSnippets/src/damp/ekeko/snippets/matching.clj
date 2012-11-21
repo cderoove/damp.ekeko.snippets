@@ -228,8 +228,8 @@
         (instance? org.eclipse.jdt.core.dom.Assignment$Operator primitive)
         `(org.eclipse.jdt.core.dom.Assignment$Operator/toOperator ~(.toString primitive))
         (nil? primitive) 
-        (throw (Exception. (str "Encountered a null-valued property value that should have been wrapped by Ekeko.")))) 
-        :else  (.toString primitive))
+        (throw (Exception. (str "Encountered a null-valued property value that should have been wrapped by Ekeko.")))
+        :else  (.toString primitive)))
 
 
 
