@@ -24,19 +24,24 @@
   [value]
   (gen-lvar
     (cond
+      (nil? value)
+      "NullShouldNotBeHere"
       (astnode/lstvalue? value)
       "ListVal"
       (astnode/primitivevalue? value)
       "PrimVal"
-      :else
-      (class-simplename (class (:value value))))))
+      (astnode/nilvalue? value)
+      "NilVal"
+      (astnode/ast? value)
+      (class-simplename (class value)))))
 
 (defn 
   walk-jdt-node
   "Recursive descent through a JDT node, applying given functions to the encountered 
    ASTNode instances and Ekeko wrappers for their property values."
-  [ast node-f list-f primitive-f]
-  (defn walk-jdt-nodes [nodes]
+  [n node-f list-f primitive-f null-f]
+  (loop
+    [nodes (list n)]
     (when-not (empty? nodes)
       (let [val (first nodes)
             others (rest nodes)]
@@ -44,13 +49,16 @@
           (astnode/ast? val)
           (do
             (node-f val)
-            (recur (concat (astnode/node-propertyvalues ast) others)))
-          (astnode/lstvalue? ast)
+            (recur (concat (astnode/node-propertyvalues val) others)))
+          (astnode/lstvalue? val)
           (do 
-            (list-f ast)
-            (recur (concat (:value ast) others)))
-          :else 
-          (do 
-            (primitive-f ast)
-            (recur others))))))
-  (walk-jdt-nodes (list ast)))
+            (list-f val)
+            (recur (concat (:value val) others)))
+          (astnode/primitivevalue? val)
+          (do
+            (primitive-f val)
+            (recur others))
+          (astnode/nilvalue? val)
+          (do
+            (null-f val)
+            (recur others)))))))

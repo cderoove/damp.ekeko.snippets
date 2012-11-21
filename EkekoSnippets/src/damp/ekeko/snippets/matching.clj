@@ -2,12 +2,15 @@
   ^{:doc "Matching strategies for snippet-driven querying."
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.matching
+  (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
              [util :as util]
              [representation :as representation]])
-  (:require [damp.ekeko.jdt 
-             [astnode :as astnode]
-             [reification :as reification]]))
+  (:require 
+    [damp.ekeko [logic :as el]]
+    [damp.ekeko.jdt 
+     [astnode :as astnode]
+     [reification :as reification]]))
 
 (defn
   make-epsilon-function
@@ -32,6 +35,7 @@
         (let [var-match (representation/snippet-var-for-node snippet snippet-ast)] 
           `((reification/ast ~snippet-ast-keyw ~var-match)))
         '()))))
+
   
 (defn 
   gf-node-exact
@@ -121,11 +125,11 @@
             (for [element lst
                   :let [idx-el (.indexOf lst element)
                         var-el (representation/snippet-var-for-node snippet element)]]
-              `(equals ~var-el (.get ~var-match-raw ~idx-el)))]
+              `(el/equals ~var-el (.get ~var-match-raw ~idx-el)))]
         `((reification/listvalue ~var-match)
-           (fresh [~var-match-raw] 
+           (cl/fresh [~var-match-raw] 
                   (reification/value-raw ~var-match ~var-match-raw)
-                  (equals ~snippet-list-size (.size ~var-match-raw))
+                  (el/equals ~snippet-list-size (.size ~var-match-raw))
                   ~@element-conditions))))))
 
 (defn
@@ -136,7 +140,7 @@
       (value-raw ?var-match <clojure-exp-evaluating-to-raw-value>))"
    [snippet-ast]
    (let [exp 
-         (ast-primitive-as-expression snippet-ast)]
+         (ast-primitive-as-expression (:value snippet-ast))]
      (fn [snippet]
        (let [var-match 
              (representation/snippet-var-for-node snippet snippet-ast)]
@@ -174,9 +178,9 @@
                 :let [var-el (representation/snippet-var-for-node snippet element)]]
               `(contains ~var-match-raw ~var-el))]
         `((reification/listvalue ~var-match)
-           (fresh [~var-match-raw]
+           (cl/fresh [~var-match-raw]
                   (reification/value-raw ~var-match ~var-match-raw)
-                  (equals ~snippet-list-size (.size ~var-match-raw))
+                  (el/equals ~snippet-list-size (.size ~var-match-raw))
                   ~@element-conditions))))))
 
 (defn 
