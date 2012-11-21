@@ -8,12 +8,15 @@
     [org.eclipse.swt SWT]
     [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
     [org.eclipse.swt.widgets Display])
-  (:require [damp.ekeko.snippets [util :as util]])
+  (:require [damp.ekeko.snippets 
+             [util :as util]
+             [representation :as representation]
+             ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko.gui]))
 
-; Eclipse view on snippets
-; ------------------------
+; View elements
+; -------------
 
 (defn
   snippetviewer-elements
@@ -23,7 +26,6 @@
     (= input snippet)
     (to-array [(:ast snippet)])
     nil))
-
 
 (defn
   snippetviewer-children
@@ -37,34 +39,62 @@
      :else 
      (to-array [])))
 
-
 (defn
   snippetviewer-parent
   [snippet c]
   ;treeview parent of given treeview child
   (astnode/owner c))
 
+;; View Columns
+;; ------------
+
+(defn
+  snippetviewercolumn-node
+  [snippet element]
+  (cond 
+    (astnode/nilvalue? element)
+    "null"
+    (astnode/value? element)
+    (str (:value element))
+    :else 
+    (str element)))
+
+
 (defn
   snippetviewercolumn-kind
   [snippet element]
-  (util/class-simplename (class element)))
+  (cond 
+    (astnode/nilvalue? element)
+    "null"
+    (astnode/value? element)
+    (util/class-simplename (class  (:value element)))
+    :else 
+    (util/class-simplename (class element))))
+
+(defn
+  snippetviewercolumn-property
+  [snippet element]
+  (astnode/property-descriptor-id (astnode/owner-property element)))
+
 
 (defn
   snippetviewercolumn-variable
   [snippet element]
-  (str (snippet-var-for-node snippet element)))
+  (str (representation/snippet-var-for-node snippet element)))
 
 (defn
   snippetviewercolumn-grounder
   [snippet element]
-  (str (snippet-grounder-for-node snippet element)))
+  (str (representation/snippet-grounder-for-node snippet element)))
 
 (defn
   snippetviewercolumn-constrainer
   [snippet element]
-  (str (snippet-constrainer-for-node snippet element)))
+  (str (representation/snippet-constrainer-for-node snippet element)))
 
-   
+;; Opening a View
+;; --------------
+
 (def snippet-viewer-cnt (atom 0))
 
 (defn 

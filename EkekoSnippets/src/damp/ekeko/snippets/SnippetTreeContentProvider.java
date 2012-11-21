@@ -12,7 +12,7 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 	private TreeViewer viewer;
 	
 	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
 	}
 
 	public SnippetTreeContentProvider() {
@@ -33,14 +33,14 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 	public Object[] getElements(Object inputElement) {
 		if (inputElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets", "snippetviewer-elements").invoke(getSnippet(), inputElement);
+		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-elements").invoke(getSnippet(), inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets", "snippetviewer-children").invoke(getSnippet(), parentElement);
+		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-children").invoke(getSnippet(), parentElement);
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 		if (element == null)
 			return null;
 
-		return RT.var("damp.ekeko.snippets", "snippetviewer-parent").invoke(getSnippet(), element);
+		return RT.var("damp.ekeko.snippets.gui", "snippetviewer-parent").invoke(getSnippet(), element);
 	}
 
 	@Override

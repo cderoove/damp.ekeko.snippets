@@ -33,34 +33,36 @@ public class SnippetViewer extends ViewPart {
 		contentProvider = new SnippetTreeContentProvider();
 		viewer.setContentProvider(getContentProvider());
 
-		/*
+		
 		TreeViewerColumn nodeCol = new TreeViewerColumn(viewer, SWT.NONE);
-		nodeCol.getColumn().setText("Node");
+		nodeCol.getColumn().setText("Value");
 		nodeCol.getColumn().setWidth(150);
 		nodeCol.setLabelProvider(new SnippetTreeLabelProviders.NodeColumnLabelProvider(this));
-		 */
 		
-		/*
+		TreeViewerColumn propCol = new TreeViewerColumn(viewer, SWT.NONE);
+		propCol.getColumn().setText("Property");
+		propCol.getColumn().setWidth(150);
+		propCol.setLabelProvider(new SnippetTreeLabelProviders.PropertyColumnLabelProvider(this));
+		
 		TreeViewerColumn kindCol = new TreeViewerColumn(viewer, SWT.NONE);
 		kindCol.getColumn().setText("Kind");
 		kindCol.getColumn().setWidth(150);
 		kindCol.setLabelProvider(new SnippetTreeLabelProviders.KindColumnLabelProvider(this));
-
+		
 		TreeViewerColumn variableCol = new TreeViewerColumn(viewer, SWT.NONE);
 		variableCol.getColumn().setText("Variable");
 		variableCol.getColumn().setWidth(150);
 		variableCol.setLabelProvider(new SnippetTreeLabelProviders.VariableColumnLabelProvider(this));
 
-		TreeViewerColumn grounderCol = new TreeViewerColumn(viewer, SWT.RIGHT);
+		TreeViewerColumn grounderCol = new TreeViewerColumn(viewer, SWT.NONE);
 		grounderCol.getColumn().setText("Grounder");
-		grounderCol.getColumn().setWidth(150);
+		grounderCol.getColumn().setWidth(75);
 		grounderCol.setLabelProvider(new SnippetTreeLabelProviders.GrounderColumnLabelProvider(this));
 
-		TreeViewerColumn constrainerCol = new TreeViewerColumn(viewer, SWT.RIGHT);
+		TreeViewerColumn constrainerCol = new TreeViewerColumn(viewer, SWT.NONE);
 		constrainerCol.getColumn().setText("Constrainer");
-		constrainerCol.getColumn().setWidth(150);
+		constrainerCol.getColumn().setWidth(75);
 		constrainerCol.setLabelProvider(new SnippetTreeLabelProviders.ConstrainerColumnLabelProvider(this));
-*/
 		
 		createActions();
 		initializeToolBar();
