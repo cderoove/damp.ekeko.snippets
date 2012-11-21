@@ -9,7 +9,9 @@
              [representation :as representation]
              [matching :as matching]
              [parsing :as parsing]
-             [util :as util]])
+             [util :as util]
+             [gui :as gui]
+             ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko])
   (:require [damp.ekeko.logic :as el]))    
@@ -54,23 +56,23 @@
                                                    (has :identifier ?n "LocatorHandle"))))))
   
   ;; create a snippet from the selected AST node 
-  (def snippet (jdt-node-as-snippet selected))
+  (def snippet (parsing/jdt-node-as-snippet selected))
   
   ;; convert the snippet to an Ekeko query
-  (def query (snippet-query snippet))
+  (def query (querying/snippet-query snippet))
   
   ;;Example 2: snippet originating from a string 
   ;;--------------------------------------------
  
-  (snippet-query (jdt-node-as-snippet (parsing/parse-string-expression "fLocator.locate(owner())")))
+  (querying/snippet-query (representation/jdt-node-as-snippet (parsing/parse-string-expression "fLocator.locate(owner())")) 'damp.ekeko/ekeko*)
     
   
   ;;Example 3: introduce logic variable 
   ;;--------------------------------------------
 
   (def astnode (parsing/parse-string-statement "return foo;"))
-  (def snippet (jdt-node-as-snippet astnode))
-  (def query (snippet-query snippet))
+  (def snippet (representation/jdt-node-as-snippet astnode))
+  (def query (querying/snippet-query snippet))
   
   ;(damp.ekeko.jdt.reification/ast :ReturnStatement ?ReturnStatement14017) --> still double
   ;(damp.ekeko.jdt.reification/ast :ReturnStatement ?ReturnStatement14017) 
@@ -78,8 +80,8 @@
   ;(damp.ekeko.jdt.reification/ast :SimpleName ?SimpleName14018) 
   ;(damp.ekeko.jdt.reification/has :identifier ?SimpleName14018 "foo")
   
-  (def snippet2 (introduce-logic-variable snippet (snippet-node-for-var snippet '?SimpleName14018) '?vfoo))
-  (def query2 (snippet-query snippet2))
+  (def snippet2 (introduce-logic-variable snippet (representation/snippet-node-for-var snippet '?SimpleName14018) '?vfoo))
+  (def query2 (querying/snippet-query snippet2))
   ;(damp.ekeko.jdt.reification/has :identifier ?SimpleName14018 ?lvar)
 
   
@@ -87,8 +89,8 @@
   ;;--------------------------------------------------------------------------------
 
   (def astnode (parsing/parse-string-statement "{int y; int x;}"))
-  (def snippet (jdt-node-as-snippet astnode))
-  (def query (snippet-query snippet))
+  (def snippet (representation/jdt-node-as-snippet astnode))
+  (def query (querying/snippet-query snippet))
   ;....
   ;(damp.ekeko.jdt.reification/has :statements ?Block14974 ?List14975) 
   ;(damp.ekeko.logic/equals 2 (.size ?List14975)) 
@@ -96,8 +98,8 @@
   ;(damp.ekeko.logic/equals ?VariableDeclarationStatement14982 (clojure.core/get ?List14975 1))
   ;.... 
   
-  (def snippet2 (ignore-elements-sequence snippet (snippet-node-for-var snippet '?List14975)))  
-  (def query2 (snippet-query snippet2))
+  (def snippet2 (ignore-elements-sequence snippet (representation/snippet-node-for-var snippet '?List14975)))  
+  (def query2 (querying/snippet-query snippet2))
   ;....
   ;(damp.ekeko.jdt.reification/has :statements ?Block14974 ?List14975) 
   ;(damp.ekeko.logic/equals 2 (.size ?List14975)) 
@@ -110,14 +112,14 @@
   ;;-------------
   
   
-  (def s (jdt-node-as-snippet(parsing/parse-string-expression "x.m()")))             ;ok
-  (def s (jdt-node-as-snippet(parsing/parse-string-statement "this.methodC();")))    ;ok
-  (def s (jdt-node-as-snippet(parsing/parse-string-expression "o.f")))               ;ok
-  (def s (jdt-node-as-snippet(parsing/parse-string-statement "o.f = x.m();")))       ;not ok
+  (def s (representation/jdt-node-as-snippet (parsing/parse-string-expression "x.m()")))             ;ok
+  (def s (representation/jdt-node-as-snippet (parsing/parse-string-statement "this.methodC();")))    ;ok
+  (def s (representation/jdt-node-as-snippet (parsing/parse-string-expression "o.f")))               ;ok
+  (def s (representation/jdt-node-as-snippet (parsing/parse-string-statement "o.f = x.m();")))       ;not ok
   
   (query-by-snippet s)
   
-  (view-snippet s)
+  (gui/view-snippet s)
 
   
 )
