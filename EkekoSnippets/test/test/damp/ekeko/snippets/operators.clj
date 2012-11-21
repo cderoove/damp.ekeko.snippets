@@ -4,14 +4,23 @@
   test.damp.ekeko.snippets.operators
   (:refer-clojure :exclude [== type declare])
   (:use [clojure.core.logic :exclude [is]] :reload)
-  (:use [damp ekeko])
-  (:use [damp.ekeko logic])
-  (:use clojure.test)
-  (:require [test.damp [ekeko :as test]]
-            [damp.ekeko.jdt 
+  (:require [damp.ekeko.snippets 
+             [querying :as querying]
+             [representation :as representation]
+             [operators :as operators]
+             [matching :as matching]
+             [parsing :as parsing]
+             [util :as util]])
+  (:require [test.damp [ekeko :as test]])
+  (:require [damp.ekeko.jdt 
+             [astnode :as astnode]
              [reification :as reification]
-             [basic :as basic]]
-            [damp.ekeko [snippets :as snippets]]))
+             ])
+  (:require [damp.ekeko])
+  (:require [damp.ekeko 
+             [logic :as el]
+             [snippets :as snippets]])
+  (:use clojure.test))
 
 ;; Generalization Operators
 ;; ========================
@@ -26,13 +35,13 @@
   ^{:doc "For all nodes n, properties p of n, n should be included in the matches for introduce-logic-variable(snippet(n),p.n)."}
   operator-variable-substitutes-node-child
   (let [node-child
-        (ekeko [?ast ?child]
+        (damp.ekeko/ekeko [?ast ?child]
                (fresh [?kind ?property] 
                       (reification/ast ?kind ?ast)
                       (reification/child ?property ?ast ?child)))]
     (doseq [[node child] node-child] 
-      (let [snippet (snippets/jdt-node-as-snippet node)
-            generalized-snippet (snippets/introduce-logic-variable snippet child '?childvar)
+      (let [snippet (representation/jdt-node-as-snippet node)
+            generalized-snippet (operators/introduce-logic-variable snippet child '?childvar)
             solutions (snippets/query-by-snippet generalized-snippet)]
         ;useful when debugging:
         ;(println "node: " node) 
@@ -44,11 +53,11 @@
   ^{:doc "Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration "}
   operator-variable-substitutes-methoddeclaration-name
   (let [node
-        (snippets/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ")
+        (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ")
         snippet 
-        (snippets/jdt-node-as-snippet node)
+        (representation/jdt-node-as-snippet node)
         generalized-snippet
-        (snippets/introduce-logic-variable snippet (.getName node) '?m)]
+        (operators/introduce-logic-variable snippet (.getName node) '?m)]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\") 
@@ -73,11 +82,11 @@
           in an ASTNode$NodeList."}
   operator-variable-substitutes-typedeclaration-bodydeclaration
   (let [node
-        (snippets/parse-string-declaration "private class X {public Integer m() { return new Integer(111); } }")
+        (parsing/parse-string-declaration "private class X {public Integer m() { return new Integer(111); } }")
         snippet 
-        (snippets/jdt-node-as-snippet node)
+        (representation/jdt-node-as-snippet node)
         generalized-snippet
-        (snippets/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
+        (operators/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
     (test/nonemptytuples-are ;assuming that class X has only one body declaration
       (snippets/query-by-snippet snippet)
       (snippets/query-by-snippet generalized-snippet)))) 

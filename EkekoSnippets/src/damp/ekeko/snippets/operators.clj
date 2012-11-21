@@ -34,7 +34,7 @@
   "Introduce logic variable to a given node"
   [snippet node uservar]
   (let [newsnippet (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)]
-    (update-constrainf newsnippet node :node)))
+    (update-constrainf newsnippet node :variable)))
 
 
 

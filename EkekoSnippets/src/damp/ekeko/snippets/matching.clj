@@ -158,6 +158,21 @@
            (representation/snippet-var-for-node snippet snippet-ast)]
        `((reification/nullvalue ~var-match)))))
 
+
+(defn
+  cf-variable
+  "Returns a function that will generate a condition that will unify the match for the
+   given code snippet AST node with a user-provided logic variable:
+      (== ?uservar ?var-match)"
+  [snippet-ast]
+   (fn [snippet]
+     (let [var-match 
+           (representation/snippet-var-for-node snippet snippet-ast)
+           var-userprovided
+           (representation/snippet-uservar-for-var snippet snippet-ast)]
+       `((cl/== ~var-userprovided ~var-match)))))
+
+
 (defn 
   cf-list-contains
     "Returns a function that will generate constraining conditions for the given AST node of a code snippet:
@@ -206,6 +221,8 @@
     cf-list-exact
     (= type :list-contains)
     cf-list-contains
+    (= type :variable)
+    cf-variable
     (= type :epsilon)
     make-epsilon-function
     :default
