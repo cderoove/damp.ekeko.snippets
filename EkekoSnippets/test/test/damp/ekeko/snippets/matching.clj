@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "Test suite for matching strategies of snippets."
     :author "Siltvani, Coen De Roover"}
-  test.damp.ekeko.snippets.matching
+  matching
   (:refer-clojure :exclude [== type declare])
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
@@ -50,7 +50,6 @@
     (doseq [[node snippet] (map vector nodes snippets)]
       (is (some #{node} (map first (snippets/query-by-snippet snippet)))))))
     
-
 ;; Type Declarations
 
 (deftest
@@ -77,7 +76,6 @@
             } ")))
     "#{(\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\")}"))
   
-
 ;; Expressions
 
 (deftest
@@ -89,22 +87,36 @@
 ;; Statements
 ;; ----------
 
-      
+;; If Statements
+
+(deftest
+  ^{:doc "Exact matching of if statement snippet."}
+  exactmatch-ifstatement
+  (test/tuples-correspond 
+    (snippets/query-by-snippet 
+      (representation/jdt-node-as-snippet
+        (parsing/parse-string-statement "if (getInput() % 2 == 0) return o; else return new MayAliasLeaf();")))
+    "#{(\"if (getInput() % 2 == 0) return o;\\n else return new MayAliasLeaf();\\n\")}"))
+
+
+
 ;; Test suite
+;; ----------
 
 (deftest
    test-suite 
    
    ;this test discovers some shortcomings!
-   ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false exactmatch-node)
+   (test/against-project-named "TestCase-JDT-CompositeVisitor" false exactmatch-node)
 
    ;fails for some of the bigger nodes (e.g., compilation units) because the query gets too big 
    ;(could work on this later, for instance by splitting the query into two)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-node)
+   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-node)
    
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-typedeclaration)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methoddeclaration)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methodinvocation)
+   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-typedeclaration)
+   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methoddeclaration)
+   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false exactmatch-methodinvocation)
+   ;(test/against-project-named "TestCase-JDT-CompositeVisitor" false exactmatch-ifstatement)
 
    )
 
