@@ -169,7 +169,7 @@
      (let [var-match 
            (representation/snippet-var-for-node snippet snippet-ast)
            var-userprovided
-           (representation/snippet-uservar-for-var snippet snippet-ast)]
+           (representation/snippet-uservar-for-var snippet var-match)]
        `((cl/== ~var-userprovided ~var-match)))))
 
 

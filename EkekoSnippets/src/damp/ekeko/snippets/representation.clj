@@ -81,6 +81,13 @@
   [snippet]
   (vals (:ast2var snippet)))
 
+(defn 
+  snippet-uservars
+  "Returns the logic variables defined by users of the given snippet."
+  [snippet]
+  (vals (:var2uservar snippet)))
+
+
 ;; Constructing Snippet instances
 ;; ------------------------------
 
