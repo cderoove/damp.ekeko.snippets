@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "Test suite for matching strategies of snippets."
     :author "Siltvani, Coen De Roover"}
-  matching
+  test.damp.ekeko.snippets.matching
   (:refer-clojure :exclude [== type declare])
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
