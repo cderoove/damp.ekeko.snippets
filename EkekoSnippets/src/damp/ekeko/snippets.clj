@@ -37,6 +37,17 @@
       (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko* conditions))
       (recur (butlast conditions)))))
 
+(defn 
+  query-by-snippet-for-empty-result*
+  [snippet]
+  (let [conditions (querying/snippet-conditions snippet)]
+    (loop [conditions conditions
+           old-conditions conditions]
+      (when (seq conditions)
+        (if (empty? (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko conditions)))
+          (recur (butlast conditions) conditions)
+          (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko* old-conditions)))))))
+
 (comment 
   (use 'damp.ekeko.snippets)
   (in-ns 'damp.ekeko.snippets)
