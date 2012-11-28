@@ -60,8 +60,8 @@
         (operators/introduce-logic-variable snippet (.getName node) '?m)]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
-      "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\") 
-         (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\")}")))
+      "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
+         (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\")}")))
 
 
 
@@ -89,9 +89,14 @@
         (representation/jdt-node-as-snippet node)
         generalized-snippet
         (operators/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
-    (test/nonemptytuples-are ;assuming that class X has only one body declaration
-      (snippets/query-by-snippet snippet)
-      (snippets/query-by-snippet generalized-snippet)))) 
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\" 
+          \"public Integer m(){\\n  return new Integer(111);\\n}\\n\")}")))
+
+    ;(test/nonemptytuples-are ;assuming that class X has only one body declaration
+    ;  (snippets/query-by-snippet snippet)
+    ;  (snippets/query-by-snippet generalized-snippet)))) 
   
       
 

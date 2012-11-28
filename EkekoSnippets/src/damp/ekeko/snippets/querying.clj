@@ -43,12 +43,10 @@
   snippet-query-with-conditions
   [snippet ekekolaunchersymbol conditions]
   (let [root-var (snippet-var-for-root snippet)
-        vars (disj 
-               (into #{} 
-                     (concat (representation/snippet-vars snippet) (representation/snippet-uservars snippet)))
-               root-var)]
+        uservars (into #{} (representation/snippet-uservars snippet))
+        vars (disj (into #{} (representation/snippet-vars snippet)) root-var)]
     `(~ekekolaunchersymbol 
-       [~root-var]
+       [~root-var ~@uservars]
        (cl/fresh [~@vars]
                  ~@conditions))))
   
