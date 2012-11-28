@@ -69,13 +69,15 @@
 ;; reason: check generated query for
 ;(snippets/query-by-snippet* 
 ;      (let [node
-;               (snippets/parse-string-declaration "private class X {	public Integer m() { return new Integer(111);	}	}" ")
+;               (parsing/parse-string-declaration "private class X {	public Integer m() { return new Integer(111);	}	}" ")
 ;               snippet 
-;               (snippets/jdt-node-as-snippet node)
+;               (representation/jdt-node-as-snippet node)
 ;               generalized-snippet
-;               (snippets/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
+;               (operators/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
 ;           generalized-snippet))
 ;-> there are still constraining conditions generate for the MethodDeclaration
+;solution : add clear-cf-from-node in introduce-logic-variable
+;           this function put :epsilon as cf and gf in all child of node
 (deftest 
   ^{:doc "Introduce a logic variable that substitutes for one of the :bodyDeclarations 
           (e.g., a MethodDeclaration) of a :TypeDeclaration. Tests introducing a logic variable
