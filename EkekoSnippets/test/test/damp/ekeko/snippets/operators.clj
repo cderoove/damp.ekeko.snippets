@@ -60,7 +60,7 @@
 
 
 (deftest 
-  ^{:doc "Introduce a logic variable that substitutes for one of the :bodyDeclarations 
+  ^{:doc "Introduce a logic variable (removing elements conditions) that substitutes for one of the :bodyDeclarations 
           (e.g., a MethodDeclaration) of a :TypeDeclaration. Tests introducing a logic variable
           in an ASTNode$NodeList."}
   operator-variable-substitutes-typedeclaration-bodydeclaration
@@ -75,6 +75,21 @@
       "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\" 
           \"public Integer m(){\\n  return new Integer(111);\\n}\\n\")}")))
  
+(deftest 
+  ^{:doc "Introduce a logic variable that substitutes for one of the :bodyDeclarations 
+          (e.g., a MethodDeclaration) of a :TypeDeclaration. Tests introducing a logic variable
+          in an ASTNode$NodeList."}
+  operator-variable-exact-substitutes-typedeclaration-bodydeclaration
+  (let [node
+        (parsing/parse-string-declaration "private class X {public Integer m() { return new Integer(111); } }")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet
+        (operators/introduce-logic-variable-of-node-exact snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\" 
+          \"public Integer m(){\\n  return new Integer(111);\\n}\\n\")}")))
       
 ;; Operator: generelized for the list
 ;; ------------------------------------------
@@ -83,9 +98,9 @@
   generelized-statements
   "Generelized list :statements of :MethodDeclaration with given generelized-function
    with preprocess : Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration"
-  [generelized-function match-string]
+  [generelized-function snippet-string match-string]
   (let [node
-        (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ")
+        (parsing/parse-string-declaration snippet-string)
         snippet 
         (representation/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
@@ -109,6 +124,7 @@
   operator-contains-elements-with-same-size-of-statements
   (generelized-statements 
     operators/contains-elements-with-same-size 
+    "public void methodA() { this.methodM(); this.methodC();} "
     "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
        (\"public void methodA2(){\\n  this.methodC();\\n  this.methodM();\\n}\\n\" \"methodA2\") 
        (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\")}"))
@@ -121,6 +137,7 @@
   operator-contains-elements-of-statements
   (generelized-statements 
     operators/contains-elements 
+    "public void methodA() { this.methodM(); this.methodC();} "
     "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
        (\"public void methodA2(){\\n  this.methodC();\\n  this.methodM();\\n}\\n\" \"methodA2\") 
        (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\") 
@@ -138,8 +155,9 @@
    test-suite 
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-methoddeclaration-name)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-node-child)
+   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-node-child)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-typedeclaration-bodydeclaration)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-exact-substitutes-typedeclaration-bodydeclaration)
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-same-size-of-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-of-statements)

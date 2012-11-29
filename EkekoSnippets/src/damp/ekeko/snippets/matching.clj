@@ -228,6 +228,14 @@
     (cf-nil-exact snippet-val)))
 
 (defn
+  cf-exact-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-exact snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
+
+(defn
   make-constraining-function
   [type]
   (cond
@@ -241,6 +249,8 @@
     cf-list-contains
     (= type :variable)
     cf-variable
+    (= type :exact-with-variable)
+    cf-exact-with-variable
     (= type :epsilon)
     make-epsilon-function
     :default

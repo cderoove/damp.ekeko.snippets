@@ -38,6 +38,13 @@
 (declare clear-cf-for-node)
 
 (defn 
+  introduce-logic-variable-of-node-exact 
+  "Introduce logic variable to a given node, without removing any condition."
+  [snippet node uservar]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)]
+    (update-constrainf snippet-with-uservar node :exact-with-variable)))
+
+(defn 
   introduce-logic-variable 
   "Introduce logic variable to a given node."
   [snippet node uservar]
