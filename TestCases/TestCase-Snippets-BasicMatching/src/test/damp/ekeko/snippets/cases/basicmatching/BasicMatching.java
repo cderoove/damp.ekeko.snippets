@@ -35,6 +35,12 @@ public class BasicMatching {
 		this.methodM();
 	}
 
+	public void methodA3() {
+		this.methodC();
+		this.methodM();
+		this.methodD();
+	}
+
 	public Object methodM() {
 		return o.f;
 	}
@@ -43,6 +49,11 @@ public class BasicMatching {
 		o.f = x.m();
 	}
 	
+	public int methodD() {
+		int foo = 0;
+		return foo;
+	}
+
 	public static void runTest() {
 		BasicMatching test = new BasicMatching();
 		test.methodA();
