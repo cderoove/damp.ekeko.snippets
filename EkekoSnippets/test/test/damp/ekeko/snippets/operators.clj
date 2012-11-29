@@ -42,11 +42,7 @@
       (let [snippet (representation/jdt-node-as-snippet node)
             generalized-snippet (operators/introduce-logic-variable snippet child '?childvar)
             solutions (snippets/query-by-snippet generalized-snippet)]
-        ;useful when debugging:
-        ;(println "node: " node) 
-        ;(println "child: " child)
         (is (some #{[node child]} solutions))))))
-        ;(is (some #{node} (map first solutions))))))) ;TODO: also check whether ?childvar is bound to p.n, but ?chilvar has to 
 
 (deftest
   ^{:doc "Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration "}
@@ -78,18 +74,14 @@
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\" 
           \"public Integer m(){\\n  return new Integer(111);\\n}\\n\")}")))
-
-    ;(test/nonemptytuples-are ;assuming that class X has only one body declaration
-    ;  (snippets/query-by-snippet snippet)
-    ;  (snippets/query-by-snippet generalized-snippet)))) 
-  
+ 
       
 ;; Operator: generelized for the list
 ;; ------------------------------------------
 
 (defn
   generelized-statements
-  "Generelized list :statements of :MethodDeclaration with given function f
+  "Generelized list :statements of :MethodDeclaration with given generelized-function
    with preprocess : Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration"
   [generelized-function match-string]
   (let [node
