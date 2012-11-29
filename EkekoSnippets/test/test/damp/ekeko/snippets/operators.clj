@@ -30,7 +30,6 @@
 
 ;; In general: matches(snippet) is a subset of matches(generalized(snippet))
 
-
 (deftest
   ^{:doc "For all nodes n, properties p of n, n should be included in the matches for introduce-logic-variable(snippet(n),p.n)."}
   operator-variable-substitutes-node-child
@@ -46,8 +45,8 @@
         ;useful when debugging:
         ;(println "node: " node) 
         ;(println "child: " child)
-        (is (some #{node} (map first solutions))))))) ;TODO: also check whether ?childvar is bound to p.n, but ?chilvar has to 
-      
+        (is (some #{[node child]} solutions))))))
+        ;(is (some #{node} (map first solutions))))))) ;TODO: also check whether ?childvar is bound to p.n, but ?chilvar has to 
 
 (deftest
   ^{:doc "Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration "}
@@ -64,20 +63,6 @@
          (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\")}")))
 
 
-
-;; test fails
-;; reason: check generated query for
-;(snippets/query-by-snippet* 
-;      (let [node
-;               (parsing/parse-string-declaration "private class X {	public Integer m() { return new Integer(111);	}	}" ")
-;               snippet 
-;               (representation/jdt-node-as-snippet node)
-;               generalized-snippet
-;               (operators/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
-;           generalized-snippet))
-;-> there are still constraining conditions generate for the MethodDeclaration
-;solution : add clear-cf-from-node in introduce-logic-variable
-;           this function put :epsilon as cf and gf in all child of node
 (deftest 
   ^{:doc "Introduce a logic variable that substitutes for one of the :bodyDeclarations 
           (e.g., a MethodDeclaration) of a :TypeDeclaration. Tests introducing a logic variable
@@ -99,37 +84,57 @@
     ;  (snippets/query-by-snippet generalized-snippet)))) 
   
       
+;; Operator: generelized for the list
+;; ------------------------------------------
 
-(comment
-
-;; Test - List contains match
-;; against methodA, methodA1 & methodA2
-
-;; list (statements) of methodA
-(defn selected-list [?m]
-  (first (first 
-           (damp.ekeko/ekeko [?l]
-                    (fresh [?b]
-                           (reification/has :body ?m ?b)
-                           (reification/has :statements ?b ?l))))))
-
-;; unit test
-(defn list-contains-unittest []
-  (let [selected    (selected-snippet)
-        snippet     (snippets/jdt-node-as-snippet selected)
-        newsnippet  (snippets/introduce-logic-variable snippet (selected-node selected) '?m)
-        newsnippet  (snippets/ignore-elements-sequence newsnippet (selected-list selected))]
-    (snippets/query-by-snippet newsnippet)))
-
-;; test
-(deftest
-  list-contains-test
+(defn
+  generelized-statements
+  "Generelized list :statements of :MethodDeclaration with given function f
+   with preprocess : Introduce a logic variable that substitutes for the :name property of a :MethodDeclaration"
+  [generelized-function match-string]
+  (let [node
+        (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (generelized-function
+          generalized-snippet-with-lvar 
+          (first (first (damp.ekeko/ekeko [?s]
+                     (fresh [?b]
+                     (reification/has :body node ?b)
+                     (reification/has :statements ?b ?s))))))]
     (test/tuples-correspond 
-      (list-contains-unittest)
-      (test/tuples-to-stringsetstring 
-          (query-for-get-methods ["methodA" "methodA1" "methodA2"]))))
+      (snippets/query-by-snippet generalized-snippet)
+      match-string)))
 
-)
+;; Operator: contains-elements-with-same-size
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Contains elements in a nodelist :statements with the same size"}
+  operator-contains-elements-with-same-size-of-statements
+  (generelized-statements 
+    operators/contains-elements-with-same-size 
+    "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
+       (\"public void methodA2(){\\n  this.methodC();\\n  this.methodM();\\n}\\n\" \"methodA2\") 
+       (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\")}"))
+
+;; Operator: contains-elements
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Contains elements in a nodelist :statements "}
+  operator-contains-elements-of-statements
+  (generelized-statements 
+    operators/contains-elements 
+    "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
+       (\"public void methodA2(){\\n  this.methodC();\\n  this.methodM();\\n}\\n\" \"methodA2\") 
+       (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\") 
+       (\"public void methodA3(){\\n  this.methodC();\\n  this.methodM();\\n  this.methodD();\\n}\\n\" \"methodA3\")}"))
+
+
 
 ;; Refinement Operators
 ;; --------------------
@@ -143,10 +148,9 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-methoddeclaration-name)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-node-child)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-typedeclaration-bodydeclaration)
-
    
-   
-   ;(test/against-project-named "TestCase-Snippets-BasicMatching" false list-contains-test)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-same-size-of-statements)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-of-statements)
    )
 
 (defn 

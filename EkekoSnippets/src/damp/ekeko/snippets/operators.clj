@@ -24,8 +24,14 @@
   (update-in snippet [:ast2constrainf node] (fn [x] type)))
 
 (defn
-  ignore-elements-sequence 
-  "Ignore elements sequence in a given node (list)."
+  contains-elements-with-same-size 
+  "Contains all elements in a given node (list), and list has to be the same size."
+  [snippet node]
+  (update-constrainf snippet node :list-contains-with-same-size))
+
+(defn
+  contains-elements
+  "Contains all elements in a given node (list), and list does not have to be the same size."
   [snippet node]
   (update-constrainf snippet node :list-contains))
 
