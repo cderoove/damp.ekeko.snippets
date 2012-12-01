@@ -36,8 +36,35 @@ public class BasicMatching {
 	}
 
 	public void methodA3() {
-		this.methodC();
 		this.methodM();
+		this.methodC();
+		this.methodD();
+		this.methodC();
+		this.methodE();
+	}
+
+	public void methodA4() {
+		this.methodM();
+		this.methodE();
+		this.methodD();
+	}
+
+	public void methodA5() {
+		this.methodM();
+		this.methodE();
+		this.methodD();
+		this.methodD();
+	}
+
+	public void methodAA() {
+		this.methodM();
+		this.methodD();
+		this.methodE();
+	}
+
+	public void methodAAA() {
+		this.methodM();
+		this.methodD();
 		this.methodD();
 	}
 
@@ -50,6 +77,11 @@ public class BasicMatching {
 	}
 	
 	public int methodD() {
+		int foo = 0;
+		return foo;
+	}
+
+	public int methodE() {
 		int foo = 0;
 		return foo;
 	}
