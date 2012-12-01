@@ -35,6 +35,18 @@
   [snippet node]
   (update-constrainf snippet node :list-contains))
 
+(defn
+  contains-elements-with-relative-order 
+  "Contains all elements in a given node (list), with relative order."
+  [snippet node]
+  (update-constrainf snippet node :list-contains-with-relative-order))
+
+(defn
+  contains-elements-with-repetition 
+  "Contains all elements in a given node (list), with repetition."
+  [snippet node]
+  (update-constrainf snippet node :list-contains-with-repetition))
+
 (declare clear-cf-for-node)
 
 (defn 

@@ -141,9 +141,32 @@
     "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
        (\"public void methodA2(){\\n  this.methodC();\\n  this.methodM();\\n}\\n\" \"methodA2\") 
        (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\") 
-       (\"public void methodA3(){\\n  this.methodC();\\n  this.methodM();\\n  this.methodD();\\n}\\n\" \"methodA3\")}"))
+       (\"public void methodA3(){\\n  this.methodM();\\n  this.methodC();\\n  this.methodD();\\n  this.methodC();\\n  this.methodE();\\n}\\n\" \"methodA3\")}"))
 
 
+;; Operator: contains-elements-with-relative-order
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Contains elements in a nodelist :statements with realtive order"}
+  operator-contains-elements-with-relative-order-of-statements
+  (generelized-statements 
+    operators/contains-elements-with-relative-order 
+    "public void methodAA() { this.methodM(); this.methodD(); this.methodE; }"
+    "#{(\"public void methodA3(){\\n  this.methodM();\\n  this.methodC();\\n  this.methodD();\\n  this.methodC();\\n  this.methodE();\\n}\\n\" \"methodA3\") 
+       (\"public void methodAA(){\\n  this.methodM();\\n  this.methodD();\\n  this.methodE();\\n}\\n\" \"methodAA\")}"))
+
+;; Operator: contains-elements-with-repetition
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Contains elements in a nodelist :statements with repetition"}
+  operator-contains-elements-with-repetition-of-statements
+  (generelized-statements 
+    operators/contains-elements-with-repetition 
+    "public void methodAAA() { this.methodM(); this.methodD(); this.methodD; }"
+    "#{(\"public void methodAAA(){\\n  this.methodM();\\n  this.methodD();\\n  this.methodD();\\n}\\n\" \"methodAAA\") 
+       (\"public void methodA5(){\\n  this.methodM();\\n  this.methodE();\\n  this.methodD();\\n  this.methodD();\\n}\\n\" \"methodA5\")}"))
 
 ;; Refinement Operators
 ;; --------------------
@@ -161,7 +184,9 @@
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-same-size-of-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-of-statements)
-   )
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-relative-order-of-statements)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-repetition-of-statements)
+)
 
 (defn 
   test-ns-hook 

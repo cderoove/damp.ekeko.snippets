@@ -110,7 +110,11 @@
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
-      (fn [lstval] (swap! snippet assoc-snippet-value lstval))
+      (fn [lstval] 
+        (swap! snippet assoc-snippet-value lstval)
+        (let [rawlst (:value lstval)
+              rawlstvar (util/gen-readable-lvar-for-value rawlst)]
+          (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
       (fn [primval]  (swap! snippet assoc-snippet-value primval))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
