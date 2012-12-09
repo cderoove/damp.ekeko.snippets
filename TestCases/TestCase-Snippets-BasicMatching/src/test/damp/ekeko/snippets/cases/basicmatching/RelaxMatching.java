@@ -33,4 +33,42 @@ public class RelaxMatching {
 		int z = x + y;
 		return z;
 	}
+
+	public int rmethodE(int val) {
+		int r = 0;
+		if (val == 0) {
+			r = val;
+		} else if (val < 0) {
+			r = val * -1;
+		} else {
+			r = val;
+		}
+		return r;
+	}
+	
+	public int rmethodF(int val) {
+		int r = 0;
+		if (val == 0) {
+			r = val;
+		} 
+		return r;
+	}
+
+	public int rmethodG(int val) {
+		int r = 0;
+		if (val == 0) {
+			r = val;
+		} else if (val < 0) {
+			r = val * -1;
+		} 
+		return r;
+	}
+	
+	public int rmethodH(int val) {
+		int r = 1;
+		if (val == 0) {
+			r = val;
+		} 
+		return r;
+	}
 }
