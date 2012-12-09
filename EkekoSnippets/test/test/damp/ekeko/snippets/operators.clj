@@ -218,6 +218,31 @@
       "#{(\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
 
 
+;; Operator: contains-variable-declaration-statements
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."}
+  operator-contains-variable-declaration-statements
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/contains-variable-declaration-statements
+          generalized-snippet-with-lvar 
+          (list (first (.statements (.getBody node)))
+                (fnext (.statements (.getBody node)))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodC(){\\n  int i=0;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodC\") 
+         (\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
+
+
+
 ;; Refinement Operators
 ;; --------------------
 
@@ -240,6 +265,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
    
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
 )
 
 (defn 

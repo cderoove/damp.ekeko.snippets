@@ -4,6 +4,7 @@
   damp.ekeko.snippets.operators
   (:require [damp.ekeko.snippets 
              [util :as util]
+             [parsing :as parsing]
              [representation :as representation]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
@@ -111,21 +112,41 @@
     (update-listrewrite-for-node new-snippet list-container list-rewrite)))
 
 (defn
-  contains-variable-declaration-fragments 
-  "Allow given fragments in given snippet, as part of one or more fragments in target source code."
-  [snippet fragments]
-  (let [listcontainer (representation/snippet-node-with-member (:owner fragments))
-        newsnippet    (contains-elements snippet listcontainer)]  
-    (contains-elements newsnippet fragments)))
+  split-variable-declaration-statement 
+  "Split variable declaration statement into multiple node with one fragment for each statement."
+  [snippet listcontainer position fragments modifiers type]
+  (if (empty? fragments)
+    snippet
+    (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
+          newsnippet-node (add-node snippet listcontainer newnode position)
+          newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
+      (split-variable-declaration-statement newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
 
 (defn
-  contains-list-of-variable-declaration-fragments 
-  "Allow given lst (= list of fragments) in given snippet, as part of one or more fragments in target source code."
+  contains-variable-declaration-statement 
+  "Allow given variable declaration statement in given snippet, 
+   as part of one or more variable declaration statements in target source code."
+  [snippet statement]
+  (let [listcontainer   (representation/snippet-node-with-member statement)
+        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+        newsnippet-list (contains-elements snippet listcontainer)
+        newsnippet      (remove-node newsnippet-list statement)]  
+    (split-variable-declaration-statement
+      newsnippet 
+      listcontainer
+      position
+      (.fragments statement) 
+      (.modifiers statement) 
+      (.getType statement))))
+
+(defn
+  contains-variable-declaration-statements 
+  "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."
   [snippet lst]
   (if (empty? lst)
     snippet
-    (contains-list-of-variable-declaration-fragments 
-      (contains-variable-declaration-fragments snippet (first lst))
+    (contains-variable-declaration-statements 
+      (contains-variable-declaration-statement snippet (first lst))
       (rest lst))))
   
 

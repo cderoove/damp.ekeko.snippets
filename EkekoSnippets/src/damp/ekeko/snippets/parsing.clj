@@ -121,4 +121,11 @@
              [parse-string-declaration :declaration] 
              [parse-string-unit :unit]
              [parse-string-expression :expression]])))
+
+(defn
+  make-variable-declaration-statement
+  [modifiers type fragment]
+  (parse-string-statement 
+    (str (apply str (interpose \space modifiers)) " " type " " fragment ";")))
+
        
