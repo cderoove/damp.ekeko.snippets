@@ -192,6 +192,57 @@
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public int rmethodB(){\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodB\")}")))
 
+
+;; Operator: contains-variable-declaration-statements
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."}
+  operator-contains-variable-declaration-statements
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/contains-variable-declaration-statements
+          generalized-snippet-with-lvar 
+          (list (first (.statements (.getBody node)))
+                (fnext (.statements (.getBody node)))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodC(){\\n  int i=0;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodC\") 
+         (\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
+
+;; Operator: allow-match-ifstatement-with-else
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Allow match given node (= ifstatement without else) with node (= ifstatement with else)."}
+  operator-allow-match-ifstatement-with-else
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodF(int val) {	int r = 0; if (val == 0) {	r = val;	} return r; }")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/allow-match-ifstatement-with-else
+          generalized-snippet-with-lvar 
+          (fnext (.statements (.getBody node))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodF(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodF\") 
+         (\"public int rmethodE(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n else {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodE\") 
+         (\"public int rmethodG(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n  return r;\\n}\\n\" \"rmethodG\")}")))
+
+
+;; Refinement Operators
+;; --------------------
+
 ;; Operator: add-node
 ;; ------------------------------------------
 
@@ -218,35 +269,6 @@
       "#{(\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
 
 
-;; Operator: contains-variable-declaration-statements
-;; ------------------------------------------
-
-(deftest
-  ^{:doc "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."}
-  operator-contains-variable-declaration-statements
-  (let [node
-        (parsing/parse-string-declaration 
-          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
-        snippet 
-        (representation/jdt-node-as-snippet node)
-        generalized-snippet-with-lvar
-        (operators/introduce-logic-variable snippet (.getName node) '?m)
-        generalized-snippet
-        (operators/contains-variable-declaration-statements
-          generalized-snippet-with-lvar 
-          (list (first (.statements (.getBody node)))
-                (fnext (.statements (.getBody node)))))]
-    (test/tuples-correspond 
-      (snippets/query-by-snippet generalized-snippet)
-      "#{(\"public int rmethodC(){\\n  int i=0;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodC\") 
-         (\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
-
-
-
-;; Refinement Operators
-;; --------------------
-
-
 ;; Test suite
 ;; ----------
 (deftest
@@ -266,6 +288,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-match-ifstatement-with-else)
 )
 
 (defn 

@@ -149,6 +149,12 @@
       (contains-variable-declaration-statement snippet (first lst))
       (rest lst))))
   
+(defn
+  allow-match-ifstatement-with-else 
+  "Allow match given node (= ifstatement without else) with node (= ifstatement with else)."
+  [snippet node]
+  (let [else-node (first (astnode/node-propertyvalues node))]
+    (update-constrainf snippet else-node :epsilon)))
 
 
 
