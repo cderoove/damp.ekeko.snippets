@@ -72,6 +72,10 @@ public class BasicMatching {
 		return o.f;
 	}
 	
+	public void methodB() {
+		o.f = x.m();
+	}
+	
 	public void methodC() {
 		o.f = x.m();
 	}
@@ -94,5 +98,23 @@ public class BasicMatching {
 		System.out.println(test.o.f);
 	}
 	
+	public void myMethod() {
+		this.methodA();
+		this.methodB();
+		this.methodC();
+	}
+
+	public void myMethodX() {
+		this.methodA();
+		this.methodB();
+		this.methodC();
+	}
+
+	public void myMethodY() {
+		this.methodA();
+		this.methodC();
+		this.methodB();
+	}
 	
+
 }
