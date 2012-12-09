@@ -63,3 +63,29 @@
             (null-f val)
             (recur others)))))))
 
+(defn 
+  create-listrewrite
+  "Return new ListRewrite for property of :owner of the list (e.g. owner : block, property : statements).
+   Note : only using NodeList.add, not able to rewrite the list."
+  [lst]
+  (let [owner (:owner lst)
+        property (:property lst)
+        ast-rewrite (org.eclipse.jdt.core.dom.rewrite.ASTRewrite/create (.getAST owner))]
+    (.getListRewrite ast-rewrite owner property)))
+
+(defn
+  add-node-to-listrewrite
+  "Add node in given index idx to the list-rewrite."
+  [list-rewrite node idx]
+  (.insertAt list-rewrite node idx (new org.eclipse.text.edits.TextEditGroup "snippet")))
+
+(defn
+  remove-node-from-listrewrite
+  "Remove node from the list-rewrite."
+  [list-rewrite node]
+  (.remove list-rewrite node (new org.eclipse.text.edits.TextEditGroup "snippet")))
+
+(defn
+  rewritten-list-from-listrewrite
+  [list-rewrite]
+  (.getRewrittenList list-rewrite))

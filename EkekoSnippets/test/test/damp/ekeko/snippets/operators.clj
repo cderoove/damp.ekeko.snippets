@@ -93,6 +93,9 @@
       
 ;; Operator: generelized for the list
 ;; ------------------------------------------
+;; note: to get the list, should use ekeko query, can not use .statements
+;;       list = {:type :Value, :owner #<Block {..}>, :property #<ChildListPropertyDescriptor ..>
+;;               :value #<NodeList [...]>}
 
 (defn
   generelized-statements
@@ -168,6 +171,53 @@
     "#{(\"public void methodAAA(){\\n  this.methodM();\\n  this.methodD();\\n  this.methodD();\\n}\\n\" \"methodAAA\") 
        (\"public void methodA5(){\\n  this.methodM();\\n  this.methodE();\\n  this.methodD();\\n  this.methodD();\\n}\\n\" \"methodA5\")}"))
 
+;; Operator: remove-node
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Remove node from a nodelist :statements"}
+  operator-remove-node-from-statements
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/remove-node
+          generalized-snippet-with-lvar 
+          (first (.statements (.getBody node))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodB(){\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodB\")}")))
+
+;; Operator: add-node
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Add node to a nodelist :statements"}
+  operator-add-node-to-statements
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        new-node
+        (parsing/parse-string-statement "i = 1;")
+        generalized-snippet
+        (operators/add-node
+          generalized-snippet-with-lvar 
+          (representation/snippet-node-with-value (.statements (.getBody node)))
+          new-node
+          1)]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
+
+
 ;; Refinement Operators
 ;; --------------------
 
@@ -186,6 +236,10 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-of-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-relative-order-of-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-repetition-of-statements)
+
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
+   
 )
 
 (defn 

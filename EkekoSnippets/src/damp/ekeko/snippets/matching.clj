@@ -115,7 +115,7 @@
            (equals snippet-list-size (.size ?newly-generated-var)) {If type = :samesize}
            (element-conditions)"
   [snippet snippet-val type function-element-condition]
-  (let [lst (:value snippet-val)
+  (let [lst (representation/snippet-value-for-node snippet snippet-val)
         snippet-list-size (.size lst)
         var-match (representation/snippet-var-for-node snippet snippet-val)
         var-match-raw (representation/snippet-var-for-node snippet lst)
@@ -227,7 +227,7 @@
   cf-list-contains-with-relative-order
   [snippet-val]
   (fn [snippet]
-    (let [lst (:value snippet-val)
+    (let [lst (representation/snippet-value-for-node snippet snippet-val)
           var-match-raw (representation/snippet-var-for-node snippet lst)]
       (concat
         ((cf-list-contains snippet-val) snippet)
@@ -254,7 +254,7 @@
   cf-list-contains-with-repetition
   [snippet-val]
   (fn [snippet]
-    (let [lst (:value snippet-val)]
+    (let [lst (representation/snippet-value-for-node snippet snippet-val)]
       (concat
         ((cf-list-contains snippet-val) snippet)
         (internal-cf-list-contains-with-repetition snippet lst)))))

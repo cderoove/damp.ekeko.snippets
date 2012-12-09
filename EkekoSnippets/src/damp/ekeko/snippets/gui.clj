@@ -35,7 +35,7 @@
      (astnode/ast? p) 
      (to-array (astnode/node-propertyvalues p)) 
      (astnode/lstvalue? p) 
-     (to-array (seq (:value p)))
+     (to-array (seq (representation/snippet-value-for-node snippet p)))
      :else 
      (to-array [])))
 

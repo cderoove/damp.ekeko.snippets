@@ -3,7 +3,9 @@
     :author "Coen De Roover, Siltvani"}
    damp.ekeko.snippets.representation
   (:require [damp.ekeko.snippets 
-             [util :as util]]))
+             [util :as util]])
+    (:require [damp.ekeko.jdt 
+             [astnode :as astnode]]))
 
 
 ;; Snippet Datatype
@@ -28,10 +30,11 @@
 ;   that actually matches the AST node of the snippet. 
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
 ; - var2uservar: map from logic variable to the user defined logic variable 
+; - node2usernode: map from node (= list wrapper) to the list rewrite 
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar])
+  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar node2usernode])
 
 (defn 
   snippet-var-for-node 
@@ -63,9 +66,36 @@
 
 (defn 
   snippet-uservar-for-var 
-  "For the givenlogis var of the given snippet, returns the name of the user defined logic variable."
+  "For the given logic var of the given snippet, returns the name of the user defined logic variable."
   [snippet snippet-var]
   (get-in snippet [:var2uservar snippet-var]))
+
+(defn 
+  snippet-usernode-for-node 
+  "For the given node (list wrapper) of the given snippet, returns the user defined node (list rewrite)."
+  [snippet snippet-ast]
+  (get-in snippet [:node2usernode snippet-ast]))
+
+(defn 
+  snippet-node-with-member
+  "Returns node (= wrapper of NodeList) which it's :value (= NodeList) has member mbr."
+  [mbr]
+  (first (astnode/node-propertyvalues (.getParent mbr))))
+
+(defn 
+  snippet-node-with-value
+  "Returns node (= wrapper of NodeList) which has :value = value."
+  [value]
+  (snippet-node-with-member (first value)))
+
+(defn
+  snippet-value-for-node
+  "Return :value of the given node (= wrapper of NodeList) or value of usernode if it exist."
+  [snippet node]
+  (let [list-rewrite (snippet-usernode-for-node snippet node)]
+    (if (nil? list-rewrite)
+      (:value node)
+      (util/rewritten-list-from-listrewrite list-rewrite))))
 
 (defn 
   snippet-nodes
@@ -106,7 +136,7 @@
         (assoc-in [:ast2groundf value] :minimalistic)
         (assoc-in [:ast2constrainf value] :exact)
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {}))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -119,6 +149,82 @@
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
   
-  
-  
+
+;; Updating Snippet instances
+;;-----------------------------
+
+(defn 
+  add-node-to-snippet
+  "Add node to snippet."
+  [snippet n]
+  (defn assoc-snippet-value [snippet value]
+    (let [lvar (util/gen-readable-lvar-for-value value)]
+      (->
+        snippet
+        (assoc-in [:ast2var value] lvar)
+        (assoc-in [:ast2groundf value] :minimalistic)
+        (assoc-in [:ast2constrainf value] :exact)
+        (assoc-in [:var2ast lvar] value))))
+  (let [snippet (atom snippet)]
+    (util/walk-jdt-node 
+      n
+      (fn [astval] (swap! snippet assoc-snippet-value astval))
+      (fn [lstval] 
+        (swap! snippet assoc-snippet-value lstval)
+        (let [rawlst (:value lstval)
+              rawlstvar (util/gen-readable-lvar-for-value rawlst)]
+          (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
+      (fn [primval]  (swap! snippet assoc-snippet-value primval))
+      (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
+    @snippet))
+
+(defn 
+  remove-node-from-snippet
+  "Clear grounding & constraining function for all child of a given node in snippet."
+  [snippet node]
+  (defn update-snippet-value [snippet value]
+    (update-in snippet [:ast2groundf value] (fn [x] :epsilon))
+    (update-in snippet [:ast2constrainf value] (fn [x] :epsilon)))
+  (let [snippet (atom snippet)]
+    (util/walk-jdt-node 
+      node
+      (fn [astval] (swap! snippet update-snippet-value astval))
+      (fn [lstval] (swap! snippet update-snippet-value lstval))
+      (fn [primval]  (swap! snippet update-snippet-value primval))
+      (fn [nilval] (swap! snippet update-snippet-value nilval)))
+    @snippet))
+
+
+;; walk through snippet
+;;-----------------------------
+
+(defn 
+  walk-jdt-node-of-snippet
+  "Recursive descent through a JDT node, applying given functions to the encountered 
+   ASTNode instances and Ekeko wrappers for their property values.
+   With addition get new property value from snippet :node2usernode if it exist."
+  [snippet n node-f list-f primitive-f null-f]
+  (loop
+    [nodes (list n)]
+    (when-not (empty? nodes)
+      (let [val (first nodes)
+            others (rest nodes)]
+        (cond 
+          (astnode/ast? val)
+          (do
+            (node-f val)
+            (recur (concat (astnode/node-propertyvalues val) others)))
+          (astnode/lstvalue? val)
+          (do 
+            (list-f val)
+            (recur (concat (snippet-value-for-node snippet val) others)))
+          (astnode/primitivevalue? val)
+          (do
+            (primitive-f val)
+            (recur others))
+          (astnode/nilvalue? val)
+          (do
+            (null-f val)
+            (recur others)))))))
+
 

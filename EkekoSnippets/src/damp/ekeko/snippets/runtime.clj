@@ -6,7 +6,7 @@
   (:require [damp.ekeko [logic :as el]]))
 
 ;;not working yet, not used yet
-
+(comment
 (defn
    val-exactmatch-logiclist
    "Predicate to check exact match java property value ?val with snippet list ?llist."
@@ -31,5 +31,5 @@
    "Predicate to check exact match java property value ?val with snippet list ?llist."
    [?list ?el1 ?el2]
    (< (.indexOf ?list ?el1) (.indexOf ?list ?el2)))
-
+)
 
