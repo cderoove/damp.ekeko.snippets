@@ -310,6 +310,41 @@
       ((cf-node-exact snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
+(defn 
+  cf-subtype
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+     For ASTNode instances: ((type-subtypematch-logictype :kind-of-node ?var-for-node ?var-for-node-match)
+                               (ast :kind-of-node ?var-for-node)  
+                               (has :property1 ?var-for-node ''primitive-valued-child-as-string''))
+                               ....
+     ?var-for-node is new logic variable."
+  [snippet-ast]
+  (fn [snippet]
+    (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
+          snippet-properties (astnode/node-ekeko-properties snippet-ast)
+          var-match          (representation/snippet-var-for-node snippet snippet-ast)
+          var-node           (util/gen-lvar)
+          child-conditions 
+              (for [[property-keyw retrievalf] 
+                    (seq snippet-properties)
+                    :let [value     (retrievalf) 
+                          var-value (representation/snippet-var-for-node snippet value)]]
+                `(reification/has ~property-keyw ~var-node ~var-value))]
+      `((cl/fresh [~var-node]
+         (reification/ast ~snippet-keyw ~var-node)
+           ~@child-conditions
+           (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
+
+(defn 
+  cf-variable-declaration-with-initializer
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+     For ASTNode instances: (assignment-relaxmatch-variable-declaration ?var-for-node-match ?var-assignment)"
+  [snippet-ast]
+  (fn [snippet]
+    (let [var-match          (representation/snippet-var-for-node snippet snippet-ast)
+          var-assignment     (representation/snippet-var-for-node snippet (.getExpression snippet-ast))]
+      `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-assignment)))))
+
 (defn
   make-constraining-function
   [type]
@@ -330,6 +365,10 @@
     cf-variable
     (= type :exact-with-variable)
     cf-exact-with-variable
+    (= type :subtype)
+    cf-subtype
+    (= type :variable-declaration-with-initializer)
+    cf-variable-declaration-with-initializer
     (= type :epsilon)
     make-epsilon-function
     :default

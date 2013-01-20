@@ -150,11 +150,26 @@
       (rest lst))))
   
 (defn
-  allow-match-ifstatement-with-else 
+  allow-ifstatement-with-else 
   "Allow match given node (= ifstatement without else) with node (= ifstatement with else)."
   [snippet node]
   (let [else-node (first (astnode/node-propertyvalues node))]
     (update-constrainf snippet else-node :epsilon)))
 
+(defn
+  allow-subtype-on-variable-declaration
+  "Allow match given node (= field/variable type) with same type or its' subtype."
+  [snippet node]
+  (update-constrainf snippet node :subtype))
+  
+(defn
+  allow-subtype-on-class-declaration-extends
+  "Allow match given node (= class declaration extends type) with same type or its' subtype."
+  [snippet node]
+  (update-constrainf snippet node :subtype))
 
-
+(defn
+  allow-variable-declaration-with-initializer
+  "Allow match given node (= assignment expression) with local variable declaration with initializer."
+  [snippet node]
+  (update-constrainf snippet node :variable-declaration-with-initializer))

@@ -216,12 +216,12 @@
       "#{(\"public int rmethodC(){\\n  int i=0;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodC\") 
          (\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
 
-;; Operator: allow-match-ifstatement-with-else
+;; Operator: allow-ifstatement-with-else
 ;; ------------------------------------------
 
 (deftest
   ^{:doc "Allow match given node (= ifstatement without else) with node (= ifstatement with else)."}
-  operator-allow-match-ifstatement-with-else
+  operator-allow-ifstatement-with-else
   (let [node
         (parsing/parse-string-declaration 
           "public int rmethodF(int val) {	int r = 0; if (val == 0) {	r = val;	} return r; }")
@@ -230,7 +230,7 @@
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
-        (operators/allow-match-ifstatement-with-else
+        (operators/allow-ifstatement-with-else
           generalized-snippet-with-lvar 
           (fnext (.statements (.getBody node))))]
     (test/tuples-correspond 
@@ -238,6 +238,87 @@
       "#{(\"public int rmethodF(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodF\") 
          (\"public int rmethodE(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n else {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodE\") 
          (\"public int rmethodG(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n  return r;\\n}\\n\" \"rmethodG\")}")))
+
+
+;; Operator: allow-subtype-on-variable-declaration
+;; ------------------------------------------
+(defn method-with-name 
+  [name]
+  (first (first 
+           (damp.ekeko/ekeko [?m]
+                  (fresh [?n ?id]
+                  (reification/ast :MethodDeclaration ?m)
+                  (reification/has :name ?m ?n)
+                  (reification/has :identifier ?n ?id)
+                  (reification/value-raw ?id name))))))
+
+(deftest
+  ^{:doc "Allow match given node (= type) with node (= same type or subtype)."}
+  operator-allow-subtype-on-variable-declaration
+  (let [node
+        (method-with-name "rmethodI")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/allow-subtype-on-variable-declaration
+          generalized-snippet-with-lvar 
+          (.getType (.get (.statements (.getBody node)) 0)))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodJ(){\\n  Integer o=1;\\n  Integer x=0;\\n  O test;\\n{\\n    int y=0;\\n    int z=x + y;\\n  }\\n  return x;\\n}\\n\" \"rmethodJ\") 
+         (\"public int rmethodI(){\\n  Number o=1;\\n  Integer x=0;\\n  O test;\\n{\\n    int y=0;\\n    int z=x + y;\\n  }\\n  return x;\\n}\\n\" \"rmethodI\")}")))
+
+;; Operator: allow-subtype-on-class-declaration-extends
+;; ------------------------------------------
+(defn class-with-name 
+  [name]
+  (first (first 
+           (damp.ekeko/ekeko [?m]
+                  (fresh [?n ?id]
+                  (reification/ast :TypeDeclaration ?m)
+                  (reification/has :name ?m ?n)
+                  (reification/has :identifier ?n ?id)
+                  (reification/value-raw ?id name))))))
+
+(deftest
+  ^{:doc "Allow match given node (= type (class extends)) with node (= same type or subtype)."}
+  operator-allow-subtype-on-class-declaration-extends
+  (let [node
+        (class-with-name "Z")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/allow-subtype-on-class-declaration-extends
+          generalized-snippet-with-lvar 
+          (.getSuperclassType node))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"private class Z extends Object {\\n  private int i;\\n}\\n\" \"Z\") 
+         (\"private class ZSub extends OSub {\\n  private int i;\\n}\\n\" \"ZSub\")}")))
+
+;; Operator: allow-variable-declaration-with-initializer
+;; ------------------------------------------
+(deftest
+  ^{:doc "Allow match given node (= assigment expression) with node (= variable declaration wth initializer)."}
+  operator-allow-variable-declaration-with-initializer
+  (let [node
+        (method-with-name "myMethodK")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/allow-variable-declaration-with-initializer
+          generalized-snippet-with-lvar 
+          (.get (.statements (.getBody node)) 0))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public char rmethodK(){\\n  char s='m';\\n  return s;\\n}\\n\" \"rmethodK\") 
+         (\"public char myMethodK(){\\n  s='m';\\n  return s;\\n}\\n\" \"myMethodK\")}")))
 
 
 ;; Refinement Operators
@@ -274,8 +355,9 @@
 (deftest
    test-suite 
    
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-methoddeclaration-name)
    ;(test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-node-child)
+
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-methoddeclaration-name)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-substitutes-typedeclaration-bodydeclaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-variable-exact-substitutes-typedeclaration-bodydeclaration)
    
@@ -288,7 +370,11 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-match-ifstatement-with-else)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-ifstatement-with-else)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-variable-declaration)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-class-declaration-extends)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-variable-declaration-with-initializer)
+   
 )
 
 (defn 
