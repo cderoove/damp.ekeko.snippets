@@ -3,6 +3,22 @@ package test.damp.ekeko.snippets.cases.basicmatching;
 
 public class RelaxMatching {
 
+	private class O {
+		public Object f;
+	}
+
+	private class OSub extends O {
+		public Object fsub;
+	}
+
+	private class Z extends Object {
+		private int i;
+	}
+
+	private class ZSub extends OSub {
+		private int i;
+	}
+
 	public RelaxMatching() {
 	}
 
@@ -70,5 +86,33 @@ public class RelaxMatching {
 			r = val;
 		} 
 		return r;
+	}
+
+	public int rmethodI() {
+		Number o = 1;
+		Integer x = 0;
+		O test;
+		
+		{
+			int y = 0;
+			int z = x + y;
+		}
+		return x;
+	}
+
+	public int rmethodJ() {
+		Integer o = 1;
+		Integer x = 0;
+		O test;
+		{
+			int y = 0;
+			int z = x + y;
+		}
+		return x;
+	}
+
+	public char rmethodK() {
+		char s = 'm';
+		return s;
 	}
 }

@@ -1,5 +1,6 @@
 package test.damp.ekeko.snippets.cases.basicmatching;
 
+
 public class BasicMatching {
 	
 	public BasicMatching() {
@@ -116,5 +117,20 @@ public class BasicMatching {
 		this.methodB();
 	}
 	
+	int r;
+	
+	public int myMethodF(int val) {
+		r = 0;
+		if (val == 0) {
+			r = val;
+		} 
+		return r;
+	}
 
+	char s;
+	
+	public char myMethodK() {
+		s = 'm';
+		return s;
+	}
 }
