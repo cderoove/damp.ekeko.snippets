@@ -189,3 +189,17 @@
   [snippet node]
   (update-constrainf snippet node :variable-declaration-with-initializer))
 
+(defn
+  add-logic-conditions
+  "Add user logic conditions to snippet. conditions should be in quote, '((...) (...))."
+  [snippet conditions]
+  (let [new-conditions `(~@(representation/snippet-userqueries snippet) ~@conditions)]
+    (assoc snippet :userquery new-conditions)))
+
+(defn
+  remove-logic-conditions
+  "Remove user logic conditions from snippet. conditions should be in quote, '((...) (...))."
+  [snippet conditions]
+  (let [new-conditions (remove (set conditions) (:userquery snippet))]
+    (assoc snippet :userquery new-conditions)))
+  

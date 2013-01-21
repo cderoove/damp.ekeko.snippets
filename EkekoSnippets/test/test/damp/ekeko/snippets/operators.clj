@@ -192,6 +192,37 @@
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public int rmethodB(){\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodB\")}")))
 
+;; Operator: remove-logic-conditions
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Remove logic conditions"}
+  operator-remove-logic-conditions
+  (let [node
+        (parsing/parse-string-declaration 
+          "public void methodA() {this.methodM(); this.methodC();	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        cond-1     'damp.ekeko.jdt.reification/has 
+        pro-1      ':identifier
+        cond-2     'damp.ekeko.jdt.reification/value-raw
+        var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
+        var-name   (representation/snippet-var-for-node snippet (.getName node))
+        value      "methodA1"
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet-add
+        (operators/add-logic-conditions
+          generalized-snippet-with-lvar 
+          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))
+        generalized-snippet
+        (operators/remove-logic-conditions
+          generalized-snippet-add 
+          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
+         (\"public void methodA(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA\")}")))
 
 ;; Operator: split-variable-declaration-statement
 ;; ------------------------------------------
@@ -370,6 +401,33 @@
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
 
+;; Operator: add-logic-conditions
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Add logic conditions"}
+  operator-add-logic-conditions
+  (let [node
+        (parsing/parse-string-declaration 
+          "public void methodA() {this.methodM(); this.methodC();	}")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        cond-1     'damp.ekeko.jdt.reification/has 
+        pro-1      ':identifier
+        cond-2     'damp.ekeko.jdt.reification/value-raw
+        var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
+        var-name   (representation/snippet-var-for-node snippet (.getName node))
+        value      "methodA1"
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/add-logic-conditions
+          generalized-snippet-with-lvar 
+          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\")}")))
+
 
 ;; Test suite
 ;; ----------
@@ -387,9 +445,11 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-relative-order-of-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-elements-with-repetition-of-statements)
 
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
-   
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)   
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-logic-conditions)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-logic-conditions)
+
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-split-variable-declaration-statement)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-ifstatement-with-else)

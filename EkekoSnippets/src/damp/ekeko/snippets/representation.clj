@@ -34,7 +34,7 @@
 ; - var2uservar: map from logic variable to the user defined logic variable 
 ; - node2usernode: map from node (= list wrapper) to the list rewrite 
 ; - userquery: user defined logic conditions 
-;   format in quasi `((...)(....))
+;   format in quote '((...)(....))
 
 
 (defrecord 
@@ -142,7 +142,7 @@
   [snippet]
   (let [query (:userquery snippet)]
         (if (nil? query)
-          `()
+          '()
           query)))
 
 ;; Constructing Snippet instances
