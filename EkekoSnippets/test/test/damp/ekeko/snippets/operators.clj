@@ -193,6 +193,27 @@
       "#{(\"public int rmethodB(){\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodB\")}")))
 
 
+;; Operator: split-variable-declaration-statement
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Split given statement in given snippet, become multiple statements with one fragment in each."}
+  operator-split-variable-declaration-statement
+  (let [node
+        (parsing/parse-string-declaration 
+          "public int rmethodB() {int x = 0, y = 0; int z = x + y; return z; } ")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/split-variable-declaration-statement
+          generalized-snippet-with-lvar 
+          (first (.statements (.getBody node))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodA(){\\n  int x=0;\\n  int y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodA\")}")))
+
 ;; Operator: contains-variable-declaration-statements
 ;; ------------------------------------------
 
@@ -369,6 +390,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-node-to-statements)
    
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-split-variable-declaration-statement)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-ifstatement-with-else)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-variable-declaration)

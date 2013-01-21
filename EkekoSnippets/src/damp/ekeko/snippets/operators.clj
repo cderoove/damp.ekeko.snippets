@@ -112,15 +112,30 @@
     (update-listrewrite-for-node new-snippet list-container list-rewrite)))
 
 (defn
-  split-variable-declaration-statement 
-  "Split variable declaration statement into multiple node with one fragment for each statement."
+  split-variable-declaration-fragments 
+  "Split variable declaration fragments into multiple node with one fragment for each statement."
   [snippet listcontainer position fragments modifiers type]
   (if (empty? fragments)
     snippet
     (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
           newsnippet-node (add-node snippet listcontainer newnode position)
           newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
-      (split-variable-declaration-statement newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
+      (split-variable-declaration-fragments newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
+
+(defn
+  split-variable-declaration-statement 
+  "Split variable declaration statement with many fragments into multiple node with one fragment for each statement."
+  [snippet statement]
+  (let [listcontainer   (representation/snippet-node-with-member statement)
+        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+        newsnippet      (remove-node snippet statement)]  
+    (split-variable-declaration-fragments
+      newsnippet 
+      listcontainer
+      position
+      (.fragments statement) 
+      (.modifiers statement) 
+      (.getType statement))))
 
 (defn
   contains-variable-declaration-statement 
@@ -131,7 +146,7 @@
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         newsnippet-list (contains-elements snippet listcontainer)
         newsnippet      (remove-node newsnippet-list statement)]  
-    (split-variable-declaration-statement
+    (split-variable-declaration-fragments
       newsnippet 
       listcontainer
       position
@@ -173,3 +188,4 @@
   "Allow match given node (= assignment expression) with local variable declaration with initializer."
   [snippet node]
   (update-constrainf snippet node :variable-declaration-with-initializer))
+
