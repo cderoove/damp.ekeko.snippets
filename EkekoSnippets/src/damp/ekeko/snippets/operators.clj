@@ -15,14 +15,14 @@
   "Update grounding function of a given node in a given snippet with new grounding function of given type
    Example: (update-groundf snippet node :node-deep)."
   [snippet node type]
-  (update-in snippet [:ast2groundf node] (fn [x] type)))
+  (update-in snippet [:ast2groundf node] (fn [x] (list type))))
 
 (defn 
   update-constrainf 
   "Update constraining function of a given node in a given snippet with the new constraining function of given type
    Example: (update-constrainf snippet node :list-contains)."
   [snippet node type]
-  (update-in snippet [:ast2constrainf node] (fn [x] type)))
+  (update-in snippet [:ast2constrainf node] (fn [x] (list type))))
 
 (defn
   contains-elements-with-same-size 

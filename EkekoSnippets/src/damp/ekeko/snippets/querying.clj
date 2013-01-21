@@ -42,20 +42,24 @@
 
 (defn
   snippet-query-with-conditions
-  [snippet ekekolaunchersymbol conditions]
+  [snippet ekekolaunchersymbol conditions userconditions]
   (let [root-var (snippet-var-for-root snippet)
         uservars (into #{} (representation/snippet-uservars snippet))
         vars (disj (into #{} (representation/snippet-vars snippet)) root-var)]
     `(~ekekolaunchersymbol 
        [~root-var ~@uservars]
        (cl/fresh [~@vars]
-                 ~@conditions))))
+                 ~@conditions
+                 ~@userconditions))))
   
 (defn
   snippet-query
   "Returns an Ekeko query that that will retrieve matches for the given snippet."
   [snippet ekekolaunchersymbol]
-  (snippet-query-with-conditions snippet ekekolaunchersymbol (snippet-conditions snippet)))
+  (snippet-query-with-conditions 
+    snippet ekekolaunchersymbol 
+    (snippet-conditions snippet) 
+    (representation/snippet-userqueries snippet)))
  
 
   

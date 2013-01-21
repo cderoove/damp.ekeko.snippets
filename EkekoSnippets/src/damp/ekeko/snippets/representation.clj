@@ -25,16 +25,21 @@
 ; - ast2var: map from an AST node of the snippet to the logic variable that is to be bound to its match
 ; - ast2groundf: map from an AST node of the snippet to a function that generates "grounding" conditions. 
 ;   These will ground the corresponding logic variable to an AST node of the Java project
+;   format of the function is list (:type arguments)
 ; - ast2constrainf:  map from an AST node of the snippet to a function that generates "constraining" conditions. 
 ;   These will constrain the bindings for the corresponding logic variable to an AST node of the Java project
 ;   that actually matches the AST node of the snippet. 
+;   format of the function is list (:type arguments)
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
 ; - var2uservar: map from logic variable to the user defined logic variable 
 ; - node2usernode: map from node (= list wrapper) to the list rewrite 
+; - userquery: user defined logic conditions 
+;   format in quasi `((...)(....))
+
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar node2usernode])
+  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar node2usernode userquery])
 
 (defn 
   snippet-var-for-node 
@@ -45,17 +50,31 @@
 
 (defn 
   snippet-grounder-for-node
-  "For the given AST node of the given snippet, returns the function
+  "For the given AST node of the given snippet, returns the function type
    that will generate grounding conditions for the corresponding logic variable."
   [snippet template-ast]
-  (get-in snippet [:ast2groundf template-ast]))
+  (first (get-in snippet [:ast2groundf template-ast])))
 
 (defn 
   snippet-constrainer-for-node
-  "For the given AST node of the given snippet, returns the function
+  "For the given AST node of the given snippet, returns the function type
    that will generate constraining conditions for the corresponding logic variable."
   [snippet template-ast]
-  (get-in snippet [:ast2constrainf template-ast]))
+  (first (get-in snippet [:ast2constrainf template-ast])))
+
+(defn 
+  snippet-grounder-args-for-node
+  "For the given AST node of the given snippet, returns the list of function arguments
+   that will generate grounding conditions for the corresponding logic variable."
+  [snippet template-ast]
+  (rest (get-in snippet [:ast2groundf template-ast])))
+
+(defn 
+  snippet-constrainer-args-for-node
+  "For the given AST node of the given snippet, returns the function arguments
+   that will generate constraining conditions for the corresponding logic variable."
+  [snippet template-ast]
+  (rest (get-in snippet [:ast2constrainf template-ast])))
 
 (defn 
   snippet-node-for-var 
@@ -117,6 +136,14 @@
   [snippet]
   (vals (:var2uservar snippet)))
 
+(defn 
+  snippet-userqueries
+  "Returns the logic conditions defined by users of the given snippet."
+  [snippet]
+  (let [query (:userquery snippet)]
+        (if (nil? query)
+          `()
+          query)))
 
 ;; Constructing Snippet instances
 ;; ------------------------------
@@ -133,10 +160,10 @@
       (->
         snippet
         (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] :minimalistic)
-        (assoc-in [:ast2constrainf value] :exact)
+        (assoc-in [:ast2groundf value] (list :minimalistic))
+        (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {}))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -162,8 +189,8 @@
       (->
         snippet
         (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] :minimalistic)
-        (assoc-in [:ast2constrainf value] :exact)
+        (assoc-in [:ast2groundf value] (list :minimalistic))
+        (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
@@ -183,8 +210,8 @@
   "Clear grounding & constraining function for all child of a given node in snippet."
   [snippet node]
   (defn update-snippet-value [snippet value]
-    (update-in snippet [:ast2groundf value] (fn [x] :epsilon))
-    (update-in snippet [:ast2constrainf value] (fn [x] :epsilon)))
+    (update-in snippet [:ast2groundf value] (fn [x] (list :epsilon)))
+    (update-in snippet [:ast2constrainf value] (fn [x] (list :epsilon))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
       node

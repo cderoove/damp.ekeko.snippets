@@ -13,6 +13,10 @@
      [astnode :as astnode]
      [reification :as reification]]))
 
+;; for each grounding or constraining function maker, there are additional arguments beside snippet-ast,
+;; which can be accessed in snippet :ast2groundf or :ast2constrainf via getter function
+;; snippet-grounder-args-for-node and snippet-constrainer-args-for-node (see representation.clj)
+
 (defn
   make-epsilon-function
   "Returns a function that does not generate any conditions for the given AST node of a code snippet."
