@@ -33,17 +33,9 @@
     @query))
 
 (defn
-  snippet-var-for-root
-  "Returns the logic variable associated with the root of the snippet
-   (i.e., the JDT node the snippet originated from)."
-  [snippet]
-  (representation/snippet-var-for-node snippet (:ast snippet)))
-
-
-(defn
   snippet-query-with-conditions
   [snippet ekekolaunchersymbol conditions userconditions]
-  (let [root-var (snippet-var-for-root snippet)
+  (let [root-var (representation/snippet-var-for-root snippet)
         uservars (into #{} (representation/snippet-uservars snippet))
         vars (disj (into #{} (representation/snippet-vars snippet)) root-var)]
     `(~ekekolaunchersymbol 
@@ -61,7 +53,37 @@
     (snippet-conditions snippet) 
     (representation/snippet-userqueries snippet)))
  
+; Converting snippet group to query
+;------------------------------------
 
-  
-  
+(defn
+  snippetgroup-conditions
+  "Returns a list of logic conditions that will retrieve matches for the given snippet group."
+  [snippetgroup]
+  (representation/flat-map snippet-conditions (representation/snippetgroup-snippetlist snippetgroup)))
+
+(defn
+  snippetgroup-query-with-conditions
+  [snippetgroup ekekolaunchersymbol conditions userconditions]
+  (let [root-vars (representation/snippetgroup-rootvars snippetgroup)
+        uservars (into #{} (representation/snippetgroup-uservars snippetgroup))
+        vars (into #{} (remove (set root-vars) (representation/snippetgroup-vars snippetgroup)))]
+    `(~ekekolaunchersymbol 
+       [~@root-vars ~@uservars]
+       (cl/fresh [~@vars]
+                 ~@conditions
+                 ~@userconditions))))
+
+(defn
+  snippetgroup-query
+  "Returns an Ekeko query that that will retrieve matches for the given snippet group."
+  [snippetgroup ekekolaunchersymbol]
+  (snippetgroup-query-with-conditions 
+    snippetgroup ekekolaunchersymbol 
+    (snippetgroup-conditions snippetgroup) 
+    (representation/snippetgroup-userqueries snippetgroup)))
+
+    
+    
+    
 

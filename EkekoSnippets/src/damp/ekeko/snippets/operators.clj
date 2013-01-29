@@ -200,6 +200,26 @@
   remove-logic-conditions
   "Remove user logic conditions from snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
-  (let [new-conditions (remove (set conditions) (:userquery snippet))]
+  (let [new-conditions (remove (set conditions) (representation/snippet-userqueries snippet))]
     (assoc snippet :userquery new-conditions)))
   
+(defn 
+  add-snippet
+  "Add snippet to snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
+    (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn
+  add-logic-conditions-to-snippetgroup
+  "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
+  [snippetgroup conditions]
+  (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
+    (assoc snippetgroup :userquery new-conditions)))
+
+(defn
+  remove-logic-conditions-from-snippetgroup
+  "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
+  [snippetgroup conditions]
+  (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
+    (assoc snippetgroup :userquery new-conditions)))

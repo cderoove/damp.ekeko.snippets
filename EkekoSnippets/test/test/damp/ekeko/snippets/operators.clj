@@ -203,22 +203,23 @@
           "public void methodA() {this.methodM(); this.methodC();	}")
         snippet 
         (representation/jdt-node-as-snippet node)
-        cond-1     'damp.ekeko.jdt.reification/has 
-        pro-1      ':identifier
-        cond-2     'damp.ekeko.jdt.reification/value-raw
         var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
         var-name   (representation/snippet-var-for-node snippet (.getName node))
         value      "methodA1"
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
+        ;;add conditions
+        conditions  `((damp.ekeko.jdt.reification/has :identifier ~var-name ~var-id) 
+                       (damp.ekeko.jdt.reification/value-raw ~var-id ~value))
         generalized-snippet-add
         (operators/add-logic-conditions
           generalized-snippet-with-lvar 
-          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))
+          conditions)
+        ;;remove conditions
         generalized-snippet
         (operators/remove-logic-conditions
           generalized-snippet-add 
-          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))]
+          conditions)]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\") 
@@ -412,9 +413,6 @@
           "public void methodA() {this.methodM(); this.methodC();	}")
         snippet 
         (representation/jdt-node-as-snippet node)
-        cond-1     'damp.ekeko.jdt.reification/has 
-        pro-1      ':identifier
-        cond-2     'damp.ekeko.jdt.reification/value-raw
         var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
         var-name   (representation/snippet-var-for-node snippet (.getName node))
         value      "methodA1"
@@ -423,10 +421,45 @@
         generalized-snippet
         (operators/add-logic-conditions
           generalized-snippet-with-lvar 
-          `((~cond-1 ~pro-1 ~var-name ~var-id) (~cond-2 ~var-id ~value)))]
+          `((damp.ekeko.jdt.reification/has :identifier ~var-name ~var-id) 
+             (damp.ekeko.jdt.reification/value-raw ~var-id ~value)))]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       "#{(\"public void methodA1(){\\n  this.methodM();\\n  this.methodC();\\n}\\n\" \"methodA1\")}")))
+
+;; Operator: add-snippet
+;; ------------------------------------------
+
+(deftest
+  ^{:doc "Add Snippet"}
+  operator-add-snippet
+  (let [node (parsing/parse-string-declaration 
+               "public void methodX() {methodA1(); methodA2();	}")
+        node2 (parsing/parse-string-statement "methodA3();")        
+        snippet (representation/jdt-node-as-snippet node)
+        snippet2 (representation/jdt-node-as-snippet node2)
+        generalized-snippet-contains
+        (operators/contains-elements 
+          snippet 
+          (first (first (damp.ekeko/ekeko [?s]
+                                          (fresh [?b]
+                                                 (reification/has :body node ?b)
+                                                 (reification/has :statements ?b ?s))))))
+        ;;add snippet1 and snippet2 to group
+        group (representation/make-snippetgroup)
+        added-group1 (operators/add-snippet group generalized-snippet-contains)
+        added-group2 (operators/add-snippet added-group1 snippet2)
+        ;;add logic conditions (list statement of node1 contains node2) 
+        var-raw (representation/snippet-var-for-node snippet (.statements (.getBody node)))
+        var-stat (representation/snippet-var-for-node snippet2 node2)
+        generalized-group
+        (operators/add-logic-conditions-to-snippetgroup
+          added-group2 
+          `((damp.ekeko.logic/contains ~var-raw ~var-stat)))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippetgroup generalized-group)      
+      "#{(\"methodA3();\\n\" 
+          \"public void methodX(){\\n  methodA1();\\n  methodA2();\\n  methodA3();\\n}\\n\")}")))
 
 
 ;; Test suite
@@ -449,6 +482,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-node-from-statements)   
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-logic-conditions)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-remove-logic-conditions)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-snippet)
 
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-split-variable-declaration-statement)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)

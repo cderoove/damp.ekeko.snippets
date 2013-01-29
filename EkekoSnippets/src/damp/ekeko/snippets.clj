@@ -17,6 +17,18 @@
   (:require [damp.ekeko.logic :as el]))    
     
 (defn
+  query-by-snippetgroup*
+  "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
+  [snippetgroup]
+  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)))
+
+(defn
+  query-by-snippetgroup
+  "Queries the Ekeko projects for matches for the given snippet."
+  [snippetgroup]
+  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko)))
+
+(defn
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]

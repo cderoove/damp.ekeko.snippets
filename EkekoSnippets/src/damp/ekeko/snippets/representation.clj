@@ -48,6 +48,13 @@
   [snippet snippet-node]
   (get-in snippet [:ast2var snippet-node]))
 
+(defn
+  snippet-var-for-root
+  "Returns the logic variable associated with the root of the snippet
+   (i.e., the JDT node the snippet originated from)."
+  [snippet]
+  (snippet-var-for-node snippet (:ast snippet)))
+
 (defn 
   snippet-grounder-for-node
   "For the given AST node of the given snippet, returns the function type
@@ -144,6 +151,61 @@
         (if (nil? query)
           '()
           query)))
+
+
+
+;; Snippets Group Datatype
+;; ----------------------
+
+; Datatype representing a group (list) of Snippet(s) and additional logic condition
+
+(defrecord SnippetGroup [snippetlist userquery])
+
+(defn 
+  snippetgroup-snippetlist
+  "Returns the list of Snippet(s) of the given snippet group."
+  [snippetgroup]
+  (:snippetlist snippetgroup))
+
+(defn 
+  snippetgroup-userqueries
+  "Returns the logic conditions defined by users of the given snippet group."
+  [snippetgroup]
+  (let [query (:userquery snippetgroup)]
+        (if (nil? query)
+          '()
+          query)))
+
+(defn
+  snippetgroup-rootvars
+  "Returns all logic variables of root node of all snippets in snippet group."
+  [snippetgroup]
+  (map snippet-var-for-root (snippetgroup-snippetlist snippetgroup)))
+
+(declare flat-map)
+
+(defn
+  snippetgroup-vars
+  "Returns all logic variables from the given snippet group."
+  [snippetgroup]
+  (flat-map snippet-vars (snippetgroup-snippetlist snippetgroup)))
+
+(defn
+  snippetgroup-uservars
+  "Returns all user logic variables from the given snippet group."
+  [snippetgroup]
+  (flat-map snippet-uservars (snippetgroup-snippetlist snippetgroup)))
+
+(defn flat-map
+  "Returns list of results (= f(each-element)) in the form of flat list.
+   Function f here return a list.
+   flat-map similar with function map, but instead of return nested list, flat-map returns unnested list."
+  [f lst]
+  (if (empty? lst)
+    '()
+    (concat (f (first lst))
+            (flat-map f (rest lst)))))
+  
 
 ;; Constructing Snippet instances
 ;; ------------------------------
@@ -255,3 +317,15 @@
             (recur others)))))))
 
 
+;; Constructing SnippetGroup instances
+;; -----------------------------------
+
+(defn 
+  make-snippetgroup
+  "Create SnippetGroup instance."
+  []
+  (let [snippetgroup (atom (SnippetGroup. '() {}))]
+    @snippetgroup))
+
+    
+    
