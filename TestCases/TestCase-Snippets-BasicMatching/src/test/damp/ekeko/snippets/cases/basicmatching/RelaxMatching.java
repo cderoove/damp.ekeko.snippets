@@ -22,6 +22,17 @@ public class RelaxMatching {
 	public RelaxMatching() {
 	}
 
+	public void methodX() {
+		methodA1();
+		methodA2();
+	}
+
+	public void methodA1() {
+	}
+
+	public void methodA2() {
+	}
+
 	public int rmethodA() {
 		int x = 0;
 		int y = 0;

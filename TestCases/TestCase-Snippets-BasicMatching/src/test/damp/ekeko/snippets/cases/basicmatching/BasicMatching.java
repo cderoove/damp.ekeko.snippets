@@ -133,4 +133,10 @@ public class BasicMatching {
 		s = 'm';
 		return s;
 	}
+	
+	public void methodX() {
+		methodA1();
+		methodA2();
+		methodA3();
+	}
 }
