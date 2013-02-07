@@ -139,4 +139,24 @@ public class BasicMatching {
 		methodA2();
 		methodA3();
 	}
+
+	public void methodY() {
+		methodA1();
+		methodY1();
+		methodA2();
+		methodA3();
+	}
+
+	public void methodY1() {
+		myMethodX();
+		myMethodY();
+	}
+
+	public void methodZ() {
+		methodA1();
+		myMethodX();
+		myMethodY();
+		methodA2();
+		methodA3();
+	}
 }
