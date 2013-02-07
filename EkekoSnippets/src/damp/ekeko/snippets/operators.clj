@@ -187,7 +187,9 @@
   allow-variable-declaration-with-initializer
   "Allow match given node (= assignment expression) with local variable declaration with initializer."
   [snippet node]
-  (update-constrainf snippet node :variable-declaration-with-initializer))
+  (let [snippet-without-assignment 
+        (update-constrainf snippet (.getExpression node) :epsilon)]
+    (update-constrainf snippet-without-assignment node :variable-declaration-with-initializer)))
 
 (defn
   add-logic-conditions

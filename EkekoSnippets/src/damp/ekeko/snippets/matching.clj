@@ -342,12 +342,13 @@
 (defn 
   cf-variable-declaration-with-initializer
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
-     For ASTNode instances: (assignment-relaxmatch-variable-declaration ?var-for-node-match ?var-assignment)"
+     For ASTNode instances: (assignment-relaxmatch-variable-declaration ?var-for-node-match ?var-left ?var-right)"
   [snippet-ast]
   (fn [snippet]
-    (let [var-match          (representation/snippet-var-for-node snippet snippet-ast)
-          var-assignment     (representation/snippet-var-for-node snippet (.getExpression snippet-ast))]
-      `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-assignment)))))
+    (let [var-match    (representation/snippet-var-for-node snippet snippet-ast)
+          var-left     (representation/snippet-var-for-node snippet (.getLeftHandSide (.getExpression snippet-ast)))
+          var-right    (representation/snippet-var-for-node snippet (.getRightHandSide (.getExpression snippet-ast)))]
+      `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
 
 (defn
   make-constraining-function

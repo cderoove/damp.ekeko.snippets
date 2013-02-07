@@ -20,12 +20,21 @@
                        (reification/type-super-type ?iltype ?itype))]))
              
 (defn
+  typebinding-extends-typebinding-with-check
+  [?type ?stype]
+  (cl/all
+    (basic/is-binding-type? ?type)
+    (basic/is-binding-type? ?stype)
+    (basic/typebinding-extends-typebinding ?type ?stype)))
+
+(defn
   typebinding-extends-typebinding-with-depth
   [?type ?stype depth]
-  (if (> depth 0)
-    (cl/conde [(basic/typebinding-extends-typebinding ?type ?stype)]
+  (if (= depth 1) 
+    (typebinding-extends-typebinding-with-check ?type ?stype)
+    (cl/conde [(typebinding-extends-typebinding-with-check ?type ?stype)]
               [(cl/fresh [?mtype]
-                         (basic/typebinding-extends-typebinding ?type ?mtype)
+                         (typebinding-extends-typebinding-with-check ?type ?mtype)
                          (typebinding-extends-typebinding-with-depth ?mtype ?stype (- depth 1)))])))
 
 (defn
@@ -38,6 +47,28 @@
                        (reification/ast-type-binding ?keyword ?ltype ?iltype)
                        (typebinding-extends-typebinding-with-depth ?iltype ?itype depth))]))
              
+(defn
+  assignment-relaxmatch-variable-declaration
+  "Predicate to check relaxmatch of VariableDeclarationStatement (+ initializer) with Assignment."
+  [?statement ?left ?right]
+  (cl/conde [(cl/fresh [?assignment]
+                       (reification/ast :ExpressionStatement ?statement)
+                       (reification/has :expression ?statement ?assignment)                        
+                       (reification/has :leftHandSide ?assignment ?left)
+                       (reification/has :rightHandSide ?assignment ?right))]
+            [(cl/fresh [?fragments ?fragmentsraw ?fragment ?fvalue ?avalue ?fname ?aname]
+                       (reification/ast :VariableDeclarationStatement ?statement)
+                       (reification/has :fragments ?statement ?fragments)
+                       (reification/listvalue ?fragments)
+                       (reification/value-raw ?fragments ?fragmentsraw)
+                       (el/equals 1 (.size ?fragmentsraw))
+                       (el/equals ?fragment (.get ?fragmentsraw 0))
+                       (reification/ast :VariableDeclarationFragment ?fragment)
+                       (reification/has :name ?fragment ?left)
+                       (reification/has :initializer ?fragment ?right))]))
+
+;;not used
+(comment
 (defn 
   name-exactmatch
   "Predicate to check whether SimpleName name1 has the same identifier with name2."
@@ -95,9 +126,6 @@
                        (reification/has :leftHandSide ?assignment ?aname)
                        (name-exactmatch ?fname ?aname))])) 
 
-
-;;not used
-(comment
 (defn
    val-exactmatch-logiclist
    "Predicate to check exact match java property value ?val with snippet list ?llist."
