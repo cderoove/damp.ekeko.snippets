@@ -3,6 +3,7 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.operators
   (:require [damp.ekeko.snippets 
+             [runtime :as runtime]
              [util :as util]
              [parsing :as parsing]
              [representation :as representation]])
@@ -110,6 +111,15 @@
         new-snippet (representation/add-node-to-snippet snippet node)]
     (util/add-node-to-listrewrite list-rewrite node idx)
     (update-listrewrite-for-node new-snippet list-container list-rewrite)))
+
+(defn
+  add-nodes 
+  "Add nodes (list of node) to listcontainer lst with index starting from idx in the given snippet."
+  [snippet lst nodes idx]
+  (if (empty? nodes)
+    snippet
+    (let [newsnippet (add-node snippet lst (first nodes) idx)]
+      (add-nodes newsnippet lst (rest nodes) (+ idx 1)))))
 
 (defn
   split-variable-declaration-fragments 
@@ -225,3 +235,21 @@
   [snippetgroup conditions]
   (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
     (assoc snippetgroup :userquery new-conditions)))
+
+(defn declaration-of-invocation
+  "Returns declaration (e.g MethodDeclaration) from the given invocation (e.g MethodInvocation)."
+  [inv]
+  (first 
+    (first 
+      (damp.ekeko/ekeko [?dec] 
+                        (runtime/ast-invocation-declaration inv ?dec)))))
+
+(defn
+  inline-method-invocation 
+  "Inline statement of method invocation in given snippet, with statements from called method."
+  [snippet statement]
+  (let [listcontainer   (representation/snippet-node-with-member statement)
+        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+        inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
+        newsnippet      (remove-node snippet statement)]  
+    (add-nodes newsnippet listcontainer inlined-statements position)))

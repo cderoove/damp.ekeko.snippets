@@ -373,6 +373,29 @@
       "#{(\"public char rmethodK(){\\n  char s='m';\\n  return s;\\n}\\n\" \"rmethodK\") 
          (\"public char myMethodK(){\\n  s='m';\\n  return s;\\n}\\n\" \"myMethodK\")}")))
 
+;; Operator: inline-method-invocation
+;; ------------------------------------------
+(deftest
+  ^{:doc "Inline statement of method invocation in given snippet, with statements from called method.
+          e.g: inline methodY1() in methodY().
+               public void methodY() {methodA1(); methodY1(); methodA2(); methodA3(); }
+               public void methodY1() {	myMethodX(); myMethodY();	}	"}
+  operator-inline-method-invocation
+  (let [node
+        (method-with-name "methodY")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/inline-method-invocation
+          generalized-snippet-with-lvar 
+          (.get (.statements (.getBody node)) 1))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public void methodZ(){\\n  methodA1();\\n  myMethodX();\\n  myMethodY();\\n  methodA2();\\n  methodA3();\\n}\\n\" \"methodZ\")}")))
+
+
 
 ;; Refinement Operators
 ;; --------------------
@@ -490,6 +513,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-variable-declaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-class-declaration-extends)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-variable-declaration-with-initializer)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-inline-method-invocation)
    
 )
 

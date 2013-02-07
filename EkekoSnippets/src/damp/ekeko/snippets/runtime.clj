@@ -17,8 +17,38 @@
             [(cl/fresh [?itype ?iltype]
                        (reification/ast-type-type ?keyword ?type ?itype)
                        (reification/ast-type-type ?keyword ?ltype ?iltype)
-                       (reification/type-super-type ?iltype ?itype))]))
+                       (reification/type-super-type ?iltype ?itype))]))            
              
+(defn
+  assignment-relaxmatch-variable-declaration
+  "Predicate to check relaxmatch of VariableDeclarationStatement (+ initializer) with Assignment."
+  [?statement ?left ?right]
+  (cl/conde [(cl/fresh [?assignment]
+                       (reification/ast :ExpressionStatement ?statement)
+                       (reification/has :expression ?statement ?assignment)                        
+                       (reification/has :leftHandSide ?assignment ?left)
+                       (reification/has :rightHandSide ?assignment ?right))]
+            [(cl/fresh [?fragments ?fragmentsraw ?fragment ?fvalue ?avalue ?fname ?aname]
+                       (reification/ast :VariableDeclarationStatement ?statement)
+                       (reification/has :fragments ?statement ?fragments)
+                       (reification/listvalue ?fragments)
+                       (reification/value-raw ?fragments ?fragmentsraw)
+                       (el/equals 1 (.size ?fragmentsraw))
+                       (el/equals ?fragment (.get ?fragmentsraw 0))
+                       (reification/ast :VariableDeclarationFragment ?fragment)
+                       (reification/has :name ?fragment ?left)
+                       (reification/has :initializer ?fragment ?right))]))
+
+(defn
+  ast-invocation-declaration
+   "Relation between ASTNode invocation with it's declaration."
+  [?inv ?dec]
+  (cl/fresh [?k-inv ?k-dec ?b]
+            (reification/ast-invocation-binding ?k-inv ?inv ?b)
+            (reification/ast-declares-binding ?k-dec ?dec ?b)))
+
+;;not used
+(comment
 (defn
   typebinding-extends-typebinding-with-check
   [?type ?stype]
@@ -46,29 +76,7 @@
                        (reification/ast-type-binding ?keyword ?type ?itype)
                        (reification/ast-type-binding ?keyword ?ltype ?iltype)
                        (typebinding-extends-typebinding-with-depth ?iltype ?itype depth))]))
-             
-(defn
-  assignment-relaxmatch-variable-declaration
-  "Predicate to check relaxmatch of VariableDeclarationStatement (+ initializer) with Assignment."
-  [?statement ?left ?right]
-  (cl/conde [(cl/fresh [?assignment]
-                       (reification/ast :ExpressionStatement ?statement)
-                       (reification/has :expression ?statement ?assignment)                        
-                       (reification/has :leftHandSide ?assignment ?left)
-                       (reification/has :rightHandSide ?assignment ?right))]
-            [(cl/fresh [?fragments ?fragmentsraw ?fragment ?fvalue ?avalue ?fname ?aname]
-                       (reification/ast :VariableDeclarationStatement ?statement)
-                       (reification/has :fragments ?statement ?fragments)
-                       (reification/listvalue ?fragments)
-                       (reification/value-raw ?fragments ?fragmentsraw)
-                       (el/equals 1 (.size ?fragmentsraw))
-                       (el/equals ?fragment (.get ?fragmentsraw 0))
-                       (reification/ast :VariableDeclarationFragment ?fragment)
-                       (reification/has :name ?fragment ?left)
-                       (reification/has :initializer ?fragment ?right))]))
 
-;;not used
-(comment
 (defn 
   name-exactmatch
   "Predicate to check whether SimpleName name1 has the same identifier with name2."
