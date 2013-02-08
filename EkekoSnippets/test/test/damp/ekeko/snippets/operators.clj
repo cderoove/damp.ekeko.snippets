@@ -396,6 +396,66 @@
       "#{(\"public void methodZ(){\\n  methodA1();\\n  myMethodX();\\n  myMethodY();\\n  methodA2();\\n  methodA3();\\n}\\n\" \"methodZ\")}")))
 
 
+;; Operator: introduce-logic-variables
+;; ------------------------------------------
+(deftest
+  ^{:doc "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
+          e.g: introduce logic variables for 'val' in rmethodE().
+	             public int rmethodE(int val) { 
+                      int r = 0;
+		                  if (val == 0) { r = val; } else if (val < 0) { r = val * -1; } else { r = val; }
+		                  return r;
+	             } "}
+  operator-introduce-logic-variables
+  (let [node
+        (method-with-name "rmethodE")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/introduce-logic-variables
+          generalized-snippet-with-lvar 
+          (.getLeftOperand  (.getExpression (fnext (.statements (.getBody node))))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodE2(int val2){\\n  int r=0;\\n  if (val2 == 0) {\\n    r=val2;\\n  }\\n else   if (val2 < 0) {\\n    r=val2 * -1;\\n  }\\n else {\\n    r=val2;\\n  }\\n  return r;\\n}\\n\" \"rmethodE2\" \"val2\" \"val2\" \"val2\" \"val2\" \"val2\" \"val2\") 
+         (\"public int rmethodE(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n else {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodE\" \"val\" \"val\" \"val\" \"val\" \"val\" \"val\")}")))
+
+;; Operator: introduce-logic-variables-with-condition
+;; ------------------------------------------
+(deftest
+  ^{:doc "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
+          Logic variable for the nodes will be generated. Condition will be applied to all those nodes.
+          e.g: see operator-introduce-logic-variables
+               generated conditions: 
+                 (clojure.core.logic/fresh [?v-id] 
+                    (damp.ekeko.jdt.reification/has :identifier ??v15600 ?v-id) 
+                    (damp.ekeko.jdt.reification/value-raw ?v-id \"val2\")) 
+               ??v15600 -> new logic variables
+               same conditions will be generated for all new logic variables."}
+  operator-introduce-logic-variables-with-condition
+  (let [node
+        (method-with-name "rmethodE")
+        var-val '?v-val
+        var-id  '?v-id
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/introduce-logic-variables-with-condition
+          generalized-snippet-with-lvar 
+          (.getLeftOperand  (.getExpression (fnext (.statements (.getBody node)))))
+          var-val
+          `(clojure.core.logic/fresh [~var-id]
+                                     (damp.ekeko.jdt.reification/has :identifier ~var-val ~var-id) 
+                                     (damp.ekeko.jdt.reification/value-raw ~var-id "val2")))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodE2(int val2){\\n  int r=0;\\n  if (val2 == 0) {\\n    r=val2;\\n  }\\n else   if (val2 < 0) {\\n    r=val2 * -1;\\n  }\\n else {\\n    r=val2;\\n  }\\n  return r;\\n}\\n\" 
+          \"val2\" \"val2\" \"rmethodE2\" \"val2\" \"val2\" \"val2\" \"val2\")}")))
+
 
 ;; Refinement Operators
 ;; --------------------
@@ -515,6 +575,8 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-variable-declaration-with-initializer)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-inline-method-invocation)
    
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-introduce-logic-variables)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-introduce-logic-variables-with-condition)
 )
 
 (defn 
