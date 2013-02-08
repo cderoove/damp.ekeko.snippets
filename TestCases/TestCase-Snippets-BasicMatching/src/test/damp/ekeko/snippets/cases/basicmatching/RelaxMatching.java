@@ -126,4 +126,16 @@ public class RelaxMatching {
 		char s = 'm';
 		return s;
 	}
+
+	public int rmethodE2(int val2) {
+		int r = 0;
+		if (val2 == 0) {
+			r = val2;
+		} else if (val2 < 0) {
+			r = val2 * -1;
+		} else {
+			r = val2;
+		}
+		return r;
+	}
 }
