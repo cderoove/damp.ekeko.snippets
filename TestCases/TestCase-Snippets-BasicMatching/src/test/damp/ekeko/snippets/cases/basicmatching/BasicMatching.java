@@ -117,6 +117,13 @@ public class BasicMatching {
 		this.methodB();
 	}
 	
+	//addition for test negated node
+	public void myMethodZ() {
+		this.methodA();
+		this.methodX();
+		this.methodC();
+	}
+
 	int r;
 	
 	public int myMethodF(int val) {
