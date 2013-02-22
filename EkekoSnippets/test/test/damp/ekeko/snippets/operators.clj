@@ -405,7 +405,8 @@
                       int r = 0;
 		                  if (val == 0) { r = val; } else if (val < 0) { r = val * -1; } else { r = val; }
 		                  return r;
-	             } "}
+	             } 
+    !!This test is fail, but when test manually it's ok, the result are exactly the same as the string above."}
   operator-introduce-logic-variables
   (let [node
         (method-with-name "rmethodE")
@@ -433,7 +434,8 @@
                     (damp.ekeko.jdt.reification/has :identifier ??v15600 ?v-id) 
                     (damp.ekeko.jdt.reification/value-raw ?v-id \"val2\")) 
                ??v15600 -> new logic variables
-               same conditions will be generated for all new logic variables."}
+               same conditions will be generated for all new logic variables.
+    This test is error when eval query. But when run query manually, it is ok, and the result is correct."}
   operator-introduce-logic-variables-with-condition
   (let [node
         (method-with-name "rmethodE")

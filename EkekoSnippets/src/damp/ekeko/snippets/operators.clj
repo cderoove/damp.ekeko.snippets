@@ -205,15 +205,19 @@
   add-logic-conditions
   "Add user logic conditions to snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
-  (let [new-conditions `(~@(representation/snippet-userqueries snippet) ~@conditions)]
-    (assoc snippet :userquery new-conditions)))
+  (if (not (empty? conditions)) 
+    (let [new-conditions `(~@(representation/snippet-userqueries snippet) ~@conditions)]
+      (assoc snippet :userquery new-conditions))
+    snippet))
 
 (defn
   remove-logic-conditions
   "Remove user logic conditions from snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
-  (let [new-conditions (remove (set conditions) (representation/snippet-userqueries snippet))]
-    (assoc snippet :userquery new-conditions)))
+  (if (not (empty? conditions)) 
+    (let [new-conditions (remove (set conditions) (representation/snippet-userqueries snippet))]
+      (assoc snippet :userquery new-conditions))
+    snippet))
   
 (defn 
   add-snippet
@@ -226,15 +230,19 @@
   add-logic-conditions-to-snippetgroup
   "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
-  (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
-    (assoc snippetgroup :userquery new-conditions)))
+  (if (not (empty? conditions)) 
+    (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
+      (assoc snippetgroup :userquery new-conditions))
+    snippetgroup))
 
 (defn
   remove-logic-conditions-from-snippetgroup
   "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
-  (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
-    (assoc snippetgroup :userquery new-conditions)))
+  (if (not (empty? conditions)) 
+    (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
+      (assoc snippetgroup :userquery new-conditions))
+    snippetgroup))
 
 (defn declaration-of-invocation
   "Returns declaration (e.g MethodDeclaration) from the given invocation (e.g MethodInvocation)."
@@ -255,7 +263,7 @@
     (add-nodes newsnippet listcontainer inlined-statements position)))
 
 (defn 
-  introduce-logic-variables
+  introduce-logic-variables2
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
    Logic variable for the nodes will be generated."
   [snippet node]
@@ -280,7 +288,9 @@
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
   [snippet node uservar condition]
   (defn make-condition [condition uservar newvar]
-    (list (symbol (clojure.string/replace condition (str uservar) (str newvar)))))
+    (if (not (empty? condition))
+      (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
+      condition))
   (defn update-snippet-value [snippet value]
     (if (and (instance? org.eclipse.jdt.core.dom.SimpleName value)
              (= (.resolveBinding node) (.resolveBinding value))) 
@@ -297,3 +307,10 @@
       (fn [primval] '())
       (fn [nilval]  '()))
     @snippet))
+
+(defn 
+  introduce-logic-variables
+  "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
+   Logic variable for the nodes will be generated."
+  [snippet node]
+  (introduce-logic-variables-with-condition snippet node '?dummy '()))

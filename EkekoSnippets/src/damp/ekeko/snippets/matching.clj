@@ -263,36 +263,6 @@
         ((cf-list-contains snippet-val) snippet)
         (internal-cf-list-contains-with-repetition snippet lst)))))
 
-(comment
-(defn 
-  internal-cf-list-contains
-    "Returns constraining-conditions for the given property value of a code snippet.
-     For Ekeko wrappers of ASTNode$NodeList instances: 
-         (listvalue ?var-match)
-         (fresh [?newly-generated-var]
-           (value-raw ?var-match ?newly-generated-var)
-           (equals snippet-list-size (.size ?newly-generated-var)) {If type = :samesize}
-           (element-conditions)"
-  [snippet snippet-val]
-  (let [lst (:value snippet-val)
-        snippet-list-size (.size lst)
-        var-match (representation/snippet-var-for-node snippet snippet-val)
-        var-match-raw (representation/snippet-var-for-node snippet lst)
-        var-match-els 
-        (for [element lst
-              :let [var-el (representation/snippet-var-for-node snippet element)]]
-          `~var-el)]
-    `((reification/listvalue ~var-match)
-      (reification/value-raw ~var-match ~var-match-raw)
-      (runtime/list-exactmatch-logiclist ~var-match-raw (cl/llist ~@var-match-els)))))
-
-(defn
-  cf-list-contains-with-relative-order
-  [snippet-val]
-  (fn [snippet] 
-    (internal-cf-list-contains snippet snippet-val))) 
-)
-
 (defn
   cf-variable
   "Returns a function that will generate a condition that will unify the match for the
