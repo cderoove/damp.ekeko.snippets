@@ -459,6 +459,24 @@
           \"val2\" \"val2\" \"rmethodE2\" \"val2\" \"val2\" \"val2\" \"val2\")}")))
 
 
+(deftest
+  ^{:doc "Match all kind of node except given node -> statement this.methodB() "}
+  operator-negated-node
+  (let [node
+        (parsing/parse-string-declaration "public void myMethod() {this.methodA();	this.methodB();	this.methodC(); }")
+        snippet 
+        (representation/jdt-node-as-snippet node)
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet
+        (operators/negated-node
+          generalized-snippet-with-lvar 
+          (fnext (.statements (.getBody node))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public void myMethodZ(){\\n  this.methodA();\\n  this.methodX();\\n  this.methodC();\\n}\\n\" \"myMethodZ\")}")))
+
+
 ;; Refinement Operators
 ;; --------------------
 
@@ -576,6 +594,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-class-declaration-extends)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-variable-declaration-with-initializer)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-inline-method-invocation)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-negated-node)
    
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-introduce-logic-variables)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-introduce-logic-variables-with-condition)

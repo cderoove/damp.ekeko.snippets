@@ -6,6 +6,7 @@
   (:require [damp.ekeko.snippets 
              [util :as util]
              [representation :as representation]
+             [querying :as querying]
              [runtime :as runtime]])
   (:require 
     [damp.ekeko [logic :as el]]
@@ -320,6 +321,34 @@
           var-right    (representation/snippet-var-for-node snippet (.getRightHandSide (.getExpression snippet-ast)))]
       `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
 
+(defn 
+  cf-negated
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+     For ASTNode instances: (fails (all (node-conditions) (child-conditions)))."
+  [snippet-ast]
+  (fn [snippet]
+    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
+      `((el/fails (cl/all ~@conditions-of-ast))))))
+
+(defn 
+  ast-conditions
+  "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
+  [snippet ast]
+  (defn 
+    conditions
+    [ast-or-list]
+    (concat ((gf-minimalistic ast-or-list) snippet)
+            ((cf-exact ast-or-list) snippet)))
+  (let [query (atom '())]
+    (representation/walk-jdt-node-of-snippet 
+      snippet
+      ast
+      (fn [astval]  (swap! query concat (conditions astval)))
+      (fn [lstval] (swap! query concat (conditions lstval)))
+      (fn [primval] (swap! query concat (conditions primval)))
+      (fn [nilval] (swap! query concat (conditions nilval))))
+    @query))
+
 (defn
   make-constraining-function
   [type]
@@ -344,6 +373,8 @@
     cf-subtype
     (= type :variable-declaration-with-initializer)
     cf-variable-declaration-with-initializer
+    (= type :negated)
+    cf-negated
     (= type :epsilon)
     make-epsilon-function
     :default

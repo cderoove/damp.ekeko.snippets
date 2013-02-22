@@ -263,26 +263,6 @@
     (add-nodes newsnippet listcontainer inlined-statements position)))
 
 (defn 
-  introduce-logic-variables2
-  "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
-   Logic variable for the nodes will be generated."
-  [snippet node]
-  (defn update-snippet-value [snippet value]
-    (if (and (instance? org.eclipse.jdt.core.dom.SimpleName value)
-             (= (.resolveBinding node) (.resolveBinding value))) 
-      (introduce-logic-variable snippet value (util/gen-lvar))
-      snippet))
-  (let [root (:ast snippet) 
-        snippet (atom snippet)]
-    (util/walk-jdt-node 
-      root
-      (fn [astval]  (swap! snippet update-snippet-value astval))
-      (fn [lstval]  '())
-      (fn [primval] '())
-      (fn [nilval]  '()))
-    @snippet))
-
-(defn 
   introduce-logic-variables-with-condition
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
@@ -314,3 +294,11 @@
    Logic variable for the nodes will be generated."
   [snippet node]
   (introduce-logic-variables-with-condition snippet node '?dummy '()))
+
+(defn 
+  negated-node 
+  "Match all kind of node, except the given node."
+  [snippet node]
+  (let [snippet-with-epsilon (representation/remove-node-from-snippet snippet node)
+        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+    (update-constrainf snippet-with-gf node :negated)))
