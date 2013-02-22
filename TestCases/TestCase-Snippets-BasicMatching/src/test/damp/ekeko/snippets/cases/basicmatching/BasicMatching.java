@@ -91,6 +91,18 @@ public class BasicMatching {
 		return foo;
 	}
 
+	int foob;
+	
+	public int methodF() {
+		int foo2 = 0;
+		return foo2;
+	}
+
+	public int methodG() {
+		int foo2 = 0;
+		return foob;
+	}
+
 	public static void runTest() {
 		BasicMatching test = new BasicMatching();
 		test.methodA();

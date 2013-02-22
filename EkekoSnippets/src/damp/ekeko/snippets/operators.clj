@@ -295,6 +295,17 @@
   [snippet node]
   (introduce-logic-variables-with-condition snippet node '?dummy '()))
 
+(defn
+  introduce-list-of-logic-variables
+  [snippet nodes uservars]
+  (if (empty? nodes)
+    snippet
+    (let [new-snippet (introduce-logic-variable snippet (first nodes) (first uservars))]
+      (introduce-list-of-logic-variables
+        new-snippet
+        (rest nodes)
+        (rest uservars)))))
+
 (defn 
   negated-node 
   "Match all kind of node, except the given node."

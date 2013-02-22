@@ -322,15 +322,6 @@
       `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
 
 (defn 
-  cf-negated
-    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
-     For ASTNode instances: (fails (all (node-conditions) (child-conditions)))."
-  [snippet-ast]
-  (fn [snippet]
-    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
-      `((el/fails (cl/all ~@conditions-of-ast))))))
-
-(defn 
   ast-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
   [snippet ast]
@@ -348,6 +339,15 @@
       (fn [primval] (swap! query concat (conditions primval)))
       (fn [nilval] (swap! query concat (conditions nilval))))
     @query))
+
+(defn 
+  cf-negated
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+     For ASTNode instances: (fails (all (node-conditions) (child-conditions)))."
+  [snippet-ast]
+  (fn [snippet]
+    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
+      `((el/fails (cl/all ~@conditions-of-ast))))))
 
 (defn
   make-constraining-function
