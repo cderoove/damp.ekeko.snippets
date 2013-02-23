@@ -27,49 +27,35 @@
 
 (defn
   contains-elements-with-same-size 
-  "Contains all elements in a given node (list), and list has to be the same size."
+  "Contains all elements in a given nodelist (value-raw), and list has to be the same size."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-same-size))
+  (let [lstval-of-node (representation/snippet-node-with-value node)]
+    (update-constrainf snippet lstval-of-node :list-contains-with-same-size)))
 
 (defn
   contains-elements
-  "Contains all elements in a given node (list), and list does not have to be the same size."
+  "Contains all elements in a given nodelist (value-raw), and list does not have to be the same size."
   [snippet node]
-  (update-constrainf snippet node :list-contains))
+  (let [lstval-of-node (representation/snippet-node-with-value node)]
+    (update-constrainf snippet lstval-of-node :list-contains)))
 
 (defn
   contains-elements-with-relative-order 
-  "Contains all elements in a given node (list), with relative order."
+  "Contains all elements in a given nodelist (value-raw), with relative order."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-relative-order))
+  (let [lstval-of-node (representation/snippet-node-with-value node)]
+    (update-constrainf snippet lstval-of-node :list-contains-with-relative-order)))
 
 (defn
   contains-elements-with-repetition 
-  "Contains all elements in a given node (list), with repetition."
+  "Contains all elements in a given nodelist (value-raw), with repetition."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-repetition))
-
-(declare clear-cf-for-node)
-
-(defn 
-  introduce-logic-variable-of-node-exact 
-  "Introduce logic variable to a given node, without removing any condition."
-  [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)]
-    (update-constrainf snippet-with-uservar node :exact-with-variable)))
-
-(defn 
-  introduce-logic-variable 
-  "Introduce logic variable to a given node."
-  [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)
-        snippet-with-epsilon (representation/remove-node-from-snippet snippet-with-uservar node)
-        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
-    (update-constrainf snippet-with-gf node :variable)))
+  (let [lstval-of-node (representation/snippet-node-with-value node)]
+    (update-constrainf snippet lstval-of-node :list-contains-with-repetition)))
 
 (defn
   listrewrite-for-node
-  "Return listrewrite of the given node (= list wrapper) or new listrewrite if it doesn't have."
+  "Return listrewrite of the given node (= lstval) or new listrewrite if it doesn't have."
   [snippet node]
   (let [list-rewrite (representation/snippet-usernode-for-node snippet node)]
     (if (nil? list-rewrite)
@@ -78,7 +64,7 @@
   
 (defn
   update-listrewrite-for-node
-  "Update or write :node2usernode for listrewrite of the given node (= list wrapper).
+  "Update or write :node2usernode for listrewrite of the given node (= lstval).
    Write :ast2var for new list with the same logic variable of old list."
   [snippet node new-list-rewrite]
   (let [list-rewrite (representation/snippet-usernode-for-node snippet node)
@@ -104,9 +90,9 @@
 
 (defn 
   add-node 
-  "Add a given node in given idx inside the lst in snippet."
+  "Add a given node in given idx inside the lst (value-raw) in snippet."
   [snippet lst node idx]
-  (let [list-container lst
+  (let [list-container (representation/snippet-node-with-value lst)
         list-rewrite (listrewrite-for-node snippet list-container)
         new-snippet (representation/add-node-to-snippet snippet node)]
     (util/add-node-to-listrewrite list-rewrite node idx)
@@ -114,7 +100,7 @@
 
 (defn
   add-nodes 
-  "Add nodes (list of node) to listcontainer lst with index starting from idx in the given snippet."
+  "Add nodes (list of node) to list lst (value-raw) with index starting from idx in the given snippet."
   [snippet lst nodes idx]
   (if (empty? nodes)
     snippet
@@ -123,13 +109,14 @@
 
 (defn
   split-variable-declaration-fragments 
-  "Split variable declaration fragments into multiple node with one fragment for each statement."
+  "Split variable declaration fragments into multiple node with one fragment for each statement.
+   List listcontainer (lstval) is the list which fragments resided."
   [snippet listcontainer position fragments modifiers type]
   (if (empty? fragments)
     snippet
     (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
-          newsnippet-node (add-node snippet listcontainer newnode position)
-          newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
+          newsnippet-node (add-node snippet (:value listcontainer) newnode position)
+          newsnippet      (contains-elements newsnippet-node (:value (first (astnode/node-propertyvalues newnode))))]
       (split-variable-declaration-fragments newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
 
 (defn
@@ -154,7 +141,7 @@
   [snippet statement]
   (let [listcontainer   (representation/snippet-node-with-member statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
-        newsnippet-list (contains-elements snippet listcontainer)
+        newsnippet-list (contains-elements snippet (:value listcontainer))
         newsnippet      (remove-node newsnippet-list statement)]  
     (split-variable-declaration-fragments
       newsnippet 
@@ -244,23 +231,35 @@
       (assoc snippetgroup :userquery new-conditions))
     snippetgroup))
 
-(defn declaration-of-invocation
-  "Returns declaration (e.g MethodDeclaration) from the given invocation (e.g MethodInvocation)."
-  [inv]
-  (first 
-    (first 
-      (damp.ekeko/ekeko [?dec] 
-                        (runtime/ast-invocation-declaration inv ?dec)))))
-
 (defn
   inline-method-invocation 
   "Inline statement of method invocation in given snippet, with statements from called method."
   [snippet statement]
+  (defn declaration-of-invocation [inv] ;returns MethodDeclaration from the given invocation 
+    (first (first 
+             (damp.ekeko/ekeko [?dec] 
+                               (runtime/ast-invocation-declaration inv ?dec)))))
   (let [listcontainer   (representation/snippet-node-with-member statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
         newsnippet      (remove-node snippet statement)]  
-    (add-nodes newsnippet listcontainer inlined-statements position)))
+    (add-nodes newsnippet (:value listcontainer) inlined-statements position)))
+
+(defn 
+  introduce-logic-variable-of-node-exact 
+  "Introduce logic variable to a given node, without removing any condition."
+  [snippet node uservar]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)]
+    (update-constrainf snippet-with-uservar node :exact-with-variable)))
+
+(defn 
+  introduce-logic-variable 
+  "Introduce logic variable to a given node."
+  [snippet node uservar]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)
+        snippet-with-epsilon (representation/remove-node-from-snippet snippet-with-uservar node)
+        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+    (update-constrainf snippet-with-gf node :variable)))
 
 (defn 
   introduce-logic-variables-with-condition
@@ -272,21 +271,19 @@
       (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
       condition))
   (defn update-snippet-value [snippet value]
-    (if (and (instance? org.eclipse.jdt.core.dom.SimpleName value)
-             (= (.resolveBinding node) (.resolveBinding value))) 
-      (let [newvar     (util/gen-lvar)
-            newsnippet (introduce-logic-variable snippet value newvar)]
-        (add-logic-conditions newsnippet (make-condition condition uservar newvar))) 
-      snippet))
-  (let [root (:ast snippet) 
-        snippet (atom snippet)]
-    (util/walk-jdt-node 
-      root
-      (fn [astval]  (swap! snippet update-snippet-value astval))
-      (fn [lstval]  '())
-      (fn [primval] '())
-      (fn [nilval]  '()))
-    @snippet))
+    (let [newvar     (util/gen-lvar)
+          newsnippet (introduce-logic-variable snippet value newvar)]
+      (add-logic-conditions newsnippet (make-condition condition uservar newvar))))
+  (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
+    (damp.ekeko/ekeko [?var] 
+                      (reification/child+ root ?var)
+                      (runtime/ast-variable-samebinding node ?var)))
+  (defn process-binding-variables [snippet nodes]
+    (if (empty? nodes)
+      snippet
+      (let [new-snippet (update-snippet-value snippet (first (first nodes)))]
+        (process-binding-variables new-snippet (rest nodes)))))
+  (process-binding-variables snippet (get-binding-variables (:ast snippet) node)))
 
 (defn 
   introduce-logic-variables

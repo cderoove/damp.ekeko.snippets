@@ -111,10 +111,7 @@
         generalized-snippet
         (generelized-function
           generalized-snippet-with-lvar 
-          (first (first (damp.ekeko/ekeko [?s]
-                     (fresh [?b]
-                     (reification/has :body node ?b)
-                     (reification/has :statements ?b ?s))))))]
+          (.statements (.getBody node)))]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       match-string)))
@@ -406,7 +403,7 @@
 		                  if (val == 0) { r = val; } else if (val < 0) { r = val * -1; } else { r = val; }
 		                  return r;
 	             } 
-    !!This test is fail, but when test manually it's ok, the result are exactly the same as the string above."}
+    !!This test is fail, but when test manually it's ok, the result are exactly the same as the string below."}
   operator-introduce-logic-variables
   (let [node
         (method-with-name "rmethodE")
@@ -420,8 +417,8 @@
           (.getLeftOperand  (.getExpression (fnext (.statements (.getBody node))))))]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
-      "#{(\"public int rmethodE2(int val2){\\n  int r=0;\\n  if (val2 == 0) {\\n    r=val2;\\n  }\\n else   if (val2 < 0) {\\n    r=val2 * -1;\\n  }\\n else {\\n    r=val2;\\n  }\\n  return r;\\n}\\n\" \"rmethodE2\" \"val2\" \"val2\" \"val2\" \"val2\" \"val2\" \"val2\") 
-         (\"public int rmethodE(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n else {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"rmethodE\" \"val\" \"val\" \"val\" \"val\" \"val\" \"val\")}")))
+      "#{(\"public int rmethodE2(int val2){\\n  int r=0;\\n  if (val2 == 0) {\\n    r=val2;\\n  }\\n else   if (val2 < 0) {\\n    r=val2 * -1;\\n  }\\n else {\\n    r=val2;\\n  }\\n  return r;\\n}\\n\" \"val2\" \"val2\" \"rmethodE2\" \"val2\" \"val2\" \"val2\" \"val2\") 
+         (\"public int rmethodE(int val){\\n  int r=0;\\n  if (val == 0) {\\n    r=val;\\n  }\\n else   if (val < 0) {\\n    r=val * -1;\\n  }\\n else {\\n    r=val;\\n  }\\n  return r;\\n}\\n\" \"val\" \"val\" \"rmethodE\" \"val\" \"val\" \"val\" \"val\")}")))
 
 ;; Operator: introduce-logic-variables-with-condition
 ;; ------------------------------------------
@@ -498,7 +495,7 @@
         generalized-snippet
         (operators/add-node
           generalized-snippet-with-lvar 
-          (representation/snippet-node-with-value (.statements (.getBody node)))
+          (.statements (.getBody node))
           new-node
           1)]
     (test/tuples-correspond 
@@ -542,12 +539,7 @@
         snippet (representation/jdt-node-as-snippet node)
         snippet2 (representation/jdt-node-as-snippet node2)
         generalized-snippet-contains
-        (operators/contains-elements 
-          snippet 
-          (first (first (damp.ekeko/ekeko [?s]
-                                          (fresh [?b]
-                                                 (reification/has :body node ?b)
-                                                 (reification/has :statements ?b ?s))))))
+        (operators/contains-elements snippet (.statements (.getBody node)))
         ;;add snippet1 and snippet2 to group
         group (representation/make-snippetgroup)
         added-group1 (operators/add-snippet group generalized-snippet-contains)
