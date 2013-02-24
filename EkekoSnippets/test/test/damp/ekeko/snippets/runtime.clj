@@ -1,5 +1,5 @@
 (ns 
-  ^{:doc "Test suite for snippet operators."
+  ^{:doc "Test suite for snippet runtime."
     :author "Siltvani, Coen De Roover"}
   test.damp.ekeko.snippets.runtime
   (:refer-clojure :exclude [== type declare])
