@@ -165,8 +165,9 @@
   allow-ifstatement-with-else 
   "Allow match given node (= ifstatement without else) with node (= ifstatement with else)."
   [snippet node]
-  (let [else-node (first (astnode/node-propertyvalues node))]
-    (update-constrainf snippet else-node :epsilon)))
+  (let [else-node (first (astnode/node-propertyvalues node))
+        snippet-without-else (update-constrainf snippet else-node :epsilon)]
+    (update-constrainf snippet-without-else node :if-with-else)))
 
 (defn
   allow-subtype-on-variable-declaration
@@ -270,7 +271,7 @@
     (if (not (empty? condition))
       (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
       condition))
-  (defn update-snippet-value [snippet value]
+  (defn update-snippet-var-cond [snippet value]
     (let [newvar     (util/gen-lvar)
           newsnippet (introduce-logic-variable snippet value newvar)]
       (add-logic-conditions newsnippet (make-condition condition uservar newvar))))
@@ -281,7 +282,7 @@
   (defn process-binding-variables [snippet nodes]
     (if (empty? nodes)
       snippet
-      (let [new-snippet (update-snippet-value snippet (first (first nodes)))]
+      (let [new-snippet (update-snippet-var-cond snippet (first (first nodes)))]
         (process-binding-variables new-snippet (rest nodes)))))
   (process-binding-variables snippet (get-binding-variables (:ast snippet) node)))
 

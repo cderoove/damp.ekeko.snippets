@@ -327,5 +327,17 @@
   (let [snippetgroup (atom (SnippetGroup. '() {}))]
     @snippetgroup))
 
-    
+
+;; Print Snippet
+;;--------------
+
+(defn
+  print-snippet
+  [snippet]
+  (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
+    (.setSnippet visitor 
+      (java.util.LinkedHashMap. snippet)) 
+    (.accept (:ast snippet) visitor)
+    (.getResult visitor)))
+
     

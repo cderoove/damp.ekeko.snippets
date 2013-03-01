@@ -373,6 +373,8 @@
     cf-subtype
     (= type :variable-declaration-with-initializer)
     cf-variable-declaration-with-initializer
+    (= type :if-with-else)
+    cf-exact
     (= type :negated)
     cf-negated
     (= type :epsilon)
