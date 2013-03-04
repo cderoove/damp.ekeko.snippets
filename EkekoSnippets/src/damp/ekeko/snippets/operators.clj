@@ -29,28 +29,28 @@
   contains-elements-with-same-size 
   "Contains all elements in a given nodelist (value-raw), and list has to be the same size."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value node)]
+  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
     (update-constrainf snippet lstval-of-node :list-contains-with-same-size)))
 
 (defn
   contains-elements
   "Contains all elements in a given nodelist (value-raw), and list does not have to be the same size."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value node)]
+  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
     (update-constrainf snippet lstval-of-node :list-contains)))
 
 (defn
   contains-elements-with-relative-order 
   "Contains all elements in a given nodelist (value-raw), with relative order."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value node)]
+  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
     (update-constrainf snippet lstval-of-node :list-contains-with-relative-order)))
 
 (defn
   contains-elements-with-repetition 
   "Contains all elements in a given nodelist (value-raw), with repetition."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value node)]
+  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
     (update-constrainf snippet lstval-of-node :list-contains-with-repetition)))
 
 (defn
@@ -82,7 +82,7 @@
   remove-node 
   "Remove a given node from snippet. Add new listrewrite to snippet node2usernode."
   [snippet node]
-  (let [list-container (representation/snippet-node-with-member node)
+  (let [list-container (representation/snippet-node-with-member snippet node)
         list-rewrite (listrewrite-for-node snippet list-container)
         new-snippet (representation/remove-node-from-snippet snippet node)]
     (util/remove-node-from-listrewrite list-rewrite node)
@@ -92,7 +92,7 @@
   add-node 
   "Add a given node in given idx inside the lst (value-raw) in snippet."
   [snippet lst node idx]
-  (let [list-container (representation/snippet-node-with-value lst)
+  (let [list-container (representation/snippet-node-with-value snippet lst)
         list-rewrite (listrewrite-for-node snippet list-container)
         new-snippet (representation/add-node-to-snippet snippet node)]
     (util/add-node-to-listrewrite list-rewrite node idx)
@@ -123,7 +123,7 @@
   split-variable-declaration-statement 
   "Split variable declaration statement with many fragments into multiple node with one fragment for each statement."
   [snippet statement]
-  (let [listcontainer   (representation/snippet-node-with-member statement)
+  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         newsnippet      (remove-node snippet statement)]  
     (split-variable-declaration-fragments
@@ -139,7 +139,7 @@
   "Allow given variable declaration statement in given snippet, 
    as part of one or more variable declaration statements in target source code."
   [snippet statement]
-  (let [listcontainer   (representation/snippet-node-with-member statement)
+  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         newsnippet-list (contains-elements snippet (:value listcontainer))
         newsnippet      (remove-node newsnippet-list statement)]  
@@ -240,7 +240,7 @@
     (first (first 
              (damp.ekeko/ekeko [?dec] 
                                (runtime/ast-invocation-declaration inv ?dec)))))
-  (let [listcontainer   (representation/snippet-node-with-member statement)
+  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
         newsnippet      (remove-node snippet statement)]  

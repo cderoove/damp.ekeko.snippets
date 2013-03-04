@@ -56,6 +56,16 @@
   (snippet-var-for-node snippet (:ast snippet)))
 
 (defn 
+  snippet-grounder-with-args-for-node
+  [snippet template-ast]
+  (get-in snippet [:ast2groundf template-ast]))
+
+(defn 
+  snippet-constrainer-with-args-for-node
+  [snippet template-ast]
+  (get-in snippet [:ast2constrainf template-ast]))
+
+(defn 
   snippet-grounder-for-node
   "For the given AST node of the given snippet, returns the function type
    that will generate grounding conditions for the corresponding logic variable."
@@ -97,22 +107,48 @@
   (get-in snippet [:var2uservar snippet-var]))
 
 (defn 
+  snippet-uservar-for-node 
+  "For the given logic var of the given snippet, returns the name of the user defined logic variable."
+  [snippet template-ast]
+  (snippet-uservar-for-var snippet (snippet-var-for-node snippet template-ast)))
+
+(defn 
   snippet-usernode-for-node 
   "For the given node (list wrapper) of the given snippet, returns the user defined node (list rewrite)."
   [snippet snippet-ast]
   (get-in snippet [:node2usernode snippet-ast]))
 
 (defn 
+  snippet-usernode-with-member
+  "Returns node (= the listrewrite) which it's :value (= NodeList) has member mbr."
+  [snippet mbr]
+  (defn find-owner [member list]
+    (cond 
+      (empty? list) nil
+      (.contains (.getRewrittenList (first list)) member) (first list)
+      :else (find-owner member (rest list)))) 
+  (find-owner mbr (vals (:node2usernode snippet))))
+
+(defn 
   snippet-node-with-member
-  "Returns node (= wrapper of NodeList) which it's :value (= NodeList) has member mbr."
-  [mbr]
-  (first (astnode/node-propertyvalues (.getParent mbr))))
+  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which it's :value (= NodeList) has member mbr."
+  ;;note : how to check for list-rewrite, maybe need to add usernode2node
+  [snippet mbr]
+  (let [listrewrite (snippet-usernode-with-member snippet mbr)
+        parent (if (nil? listrewrite) 
+                (.getParent mbr)
+                (.getParent listrewrite))          
+        property (.getLocationInParent mbr)
+        value (if (nil? listrewrite) 
+                (.getStructuralProperty parent property)
+                (.getOriginalList listrewrite))]    
+    (astnode/make-value parent property value)))
 
 (defn 
   snippet-node-with-value
-  "Returns node (= wrapper of NodeList) which has :value = value."
-  [value]
-  (snippet-node-with-member (first value)))
+  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which has :value = value."
+  [snippet value]
+  (snippet-node-with-member snippet (first value)))
 
 (defn
   snippet-value-for-node
@@ -335,8 +371,8 @@
   print-snippet
   [snippet]
   (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
-    (.setSnippet visitor 
-      (java.util.LinkedHashMap. snippet)) 
+    (.setSnippet visitor snippet)
+      ;(java.util.LinkedHashMap. snippet)) 
     (.accept (:ast snippet) visitor)
     (.getResult visitor)))
 
