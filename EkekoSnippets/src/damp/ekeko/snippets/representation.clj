@@ -372,7 +372,6 @@
   [snippet]
   (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
     (.setSnippet visitor snippet)
-      ;(java.util.LinkedHashMap. snippet)) 
     (.accept (:ast snippet) visitor)
     (.getResult visitor)))
 

@@ -9,5 +9,11 @@
             id="damp.ekeko.snippets.SnippetViewer"
             name="Ekeko Snippet Viewer">
       </view>
+      <view
+            allowMultiple="true"
+            class="damp.ekeko.snippets.SnippetTextViewer"
+            id="damp.ekeko.snippets.SnippetTextViewer"
+            name="Ekeko Snippet Text Viewer">
+      </view>
    </extension>
 </plugin>
