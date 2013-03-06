@@ -15,5 +15,90 @@
             id="damp.ekeko.snippets.SnippetTextViewer"
             name="Ekeko Snippet Text Viewer">
       </view>
+      <category
+            id="EkekoSnippets"
+            name="EkekoSnippets Category">
+      </category>
+      <view
+            category="EkekoSnippets"
+            class="damp.ekeko.snippets.gui.MainView"
+            icon="icons/sample.gif"
+            id="damp.ekeko.snippets.gui.MainView"
+            name="Main View">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="EkekoSnippets.commands.category"
+            name="Sample Category">
+      </category>
+      <command
+            categoryId="EkekoSnippets.commands.category"
+            id="EkekoSnippets.commands.sampleCommand"
+            name="Ekeko Snippets">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="damp.ekeko.snippets.gui.MainMenuHandler"
+            commandId="EkekoSnippets.commands.sampleCommand">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="EkekoSnippets.commands.sampleCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               id="EkekoSnippets.menus.sampleMenu"
+               label="EkekoSnippets"
+               mnemonic="M">
+            <command
+                  commandId="EkekoSnippets.commands.sampleCommand"
+                  id="EkekoSnippets.menus.sampleCommand"
+                  mnemonic="S">
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="EkekoSnippets.toolbars.sampleToolbar">
+            <command
+                  commandId="EkekoSnippets.commands.sampleCommand"
+                  icon="icons/sample.gif"
+                  id="EkekoSnippets.toolbars.sampleCommand"
+                  tooltip="Ekeko Snippets">
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               id="damp.ekeko.snippets.gui.MainView"
+               ratio="0.5"
+               relationship="right"
+               relative="org.eclipse.ui.views.ProblemView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
    </extension>
 </plugin>

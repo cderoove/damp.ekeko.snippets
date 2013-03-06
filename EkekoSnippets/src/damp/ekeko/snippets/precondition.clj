@@ -6,7 +6,7 @@
   (:use [clojure.core.logic])
   (:use [damp.ekeko logic])
   (:use [damp.ekeko.jdt astnode basic reification])
-  (:use [damp.ekeko.snippets.operators]))
+  (:use [damp.ekeko.snippets operators representation]))
 
 
 ;; Precondition for Operator
@@ -77,7 +77,7 @@
 (defn 
   possible-nodes-for-operator
   "Returns list of possible nodes to be applied on."
-  [root operator-name] []
+  [root operator-name]
   (let [pre-func (precondition-function operator-name)
         op-type  (operator-type operator-name)]
     (case op-type 
@@ -89,21 +89,26 @@
                                           (child+ root ?node)
                                           (pre-func ?node)))
       ;check property value-raw of the root and all childs
-      :property (concat (damp.ekeko/ekeko [?raw] 
-                                          (fresh [?node ?keyword ?property] 
+      :property (concat (damp.ekeko/ekeko [?property] 
+                                          (fresh [?node ?keyword ?raw] 
                                                  (equals root ?node)
                                                  (has ?keyword ?node ?property)
                                                  (value-raw ?property ?raw) 
                                                  (pre-func ?raw)))
-                        (damp.ekeko/ekeko [?raw] 
-                                          (fresh [?node ?keyword ?property] 
+                        (damp.ekeko/ekeko [?property] 
+                                          (fresh [?node ?keyword ?raw] 
                                                  (child+ root ?node)
                                                  (has ?keyword ?node ?property)
                                                  (value-raw ?property ?raw) 
                                                  (pre-func ?raw))))
       ;others, return empty list
-      '()))) 
+      (lazy-seq)))) 
     
+(defn 
+  possible-nodes-for-operator-in-group
+  [snippetgroup op-name]
+  (flat-map (fn [x] (possible-nodes-for-operator (:ast x) op-name)) (snippetgroup-snippetlist snippetgroup)))
+
 (defn
   applicable-operators-for-node
   "Returns set of operator-name and corresponding list of possible nodes,

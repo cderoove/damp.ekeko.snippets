@@ -122,6 +122,11 @@
              [parse-string-unit :unit]
              [parse-string-expression :expression]])))
 
+(defn 
+  parse-string-ast
+  [string] 
+  (first (first (parse-string string))))
+
 (defn
   make-variable-declaration-statement
   [modifiers type fragment]

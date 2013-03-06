@@ -232,6 +232,24 @@
   [snippetgroup]
   (flat-map snippet-uservars (snippetgroup-snippetlist snippetgroup)))
 
+(defn snippetgroup-snippet-for-node
+  [group node]
+  (defn find-snippet [listsnippet node]
+    (cond 
+      (empty? listsnippet) nil
+      (contains? (:ast2var (first listsnippet)) node) (first listsnippet)
+      :else (find-snippet (rest listsnippet) node)))
+  (find-snippet (snippetgroup-snippetlist group) node))
+
+(defn snippetgroup-snippet-index
+  [group snippet]
+  (.indexOf (snippetgroup-snippetlist group) snippet))
+
+(defn snippetgroup-replace-snippet
+  [group oldsnippet newsnippet]
+  (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
+    (update-in group [:snippetlist] (fn [x] newlist))))
+
 (defn flat-map
   "Returns list of results (= f(each-element)) in the form of flat list.
    Function f here return a list.
@@ -375,4 +393,9 @@
     (.accept (:ast snippet) visitor)
     (.getResult visitor)))
 
+(defn
+  print-snippetgroup
+  [snippetgroup]
+  (let [str-list (map print-snippet (snippetgroup-snippetlist snippetgroup))]
+    (reduce str str-list))) 
     
