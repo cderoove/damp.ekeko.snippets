@@ -50,17 +50,14 @@ public class NodeViewer {
 			TableItem item = new TableItem(table, SWT.NONE);
 			PersistentVector columns = (PersistentVector) rows.get(i);
 			String[] str = new String[columns.size() * 2];
-			Object[] data = new Object[columns.size() * 2];
 
 			int k = 0;
 			for (int j = 0; j < columns.size(); j++) {
-				str[k] = SnippetGroup.getType(columns.get(j));
-				data[k++] = SnippetGroup.getType(columns.get(j));
-				str[k] = SnippetGroup.getObject(columns.get(j)).toString();
-				data[k++] = SnippetGroup.getObject(columns.get(j));
+				str[k++] = SnippetGroup.getTypeValue(columns.get(j));
+				str[k++] = mainView.getSnippetGroup().getObjectValue(columns.get(j)).toString();
 			}
 			item.setText(str);
-			item.setData(data);
+			item.setData(columns);
 		}	
 	}
 
@@ -81,9 +78,9 @@ public class NodeViewer {
        	column.setText("Node");
 	}
 
-	public Object[] getSelected() {
+	public PersistentVector getSelected() {
         TableItem[] selection = table.getSelection();
-        return (Object[]) selection[0].getData();
+        return (PersistentVector) selection[0].getData();
 	}
 
 }

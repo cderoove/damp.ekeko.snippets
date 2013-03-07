@@ -20,6 +20,7 @@
 ; :operator-type -> node, property, snippet, and group
 
 (declare operator-precondition)
+(declare operator-arguments)
 
 (defn 
   operator-name 
@@ -38,6 +39,12 @@
   "Returns operator function of given operator name."
   [op-name]
   (fnext (get operator-precondition op-name)))
+
+(defn 
+  operator-arguments 
+  "Returns operator arguments of given operator name."
+  [op-name]
+  (get operator-arguments op-name))
 
 (defn 
   precondition-function 
@@ -231,11 +238,19 @@
    :introduce-logic-variables-with-condition         [:node       introduce-logic-variables-with-condition          is-ast?       	        				]
    :add-node                                         [:property   add-node                                          listvalueraw		          			]
    :remove-node                                      [:node       remove-node                                       is-ast?   		          				]	
-   :add-logic-conditions                             [:snippet    add-logic-conditions                              epsilon			            				]
-   :remove-logic-conditions                          [:snippet    remove-logic-conditions                           epsilon			          			    ]
-   :add-logic-conditions-to-snippetgroup             [:group      add-logic-conditions-to-snippetgroup              epsilon                 				]
-   :remove-logic-conditions-from-snippetgroup        [:group      remove-logic-conditions-from-snippetgroup         epsilon               					]
-   :add-snippet                                      [:snippet    add-snippet                                       epsilon                        	]
 	})
 
+(def 
+  operator-arguments
+  {:introduce-logic-variable                         ["user logic variable (e.g. ?v)"]
+   :introduce-logic-variable-of-node-exact           ["user logic variable (e.g. ?v)"]
+   :introduce-logic-variables-with-condition         ["user logic variable (e.g. ?v)" 
+                                                      "conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :add-node                                         ["new node"
+                                                      "index"]
+   :add-logic-conditions                             ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :remove-logic-conditions                          ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :add-logic-conditions-to-snippetgroup             ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :remove-logic-conditions-from-snippetgroup        ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+	})
 

@@ -111,7 +111,7 @@
         generalized-snippet
         (generelized-function
           generalized-snippet-with-lvar 
-          (.statements (.getBody node)))]
+          (representation/snippet-node-with-value snippet (.statements (.getBody node))))]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       match-string)))
@@ -495,7 +495,7 @@
         generalized-snippet
         (operators/add-node
           generalized-snippet-with-lvar 
-          (.statements (.getBody node))
+          (representation/snippet-node-with-value snippet (.statements (.getBody node)))
           new-node
           1)]
     (test/tuples-correspond 

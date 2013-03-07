@@ -132,7 +132,6 @@
 (defn 
   snippet-node-with-member
   "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which it's :value (= NodeList) has member mbr."
-  ;;note : how to check for list-rewrite, maybe need to add usernode2node
   [snippet mbr]
   (let [listrewrite (snippet-usernode-with-member snippet mbr)
         parent (if (nil? listrewrite) 
@@ -146,7 +145,8 @@
 
 (defn 
   snippet-node-with-value
-  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which has :value = value."
+  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which has :value = value.
+  value at least should have one member."
   [snippet value]
   (snippet-node-with-member snippet (first value)))
 

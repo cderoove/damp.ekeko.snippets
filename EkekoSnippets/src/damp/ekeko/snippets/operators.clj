@@ -27,31 +27,27 @@
 
 (defn
   contains-elements-with-same-size 
-  "Contains all elements in a given nodelist (value-raw), and list has to be the same size."
+  "Contains all elements in a given nodelist (listval), and list has to be the same size."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
-    (update-constrainf snippet lstval-of-node :list-contains-with-same-size)))
+  (update-constrainf snippet node :list-contains-with-same-size))
 
 (defn
   contains-elements
-  "Contains all elements in a given nodelist (value-raw), and list does not have to be the same size."
+  "Contains all elements in a given nodelist (listval), and list does not have to be the same size."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
-    (update-constrainf snippet lstval-of-node :list-contains)))
+  (update-constrainf snippet node :list-contains))
 
 (defn
   contains-elements-with-relative-order 
-  "Contains all elements in a given nodelist (value-raw), with relative order."
+  "Contains all elements in a given nodelist (listval), with relative order."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
-    (update-constrainf snippet lstval-of-node :list-contains-with-relative-order)))
+  (update-constrainf snippet node :list-contains-with-relative-order))
 
 (defn
   contains-elements-with-repetition 
-  "Contains all elements in a given nodelist (value-raw), with repetition."
+  "Contains all elements in a given nodelist (listval), with repetition."
   [snippet node]
-  (let [lstval-of-node (representation/snippet-node-with-value snippet node)]
-    (update-constrainf snippet lstval-of-node :list-contains-with-repetition)))
+  (update-constrainf snippet node :list-contains-with-repetition))
 
 (defn
   listrewrite-for-node
@@ -90,17 +86,16 @@
 
 (defn 
   add-node 
-  "Add a given node in given idx inside the lst (value-raw) in snippet."
-  [snippet lst node idx]
-  (let [list-container (representation/snippet-node-with-value snippet lst)
-        list-rewrite (listrewrite-for-node snippet list-container)
+  "Add a given node in given idx inside the lst (listval) in snippet."
+  [snippet list-container node idx]
+  (let [list-rewrite (listrewrite-for-node snippet list-container)
         new-snippet (representation/add-node-to-snippet snippet node)]
     (util/add-node-to-listrewrite list-rewrite node idx)
     (update-listrewrite-for-node new-snippet list-container list-rewrite)))
 
 (defn
   add-nodes 
-  "Add nodes (list of node) to list lst (value-raw) with index starting from idx in the given snippet."
+  "Add nodes (list of node) to list lst (listval) with index starting from idx in the given snippet."
   [snippet lst nodes idx]
   (if (empty? nodes)
     snippet
@@ -115,8 +110,8 @@
   (if (empty? fragments)
     snippet
     (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
-          newsnippet-node (add-node snippet (:value listcontainer) newnode position)
-          newsnippet      (contains-elements newsnippet-node (:value (first (astnode/node-propertyvalues newnode))))]
+          newsnippet-node (add-node snippet listcontainer newnode position)
+          newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
       (split-variable-declaration-fragments newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
 
 (defn
@@ -244,7 +239,7 @@
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
         newsnippet      (remove-node snippet statement)]  
-    (add-nodes newsnippet (:value listcontainer) inlined-statements position)))
+    (add-nodes newsnippet listcontainer inlined-statements position)))
 
 (defn 
   introduce-logic-variable-of-node-exact 

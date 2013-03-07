@@ -7,10 +7,17 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import clojure.lang.Keyword;
 import clojure.lang.LazySeq;
+import clojure.lang.PersistentVector;
 import clojure.lang.RT;
+import clojure.lang.Symbol;
 
 public class OperatorViewer {
+	//static {	
+	//	RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.precondition"));
+	//}		
+
 	private Tree tree;
 	private MainView mainView;
 
@@ -46,5 +53,24 @@ public class OperatorViewer {
 	public String getSelected() {
         TreeItem[] selection = tree.getSelection();
         return selection[0].getText();
+	}
+	
+	public String getOperatorArgumentsInformation() {
+		String str = "";
+		PersistentVector args = (PersistentVector) RT.var("damp.ekeko.snippets.precondition", "operator-arguments").invoke(Keyword.intern(getSelected()));		
+		
+		if (args != null) {
+			for (int i = 0; i < args.size(); i++) {
+				str += "-" + args.get(i) + "\n";
+			}	
+			
+			if (args.size() > 0) 
+				str = "\nPlease input parameter below:\n" + str;
+	
+			if (args.size() > 1) 
+				str += "\n(Separate each argument by \":\")\n";
+		}
+		
+		return str;
 	}
 }

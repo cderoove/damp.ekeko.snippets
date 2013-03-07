@@ -156,20 +156,21 @@ public class MainView extends ViewPart {
 				codeViewer.setInput(snippetGroup.toString());
 			}
 		};
-		action1.setText("Action 1");
-		action1.setToolTipText("Action 1 tooltip");
+		action1.setText("Add Snippet");
+		action1.setToolTipText("Add Snippet");
 		action1.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 			getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
 		
 		action2 = new Action() {
 			public void run() {
-				showMessage("Action 2 executed");
+				snippetGroup.runQuery();
 			}
 		};
-		action2.setText("Action 2");
-		action2.setToolTipText("Action 2 tooltip");
+		action2.setText("Run Query");
+		action2.setToolTipText("Run Query");
 		action2.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 				getImageDescriptor(ISharedImages.IMG_OBJS_INFO_TSK));
+		
 		doubleClickAction = new Action() {
 			public void run() {
 				ISelection selection = viewer.getSelection();
@@ -194,6 +195,10 @@ public class MainView extends ViewPart {
 			message);
 	}
 
+	public SnippetGroup getSnippetGroup() {
+		return snippetGroup;
+	}
+	
 	/**
 	 * Passing the focus request to the viewer's control.
 	 */
@@ -215,15 +220,27 @@ public class MainView extends ViewPart {
 		nodeViewer.setInput(snippetGroup.getPossibleNodes(operator));
 	}
 
-	public void onNodeSelection(Object[] nodes) {
-		InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(),
-				"Apply Operator", "Apply Operator " + operatorViewer.getSelected() + 
-				"\nto Node " + nodes[0] + 
-				"\n" + nodes[1], 
-				"", null);
-		if (dlg.open() == Window.OK) {
-			String input = dlg.getValue();
-			snippetGroup.applyOperator(operatorViewer.getSelected(), nodes[1]);
+	public void onNodeSelection(PersistentVector nodes) {
+		String argsInfo = operatorViewer.getOperatorArgumentsInformation();
+		String confirmation = "Apply Operator " + operatorViewer.getSelected() + 
+				" to Node " + SnippetGroup.getTypeValue(nodes.get(0)) + "\n" +
+				nodes.get(0) + "\n" + argsInfo;
+		boolean ok = false;
+		String input = "";
+		
+		if (argsInfo.isEmpty()) {
+			ok = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+				"Apply Operator", confirmation);
+		} else {
+			InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(),
+				"Apply Operator", confirmation, "", null);
+			ok = (dlg.open() == Window.OK);
+			input = dlg.getValue();
+		}
+		
+		if (ok) {
+			String[] args = input.split(":");
+			snippetGroup.applyOperator(operatorViewer.getSelected(), nodes.get(0), args);
 			codeViewer.setInput(snippetGroup.toString());
 		}
 	}
