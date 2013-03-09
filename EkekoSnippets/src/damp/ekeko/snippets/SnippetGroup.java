@@ -59,12 +59,11 @@ public class SnippetGroup {
 	public void applyOperator(String operator, Object node, Object[] args) {
 		Object snippet = getSnippet(node);
 		Object newsnippet = snippet;
-		System.out.println(args.length);
 		
-		if (args.length == 2)
+		if (args != null && args.length == 2)
 			//add-node
 			newsnippet = RT.var("damp.ekeko.snippets.operators", operator).invoke(snippet, node, args[0], args[1]);
-		else if (args.length == 1 && !args[0].toString().isEmpty())
+		else if (args != null && args.length == 1)
 			//introduce-logic-variable variant
 			newsnippet = RT.var("damp.ekeko.snippets.operators", operator).invoke(snippet, node, Symbol.intern(args[0].toString()));
 		else
@@ -143,12 +142,23 @@ public class SnippetGroup {
 			RT.var("damp.ekeko.snippets.gui","view-snippet").invoke(snippet);		
 	}
 
+	public String getQuery(Object node) {
+		Object snippet = getSnippet(node);
+		Object query = "";
+		if (snippet == null)		
+			query = RT.var("damp.ekeko.snippets.querying","snippetgroup-query").invoke(getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
+		else 
+			query = RT.var("damp.ekeko.snippets.querying","snippet-query").invoke(snippet, Symbol.intern("damp.ekeko/ekeko*"));
+		return query.toString().replace("(", "\n(").replace("[", "\n[");
+	}
+	
 	public void runQuery(Object node) {
 		Object snippet = getSnippet(node);
 		if (snippet == null)		
-			RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup());		
-		else
-			RT.var("damp.ekeko.snippets","query-by-snippet*").invoke(snippet);		
+			//RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup()); --> both error java class not found ...PrimitiveType		
+			RT.var("damp.ekeko.snippets","query-by-snippetgroup").invoke(getGroup());		
+		else 
+			//RT.var("damp.ekeko.snippets","query-by-snippet*").invoke(snippet);		
+			RT.var("damp.ekeko.snippets","query-by-snippet").invoke(snippet);		
 	}
-	
 }

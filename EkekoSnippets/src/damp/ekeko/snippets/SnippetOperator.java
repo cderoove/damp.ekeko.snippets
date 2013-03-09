@@ -25,22 +25,15 @@ public class SnippetOperator {
 		}			
 	}
 
-	public static String getOperatorArgumentsInformation(String operator) {
-		String str = "";
+	public static String[] getOperatorArguments(String operator) {
 		PersistentVector args = (PersistentVector) RT.var("damp.ekeko.snippets.precondition", "operator-arguments").invoke(Keyword.intern(operator));		
-		
 		if (args != null) {
+			String[] result = new String[args.size()];
 			for (int i = 0; i < args.size(); i++) {
-				str += "-" + args.get(i) + "\n";
-			}	
-			
-			if (args.size() > 0) 
-				str = "\nPlease input parameter below:\n" + str;
-	
-			if (args.size() > 1) 
-				str += "\n(Separate each argument by \":\")\n";
+				result[i] = args.get(i).toString();
+			}			
+			return result;
 		}
-		
-		return str;
+		return null;
 	}
 }

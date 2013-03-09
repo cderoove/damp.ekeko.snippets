@@ -76,29 +76,65 @@ public class SnippetView extends ViewPart {
 		container.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
 		Group group_1 = new Group(container, SWT.NONE);
-		group_1.setLayout(new GridLayout(1, false));
+		group_1.setLayout(new GridLayout(2, false));
 		
 		Label lblSnippet = new Label(group_1, SWT.NONE);
 		GridData gd_lblSnippet = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
 		gd_lblSnippet.heightHint = 23;
 		lblSnippet.setLayoutData(gd_lblSnippet);
 		lblSnippet.setText("Snippet");
+
+		ToolBar toolBar_1 = new ToolBar(group_1, SWT.FLAT | SWT.RIGHT);
+		toolBar_1.setOrientation(SWT.RIGHT_TO_LEFT);
+		toolBar_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		
+		ToolItem tltmRunQuery = new ToolItem(toolBar_1, SWT.NONE);
+		tltmRunQuery.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				runQuery();
+			}
+		});
+		tltmRunQuery.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
+		tltmRunQuery.setToolTipText("Run Query");
+		
+		ToolItem tltmViewquery = new ToolItem(toolBar_1, SWT.NONE);
+		tltmViewquery.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				viewQuery();
+			}
+		});
+		tltmViewquery.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
+		tltmViewquery.setToolTipText("View Query");
 		
 		TextViewer textViewerSnippet = new TextViewer(group_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		textViewerSnippet.setEditable(false);
 		textSnippet = textViewerSnippet.getTextWidget();
-		textSnippet.setDoubleClickEnabled(false);
 		textSnippet.setEditable(false);
-		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
 		gd_textSnippet.heightHint = 95;
 		textSnippet.setLayoutData(gd_textSnippet);
+		
+		ToolBar toolBar_2 = new ToolBar(group_1, SWT.FLAT | SWT.RIGHT);
+		toolBar_2.setOrientation(SWT.RIGHT_TO_LEFT);
+		toolBar_2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
+
+		ToolItem tltmCondition = new ToolItem(toolBar_2, SWT.NONE);
+		tltmCondition.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				addLogicCondition();
+			}
+		});
+		tltmCondition.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/processinginst.gif"));
+		tltmCondition.setToolTipText("Add Logic Condition");
 		
 		TextViewer textViewerCondition = new TextViewer(group_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		textViewerCondition.setEditable(false);
 		textCondition = textViewerCondition.getTextWidget();
-		textCondition.setDoubleClickEnabled(false);
 		textCondition.setEditable(false);
-		textCondition.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		textCondition.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		
 		Group group_2 = new Group(container, SWT.NONE);
 		group_2.setLayout(new GridLayout(1, false));
@@ -136,27 +172,7 @@ public class SnippetView extends ViewPart {
 		});
 		tltmView.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/keygroups_obj.gif"));
 		tltmView.setToolTipText("View Snippet");
-		
-		ToolItem tltmRunQuery = new ToolItem(toolBar, SWT.NONE);
-		tltmRunQuery.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				runQuery();
-			}
-		});
-		tltmRunQuery.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
-		tltmRunQuery.setToolTipText("Run Query");
-		
-		ToolItem tltmCondition = new ToolItem(toolBar, SWT.NONE);
-		tltmCondition.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				addLogicCondition();
-			}
-		});
-		tltmCondition.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/processinginst.gif"));
-		tltmCondition.setToolTipText("Add Logic Condition");
-		
+				
 		treeViewerSnippet = new TreeViewer(group_2, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		Tree treeSnippet = treeViewerSnippet.getTree();
 		treeSnippet.setLinesVisible(true);
@@ -312,9 +328,7 @@ public class SnippetView extends ViewPart {
 	}
 	
 	public Object getSelectedSnippet() {
-        //String lvar = treeViewerSnippet.getTree().getSelection()[1].getText();
 		Object data = treeViewerSnippet.getTree().getSelection()[0].getData();
-		System.out.println(data);
         return data;
 	}
 	
@@ -337,6 +351,7 @@ public class SnippetView extends ViewPart {
 		snippetGroup.addSnippetCode(code);
 		textSnippet.setText(snippetGroup.toString());
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		treeViewerSnippet.getTree().getItems()[0].setExpanded(true);	
 	}
 	
 	public void viewSnippet() {
@@ -346,6 +361,15 @@ public class SnippetView extends ViewPart {
 
 	public void removeSnippet() {
 		System.out.println("Remove Snippet");
+	}
+
+	public void viewQuery() {
+		System.out.println("View Query");
+		String query = snippetGroup.getQuery(getSelectedSnippet());
+		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+				"Query", query, "\nExecute the Query?", null);
+		dlg.create();
+		if (dlg.open() == Window.OK) runQuery();
 	}
 
 	public void runQuery() {
@@ -378,25 +402,18 @@ public class SnippetView extends ViewPart {
 	} 
 	
 	public void applyOperator(Object selectedNode, String selectedOperator, String input) {
-		String argsInfo = SnippetOperator.getOperatorArgumentsInformation(selectedOperator);
+		String[] args = SnippetOperator.getOperatorArguments(selectedOperator);
 		String confirmation = "Apply Operator " + selectedOperator + 
-				" to Node " + SnippetGroup.getTypeValue(selectedNode) + "\n" +
-				selectedNode + "\n" + argsInfo;
-		boolean ok = false;
+				"\nto Node " + SnippetGroup.getTypeValue(selectedNode) + 
+				"\n" + selectedNode.toString().replace(", :",  "\n:") ;
 		
-		if (argsInfo.isEmpty()) {
-			ok = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
-				"Apply Operator", confirmation);
-		} else {
-			InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(),
-				"Apply Operator", confirmation, "", null);
-			ok = (dlg.open() == Window.OK);
-			input = dlg.getValue();
-		}
+		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+				"Apply Operator", confirmation, "\nApply the Operator?", args);
+		dlg.create();
 		
-		if (ok) {
-			String[] args = input.split(":");
-			snippetGroup.applyOperator(selectedOperator, selectedNode, args);
+		if (dlg.open() == Window.OK) {
+			System.out.println(dlg.getInputs());
+			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs());
 			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		}
 

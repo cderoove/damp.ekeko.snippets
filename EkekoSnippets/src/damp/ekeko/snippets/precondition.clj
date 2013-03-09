@@ -247,15 +247,15 @@
 
 (def 
   operator-arguments
-  {:introduce-logic-variable                         ["user logic variable (e.g. ?v)"]
-   :introduce-logic-variable-of-node-exact           ["user logic variable (e.g. ?v)"]
-   :introduce-logic-variables-with-condition         ["user logic variable (e.g. ?v)" 
-                                                      "conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :add-node                                         ["new node"
-                                                      "index"]
-   :add-logic-conditions                             ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :remove-logic-conditions                          ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :add-logic-conditions-to-snippetgroup             ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :remove-logic-conditions-from-snippetgroup        ["conditions (e.g. ((damp.ekeko.jdt.reification/has :identifier ?name ?id) (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+  {:introduce-logic-variable                         ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
+                                                      "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :add-node                                         ["New Node (eg. int x = 5;)"
+                                                      "Index (eg. 1)"]
+   :add-logic-conditions                             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :remove-logic-conditions                          ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :add-logic-conditions-to-snippetgroup             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :remove-logic-conditions-from-snippetgroup        ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
 	})
 
