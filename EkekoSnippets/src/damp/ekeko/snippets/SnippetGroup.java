@@ -92,10 +92,6 @@ public class SnippetGroup {
 		}
 	}
 	
-	public void runQuery() {
-		RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup());		
-	}
-	
 	public LazySeq getPossibleNodes(Object rootNode, String operator) {
 		Object snippet = getSnippet(rootNode);
 		if (snippet == null)		
@@ -141,4 +137,18 @@ public class SnippetGroup {
 		}	
 	}
 
+	public void viewSnippet(Object node) {
+		Object snippet = getSnippet(node);
+		if (snippet != null)		
+			RT.var("damp.ekeko.snippets.gui","view-snippet").invoke(snippet);		
+	}
+
+	public void runQuery(Object node) {
+		Object snippet = getSnippet(node);
+		if (snippet == null)		
+			RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup());		
+		else
+			RT.var("damp.ekeko.snippets","query-by-snippet*").invoke(snippet);		
+	}
+	
 }

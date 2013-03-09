@@ -341,6 +341,7 @@ public class SnippetView extends ViewPart {
 	
 	public void viewSnippet() {
 		System.out.println("View Snippet");
+		snippetGroup.viewSnippet(getSelectedSnippet());
 	}
 
 	public void removeSnippet() {
@@ -349,10 +350,13 @@ public class SnippetView extends ViewPart {
 
 	public void runQuery() {
 		System.out.println("Run Query");
+		snippetGroup.runQuery(getSelectedSnippet());
 	}
 
 	public void addLogicCondition() {
 		System.out.println("Add Logic Condition");
+		//Object node = snippetGroup.getRoot(getSelectedSnippet());
+		applyOperator(getSelectedSnippet(), "add-logic-conditions", "");
 	}
 
 	public void showOperators() {
@@ -370,16 +374,15 @@ public class SnippetView extends ViewPart {
 	
 	public void onNodeSelection() {
 		PersistentVector selectedNode = (PersistentVector) getSelectedNode();
-		applyOperator(selectedNode.get(0), getSelectedOperator());
+		applyOperator(selectedNode.get(0), getSelectedOperator(), "");
 	} 
 	
-	public void applyOperator(Object selectedNode, String selectedOperator) {
+	public void applyOperator(Object selectedNode, String selectedOperator, String input) {
 		String argsInfo = SnippetOperator.getOperatorArgumentsInformation(selectedOperator);
 		String confirmation = "Apply Operator " + selectedOperator + 
 				" to Node " + SnippetGroup.getTypeValue(selectedNode) + "\n" +
 				selectedNode + "\n" + argsInfo;
 		boolean ok = false;
-		String input = "";
 		
 		if (argsInfo.isEmpty()) {
 			ok = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
