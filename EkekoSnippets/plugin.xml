@@ -15,16 +15,21 @@
             id="damp.ekeko.snippets.SnippetTextViewer"
             name="Ekeko Snippet Text Viewer">
       </view>
+      <view
+            allowMultiple="true"
+            class="damp.ekeko.snippets.SnippetGroupViewer"
+            id="damp.ekeko.snippets.SnippetGroupViewer"
+            name="Ekeko Snippet Group Viewer">
+      </view>
       <category
             id="EkekoSnippets"
             name="EkekoSnippets Category">
       </category>
       <view
             category="EkekoSnippets"
-            class="damp.ekeko.snippets.gui.MainView"
-            icon="icons/sample.gif"
-            id="damp.ekeko.snippets.gui.MainView"
-            name="Main View">
+            class="damp.ekeko.snippets.gui.SnippetView"
+            id="damp.ekeko.snippets.gui.SnippetView"
+            name="Ekeko Snippet">
       </view>
    </extension>
    <extension

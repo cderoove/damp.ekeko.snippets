@@ -2,10 +2,15 @@ package damp.ekeko.snippets;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.jface.viewers.TableViewer;
 
 import clojure.lang.Keyword;
 import clojure.lang.LazySeq;
 import clojure.lang.PersistentArrayMap;
+import clojure.lang.PersistentVector;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
@@ -18,53 +23,62 @@ public class SnippetGroup {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.precondition"));
 	}*/		
 
-	private static String es = "damp.ekeko.snippets";
 	private Object group;
 	
-	public SnippetGroup() {
-		
+	public SnippetGroup(String name) {
+		group = RT.var("damp.ekeko.snippets.representation", "make-snippetgroup").invoke(name);
 	}
 	
 	public Object getGroup() {
 		return group;
 	}
 	
+	public Object getSnippet(Object node) {
+		return RT.var("damp.ekeko.snippets.representation", "snippetgroup-snippet-for-node").invoke(getGroup(), node);		
+	}
+	
 	public String toString() {
-		String result = (String) RT.var(es+".representation", "print-snippetgroup").invoke(getGroup());
+		String result = (String) RT.var("damp.ekeko.snippets.representation", "print-snippetgroup").invoke(getGroup());
 		return result;
 	}
 	
-	public void addSnippetCode(String code) {
-		ASTNode rootNode = (ASTNode) RT.var(es+".parsing", "parse-string-ast").invoke(code);
-		Object snippet = RT.var(es+".representation", "jdt-node-as-snippet").invoke(rootNode);
-		group = RT.var(es+".operators", "add-snippet").invoke(group, snippet);
-	}
-
-	public LazySeq getPossibleNodes(String operator) {
-		return (LazySeq) RT.var(es+".precondition", "possible-nodes-for-operator-in-group").invoke(getGroup(), Keyword.intern(operator));
+	public String toString(Object node) {
+		Object snippet = getSnippet(node);
+		if (snippet == null)
+			return toString();
+		return (String) RT.var("damp.ekeko.snippets.representation", "print-snippet").invoke(snippet);
 	}
 	
-	public void applyOperator(String operator, Object node, String[] args) {
-		Object snippet = RT.var(es+".representation", "snippetgroup-snippet-for-node").invoke(getGroup(), node);
+	public void addSnippetCode(String code) {
+		System.out.println("inside");
+		ASTNode rootNode = (ASTNode) RT.var("damp.ekeko.snippets.parsing", "parse-string-ast").invoke(code);
+		Object snippet = RT.var("damp.ekeko.snippets.representation", "jdt-node-as-snippet").invoke(rootNode);
+		group = RT.var("damp.ekeko.snippets.operators", "add-snippet").invoke(getGroup(), snippet);
+	}
+
+	public void applyOperator(String operator, Object node, Object[] args) {
+		Object snippet = getSnippet(node);
 		Object newsnippet = snippet;
-		System.out.println("len "+args.length+args.toString());
+		System.out.println(args.length);
 		
 		if (args.length == 2)
-			newsnippet = RT.var(es+".operators", operator).invoke(snippet, node, args[0], args[1]);
-		else if (args.length == 1 && !args[0].isEmpty())
-			newsnippet = RT.var(es+".operators", operator).invoke(snippet, node, Symbol.intern(args[0]));
+			//add-node
+			newsnippet = RT.var("damp.ekeko.snippets.operators", operator).invoke(snippet, node, args[0], args[1]);
+		else if (args.length == 1 && !args[0].toString().isEmpty())
+			//introduce-logic-variable variant
+			newsnippet = RT.var("damp.ekeko.snippets.operators", operator).invoke(snippet, node, Symbol.intern(args[0].toString()));
 		else
-			newsnippet = RT.var(es+".operators", operator).invoke(snippet, node);
+			newsnippet = RT.var("damp.ekeko.snippets.operators", operator).invoke(snippet, node);
 			
-		group = RT.var(es+".representation", "snippetgroup-replace-snippet").invoke(group, snippet, newsnippet);		
+		group = RT.var("damp.ekeko.snippets.representation", "snippetgroup-replace-snippet").invoke(getGroup(), snippet, newsnippet);		
 	}
 	
 	public Object getObjectValue(Object node) {
 		if (node instanceof ASTNode) {
 			return node;
 		} else {
-			Object snippet = RT.var(es+".representation", "snippetgroup-snippet-for-node").invoke(getGroup(), node);		
-			return RT.var(es+".representation", "snippet-value-for-node").invoke(snippet, node);		
+			Object snippet = getSnippet(node);		
+			return RT.var("damp.ekeko.snippets.representation", "snippet-value-for-node").invoke(snippet, node);		
 		}
 	}
 
@@ -79,6 +93,52 @@ public class SnippetGroup {
 	}
 	
 	public void runQuery() {
-		RT.var(es, "query-by-snippetgroup*").invoke(getGroup());		
+		RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup());		
 	}
+	
+	public LazySeq getPossibleNodes(Object rootNode, String operator) {
+		Object snippet = getSnippet(rootNode);
+		if (snippet == null)		
+			return (LazySeq) RT.var("damp.ekeko.snippets.precondition", "possible-nodes-for-operator-in-group").invoke(getGroup(), Keyword.intern(operator));
+		else
+			return (LazySeq) RT.var("damp.ekeko.snippets.precondition", "possible-nodes-for-operator").invoke(rootNode, Keyword.intern(operator));
+	}
+	
+	public void setInputPossibleNodes(Object rootNode, TableViewer tableViewer, String operator) {
+		tableViewer.getTable().removeAll();
+		for (int y = 2 ; y < tableViewer.getTable().getColumnCount(); y++) {
+			//delete all columns except first 2 columns
+			tableViewer.getTable().getColumn(y).dispose();
+		}
+		
+		LazySeq rows = getPossibleNodes(rootNode, operator);
+
+		if (rows.size() > 0) {
+			PersistentVector columns = (PersistentVector) rows.get(0);
+			int cols = columns.size() * 2;
+		    for (int i = 2; i < cols; i++) {
+		        TableColumn column = new TableColumn(tableViewer.getTable(), SWT.NONE);
+		        column.setWidth(150);
+		        if (i % 2 == 0)
+		        	column.setText("Type");
+		        else
+		        	column.setText("Node");
+		    }
+		}
+		
+	    for (int i = 0; i < rows.size(); i++) {
+			TableItem item = new TableItem(tableViewer.getTable(), SWT.NONE);
+			PersistentVector columns = (PersistentVector) rows.get(i);
+			String[] str = new String[columns.size() * 2];
+
+			int k = 0;
+			for (int j = 0; j < columns.size(); j++) {
+				str[k++] = getTypeValue(columns.get(j));
+				str[k++] = getObjectValue(columns.get(j)).toString();
+			}
+			item.setText(str);
+			item.setData(columns);
+		}	
+	}
+
 }

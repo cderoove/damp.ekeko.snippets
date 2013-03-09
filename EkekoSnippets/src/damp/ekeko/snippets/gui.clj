@@ -45,6 +45,34 @@
   ;treeview parent of given treeview child
   (astnode/owner c))
 
+(defn
+  snippetgroupviewer-elements
+  [snippetgroup input]
+  ;roots of treeview
+  (if 
+    (= input snippetgroup)
+    (to-array [(:name snippetgroup)])
+    nil))
+
+(defn
+  snippetgroupviewer-children
+  [snippetgroup p]
+  (if (= p (:name snippetgroup))
+    (to-array (map (fn [x] (:ast x)) (representation/snippetgroup-snippetlist snippetgroup)))
+    (snippetviewer-children
+      (representation/snippetgroup-snippet-for-node snippetgroup p)
+      p)))
+      
+(defn
+  snippetgroupviewer-parent
+  [snippetgroup c]
+  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup c)]
+    (if (= c (:ast snippet))
+      (:name snippetgroup)
+      (snippetviewer-parent snippet c))))
+ 
+
+
 ;; View Columns
 ;; ------------
 
@@ -91,6 +119,21 @@
   snippetviewercolumn-constrainer
   [snippet element]
   (str (representation/snippet-constrainer-for-node snippet element)))
+
+(defn
+  snippetgroupviewercolumn-node
+  [snippetgroup element]
+  (snippetviewercolumn-node
+    (representation/snippetgroup-snippet-for-node snippetgroup element)
+    element))
+
+(defn
+  snippetgroupviewercolumn-variable
+  [snippetgroup element]
+  (snippetviewercolumn-variable
+    (representation/snippetgroup-snippet-for-node snippetgroup element)
+    element))
+
 
 ;; Opening a View
 ;; --------------
@@ -143,5 +186,27 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-text-viewer snippet))))
 
 
+;; Opening a View - Snippet Group Plugin
+;; -------------------------------------
     
-    
+(def snippetgroup-viewer-cnt (atom 0))
+
+(defn 
+  open-snippetgroup-viewer
+  []
+  (let [page (-> (PlatformUI/getWorkbench)
+               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
+               .getActivePage)
+        qvid (damp.ekeko.snippets.gui.SnippetView/ID)
+        uniqueid (str @snippetgroup-viewer-cnt)
+        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
+    (swap! snippetgroup-viewer-cnt inc)
+    (.setViewID viewpart uniqueid)
+    viewpart))
+
+
+(defn
+  view-snippetgroup
+  []
+  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippetgroup-viewer))))
+

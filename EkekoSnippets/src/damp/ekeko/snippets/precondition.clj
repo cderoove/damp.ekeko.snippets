@@ -84,32 +84,37 @@
 (defn 
   possible-nodes-for-operator
   "Returns list of possible nodes to be applied on."
-  [root operator-name]
-  (let [pre-func (precondition-function operator-name)
+  [ast operator-name]
+  (let [root (cond (ast? ast) ast
+                   (lstvalue? ast) (:owner ast)
+                   :else nil)
+        pre-func (precondition-function operator-name)
         op-type  (operator-type operator-name)]
-    (case op-type 
-      ;check astnode : the root itself and all childs
-      :node     (concat (damp.ekeko/ekeko [?node] 
-                                          (equals root ?node)
-                                          (pre-func ?node))
-                        (damp.ekeko/ekeko [?node] 
-                                          (child+ root ?node)
-                                          (pre-func ?node)))
-      ;check property value-raw of the root and all childs
-      :property (concat (damp.ekeko/ekeko [?property] 
-                                          (fresh [?node ?keyword ?raw] 
-                                                 (equals root ?node)
-                                                 (has ?keyword ?node ?property)
-                                                 (value-raw ?property ?raw) 
-                                                 (pre-func ?raw)))
-                        (damp.ekeko/ekeko [?property] 
-                                          (fresh [?node ?keyword ?raw] 
-                                                 (child+ root ?node)
-                                                 (has ?keyword ?node ?property)
-                                                 (value-raw ?property ?raw) 
-                                                 (pre-func ?raw))))
-      ;others, return empty list
-      (lazy-seq)))) 
+    (if (nil? root)
+      (lazy-seq)
+      (case op-type 
+        ;check astnode : the root itself and all childs
+        :node     (concat (damp.ekeko/ekeko [?node] 
+                                            (equals root ?node)
+                                            (pre-func ?node))
+                          (damp.ekeko/ekeko [?node] 
+                                            (child+ root ?node)
+                                            (pre-func ?node)))
+        ;check property value-raw of the root and all childs
+        :property (concat (damp.ekeko/ekeko [?property] 
+                                            (fresh [?node ?keyword ?raw] 
+                                                   (equals root ?node)
+                                                   (has ?keyword ?node ?property)
+                                                   (value-raw ?property ?raw) 
+                                                   (pre-func ?raw)))
+                          (damp.ekeko/ekeko [?property] 
+                                            (fresh [?node ?keyword ?raw] 
+                                                   (child+ root ?node)
+                                                   (has ?keyword ?node ?property)
+                                                   (value-raw ?property ?raw) 
+                                                   (pre-func ?raw))))
+        ;others, return empty list
+        (lazy-seq))))) 
     
 (defn 
   possible-nodes-for-operator-in-group

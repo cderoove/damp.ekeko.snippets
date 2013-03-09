@@ -195,7 +195,13 @@
 
 ; Datatype representing a group (list) of Snippet(s) and additional logic condition
 
-(defrecord SnippetGroup [snippetlist userquery])
+(defrecord SnippetGroup [name snippetlist userquery])
+
+(defn 
+  snippetgroup-name
+  "Returns name of the given snippet group."
+  [snippetgroup]
+  (:name snippetgroup))
 
 (defn 
   snippetgroup-snippetlist
@@ -377,8 +383,8 @@
 (defn 
   make-snippetgroup
   "Create SnippetGroup instance."
-  []
-  (let [snippetgroup (atom (SnippetGroup. '() {}))]
+  [name]
+  (let [snippetgroup (atom (SnippetGroup. name '() {}))]
     @snippetgroup))
 
 

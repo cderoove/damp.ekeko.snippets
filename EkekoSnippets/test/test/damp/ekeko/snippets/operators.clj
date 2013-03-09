@@ -541,7 +541,7 @@
         generalized-snippet-contains
         (operators/contains-elements snippet (.statements (.getBody node)))
         ;;add snippet1 and snippet2 to group
-        group (representation/make-snippetgroup)
+        group (representation/make-snippetgroup "group")
         added-group1 (operators/add-snippet group generalized-snippet-contains)
         added-group2 (operators/add-snippet added-group1 snippet2)
         ;;add logic conditions (list statement of node1 contains node2) 
