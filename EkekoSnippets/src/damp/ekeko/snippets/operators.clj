@@ -185,6 +185,12 @@
     (update-constrainf snippet-without-assignment node :variable-declaration-with-initializer)))
 
 (defn
+  update-logic-conditions
+  "Update user logic conditions to snippet. conditions should be in quote, '(...) (...)."
+  [snippet conditions]
+  (assoc snippet :userquery (list conditions)))
+
+(defn
   add-logic-conditions
   "Add user logic conditions to snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
@@ -208,6 +214,12 @@
   [snippetgroup snippet]
   (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn
+  update-logic-conditions-to-snippetgroup
+  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...)."
+  [snippetgroup conditions]
+  (assoc snippetgroup :userquery (list conditions)))
 
 (defn
   add-logic-conditions-to-snippetgroup

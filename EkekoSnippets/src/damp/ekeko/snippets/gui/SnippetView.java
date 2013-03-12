@@ -24,8 +24,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.wb.swt.ResourceManager;
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.dialogs.InputDialog;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -44,6 +42,7 @@ import damp.ekeko.snippets.SnippetGroupTreeLabelProviders;
 import damp.ekeko.snippets.SnippetOperator;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Color;
 
 public class SnippetView extends ViewPart {
 
@@ -115,6 +114,7 @@ public class SnippetView extends ViewPart {
 		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
 		gd_textSnippet.heightHint = 95;
 		textSnippet.setLayoutData(gd_textSnippet);
+		textSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
 		
 		ToolBar toolBar_2 = new ToolBar(group_1, SWT.FLAT | SWT.RIGHT);
 		toolBar_2.setOrientation(SWT.RIGHT_TO_LEFT);
@@ -175,13 +175,14 @@ public class SnippetView extends ViewPart {
 				
 		treeViewerSnippet = new TreeViewer(group_2, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		Tree treeSnippet = treeViewerSnippet.getTree();
+		treeSnippet.setHeaderVisible(true);
 		treeSnippet.setLinesVisible(true);
 		treeSnippet.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
 		TreeViewerColumn snippetNodeCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnNode = snippetNodeCol.getColumn();
 		trclmnNode.setWidth(150);
-		trclmnNode.setText("Node");
+		trclmnNode.setText("Snippet");
 		
 		TreeViewerColumn snippetVarCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnLogicVariable = snippetVarCol.getColumn();
@@ -345,9 +346,8 @@ public class SnippetView extends ViewPart {
 	//all logic part for this View are written below
 	
 	public void addSnippet() {
-		System.out.println("Add Snippet");
+		textSnippet.setSelectionRange(0, 0);
 		String code = getSelectedTextFromActiveEditor();
-		System.out.println(code);
 		snippetGroup.addSnippetCode(code);
 		textSnippet.setText(snippetGroup.toString());
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
@@ -355,7 +355,6 @@ public class SnippetView extends ViewPart {
 	}
 	
 	public void viewSnippet() {
-		System.out.println("View Snippet");
 		snippetGroup.viewSnippet(getSelectedSnippet());
 	}
 
@@ -364,23 +363,22 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void viewQuery() {
-		System.out.println("View Query");
 		String query = snippetGroup.getQuery(getSelectedSnippet());
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
-				"Query", query, "\nExecute the Query?", null);
+				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
-		if (dlg.open() == Window.OK) runQuery();
+		if (dlg.open() == Window.OK) 
+			runQuery();
 	}
 
 	public void runQuery() {
-		System.out.println("Run Query");
 		snippetGroup.runQuery(getSelectedSnippet());
 	}
 
 	public void addLogicCondition() {
-		System.out.println("Add Logic Condition");
-		//Object node = snippetGroup.getRoot(getSelectedSnippet());
-		applyOperator(getSelectedSnippet(), "add-logic-conditions", "");
+		String[] inputs = {textCondition.getText()};
+		inputs = applyOperator(snippetGroup.getRoot(getSelectedSnippet()), "update-logic-conditions", inputs);
+		textCondition.setText(inputs[0]);
 	}
 
 	public void showOperators() {
@@ -389,7 +387,13 @@ public class SnippetView extends ViewPart {
 	}
 	
 	public void onSnippetSelection() {
+		textSnippet.setSelectionRange(0, 0);
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+		int x = snippetGroup.getActiveNodePos()[0];
+		int y = snippetGroup.getActiveNodePos()[1];
+		if (x < 0) {x = 0; y = 0;}
+		textSnippet.setSelectionRange(x, y-x);
+		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
 	} 
 	
 	public void onOperatorSelection() {
@@ -398,24 +402,29 @@ public class SnippetView extends ViewPart {
 	
 	public void onNodeSelection() {
 		PersistentVector selectedNode = (PersistentVector) getSelectedNode();
-		applyOperator(selectedNode.get(0), getSelectedOperator(), "");
+		applyOperator(selectedNode.get(0), getSelectedOperator(), null);
 	} 
 	
-	public void applyOperator(Object selectedNode, String selectedOperator, String input) {
+	public String[] applyOperator(Object selectedNode, String selectedOperator, String[] inputs) {
 		String[] args = SnippetOperator.getOperatorArguments(selectedOperator);
-		String confirmation = "Apply Operator " + selectedOperator + 
-				"\nto Node " + SnippetGroup.getTypeValue(selectedNode) + 
+		String nodeInfo = "Group";
+		if (selectedNode != null)
+			nodeInfo = "Node " + SnippetGroup.getTypeValue(selectedNode) + 
 				"\n" + selectedNode.toString().replace(", :",  "\n:") ;
-		
+
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
-				"Apply Operator", confirmation, "\nApply the Operator?", args);
+				"Apply Operator", "Apply Operator " + selectedOperator + "\nto " + nodeInfo, 
+				"\nApply the Operator?", args, inputs);
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
 			System.out.println(dlg.getInputs());
 			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs());
 			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+			treeViewerSnippet.setInput(snippetGroup.getGroup());
+			treeViewerSnippet.getTree().getItems()[0].setExpanded(true);
 		}
 
+		return dlg.getInputs();
 	}
 }

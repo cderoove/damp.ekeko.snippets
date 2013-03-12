@@ -42,6 +42,11 @@
   [ast ast2var ast2groundf ast2constrainf var2ast var2uservar node2usernode userquery])
 
 (defn 
+  snippet-root 
+  [snippet]
+  (:ast snippet))
+
+(defn 
   snippet-var-for-node 
   "For the given AST node of the given snippet, returns the name of the logic
    variable that will be bound to a matching AST node from the Java project."
@@ -242,6 +247,7 @@
   [group node]
   (defn find-snippet [listsnippet node]
     (cond 
+      (= node nil) nil
       (empty? listsnippet) nil
       (contains? (:ast2var (first listsnippet)) node) (first listsnippet)
       :else (find-snippet (rest listsnippet) node)))
@@ -285,7 +291,7 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {} {}))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '()))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -384,24 +390,7 @@
   make-snippetgroup
   "Create SnippetGroup instance."
   [name]
-  (let [snippetgroup (atom (SnippetGroup. name '() {}))]
+  (let [snippetgroup (atom (SnippetGroup. name '() '()))]
     @snippetgroup))
 
 
-;; Print Snippet
-;;--------------
-
-(defn
-  print-snippet
-  [snippet]
-  (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.accept (:ast snippet) visitor)
-    (.getResult visitor)))
-
-(defn
-  print-snippetgroup
-  [snippetgroup]
-  (let [str-list (map print-snippet (snippetgroup-snippetlist snippetgroup))]
-    (reduce str str-list))) 
-    

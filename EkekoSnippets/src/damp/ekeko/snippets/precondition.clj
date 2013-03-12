@@ -82,17 +82,13 @@
       true)))
 
 (defn 
-  possible-nodes-for-operator
-  "Returns list of possible nodes to be applied on."
+  node-possible-nodes-for-operator
+  "Returns list of possible nodes to be applied on, from given ast root (ASTNode)."
   [ast operator-name]
-  (let [root (cond (ast? ast) ast
-                   (lstvalue? ast) (:owner ast)
-                   :else nil)
+  (let [root ast
         pre-func (precondition-function operator-name)
         op-type  (operator-type operator-name)]
-    (if (nil? root)
-      (lazy-seq)
-      (case op-type 
+    (case op-type 
         ;check astnode : the root itself and all childs
         :node     (concat (damp.ekeko/ekeko [?node] 
                                             (equals root ?node)
@@ -114,8 +110,56 @@
                                                    (value-raw ?property ?raw) 
                                                    (pre-func ?raw))))
         ;others, return empty list
-        (lazy-seq))))) 
+        (lazy-seq)))) 
     
+(defn 
+  nodelist-possible-nodes-for-operator
+  "Returns list of possible nodes to be applied on from given ast root (nodelist)."
+  [ast operator-name]
+  (let [list     (:value ast)
+        pre-func (precondition-function operator-name)
+        op-type  (operator-type operator-name)]
+    (case op-type 
+        ;check astnode : the member of root and member of all childs
+        :node     (concat (damp.ekeko/ekeko [?node] 
+                                            (contains list ?node)
+                                            (pre-func ?node))
+                          (damp.ekeko/ekeko [?node] 
+                                            (fresh [?member] 
+                                                   (contains list ?member)
+                                                   (child+ ?member ?node)
+                                                   (pre-func ?node))))
+        ;check property value-raw of root it self, of property members and of property all childs
+        :property (concat (damp.ekeko/ekeko [?property] 
+                                            (fresh [?raw] 
+                                                   (equals ast ?property)
+                                                   (value-raw ?property ?raw) 
+                                                   (pre-func ?raw)))
+                          (damp.ekeko/ekeko [?property] 
+                                            (fresh [?node ?keyword ?raw] 
+                                                   (contains list ?node)
+                                                   (has ?keyword ?node ?property)
+                                                   (value-raw ?property ?raw) 
+                                                   (pre-func ?raw)))
+                          (damp.ekeko/ekeko [?property] 
+                                            (fresh [?node ?keyword ?raw ?member] 
+                                                   (contains list ?member)
+                                                   (child+ ?member ?node)
+                                                   (has ?keyword ?node ?property)
+                                                   (value-raw ?property ?raw) 
+                                                   (pre-func ?raw))))
+        ;others, return empty list
+        (lazy-seq)))) 
+
+(defn 
+  possible-nodes-for-operator
+  "Returns list of possible nodes to be applied on."
+  [ast operator-name]
+  (cond 
+    (ast? ast) (node-possible-nodes-for-operator ast operator-name)
+    (lstvalue? ast) (nodelist-possible-nodes-for-operator ast operator-name) 
+    :else nil))
+
 (defn 
   possible-nodes-for-operator-in-group
   [snippetgroup op-name]
@@ -184,6 +228,14 @@
     (succeeds (type? ?node))))
 
 (defn
+  is-listmember?
+  "Relation of all list ASTNode instances which is member of Nodelist."
+  [?node]
+  (fresh [?key] 
+    (ast ?key ?node)
+    (succeeds (property-descriptor-list? (.getLocationInParent ?node)))))
+
+(defn
   is-variabledeclarationstatement?
   "Relation of all list ASTNode instances type :VariableDeclarationStatement."
   [?node]
@@ -242,7 +294,7 @@
    :introduce-logic-variables                        [:node       introduce-logic-variables                         is-ast?						            	]
    :introduce-logic-variables-with-condition         [:node       introduce-logic-variables-with-condition          is-ast?       	        				]
    :add-node                                         [:property   add-node                                          listvalueraw		          			]
-   :remove-node                                      [:node       remove-node                                       is-ast?   		          				]	
+   :remove-node                                      [:node       remove-node                                       is-listmember?   		          				]	
 	})
 
 (def 
@@ -257,5 +309,7 @@
    :remove-logic-conditions                          ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :add-logic-conditions-to-snippetgroup             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :remove-logic-conditions-from-snippetgroup        ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
+   :update-logic-conditions                          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
+   :update-logic-conditions-to-snippetgroup          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
 	})
 

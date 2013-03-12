@@ -15,8 +15,11 @@ import clojure.lang.Symbol;
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	private final String rep = "damp.ekeko.snippets.representation";
 	private Object snippet;
+	private Object highlightNode;
+	private int[] highlightPos;
 	
 	public SnippetPrettyPrinter () {
+		highlightPos = new int[2];
 	}
 	
 	public void setSnippet(Object snippet) {
@@ -25,6 +28,18 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	
 	public Object getSnippet() {
 		return snippet;
+	}
+
+	public void setHighlightNode(Object node) {
+		this.highlightNode = node;
+	}
+	
+	public Object getHighlightNode() {
+		return highlightNode;
+	}
+	
+	public int[] getHighlightPos() {
+		return highlightPos;
 	}
 
 	public Symbol getVar(Object node) {
@@ -91,23 +106,30 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return true;
 	}
 
-	public void preVisit(ASTNode node) {
+	public void preVisit(ASTNode node) {	
 		//if node is first member of NodeList, then preVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property.isChildListProperty()) {
 			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
-			if (nodeList.get(0).equals(node))
+			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
 				preVisitNodeList(nodeListWrapper);
 		}
 
+		//print bracket
 		if (!hasDefaultGroundf(node) || 
 				!hasDefaultConstrainf(node)) 
 			this.buffer.append("&open");
+		
+		//color highlightNode
+		if (highlightNode != null && highlightNode.equals(node))
+			this.buffer.append("&coloropen");
 	}
 
 	public void postVisit(ASTNode node) {
 		String fString = "";
+		
+		//print bracket, followed by groundf and constrainf
 		if (!hasDefaultGroundf(node))
 			fString = getGroundFString(node);
 		if (!hasDefaultConstrainf(node))
@@ -120,25 +142,40 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (property.isChildListProperty()) {
 			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
-			if (nodeList.get(nodeList.size()-1).equals(node))
+			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
 				postVisitNodeList(nodeListWrapper);
 		}
+		
+		//color highlightNode
+		if (highlightNode != null && highlightNode.equals(node))
+			this.buffer.append("&colorclose");
 	}
 	
 	public void preVisitNodeList(PersistentArrayMap nodeListWrapper) {
+		//print bracket
 		if (!hasDefaultGroundf(nodeListWrapper) || 
 				!hasDefaultConstrainf(nodeListWrapper)) 
 			this.buffer.append("&open");
+
+		//color highlightNode
+		if (highlightNode != null && highlightNode.equals(nodeListWrapper))
+			this.buffer.append("&coloropen");
 	}
 	
 	public void postVisitNodeList(PersistentArrayMap nodeListWrapper) {
 		String fString = "";
+
+		//print bracket, followed by groundf and constrainf
 		if (!hasDefaultGroundf(nodeListWrapper))
 			fString = getGroundFString(nodeListWrapper);
 		if (!hasDefaultConstrainf(nodeListWrapper))
 			fString += getConstrainFString(nodeListWrapper);
 		if (!fString.isEmpty()) 
 			addBufferBeforeEOL("&close" + fString);
+
+		//color highlightNode
+		if (highlightNode != null && highlightNode.equals(nodeListWrapper))
+			this.buffer.append("&colorclose");
 	}
 
 	public String getResult(){
@@ -154,6 +191,13 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		
 		result = result.replaceAll("&open", "[");
 		result = result.replaceAll("&close", "]");
+		
+		//get highlightNode position
+		highlightPos[0] = result.indexOf("&coloropen");
+		result = result.replaceAll("&coloropen", "");
+		highlightPos[1] = result.indexOf("&colorclose");
+		result = result.replaceAll("&colorclose", "");
+		
 		return result;
 	}
 

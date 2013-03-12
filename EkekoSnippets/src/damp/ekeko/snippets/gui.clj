@@ -83,7 +83,7 @@
     (astnode/nilvalue? element)
     "null"
     (astnode/value? element)
-    (str (:value element))
+    (str (representation/snippet-value-for-node snippet element))
     :else 
     (str element)))
 
@@ -159,6 +159,32 @@
   view-snippet
   [snippet]
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-viewer snippet))))
+
+;; Print Snippet
+;;-------------------
+
+;; Print Snippet
+;;--------------
+
+(defn
+  print-snippet-with-highlight
+  [snippet highlightnode]
+  (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.setHighlightNode visitor highlightnode)
+    (.accept (:ast snippet) visitor)
+    (list (.getResult visitor) (.getHighlightPos visitor))))
+
+(defn
+  print-snippet
+  [snippet]
+  (first (print-snippet-with-highlight snippet nil))) 
+
+(defn
+  print-snippetgroup
+  [snippetgroup]
+  (let [str-list (map print-snippet (representation/snippetgroup-snippetlist snippetgroup))]
+    (reduce str str-list))) 
 
 
 ;; Opening a View - Snippet Text

@@ -28,13 +28,14 @@ public class SInputDialog extends Dialog {
 	 * @param parentShell
 	 * @wbp.parser.constructor
 	 */
-	public SInputDialog(Shell parentShell, String title, String infoText, String infoLabel, String[] args) {
+	public SInputDialog(Shell parentShell, String title, String infoText, String infoLabel, String[] args, String[] inputs) {
 		super(parentShell);
 		setShellStyle(SWT.RESIZE);
 		this.title = title;
 		this.infoText = infoText;
 		this.infoLabel = infoLabel;
 		this.args = args;
+		this.inputs = inputs;
 	}
 
 	/**
@@ -76,6 +77,8 @@ public class SInputDialog extends Dialog {
 				GridData gd_txtInputs = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
 				gd_txtInputs.heightHint = args[i].split("\n").length * 15;
 				txtInputs[i].setLayoutData(gd_txtInputs);
+				if (inputs != null && inputs[i] != null)
+					txtInputs[i].setText(inputs[i]);
 			}
 		}
 
