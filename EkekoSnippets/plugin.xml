@@ -31,6 +31,11 @@
             id="damp.ekeko.snippets.gui.SnippetView"
             name="Ekeko Snippet">
       </view>
+      <view
+            class="damp.ekeko.snippets.gui.ResultCheckView"
+            id="damp.ekeko.snippets.gui.ResultCheckView"
+            name="Result Checking">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.commands">

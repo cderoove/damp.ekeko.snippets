@@ -1,7 +1,7 @@
 package damp.ekeko.snippets;
 
+import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.jface.viewers.TreeViewer;
 
 
 import clojure.lang.Keyword;
@@ -14,8 +14,8 @@ public class SnippetOperator {
 	public SnippetOperator() {
 	}
 
-	public static void setInput(TreeViewer treeViewer) {
-		TreeItem root = new TreeItem(treeViewer.getTree(), 0);
+	public static void setInput(Tree tree) {
+		TreeItem root = new TreeItem(tree, 0);
 		root.setText("Operator");
 		LazySeq operators = (LazySeq) RT.var("damp.ekeko.snippets.precondition", "operator-names").invoke();
 

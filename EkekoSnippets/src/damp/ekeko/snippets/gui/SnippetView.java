@@ -7,6 +7,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
@@ -54,7 +55,7 @@ public class SnippetView extends ViewPart {
 	private StyledText textSnippet;
 	private StyledText textCondition;
 	private TreeViewer treeViewerSnippet;
-	private TreeViewer treeViewerOperator;
+	private Tree treeOperator;
 	private TableViewer tableViewerNode;
 	
 	private SnippetGroup snippetGroup;
@@ -107,6 +108,16 @@ public class SnippetView extends ViewPart {
 		tltmViewquery.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
 		tltmViewquery.setToolTipText("View Query");
 		
+		ToolItem tltmCheckresult = new ToolItem(toolBar_1, SWT.NONE);
+		tltmCheckresult.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				checkResult();
+			}
+		});
+		tltmCheckresult.setToolTipText("Check Query Result");
+		tltmCheckresult.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/tsk_alert_obj.gif"));
+		
 		TextViewer textViewerSnippet = new TextViewer(group_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		textViewerSnippet.setEditable(false);
 		textSnippet = textViewerSnippet.getTextWidget();
@@ -127,7 +138,7 @@ public class SnippetView extends ViewPart {
 				addLogicCondition();
 			}
 		});
-		tltmCondition.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/obj16/processinginst.gif"));
+		tltmCondition.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/editor_area.gif"));
 		tltmCondition.setToolTipText("Add Logic Condition");
 		
 		TextViewer textViewerCondition = new TextViewer(group_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
@@ -216,8 +227,7 @@ public class SnippetView extends ViewPart {
 		lblOperator.setLayoutData(gd_lblOperator);
 		lblOperator.setText("Operator");
 		
-		treeViewerOperator = new TreeViewer(group_3, SWT.BORDER  | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
-		Tree treeOperator = treeViewerOperator.getTree();
+		treeOperator = new Tree(group_3, SWT.BORDER  | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		treeOperator.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
 		TreeColumn trclmnOperator = new TreeColumn(treeOperator, SWT.NONE);
@@ -321,7 +331,7 @@ public class SnippetView extends ViewPart {
 	}
 		 
 	public String getSelectedOperator() {
-        return treeViewerOperator.getTree().getSelection()[0].getText();
+        return treeOperator.getSelection()[0].getText();
 	}
 	
 	public Object getSelectedNode() {
@@ -348,10 +358,12 @@ public class SnippetView extends ViewPart {
 	public void addSnippet() {
 		textSnippet.setSelectionRange(0, 0);
 		String code = getSelectedTextFromActiveEditor();
-		snippetGroup.addSnippetCode(code);
-		textSnippet.setText(snippetGroup.toString());
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
-		treeViewerSnippet.getTree().getItems()[0].setExpanded(true);	
+		if (code != null && !code.isEmpty()) {
+			snippetGroup.addSnippetCode(code);
+			textSnippet.setText(snippetGroup.toString());
+			treeViewerSnippet.setInput(snippetGroup.getGroup());
+			treeViewerSnippet.getTree().getItems()[0].setExpanded(true);	
+		}
 	}
 	
 	public void viewSnippet() {
@@ -374,6 +386,15 @@ public class SnippetView extends ViewPart {
 	public void runQuery() {
 		snippetGroup.runQuery(getSelectedSnippet());
 	}
+	
+	public void checkResult() {
+		try {
+			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
+		} catch (PartInitException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	public void addLogicCondition() {
 		String[] inputs = {textCondition.getText()};
@@ -382,8 +403,8 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void showOperators() {
-		SnippetOperator.setInput(treeViewerOperator);
-		treeViewerOperator.getTree().getItems()[0].setExpanded(true);	
+		SnippetOperator.setInput(treeOperator);
+		treeOperator.getItems()[0].setExpanded(true);	
 	}
 	
 	public void onSnippetSelection() {

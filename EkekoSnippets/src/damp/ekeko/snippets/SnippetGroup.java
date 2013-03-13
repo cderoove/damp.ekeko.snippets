@@ -49,6 +49,8 @@ public class SnippetGroup {
 	}
 
 	public String toString() {
+		activeNodePos[0] = 0;
+		activeNodePos[1] = 0;
 		String result = (String) RT.var("damp.ekeko.snippets.gui", "print-snippetgroup").invoke(getGroup());
 		return result;
 	}
