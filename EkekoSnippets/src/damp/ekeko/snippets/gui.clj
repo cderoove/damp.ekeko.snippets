@@ -128,6 +128,15 @@
     element))
 
 (defn
+  snippetgroupviewercolumn-property
+  [snippetgroup element]
+  (if (instance? java.lang.String element)
+    "" 
+    (snippetviewercolumn-property
+      (representation/snippetgroup-snippet-for-node snippetgroup element)
+      element)))
+
+(defn
   snippetgroupviewercolumn-variable
   [snippetgroup element]
   (snippetviewercolumn-variable

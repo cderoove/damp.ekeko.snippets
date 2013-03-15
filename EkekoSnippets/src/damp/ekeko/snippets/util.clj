@@ -90,4 +90,3 @@
   [list-rewrite]
   (.getRewrittenList list-rewrite))
 
-  

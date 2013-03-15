@@ -62,7 +62,7 @@ public class SInputDialog extends Dialog {
 		if (args != null) {
 			Label lblTitle2 = new Label(container, SWT.NONE);
 			lblTitle2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
-			lblTitle2.setText("Please fill in the parameters below!");
+			lblTitle2.setText("Arguments:");
 		
 			txtInputs = new Text[args.length];
 			

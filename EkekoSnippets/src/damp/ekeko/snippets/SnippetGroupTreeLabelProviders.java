@@ -32,8 +32,18 @@ public class SnippetGroupTreeLabelProviders {
 		}
 		
 		public String getText(Object element) {
-			System.out.println("nodecol"+element);
 			return (String) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewercolumn-node").invoke(getGroup(), element);
+		}
+	}
+
+	public static class PropertyColumnLabelProvider extends SnippetGroupColumnLabelProvider {
+
+		public PropertyColumnLabelProvider(SnippetView s) {
+			super(s);
+		}
+		
+		public String getText(Object element) {
+			return (String) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewercolumn-property").invoke(getGroup(), element);
 		}
 	}
 
@@ -45,7 +55,6 @@ public class SnippetGroupTreeLabelProviders {
 		}
 		
 		public String getText(Object element) {
-			System.out.println("varcol"+element);
 			return (String) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewercolumn-variable").invoke(getGroup(), element);
 		}
 	}
