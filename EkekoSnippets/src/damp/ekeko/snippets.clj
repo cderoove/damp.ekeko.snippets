@@ -26,7 +26,11 @@
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippet."
   [snippetgroup]
-  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko)))
+  (cons 
+    (concat 
+      (representation/snippetgroup-rootvars snippetgroup)
+      (representation/snippetgroup-uservars snippetgroup)) 
+    (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
 
 (defn
   query-by-snippet*
@@ -38,8 +42,11 @@
   query-by-snippet
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
-  (eval (querying/snippet-query snippet 'damp.ekeko/ekeko)))
-
+  (cons 
+    (cons 
+      (representation/snippet-var-for-root snippet)
+      (representation/snippet-uservars snippet)) 
+    (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
       
 (defn 
   query-by-snippet-incrementally*

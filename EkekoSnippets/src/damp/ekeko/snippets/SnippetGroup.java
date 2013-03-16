@@ -145,13 +145,17 @@ public class SnippetGroup {
 	public void runQuery(Object node) {
 		Object snippet = getSnippet(node);
 		if (snippet == null)		
-			RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup()); //--> both error java class not found ...PrimitiveType		
+			RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup()); 		
 		else 
 			RT.var("damp.ekeko.snippets","query-by-snippet*").invoke(snippet);		
 	}
 
-	public static void runStringQuery(String query) {
-		RT.var("(clojure.core","eval").invoke(query);		
+	public Object[] getQueryResult(Object node) {
+		Object snippet = getSnippet(node);
+		if (snippet == null)		
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippetgroup").invoke(getGroup())); 		
+		else 
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet").invoke(snippet));		
 	}
-	
+
 }
