@@ -58,6 +58,7 @@ public class SnippetView extends ViewPart {
 	private Tree treeOperator;
 	private StyledText textOpInfo;
 	private Table tableOpArgs;
+	private TableDecorator tableOpArgsDecorator;
 	
 	private SnippetGroup snippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
@@ -270,6 +271,7 @@ public class SnippetView extends ViewPart {
 		tableOpArgs.setLinesVisible(true);
 		tableOpArgs.setHeaderVisible(true);
 		tableOpArgs.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		tableOpArgsDecorator = new TableDecorator(tableOpArgs);
 		
 		TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewerOpArgs, SWT.NONE);
 		TableColumn tblclmnType = tableViewerColumn.getColumn();
@@ -433,10 +435,14 @@ public class SnippetView extends ViewPart {
 		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
 		SnippetOperator.setInput(treeOperator, getSelectedSnippet());
 		tableOpArgs.removeAll();
+		tableOpArgsDecorator.removeAllEditors();
 	} 
 	
 	public void onOperatorSelection() {
+		tableOpArgsDecorator.removeAllEditors();
 		SnippetOperator.setInputArguments(tableOpArgs, getSelectedOperator());
+		tableOpArgsDecorator.setTextEditor(1);
+		tableOpArgsDecorator.setButtonEditor(1);
 		textOpInfo.setText(SnippetOperator.getDescription(getSelectedOperator()));
 	} 
 	
