@@ -63,6 +63,8 @@ public class Activator extends AbstractUIPlugin {
 	}
 
 	public void startClojureCode(BundleContext bundleContext) throws Exception {
-		//ClojureOSGi.require(bundleContext, "damp.ekeko.snippets"); 		
+		ClojureOSGi.require(bundleContext, "clojure.stacktrace"); 
+		ClojureOSGi.require(bundleContext, "clojure.test");  
+		ClojureOSGi.require(bundleContext, "clojure.tools.nrepl.server"); 
 	}
 }

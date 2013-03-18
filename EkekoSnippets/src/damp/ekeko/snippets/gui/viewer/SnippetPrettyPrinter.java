@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.gui.viewer;
 
 import java.util.List;
 
@@ -13,6 +13,10 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
+	static {
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+	}
+
 	private final String rep = "damp.ekeko.snippets.representation";
 	private Object snippet;
 	private Object highlightNode;

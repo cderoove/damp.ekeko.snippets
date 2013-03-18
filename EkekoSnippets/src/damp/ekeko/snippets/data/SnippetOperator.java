@@ -1,12 +1,17 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.data;
 
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import clojure.lang.RT;
+import clojure.lang.Symbol;
 
 public class SnippetOperator {
+
+	static {
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.precondition"));
+	}
 
 	public SnippetOperator() {
 	}

@@ -155,7 +155,7 @@
   (let [page (-> (PlatformUI/getWorkbench)
                .getActiveWorkbenchWindow ;nil if called from non-ui thread 
                .getActivePage)
-        qvid (damp.ekeko.snippets.SnippetViewer/ID)
+        qvid (damp.ekeko.snippets.gui.viewer.SnippetViewer/ID)
         uniqueid (str @snippet-viewer-cnt)
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
     (swap! snippet-viewer-cnt inc)
@@ -169,6 +169,29 @@
   [snippet]
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-viewer snippet))))
 
+(def snippetgroup-viewer-cnt (atom 0))
+
+(defn 
+  open-snippetgroup-viewer
+  [snippetgroup]
+  (let [page (-> (PlatformUI/getWorkbench)
+               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
+               .getActivePage)
+        qvid (damp.ekeko.snippets.gui.viewer.SnippetGroupViewer/ID)
+        uniqueid (str @snippetgroup-viewer-cnt)
+        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
+    (swap! snippetgroup-viewer-cnt inc)
+    (.setViewID viewpart uniqueid)
+    (.setInput (.getViewer viewpart) snippetgroup)
+    viewpart))
+
+
+(defn
+  view-snippetgroup
+  [snippetgroup]
+  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippetgroup-viewer snippetgroup))))
+
+
 ;; Print Snippet
 ;;-------------------
 
@@ -178,7 +201,7 @@
 (defn
   print-snippet-with-highlight
   [snippet highlightnode]
-  (let [visitor (damp.ekeko.snippets.SnippetPrettyPrinter.)]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter.)]
     (.setSnippet visitor snippet)
     (.setHighlightNode visitor highlightnode)
     (.accept (:ast snippet) visitor)
@@ -207,7 +230,7 @@
   (let [page (-> (PlatformUI/getWorkbench)
                .getActiveWorkbenchWindow ;nil if called from non-ui thread 
                .getActivePage)
-        qvid (damp.ekeko.snippets.SnippetTextViewer/ID)
+        qvid (damp.ekeko.snippets.gui.viewer.SnippetTextViewer/ID)
         uniqueid (str @snippet-text-viewer-cnt)
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
     (swap! snippet-text-viewer-cnt inc)
@@ -224,24 +247,24 @@
 ;; Opening a View - Snippet Group Plugin
 ;; -------------------------------------
     
-(def snippetgroup-viewer-cnt (atom 0))
+(def plugin-viewer-cnt (atom 0))
 
 (defn 
-  open-snippetgroup-viewer
+  open-plugin-viewer
   []
   (let [page (-> (PlatformUI/getWorkbench)
                .getActiveWorkbenchWindow ;nil if called from non-ui thread 
                .getActivePage)
         qvid (damp.ekeko.snippets.gui.SnippetView/ID)
-        uniqueid (str @snippetgroup-viewer-cnt)
+        uniqueid (str @plugin-viewer-cnt)
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! snippetgroup-viewer-cnt inc)
+    (swap! plugin-viewer-cnt inc)
     (.setViewID viewpart uniqueid)
     viewpart))
 
 
 (defn
-  view-snippetgroup
+  view-plugin
   []
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippetgroup-viewer))))
+  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-plugin-viewer))))
 

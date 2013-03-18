@@ -32,6 +32,7 @@ public class TableDecorator {
 	    	Control control = editors.get(i).getEditor();
 	    	if (control != null) control.dispose();
 		}
+		editors.clear();
 	}
 	
 	public void setButtonEditorAtNewRow() {

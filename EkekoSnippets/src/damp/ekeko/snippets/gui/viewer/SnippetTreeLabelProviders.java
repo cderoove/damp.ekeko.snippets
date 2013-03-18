@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.gui.viewer;
 
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;

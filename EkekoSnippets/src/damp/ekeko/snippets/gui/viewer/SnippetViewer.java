@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.gui.viewer;
 
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -9,11 +9,11 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 
-public class SnippetGroupViewer extends ViewPart {
+public class SnippetViewer extends ViewPart {
 
-	public static final String ID = "damp.ekeko.snippets.SnippetGroupViewer"; //$NON-NLS-1$
+	public static final String ID = "damp.ekeko.snippets.gui.viewer.SnippetViewer"; //$NON-NLS-1$
 
-	public SnippetGroupViewer() {
+	public SnippetViewer() {
 		
 	}
 
@@ -21,7 +21,7 @@ public class SnippetGroupViewer extends ViewPart {
 	
 	private String viewID;
 	
-	private SnippetGroupTreeContentProvider contentProvider;
+	private SnippetTreeContentProvider contentProvider;
 	
 
 	@Override
@@ -30,20 +30,39 @@ public class SnippetGroupViewer extends ViewPart {
 		viewer.getTree().setHeaderVisible(true);
 		viewer.getTree().setLinesVisible(true);
 		
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new SnippetTreeContentProvider();
 		viewer.setContentProvider(getContentProvider());
 
 		
 		TreeViewerColumn nodeCol = new TreeViewerColumn(viewer, SWT.NONE);
 		nodeCol.getColumn().setText("Value");
 		nodeCol.getColumn().setWidth(150);
-		//nodeCol.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));
+		nodeCol.setLabelProvider(new SnippetTreeLabelProviders.NodeColumnLabelProvider(this));
+		
+		TreeViewerColumn propCol = new TreeViewerColumn(viewer, SWT.NONE);
+		propCol.getColumn().setText("Property");
+		propCol.getColumn().setWidth(150);
+		propCol.setLabelProvider(new SnippetTreeLabelProviders.PropertyColumnLabelProvider(this));
+		
+		TreeViewerColumn kindCol = new TreeViewerColumn(viewer, SWT.NONE);
+		kindCol.getColumn().setText("Kind");
+		kindCol.getColumn().setWidth(150);
+		kindCol.setLabelProvider(new SnippetTreeLabelProviders.KindColumnLabelProvider(this));
 		
 		TreeViewerColumn variableCol = new TreeViewerColumn(viewer, SWT.NONE);
 		variableCol.getColumn().setText("Variable");
 		variableCol.getColumn().setWidth(150);
-		//variableCol.setLabelProvider(new SnippetGroupTreeLabelProviders.VariableColumnLabelProvider(this));
+		variableCol.setLabelProvider(new SnippetTreeLabelProviders.VariableColumnLabelProvider(this));
 
+		TreeViewerColumn grounderCol = new TreeViewerColumn(viewer, SWT.NONE);
+		grounderCol.getColumn().setText("Grounder");
+		grounderCol.getColumn().setWidth(75);
+		grounderCol.setLabelProvider(new SnippetTreeLabelProviders.GrounderColumnLabelProvider(this));
+
+		TreeViewerColumn constrainerCol = new TreeViewerColumn(viewer, SWT.NONE);
+		constrainerCol.getColumn().setText("Constrainer");
+		constrainerCol.getColumn().setWidth(75);
+		constrainerCol.setLabelProvider(new SnippetTreeLabelProviders.ConstrainerColumnLabelProvider(this));
 		
 		createActions();
 		initializeToolBar();
@@ -84,7 +103,7 @@ public class SnippetGroupViewer extends ViewPart {
 		this.viewID = secondaryId;
 	}
 
-	public SnippetGroupTreeContentProvider getContentProvider() {
+	public SnippetTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 

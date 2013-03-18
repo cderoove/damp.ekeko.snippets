@@ -5,20 +5,20 @@
          point="org.eclipse.ui.views">
       <view
             allowMultiple="true"
-            class="damp.ekeko.snippets.SnippetViewer"
-            id="damp.ekeko.snippets.SnippetViewer"
+            class="damp.ekeko.snippets.gui.viewer.SnippetViewer"
+            id="damp.ekeko.snippets.gui.viewer.SnippetViewer"
             name="Ekeko Snippet Viewer">
       </view>
       <view
             allowMultiple="true"
-            class="damp.ekeko.snippets.SnippetTextViewer"
-            id="damp.ekeko.snippets.SnippetTextViewer"
+            class="damp.ekeko.snippets.gui.viewer.SnippetTextViewer"
+            id="damp.ekeko.snippets.gui.viewer.SnippetTextViewer"
             name="Ekeko Snippet Text Viewer">
       </view>
       <view
             allowMultiple="true"
-            class="damp.ekeko.snippets.SnippetGroupViewer"
-            id="damp.ekeko.snippets.SnippetGroupViewer"
+            class="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
+            id="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
             name="Ekeko Snippet Group Viewer">
       </view>
       <category

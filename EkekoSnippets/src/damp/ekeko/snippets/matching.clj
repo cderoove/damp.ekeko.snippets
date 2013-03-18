@@ -6,7 +6,6 @@
   (:require [damp.ekeko.snippets 
              [util :as util]
              [representation :as representation]
-             [querying :as querying]
              [runtime :as runtime]])
   (:require 
     [damp.ekeko [logic :as el]]

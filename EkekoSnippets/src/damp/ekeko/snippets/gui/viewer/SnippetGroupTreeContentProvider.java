@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.gui.viewer;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -6,16 +6,16 @@ import org.eclipse.jface.viewers.Viewer;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
-public class SnippetTreeContentProvider implements ITreeContentProvider {
+public class SnippetGroupTreeContentProvider implements ITreeContentProvider {
 
-	private Object snippet;
+	private Object group;
 	private TreeViewer viewer;
 	
 	static {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
 	}
 
-	public SnippetTreeContentProvider() {
+	public SnippetGroupTreeContentProvider() {
 	}
 	
 	@Override
@@ -26,29 +26,28 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		this.viewer = (TreeViewer) viewer;
-		snippet = newInput;
+		group = newInput;
 	}
 
 	@Override
 	public Object[] getElements(Object inputElement) {
 		if (inputElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-elements").invoke(getSnippet(), inputElement);
+		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewer-elements").invoke(getGroup(), inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-children").invoke(getSnippet(), parentElement);
+		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewer-children").invoke(getGroup(), parentElement);
 	}
 
 	@Override
 	public Object getParent(Object element) {
 		if (element == null)
 			return null;
-
-		return RT.var("damp.ekeko.snippets.gui", "snippetviewer-parent").invoke(getSnippet(), element);
+		return RT.var("damp.ekeko.snippets.gui", "snippetgroupviewer-parent").invoke(getGroup(), element);
 	}
 
 	@Override
@@ -59,8 +58,8 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 
 	}
 
-	public Object getSnippet() {
-		return snippet;
+	public Object getGroup() {
+		return group;
 	}
 
 

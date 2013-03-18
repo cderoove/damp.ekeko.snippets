@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.data;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
@@ -12,6 +12,14 @@ public class SnippetGroup {
 	private Object group;
 	private int[] activeNodePos;
 	
+	/*static {
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operators"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.querying"));
+	}*/
+
 	public SnippetGroup(String name) {
 		group = RT.var("damp.ekeko.snippets.representation", "make-snippetgroup").invoke(name);
 		activeNodePos = new int[2];
@@ -80,14 +88,14 @@ public class SnippetGroup {
 		String opFunc = operator.toString().replace(":", "");
 		
 		if (args != null && args.length == 2)
-			if (operator.equals("add-node")) {
+			if (opFunc.equals("add-node")) {
 				//add-node
 				Object newnode = RT.var("damp.ekeko.snippets.parsing", "parse-string-ast").invoke(args[0]);
 				newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node, newnode, Integer.parseInt(args[1]));
 			} else
 				newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node, args[0], args[1]);
 		else if (args != null && args.length == 1)
-			if (operator.equals("update-logic-conditions")) {
+			if (opFunc.equals("update-logic-conditions")) {
 				//update-logic-conditions
 				if (snippet == null)
 					group = RT.var("damp.ekeko.snippets.operators", "update-logic-conditions-to-snippetgroup").invoke(getGroup(), Symbol.intern(args[0].toString().replace("\n", "")));
@@ -155,7 +163,7 @@ public class SnippetGroup {
 		if (snippet == null)		
 			return getArray(RT.var("damp.ekeko.snippets","query-by-snippetgroup").invoke(getGroup())); 		
 		else 
-			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet").invoke(snippet));		
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet").invoke(snippet));
 	}
 
 }

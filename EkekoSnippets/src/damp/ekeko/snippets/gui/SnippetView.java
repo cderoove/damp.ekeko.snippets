@@ -8,7 +8,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
@@ -37,13 +36,17 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.window.Window;
 
-import damp.ekeko.snippets.SnippetGroup;
-import damp.ekeko.snippets.SnippetGroupTreeContentProvider;
-import damp.ekeko.snippets.SnippetGroupTreeLabelProviders;
-import damp.ekeko.snippets.SnippetOperator;
+import damp.ekeko.snippets.data.SnippetGroup;
+import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
+import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
+
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Color;
+
+import clojure.lang.Keyword;
+import clojure.lang.Symbol;
 
 public class SnippetView extends ViewPart {
 
@@ -421,7 +424,7 @@ public class SnippetView extends ViewPart {
 
 	public void addLogicCondition() {
 		String[] inputs = {textCondition.getText()};
-		inputs = applyOperator(snippetGroup.getRoot(getSelectedSnippet()), "update-logic-conditions", inputs);
+		inputs = applyOperator(snippetGroup.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
 		textCondition.setText(inputs[0]);
 	}
 

@@ -1,4 +1,4 @@
-package damp.ekeko.snippets;
+package damp.ekeko.snippets.gui.viewer;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.IMenuManager;
@@ -8,9 +8,10 @@ import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 
+
 public class SnippetTextViewer extends ViewPart {
 
-	public static final String ID = "damp.ekeko.snippets.SnippetTextViewer"; //$NON-NLS-1$
+	public static final String ID = "damp.ekeko.snippets.gui.viewer.SnippetTextViewer"; //$NON-NLS-1$
 
 	public SnippetTextViewer() {
 		
