@@ -262,7 +262,7 @@ public class ResultCheckView extends ViewPart {
 	public static String[] getString(Object clojureList) {
 		Object[] aResult = getArray(clojureList);
 		String[] arrStr = new String[aResult.length + 2];
-		arrStr[0] = ""; arrStr[1] = "";
+		arrStr[0] = "result"; arrStr[1] = "";
 		for (int i = 0; i < aResult.length; i++) {
 			arrStr[i+2] = aResult[i].toString();
 		}
@@ -341,9 +341,11 @@ public class ResultCheckView extends ViewPart {
 
 		TableItem[] selected = getSelectedConfirmResults();
 		for (int i=0; i < selected.length; i++) {
-			TableItem item = new TableItem(tableResult, 0);
-			item.setData(selected[i].getData());
-			item.setText(getString(selected[i].getData()));
+			if (selected[i].getText(0).equals("result")) {
+				TableItem item = new TableItem(tableResult, 0);
+				item.setData(selected[i].getData());
+				item.setText(getString(selected[i].getData()));
+			}
 			selected[i].dispose();
 		}
 		

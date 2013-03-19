@@ -127,10 +127,22 @@
   [string] 
   (first (first (parse-string string))))
 
+(defn 
+  parse-string-to-document
+  [string]
+  (let [doc (org.eclipse.jface.text.Document.)]
+    (.set doc string)
+    doc))             
+
+(defn 
+  parse-document
+  "Returns node, parsed from Document doc." 
+  [doc]
+  (first (first (parse-string (.get doc)))))
+
 (defn
   make-variable-declaration-statement
   [modifiers type fragment]
   (parse-string-statement 
     (str (apply str (interpose \space modifiers)) " " type " " fragment ";")))
 
-       

@@ -30,7 +30,7 @@
   ^{:doc "Operator safety : contains-elements"}
   operatorsafety-contains-elements
   (let [root      (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ") 
-        node      (.statements (.getBody root))] 
+        node      (representation/snippet-node-with-value "" (.statements (.getBody root)))] 
     (is (true? 
           (precondition/safe-operator-for-node? :contains-elements node)))))
 

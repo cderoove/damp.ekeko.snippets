@@ -49,70 +49,65 @@
   [snippet node]
   (update-constrainf snippet node :list-contains-with-repetition))
 
-(defn
-  listrewrite-for-node
-  "Return listrewrite of the given node (= lstval) or new listrewrite if it doesn't have."
-  [snippet node]
-  (let [list-rewrite (representation/snippet-usernode-for-node snippet node)]
-    (if (nil? list-rewrite)
-      (util/create-listrewrite node)
-      list-rewrite)))
-  
-(defn
-  update-listrewrite-for-node
-  "Update or write :node2usernode for listrewrite of the given node (= lstval).
-   Write :ast2var for new list with the same logic variable of old list."
-  [snippet node new-list-rewrite]
-  (let [list-rewrite (representation/snippet-usernode-for-node snippet node)
-        new-snippet 
-        (if (nil? list-rewrite)
-          (assoc-in snippet [:node2usernode node] new-list-rewrite)
-          (update-in snippet [:node2usernode node] (fn [x] new-list-rewrite)))
-        new-list (util/rewritten-list-from-listrewrite new-list-rewrite)
-        var-match-raw (representation/snippet-var-for-node new-snippet (:value node))]
-    (if (nil? (representation/snippet-var-for-node new-snippet new-list))
-      (assoc-in new-snippet [:ast2var new-list] var-match-raw)
-      new-snippet)))
-
 (defn 
-  remove-node 
-  "Remove a given node from snippet. Add new listrewrite to snippet node2usernode."
+  remove-node-no-apply-rewrite 
+  "Remove a given node from snippet, without apply rewrite."
   [snippet node]
   (let [list-container (representation/snippet-node-with-member snippet node)
-        list-rewrite (listrewrite-for-node snippet list-container)
-        new-snippet (representation/remove-node-from-snippet snippet node)]
-    (util/remove-node-from-listrewrite list-rewrite node)
-    (update-listrewrite-for-node new-snippet list-container list-rewrite)))
+        rewrite (representation/snippet-rewrite snippet)
+        list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
+    (.remove list-rewrite node (new org.eclipse.text.edits.TextEditGroup "snippet"))
+    snippet))
+    
+(defn 
+  remove-node 
+  "Remove a given node from snippet."
+  [snippet node]
+  (remove-node-no-apply-rewrite snippet node)
+  (representation/apply-rewrite snippet)) 
+
+(defn 
+  add-node-no-apply-rewrite 
+  "Add a given node in given idx inside the lst (listval) in snippet."
+  [snippet list-container node idx]
+  (let [rewrite (representation/snippet-rewrite snippet)
+        list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
+    (.insertAt list-rewrite node idx (new org.eclipse.text.edits.TextEditGroup "snippet"))
+    snippet))
 
 (defn 
   add-node 
   "Add a given node in given idx inside the lst (listval) in snippet."
   [snippet list-container node idx]
-  (let [list-rewrite (listrewrite-for-node snippet list-container)
-        new-snippet (representation/add-node-to-snippet snippet node)]
-    (util/add-node-to-listrewrite list-rewrite node idx)
-    (update-listrewrite-for-node new-snippet list-container list-rewrite)))
+  (add-node-no-apply-rewrite snippet list-container node idx)
+  (representation/apply-rewrite snippet)) 
 
 (defn
   add-nodes 
   "Add nodes (list of node) to list lst (listval) with index starting from idx in the given snippet."
   [snippet lst nodes idx]
-  (if (empty? nodes)
-    snippet
-    (let [newsnippet (add-node snippet lst (first nodes) idx)]
-      (add-nodes newsnippet lst (rest nodes) (+ idx 1)))))
+  (defn add-nodes-rec [snippet lst nodes idx]
+    (if (empty? nodes)
+      snippet
+      (let [newsnippet (add-node-no-apply-rewrite snippet lst (first nodes) idx)]
+        (add-nodes-rec newsnippet lst (rest nodes) (+ idx 1)))))
+  (representation/apply-rewrite (add-nodes-rec snippet lst nodes idx))) 
 
 (defn
   split-variable-declaration-fragments 
   "Split variable declaration fragments into multiple node with one fragment for each statement.
    List listcontainer (lstval) is the list which fragments resided."
   [snippet listcontainer position fragments modifiers type]
-  (if (empty? fragments)
-    snippet
-    (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
-          newsnippet-node (add-node snippet listcontainer newnode position)
-          newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
-      (split-variable-declaration-fragments newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
+  (defn split-variable-declaration-fragments-rec 
+    [snippet listcontainer position fragments modifiers type]
+    (if (empty? fragments)
+      snippet
+      (let [newnode         (parsing/make-variable-declaration-statement modifiers type (first fragments))
+            newsnippet-node (add-node-no-apply-rewrite snippet listcontainer newnode position)
+            newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
+        (split-variable-declaration-fragments-rec newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
+  (representation/apply-rewrite 
+    (split-variable-declaration-fragments-rec snippet listcontainer position fragments modifiers type))) 
 
 (defn
   split-variable-declaration-statement 
@@ -120,7 +115,7 @@
   [snippet statement]
   (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
-        newsnippet      (remove-node snippet statement)]  
+        newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (split-variable-declaration-fragments
       newsnippet 
       listcontainer
@@ -137,7 +132,7 @@
   (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         newsnippet-list (contains-elements snippet (:value listcontainer))
-        newsnippet      (remove-node newsnippet-list statement)]  
+        newsnippet      (remove-node-no-apply-rewrite newsnippet-list statement)]  
     (split-variable-declaration-fragments
       newsnippet 
       listcontainer
@@ -250,7 +245,7 @@
   (let [listcontainer   (representation/snippet-node-with-member snippet statement)
         position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
-        newsnippet      (remove-node snippet statement)]  
+        newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (add-nodes newsnippet listcontainer inlined-statements position)))
 
 (defn 
@@ -265,7 +260,7 @@
   "Introduce logic variable to a given node."
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)
-        snippet-with-epsilon (representation/remove-node-from-snippet snippet-with-uservar node)
+        snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :variable)))
 
@@ -315,6 +310,6 @@
   negated-node 
   "Match all kind of node, except the given node."
   [snippet node]
-  (let [snippet-with-epsilon (representation/remove-node-from-snippet snippet node)
+  (let [snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :negated)))

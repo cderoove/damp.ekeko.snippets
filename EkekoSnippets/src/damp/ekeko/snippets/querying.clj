@@ -23,8 +23,7 @@
             (((matching/make-constraining-function (representation/snippet-constrainer-for-node snippet ast-or-list)) ast-or-list) snippet)))
   (let [ast (:ast snippet)
         query (atom '())]
-    (representation/walk-jdt-node-of-snippet 
-      snippet
+    (util/walk-jdt-node 
       ast
       (fn [astval]  (swap! query concat (conditions astval)))
       (fn [lstval] (swap! query concat (conditions lstval)))

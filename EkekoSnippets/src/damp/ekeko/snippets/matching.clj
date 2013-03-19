@@ -330,8 +330,7 @@
     (concat ((gf-minimalistic ast-or-list) snippet)
             ((cf-exact ast-or-list) snippet)))
   (let [query (atom '())]
-    (representation/walk-jdt-node-of-snippet 
-      snippet
+    (util/walk-jdt-node 
       ast
       (fn [astval]  (swap! query concat (conditions astval)))
       (fn [lstval] (swap! query concat (conditions lstval)))

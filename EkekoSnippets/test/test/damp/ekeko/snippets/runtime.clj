@@ -151,7 +151,7 @@
           (.getName node2)
           var2)
         ;;add snippet1 and snippet2 to group
-        group (representation/make-snippetgroup)
+        group (representation/make-snippetgroup "group")
         added-group1 (operators/add-snippet group generalized-snippet1)
         added-group2 (operators/add-snippet added-group1 generalized-snippet2)
         generalized-snippet

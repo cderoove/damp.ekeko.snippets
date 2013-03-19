@@ -26,11 +26,7 @@
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippet."
   [snippetgroup]
-  (cons 
-    (concat 
-      (representation/snippetgroup-rootvars snippetgroup)
-      (representation/snippetgroup-uservars snippetgroup)) 
-    (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
+  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko)))
 
 (defn
   query-by-snippet*
@@ -42,11 +38,7 @@
   query-by-snippet
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
-  (cons 
-    (cons 
-      (representation/snippet-var-for-root snippet)
-      (representation/snippet-uservars snippet)) 
-    (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
+  (eval (querying/snippet-query snippet 'damp.ekeko/ekeko)))
       
 (defn 
   query-by-snippet-incrementally*
@@ -66,6 +58,28 @@
         (if (empty? (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko conditions)))
           (recur (butlast conditions) conditions)
           (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko* old-conditions)))))))
+
+;;for plugin purpose, result with header
+(defn
+  query-by-snippetgroup-with-header
+  "Queries the Ekeko projects for matches for the given snippet."
+  [snippetgroup]
+  (cons 
+    (concat 
+      (representation/snippetgroup-rootvars snippetgroup)
+      (representation/snippetgroup-uservars snippetgroup)) 
+    (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
+
+(defn
+  query-by-snippet-with-header
+  "Queries the Ekeko projects for matches for the given snippet."
+  [snippet]
+  (cons 
+    (cons 
+      (representation/snippet-var-for-root snippet)
+      (representation/snippet-uservars snippet)) 
+    (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
+
 
 (comment 
   (use 'damp.ekeko.snippets)

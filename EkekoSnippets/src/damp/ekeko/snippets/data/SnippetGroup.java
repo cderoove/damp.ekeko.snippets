@@ -77,8 +77,8 @@ public class SnippetGroup {
 	}
 	
 	public void addSnippetCode(String code) {
-		Object rootNode = RT.var("damp.ekeko.snippets.parsing", "parse-string-ast").invoke(code);
-		Object snippet = RT.var("damp.ekeko.snippets.representation", "jdt-node-as-snippet").invoke(rootNode);
+		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
+		Object snippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
 		group = RT.var("damp.ekeko.snippets.operators", "add-snippet").invoke(getGroup(), snippet);
 	}
 
@@ -161,9 +161,9 @@ public class SnippetGroup {
 	public Object[] getQueryResult(Object node) {
 		Object snippet = getSnippet(node);
 		if (snippet == null)		
-			return getArray(RT.var("damp.ekeko.snippets","query-by-snippetgroup").invoke(getGroup())); 		
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippetgroup-with-header").invoke(getGroup())); 		
 		else 
-			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet").invoke(snippet));
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet-with-header").invoke(snippet));
 	}
 
 }

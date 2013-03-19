@@ -3,9 +3,11 @@
     :author "Coen De Roover, Siltvani"}
    damp.ekeko.snippets.representation
   (:require [damp.ekeko.snippets 
-             [util :as util]])
-    (:require [damp.ekeko.jdt 
-             [astnode :as astnode]]))
+             [util :as util]
+             [parsing :as parsing]])
+  (:require [damp.ekeko.jdt 
+             [astnode :as astnode]])
+  (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
 
 ;; Snippet Datatype
@@ -32,14 +34,17 @@
 ;   format of the function is list (:type arguments)
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
 ; - var2uservar: map from logic variable to the user defined logic variable 
-; - node2usernode: map from node (= list wrapper) to the list rewrite 
 ; - userquery: user defined logic conditions 
 ;   format in quote '((...)(....))
-
+; - document: java Document source code
+; - rewrite: ASTRewrite
+;   note: to use the Track, we should call the function track for each node before any modification of ASTRewrite
+; - track2ast: map from track (in original document) to node 
+;   {[property, start, length] ast}
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar node2usernode userquery])
+  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar userquery document rewrite track2ast])
 
 (defn 
   snippet-root 
@@ -118,51 +123,26 @@
   (snippet-uservar-for-var snippet (snippet-var-for-node snippet template-ast)))
 
 (defn 
-  snippet-usernode-for-node 
-  "For the given node (list wrapper) of the given snippet, returns the user defined node (list rewrite)."
-  [snippet snippet-ast]
-  (get-in snippet [:node2usernode snippet-ast]))
-
-(defn 
-  snippet-usernode-with-member
-  "Returns node (= the listrewrite) which it's :value (= NodeList) has member mbr."
-  [snippet mbr]
-  (defn find-owner [member list]
-    (cond 
-      (empty? list) nil
-      (.contains (.getRewrittenList (first list)) member) (first list)
-      :else (find-owner member (rest list)))) 
-  (find-owner mbr (vals (:node2usernode snippet))))
-
-(defn 
   snippet-node-with-member
-  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which it's :value (= NodeList) has member mbr."
+  "Returns node (= wrapper of NodeList) which it's :value (= NodeList) has member mbr."
   [snippet mbr]
-  (let [listrewrite (snippet-usernode-with-member snippet mbr)
-        parent (if (nil? listrewrite) 
-                (.getParent mbr)
-                (.getParent listrewrite))          
+  (let [parent (.getParent mbr)
         property (.getLocationInParent mbr)
-        value (if (nil? listrewrite) 
-                (.getStructuralProperty parent property)
-                (.getOriginalList listrewrite))]    
+        value (.getStructuralProperty parent property)]    
     (astnode/make-value parent property value)))
 
 (defn 
   snippet-node-with-value
-  "Returns node (= wrapper of NodeList, the original one, not the listrewrite) which has :value = value.
+  "Returns node (= wrapper of NodeList) which has :value = value.
   value at least should have one member."
   [snippet value]
   (snippet-node-with-member snippet (first value)))
 
 (defn
   snippet-value-for-node
-  "Return :value of the given node (= wrapper of NodeList) or value of usernode if it exist."
+  "Return :value of the given node (= wrapper of NodeList)."
   [snippet node]
-  (let [list-rewrite (snippet-usernode-for-node snippet node)]
-    (if (nil? list-rewrite)
-      (:value node)
-      (util/rewritten-list-from-listrewrite list-rewrite))))
+  (:value node))
 
 (defn 
   snippet-nodes
@@ -193,7 +173,28 @@
           '()
           query)))
 
+(defn 
+  snippet-document
+  "Returns the document of source code of the given snippet."
+  [snippet]
+  (:document snippet))
 
+(defn 
+  snippet-rewrite
+  "Returns the ASTRewrite from the root of snippet."
+  [snippet]
+  (:rewrite snippet))
+
+(defn 
+  snippet-node-for-track 
+  "For the node track in document of the given snippet, returns the AST node."
+  [snippet track]
+  (get-in snippet [:track2ast track]))
+
+(defn
+  snippet-property-for-node
+  [snippet ast]
+  (astnode/property-descriptor-id (astnode/owner-property ast)))
 
 ;; Snippets Group Datatype
 ;; ----------------------
@@ -276,12 +277,17 @@
 ;; Constructing Snippet instances
 ;; ------------------------------
 
+(defn 
+  make-astrewrite
+  [node]
+  (ASTRewrite/create (.getAST node)))
 
 (defn 
   jdt-node-as-snippet
   "Interpretes the given JDT ASTNode as a snippet with default matching 
    strategies (i.e., grounding=:minimalistic, constaining=:exact)
-   for the values of its properties."
+   for the values of its properties.
+   note: Only used to test operators related binding."
   [n]
   (defn assoc-snippet-value [snippet value]
     (let [lvar (util/gen-readable-lvar-for-value value)]
@@ -291,7 +297,7 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '()))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} '() nil nil {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -305,36 +311,46 @@
     @snippet))
   
 
-;; Updating Snippet instances
-;;-----------------------------
-
 (defn 
-  add-node-to-snippet
-  "Add node to snippet."
-  [snippet n]
-  (defn assoc-snippet-value [snippet value]
-    (let [lvar (util/gen-readable-lvar-for-value value)]
+  document-as-snippet
+  "Parse Document doc as a snippet with default matching strategies (i.e., grounding=:minimalistic, constaining=:exact)
+   for the values of its properties.
+   Function ASTRewrite/track is called for each ASTNode to activate the Node Tracking in ASTRewrite." 
+  [doc]
+  (defn assoc-snippet-value [snippet value track]
+    (let [lvar (util/gen-readable-lvar-for-value value)
+          arrTrack [(snippet-property-for-node snippet value) 
+                    (.getStartPosition track) 
+                    (.getLength track)]]
       (->
         snippet
         (assoc-in [:ast2var value] lvar)
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
-        (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom snippet)]
+        (assoc-in [:var2ast lvar] value)
+        (assoc-in [:track2ast arrTrack] value))))
+  (let [n (parsing/parse-document doc)
+        rw (make-astrewrite n)
+        snippet (atom (Snippet. n {} {} {} {} {} '() doc rw {}))]
     (util/walk-jdt-node 
       n
-      (fn [astval] (swap! snippet assoc-snippet-value astval))
+      (fn [astval] 
+        (swap! snippet assoc-snippet-value astval (.track rw astval)))
       (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval)
         (let [rawlst (:value lstval)
               rawlstvar (util/gen-readable-lvar-for-value rawlst)]
+          (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval)))
           (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
-      (fn [primval]  (swap! snippet assoc-snippet-value primval))
-      (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
+      (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
+      (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
     @snippet))
+  
+
+;; Updating Snippet instances
+;;-----------------------------
 
 (defn 
-  remove-node-from-snippet
+  remove-gf-cf-from-snippet
   "Clear grounding & constraining function for all child of a given node in snippet."
   [snippet node]
   (defn update-snippet-value [snippet value]
@@ -350,38 +366,6 @@
     @snippet))
 
 
-;; walk through snippet
-;;-----------------------------
-
-(defn 
-  walk-jdt-node-of-snippet
-  "Recursive descent through a JDT node, applying given functions to the encountered 
-   ASTNode instances and Ekeko wrappers for their property values.
-   With addition get new property value from snippet :node2usernode if it exist."
-  [snippet n node-f list-f primitive-f null-f]
-  (loop
-    [nodes (list n)]
-    (when-not (empty? nodes)
-      (let [val (first nodes)
-            others (rest nodes)]
-        (cond 
-          (astnode/ast? val)
-          (do
-            (node-f val)
-            (recur (concat (astnode/node-propertyvalues val) others)))
-          (astnode/lstvalue? val)
-          (do 
-            (list-f val)
-            (recur (concat (snippet-value-for-node snippet val) others)))
-          (astnode/primitivevalue? val)
-          (do
-            (primitive-f val)
-            (recur others))
-          (astnode/nilvalue? val)
-          (do
-            (null-f val)
-            (recur others)))))))
-
 
 ;; Constructing SnippetGroup instances
 ;; -----------------------------------
@@ -394,3 +378,48 @@
     @snippetgroup))
 
 
+;; Copying Snippet
+;; ------------------------
+
+(defn
+  copy-snippet
+  "Copy all informations in oldsnippet to newsnippet, comparing each node with NodeTrackPosition of ASTRewrite."
+  [oldsnippet newsnippet]
+  (defn update-newsnippet-value [snippet value track]
+    (let [arrTrack [(snippet-property-for-node oldsnippet value) 
+                    (.getStartPosition track) 
+                    (.getLength track)]
+          newast (snippet-node-for-track snippet arrTrack)] 
+      (if (not (nil? newast))
+        (->
+          snippet
+          (update-in [:ast2var newast] (fn [x] (snippet-var-for-node oldsnippet value)))
+          (update-in [:ast2groundf newast] (fn [x] (get-in oldsnippet [:ast2groundf value])))
+          (update-in [:ast2constrainf newast] (fn [x] (get-in oldsnippet [:ast2constrainf value])))
+          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])
+          (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
+        snippet)))
+  (let [snippet (atom newsnippet)
+        rw (:rewrite oldsnippet)]
+    (util/walk-jdt-node 
+      (:ast oldsnippet)
+      (fn [astval]  (swap! snippet update-newsnippet-value astval (.track rw astval)))
+      (fn [lstval]  (swap! snippet update-newsnippet-value lstval (.track rw (:owner lstval))))
+      (fn [primval] (swap! snippet update-newsnippet-value primval (.track rw (:owner primval))))
+      (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
+    (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
+    (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
+    @snippet))
+
+(defn 
+  apply-rewrite 
+  "Apply rewrite to snippet."
+  [snippet]
+  (let [rewrite (snippet-rewrite snippet)
+        document (snippet-document snippet)]
+    (.apply (.rewriteAST rewrite document nil) document)
+    (let [newsnippet (document-as-snippet document)]
+      (copy-snippet snippet newsnippet)))) 
+
+
+  

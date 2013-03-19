@@ -174,11 +174,13 @@
 (deftest
   ^{:doc "Remove node from a nodelist :statements"}
   operator-remove-node-from-statements
-  (let [node
-        (parsing/parse-string-declaration 
+  (let [doc
+        (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (representation/document-as-snippet doc)
+        node 
+        (:ast snippet) 
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -228,11 +230,13 @@
 (deftest
   ^{:doc "Split given statement in given snippet, become multiple statements with one fragment in each."}
   operator-split-variable-declaration-statement
-  (let [node
-        (parsing/parse-string-declaration 
+  (let [doc
+        (parsing/parse-string-to-document 
           "public int rmethodB() {int x = 0, y = 0; int z = x + y; return z; } ")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (representation/document-as-snippet doc)
+        node 
+        (:ast snippet) 
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -247,13 +251,41 @@
 ;; ------------------------------------------
 
 (deftest
-  ^{:doc "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."}
-  operator-contains-variable-declaration-statements
-  (let [node
-        (parsing/parse-string-declaration 
+  operator-contains-variable-declaration-statement
+  (let [doc
+        (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (representation/document-as-snippet doc)
+        node 
+        (:ast snippet) 
+        generalized-snippet-with-lvar
+        (operators/introduce-logic-variable snippet (.getName node) '?m)
+        generalized-snippet1
+        (operators/contains-variable-declaration-statement
+          generalized-snippet-with-lvar 
+          (first (.statements (.getBody node))))
+        node2 
+        (:ast generalized-snippet1) 
+        generalized-snippet
+        (operators/contains-variable-declaration-statement
+          generalized-snippet1 
+          (fnext (.statements (.getBody node2))))]
+    (test/tuples-correspond 
+      (snippets/query-by-snippet generalized-snippet)
+      "#{(\"public int rmethodC(){\\n  int i=0;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodC\") 
+         (\"public int rmethodD(){\\n  int i=0;\\n  i=1;\\n  int x=0, y=0;\\n  int z=x + y;\\n  return z;\\n}\\n\" \"rmethodD\")}")))
+
+(deftest
+  ^{:doc "Allow given lst (= list of statement) in given snippet, as part of one or more statements in target source code."}
+  operator-contains-variable-declaration-statements
+  (let [doc
+        (parsing/parse-string-to-document 
+          "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
+        snippet 
+        (representation/document-as-snippet doc)
+        node 
+        (:ast snippet) 
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -483,11 +515,13 @@
 (deftest
   ^{:doc "Add node to a nodelist :statements"}
   operator-add-node-to-statements
-  (let [node
-        (parsing/parse-string-declaration 
+  (let [doc
+        (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (representation/document-as-snippet doc)
+        node 
+        (:ast snippet) 
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         new-node
@@ -580,7 +614,7 @@
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-add-snippet)
 
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-split-variable-declaration-statement)
-   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statements)
+   (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-contains-variable-declaration-statement)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-ifstatement-with-else)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-variable-declaration)
    (test/against-project-named "TestCase-Snippets-BasicMatching" false  operator-allow-subtype-on-class-declaration-extends)
