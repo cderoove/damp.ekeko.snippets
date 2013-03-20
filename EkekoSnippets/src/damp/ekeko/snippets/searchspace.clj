@@ -1,7 +1,7 @@
 (ns damp.ekeko.snippets.searchspace)
 
 
-(defn bfs
+(defn dfs
   [init-value goal values map-operators filter-function check-function]
 
   (defn nothing [x y] x)
@@ -46,60 +46,17 @@
             (fn [todo] (filter-function (operator todo) (value todo)))
             (map (fn [op] [op curr-result next-values curr-path]) operators)))))
 
-    ;;bfs algorithm
-    (defn process-bfs
+    ;;dfs algorithm
+    (defn process-dfs
       [list-todo goal]
       (let [todo (first list-todo)]
         (cond 
-          (empty? list-todo) (print "fail")
-          (check-function (process todo) goal) (print "succeed" (conj (path todo) [(operator todo) (value todo)]))
+          (empty? list-todo) (println "fail")
+          (check-function (process todo) goal) (println "succeed" (conj (path todo) [(operator todo) (value todo)]))
           :else (do
                   (println (operator todo)) 
                   (println (value todo)) 
-                  (process-bfs (concat (rest list-todo) (children todo)) goal)))))
+                  (process-dfs (concat (children todo) (rest list-todo)) goal)))))
     
-    (process-bfs (generate-todo init-value values) goal)))
-
-(comment
-  
-(def init-value 0)
-(def goal (/ 105 6))
-(def values '(100 0 10 5 6))
-(def map-operators {'+ + '- - '* * '/ /})
-(defn safe-operator? [op value]
-  (not (and (= op '/) (= value 0))))
-
-(bfs init-value goal values map-operators safe-operator? =)
-
-(def node
-  (damp.ekeko.snippets.parsing/parse-string-declaration 
-    "public int myMethodF(int val) {	r = 0; if (val == 0) {	r = val;	} return r; }"))
-(def snippet 
-  (damp.ekeko.snippets.representation/jdt-node-as-snippet node))
-(def resnippet 
-  (damp.ekeko.snippets.operators/allow-ifstatement-with-else
-    snippet
-    (fnext (.statements (.getBody node)))))
-(def strsnippet 
-  (test.damp.ekeko/tuples-to-stringsetstring 
-    (damp.ekeko.snippets/query-by-snippet resnippet)))
-
-(defn result-equal 
-  [snippet string]
-  (= (test.damp.ekeko/tuples-to-stringsetstring 
-       (damp.ekeko.snippets/query-by-snippet snippet))
-     string))
-
-(.start 
-  (Thread. 
-    (fn [] 
-      (damp.ekeko.snippets.searchspace/bfs 
-        snippet 
-        strsnippet 
-        (damp.ekeko.snippets.representation/snippet-nodes snippet)
-        damp.ekeko.snippets.precondition/searchspace-operators
-        damp.ekeko.snippets.precondition/safe-operator-for-node? 
-        result-equal))))
-
-)
+    (process-dfs (generate-todo init-value values) goal)))
 
