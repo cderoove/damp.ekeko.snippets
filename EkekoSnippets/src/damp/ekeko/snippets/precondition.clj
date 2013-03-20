@@ -83,13 +83,25 @@
   operator-types
   "Returns all operator types."
   []
-  (map (fn [x] (key x)) operatortype-information))
+  (keys operatortype-information))
 
 (defn 
   operator-ids
+  "Returns all operator ids."
+  []
+  (keys operator-information))
+
+(defn 
+  operator-names
   "Returns all operator names."
   []
-  (map (fn [x] (key x)) operator-information))
+  (map operator-name (operator-ids)))
+
+(defn 
+  operator-functions
+  "Returns all operator functions."
+  []
+  (map operator-function (operator-ids)))
 
 (defn 
   operator-ids-with-type
@@ -103,6 +115,12 @@
         (process-ids (rest operators) selecteds))))
   (process-ids (operator-ids) '()))
   
+(defn 
+  operator-maps
+  "Returns map {name function} of all operator."
+  []
+  (zipmap (operator-ids) (operator-functions)))
+
 ;; Applicable Operator for snippet
 ;; ----------------------------------
 
@@ -470,3 +488,23 @@
    :refinement      "Refinement"
    :netral          "Netral"
   })
+
+
+;;Operators for searchspace
+;;------------------------------
+
+(def 
+  searchspace-operators
+  {:contains-elements-with-same-size                  contains-elements-with-same-size                  
+   :contains-elements                                 contains-elements
+   :contains-elements-with-relative-order             contains-elements-with-relative-order     
+   :contains-elements-with-repetition                 contains-elements-with-repetition    
+   :split-variable-declaration-statement              split-variable-declaration-statement        
+   :contains-variable-declaration-statement           contains-variable-declaration-statement     
+   :allow-ifstatement-with-else                       allow-ifstatement-with-else  
+   :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration     
+   :allow-subtype-on-class-declaration-extends        allow-subtype-on-class-declaration-extends   
+   :allow-variable-declaration-with-initializer       allow-variable-declaration-with-initializer 
+   :inline-method-invocation                          inline-method-invocation          
+   :negated-node                                      negated-node        
+	})
