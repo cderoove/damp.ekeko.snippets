@@ -12,13 +12,14 @@ public class SnippetGroup {
 	private Object group;
 	private int[] activeNodePos;
 	
-	/*static {
+	static {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operators"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.querying"));
-	}*/
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
+	}
 
 	public SnippetGroup(String name) {
 		group = RT.var("damp.ekeko.snippets.representation", "make-snippetgroup").invoke(name);

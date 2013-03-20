@@ -4,7 +4,12 @@ Bundle-Name: damp.ekeko.snippets.plugin
 Bundle-SymbolicName: EkekoSnippets;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: damp.ekeko.snippets.gui.Activator
-Export-Package: damp.ekeko
+Export-Package: clojure.core.logic,
+ damp.ekeko,
+ damp.ekeko.snippets,
+ damp.ekeko.snippets.data,
+ damp.ekeko.snippets.gui,
+ damp.ekeko.snippets.gui.viewer
 Require-Bundle: clojure.osgi;bundle-version="1.3.0",
  org.eclipse.osgi.services;bundle-version="3.3.100",
  org.eclipse.osgi.util;bundle-version="3.2.300",
@@ -18,9 +23,11 @@ Require-Bundle: clojure.osgi;bundle-version="1.3.0",
  ccw.core;bundle-version="0.11.1",
  org.clojure.tools.nrepl;bundle-version="0.2.0",
  ccw.util;bundle-version="0.11.1",
+ org.eclipse.jdt.astview;bundle-version="1.1.8",
  damp.ekeko.plugin;bundle-version="1.0.3"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-RegisterBuddy: damp.ekeko.plugin
 Bundle-ClassPath: .,
- swing2swt.jar
+ swing2swt.jar,
+ core.logic-0.8.0-rc2.jar

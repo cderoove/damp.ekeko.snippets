@@ -235,7 +235,7 @@ public class ResultCheckView extends ViewPart {
 
 			TableColumn tblclmnr = new TableColumn(tableConfirmResult, SWT.NONE);
 			tblclmnr.setWidth(250);
-			tblclmn.setText(arrCol[i].toString());
+			tblclmnr.setText(arrCol[i].toString());
 		}
 	}
 

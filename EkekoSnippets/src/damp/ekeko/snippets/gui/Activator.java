@@ -4,6 +4,8 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
+import clojure.lang.RT;
+import clojure.lang.Symbol;
 import clojure.osgi.ClojureOSGi;
 
 /**
@@ -66,5 +68,12 @@ public class Activator extends AbstractUIPlugin {
 		ClojureOSGi.require(bundleContext, "clojure.stacktrace"); 
 		ClojureOSGi.require(bundleContext, "clojure.test");  
 		ClojureOSGi.require(bundleContext, "clojure.tools.nrepl.server"); 
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.representation");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.parsing");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.operators");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.precondition");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.querying");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.gui");
 	}
 }

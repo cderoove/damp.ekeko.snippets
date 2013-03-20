@@ -9,7 +9,28 @@
              [reification :as reification]
              [soot :as soot]])
   (:import 
-    [org.eclipse.jdt.core.dom SimpleName VariableDeclarationFragment]))
+    [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
+     InfixExpression$Operator PrefixExpression$Operator SimpleName VariableDeclarationFragment]))
+
+(defn to-primitive-type-code
+  [string]
+  (PrimitiveType/toCode string)) 
+
+(defn to-modifier-keyword
+  [string]
+  (Modifier$ModifierKeyword/toKeyword string)) 
+
+(defn to-assignment-operator
+  [string]
+  (Assignment$Operator/toOperator string)) 
+
+(defn to-infix-expression-operator
+  [string]
+  (InfixExpression$Operator/toOperator string)) 
+
+(defn to-prefix-expression-operator
+  [string]
+  (PrefixExpression$Operator/toOperator string)) 
 
 (defn
   type-relaxmatch-subtype
