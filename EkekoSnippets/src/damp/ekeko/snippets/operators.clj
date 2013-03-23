@@ -181,9 +181,9 @@
 
 (defn
   update-logic-conditions
-  "Update user logic conditions to snippet. conditions should be in quote, '(...) (...)."
+  "Update user logic conditions to snippet. conditions should be in quote, '(...) (...) or string."
   [snippet conditions]
-  (assoc snippet :userquery (list conditions)))
+  (assoc snippet :userquery (list (symbol conditions))))
 
 (defn
   add-logic-conditions
@@ -210,11 +210,20 @@
   (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
+(defn 
+  add-snippet-to-snippetgrouphistory
+  "Add snippet to snippetgrouphistory."
+  [snippetgrouphistory snippet]
+  (let [new-snippetgroup (add-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
+        new-orisnippetgroup (add-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
+        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
+    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
+
 (defn
   update-logic-conditions-to-snippetgroup
-  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...)."
+  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...) or string."
   [snippetgroup conditions]
-  (assoc snippetgroup :userquery (list conditions)))
+  (assoc snippetgroup :userquery (list (symbol conditions))))
 
 (defn
   add-logic-conditions-to-snippetgroup
@@ -252,14 +261,14 @@
   introduce-logic-variable-of-node-exact 
   "Introduce logic variable to a given node, without removing any condition."
   [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))]
     (update-constrainf snippet-with-uservar node :exact-with-variable)))
 
 (defn 
   introduce-logic-variable 
   "Introduce logic variable to a given node."
   [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] uservar)
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
         snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :variable)))
@@ -268,25 +277,27 @@
   introduce-logic-variables-with-condition
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
-  [snippet node uservar condition]
-  (defn make-condition [condition uservar newvar]
-    (if (not (empty? condition))
-      (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
-      condition))
-  (defn update-snippet-var-cond [snippet value]
-    (let [newvar     (util/gen-lvar)
-          newsnippet (introduce-logic-variable snippet value newvar)]
-      (add-logic-conditions newsnippet (make-condition condition uservar newvar))))
-  (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
-    (damp.ekeko/ekeko [?var] 
-                      (reification/child+ root ?var)
-                      (runtime/ast-variable-samebinding node ?var)))
-  (defn process-binding-variables [snippet nodes]
-    (if (empty? nodes)
-      snippet
-      (let [new-snippet (update-snippet-var-cond snippet (first (first nodes)))]
-        (process-binding-variables new-snippet (rest nodes)))))
-  (process-binding-variables snippet (get-binding-variables (:ast snippet) node)))
+  [snippet node newuservar newcondition]
+  (let [uservar (symbol newuservar)
+        condition (symbol newcondition)]
+    (defn make-condition [condition uservar newvar]
+      (if (not (empty? condition))
+        (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
+        condition))
+    (defn update-snippet-var-cond [snippet value]
+      (let [newvar     (util/gen-lvar)
+            newsnippet (introduce-logic-variable snippet value newvar)]
+        (add-logic-conditions newsnippet (make-condition condition uservar newvar))))
+    (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
+      (damp.ekeko/ekeko [?var] 
+                        (reification/child+ root ?var)
+                        (runtime/ast-variable-samebinding node ?var)))
+    (defn process-binding-variables [snippet nodes]
+      (if (empty? nodes)
+        snippet
+        (let [new-snippet (update-snippet-var-cond snippet (first (first nodes)))]
+          (process-binding-variables new-snippet (rest nodes)))))
+    (process-binding-variables snippet (get-binding-variables (:ast snippet) node))))
 
 (defn 
   introduce-logic-variables

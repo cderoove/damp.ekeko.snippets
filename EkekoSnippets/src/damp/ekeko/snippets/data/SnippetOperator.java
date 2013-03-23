@@ -10,6 +10,7 @@ import clojure.lang.Symbol;
 public class SnippetOperator {
 
 	static {
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operatorsrep"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.precondition"));
 	}
 
@@ -27,16 +28,16 @@ public class SnippetOperator {
 		root.setText("Operator");
 		root.setData("");
 		
-		Object[] types = getArray(RT.var("damp.ekeko.snippets.precondition", "operator-types").invoke());
+		Object[] types = getArray(RT.var("damp.ekeko.snippets.operatorsrep", "operator-types").invoke());
 		for (int i = 0; i < types.length; i++) {
 			TreeItem itemType = new TreeItem(root, 0);
-			itemType.setText((String) RT.var("damp.ekeko.snippets.precondition", "operatortype-name").invoke(types[i]));
+			itemType.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operatortype-name").invoke(types[i]));
 			itemType.setData(types[i]);
 			
 			Object[] operators = getArray(RT.var("damp.ekeko.snippets.precondition", "applicable-operators-with-type").invoke(types[i], selectedNode));
 			for (int j = 0; j < operators.length; j++) {
 				TreeItem itemOp = new TreeItem(itemType, 0);
-				itemOp.setText((String) RT.var("damp.ekeko.snippets.precondition", "operator-name").invoke(operators[j]));
+				itemOp.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-name").invoke(operators[j]));
 				itemOp.setData(operators[j]);
 			}			
 			itemType.setExpanded(true);
@@ -55,7 +56,7 @@ public class SnippetOperator {
 	}
 
 	public static String[] getArguments(Object operator) {
-		Object[] args = getArray(RT.var("damp.ekeko.snippets.precondition", "operator-arguments").invoke(operator));		
+		Object[] args = getArray(RT.var("damp.ekeko.snippets.operatorsrep", "operator-arguments").invoke(operator));		
 		String[] result = new String[args.length];
 		for (int i = 0; i < args.length; i++) {
 			result[i] = args[i].toString();
@@ -64,7 +65,7 @@ public class SnippetOperator {
 	}
 
 	public static String getDescription(Object operator) {
-		String result = (String) RT.var("damp.ekeko.snippets.precondition", "operator-description").invoke(operator);
+		String result = (String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-description").invoke(operator);
 		if (result == null)
 			return "";
 		return result;		

@@ -6,120 +6,20 @@
   (:use [clojure.core.logic])
   (:use [damp.ekeko logic])
   (:use [damp.ekeko.jdt astnode basic reification])
-  (:use [damp.ekeko.snippets operators representation]))
+  (:use [damp.ekeko.snippets representation operatorsrep]))
 
+;; Precondition Data
+;; ----------------------
 
-;; Precondition for Operator
-;; -------------------------
-
-; Datatype representing relation between operator and precondition function.
-; operator-information 
-;    {:operator-id1 [:operator-nodetype operator-function precondition-fuction
-;                      :operator-nodetype operator-id operator-description]
-;     :operator-id2 ....
-;     ...}
-; :operator-nodetype -> node, property, snippet, and group
-; :operator-nodetype -> generalization, refinement, netral
-
-(declare operator-information)
-(declare operator-arguments)
-(declare operatortype-information)
-
-(defn 
-  operator-id 
-  "Returns operator function of given map."
-  [map]
-  (key map))
-
-(defn 
-  operator-nodetype 
-  "Returns operator node type of given operator id."
-  [op-id]
-  (first (get operator-information op-id)))
-
-(defn 
-  operator-function 
-  "Returns operator function of given operator id."
-  [op-id]
-  (fnext (get operator-information op-id)))
-
-(defn 
-  operator-arguments 
-  "Returns operator arguments of given operator id."
-  [op-id]
-  (get operator-arguments op-id))
+(declare operator-precondition)
 
 (defn 
   precondition-function 
   "Returns precondition function of given operator id."
   [op-id]
-  (first (nnext (get operator-information op-id))))
+  (get operator-precondition (precondition-id op-id)))
 
-(defn 
-  operator-type 
-  "Returns operator type of given operator id."
-  [op-id]
-  (fnext (nnext (get operator-information op-id))))
 
-(defn 
-  operator-name 
-  "Returns operator name of given operator id."
-  [op-id]
-  (fnext (nnext (next (get operator-information op-id)))))
-
-(defn 
-  operator-description 
-  "Returns operator description of given operator id."
-  [op-id]
-  (fnext (nnext (nnext (get operator-information op-id)))))
-
-(defn 
-  operatortype-name
-  "Returns operator typename."
-  [type]
-  (get operatortype-information type))
-
-(defn 
-  operator-types
-  "Returns all operator types."
-  []
-  (keys operatortype-information))
-
-(defn 
-  operator-ids
-  "Returns all operator ids."
-  []
-  (keys operator-information))
-
-(defn 
-  operator-names
-  "Returns all operator names."
-  []
-  (map operator-name (operator-ids)))
-
-(defn 
-  operator-functions
-  "Returns all operator functions."
-  []
-  (map operator-function (operator-ids)))
-
-(defn 
-  operator-ids-with-type
-  "Returns all operator names with given type."
-  [type]
-  (defn process-ids [operators selecteds]
-    (if (empty? operators)
-      selecteds
-      (if (= type (operator-type (first operators)))
-        (process-ids (rest operators) (cons (first operators) selecteds))
-        (process-ids (rest operators) selecteds))))
-  (process-ids (operator-ids) '()))
-  
-(defn 
-  operator-maps
-  "Returns map {name function} of all operator."
-  []
-  (zipmap (operator-ids) (operator-functions)))
 
 ;; Applicable Operator for snippet
 ;; ----------------------------------
@@ -351,160 +251,19 @@
   []
   '())
 
-;; Operator Precondition Data
+
+;; Operator Precondition
 ;; -----------------------------
 
 (def 
-  operator-information
-  {:contains-elements-with-same-size                 [:property       
-                                                      contains-elements-with-same-size                  
-                                                      listvalue					          
-                                                      :generalization 
-                                                      "contains-elements-with-same-size"
-                                                      "Desc"]
-   :contains-elements                                [:property   
-                                                      contains-elements
-                                                      listvalue					          
-                                                      :generalization 
-                                                      "contains-elements"
-                                                      "Desc"]
-   :contains-elements-with-relative-order            [:property
-                                                      contains-elements-with-relative-order     
-                                                      listvalue					          
-                                                      :generalization 
-                                                      "contains-elements-with-relative-order"
-                                                      "Desc"]
-   :contains-elements-with-repetition                [:property 
-                                                      contains-elements-with-repetition    
-                                                      listvalue					          
-                                                      :generalization 
-                                                      "contains-elements-with-repetition"
-                                                      "Desc"]
-   :split-variable-declaration-statement             [:node 
-                                                      split-variable-declaration-statement        
-                                                      is-variabledeclarationstatement?
-                                                      :refinement 
-                                                      "split-variable-declaration-statement"
-                                                      "Desc"]
-   :contains-variable-declaration-statement          [:node  
-                                                      contains-variable-declaration-statement     
-                                                      is-variabledeclarationstatement?
-                                                      :generalization 
-                                                      "contains-variable-declaration-statement"
-                                                      "Desc"]
-   :allow-ifstatement-with-else                      [:node   
-                                                      allow-ifstatement-with-else  
-                                                      is-ifstatement?  
-                                                      :generalization 
-                                                      "allow-ifstatement-with-else"
-                                                      "Desc"]
-   :allow-subtype-on-variable-declaration            [:node
-                                                      allow-subtype-on-variable-declaration     
-                                                      is-type?	
-                                                      :generalization 
-                                                      "allow-subtype-on-variable-declaration"
-                                                      "Desc"]
-   :allow-subtype-on-class-declaration-extends       [:node   
-                                                      allow-subtype-on-class-declaration-extends   
-                                                      is-type?     	
-                                                      :generalization 
-                                                      "allow-subtype-on-class-declaration-extends"
-                                                      "Desc"]
-   :allow-variable-declaration-with-initializer      [:node     
-                                                      allow-variable-declaration-with-initializer 
-                                                      is-assignmentexpression?    
-                                                      :generalization 
-                                                      "allow-variable-declaration-with-initializer"
-                                                      "Desc"]
-   :inline-method-invocation                         [:node  
-                                                      inline-method-invocation          
-                                                      is-methodinvocationexpression? 
-                                                      :refinement 
-                                                      "inline-method-invocation"
-                                                      "Desc"]
-   :negated-node                                     [:node   
-                                                      negated-node        
-                                                      is-ast?      
-                                                      :refinement 
-                                                      "negated-node"
-                                                      "Desc"]
-   :introduce-logic-variable                         [:node  
-                                                      introduce-logic-variable  
-                                                      is-ast?                 
-                                                      :generalization 
-                                                      "introduce-logic-variable"
-                                                      "Desc"]
-   :introduce-logic-variable-of-node-exact           [:node   
-                                                      introduce-logic-variable-of-node-exact  
-                                                      is-ast?      
-                                                      :netral 
-                                                      "introduce-logic-variable-of-node-exact"
-                                                      "Desc"]
-   :introduce-logic-variables                        [:node 
-                                                      introduce-logic-variables  
-                                                      is-ast?					
-                                                      :generalization 
-                                                      "introduce-logic-variables"
-                                                      "Desc"]
-   :introduce-logic-variables-with-condition         [:node     
-                                                      introduce-logic-variables-with-condition 
-                                                      is-ast?       	
-                                                      :generalization 
-                                                      "introduce-logic-variables-with-condition"
-                                                      "Desc"]
-   :add-node                                         [:property   
-                                                      add-node                                          
-                                                      listvalue					          
-                                                      :refinement 
-                                                      "add-node"
-                                                      "Desc"]
-   :remove-node                                      [:node       
-                                                      remove-node                                       
-                                                      is-listmember?   
-                                                      :generalization 
-                                                      "remove-node"
-                                                      "Desc"]
+  operator-precondition
+  {:listvalue                            listvalue					          
+   :is-variabledeclarationstatement?     is-variabledeclarationstatement?
+   :is-ifstatement?                      is-ifstatement?  
+   :is-type?                             is-type?	
+   :is-assignmentexpression?             is-assignmentexpression?    
+   :is-methodinvocationexpression?       is-methodinvocationexpression? 
+   :is-ast?                              is-ast?      
+   :is-listmember?                       is-listmember?   
 	})
 
-(def 
-  operator-arguments
-  {:introduce-logic-variable                         ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
-                                                      "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :add-node                                         ["New Node (eg. int x = 5;)"
-                                                      "Index (eg. 1)"]
-   :add-logic-conditions                             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :remove-logic-conditions                          ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :add-logic-conditions-to-snippetgroup             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :remove-logic-conditions-from-snippetgroup        ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
-   :update-logic-conditions                          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
-   :update-logic-conditions-to-snippetgroup          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
-	})
-
-(def
-  operatortype-information
-  {:generalization  "Generalization" 
-   :refinement      "Refinement"
-   :netral          "Netral"
-  })
-
-
-;;Operators for searchspace
-;;------------------------------
-
-(def 
-  searchspace-operators
-  {:contains-elements-with-same-size                  contains-elements-with-same-size                  
-   :contains-elements                                 contains-elements
-   :contains-elements-with-relative-order             contains-elements-with-relative-order     
-   :contains-elements-with-repetition                 contains-elements-with-repetition    
-   :split-variable-declaration-statement              split-variable-declaration-statement        
-   :contains-variable-declaration-statement           contains-variable-declaration-statement     
-   :allow-ifstatement-with-else                       allow-ifstatement-with-else  
-   :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration     
-   :allow-subtype-on-class-declaration-extends        allow-subtype-on-class-declaration-extends   
-   :allow-variable-declaration-with-initializer       allow-variable-declaration-with-initializer 
-   :inline-method-invocation                          inline-method-invocation          
-   :negated-node                                      negated-node        
-	})

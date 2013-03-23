@@ -54,7 +54,7 @@ public class SnippetView extends ViewPart {
 	private String viewID;
 
 	private Action actAddSnippet;
-	private Action actRunQuery;
+	private Action actUndo;
 	private StyledText textSnippet;
 	private StyledText textCondition;
 	private TreeViewer treeViewerSnippet;
@@ -65,6 +65,7 @@ public class SnippetView extends ViewPart {
 	
 	private SnippetGroup snippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
+	private Action actRedo;
 
 	public SnippetView() {
 	}
@@ -310,12 +311,20 @@ public class SnippetView extends ViewPart {
 			actAddSnippet.setToolTipText("Add Snippet");
 		}
 		{
-			actRunQuery = new Action("Run Query") {				public void run() {
-					runQuery();
+			actUndo = new Action("Undo Operator") {				public void run() {
+					undo();
 				}
 			};
-			actRunQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
-			actRunQuery.setToolTipText("Run Query");
+			actUndo.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/etool16/undo_edit.gif"));
+			actUndo.setToolTipText("Undo");
+		}
+		{
+			actRedo = new Action("Redo Operator") {				public void run() {
+					redo();
+				}
+			};
+			actRedo.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/etool16/redo_edit.gif"));
+			actRedo.setToolTipText("Redo");
 		}
 	}
 
@@ -326,7 +335,8 @@ public class SnippetView extends ViewPart {
 		IToolBarManager toolbarManager = getViewSite().getActionBars()
 				.getToolBarManager();
 		toolbarManager.add(actAddSnippet);
-		toolbarManager.add(actRunQuery);
+		toolbarManager.add(actUndo);
+		toolbarManager.add(actRedo);
 	}
 
 	/**
@@ -336,7 +346,8 @@ public class SnippetView extends ViewPart {
 		IMenuManager menuManager = getViewSite().getActionBars()
 				.getMenuManager();
 		menuManager.add(actAddSnippet);
-		menuManager.add(actRunQuery);
+		menuManager.add(actUndo);
+		menuManager.add(actRedo);
 	}
 
 	@Override
@@ -472,5 +483,17 @@ public class SnippetView extends ViewPart {
 		}
 
 		return dlg.getInputs();
+	}
+	
+	public void undo() {
+		snippetGroup.undoOperator();
+		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+		treeViewerSnippet.setInput(snippetGroup.getGroup());
+	}
+
+	public void redo() {
+		snippetGroup.redoOperator();
+		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+		treeViewerSnippet.setInput(snippetGroup.getGroup());
 	}
 }

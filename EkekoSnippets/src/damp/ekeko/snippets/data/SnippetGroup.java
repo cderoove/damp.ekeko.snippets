@@ -9,7 +9,7 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class SnippetGroup {
-	private Object group;
+	private Object groupHistory;
 	private int[] activeNodePos;
 	
 	static {
@@ -17,12 +17,13 @@ public class SnippetGroup {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operators"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operatorsrep"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.querying"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
 	}
 
 	public SnippetGroup(String name) {
-		group = RT.var("damp.ekeko.snippets.representation", "make-snippetgroup").invoke(name);
+		groupHistory = RT.var("damp.ekeko.snippets.representation", "make-snippetgrouphistory").invoke(name);
 		activeNodePos = new int[2];
 	}
 	
@@ -30,8 +31,12 @@ public class SnippetGroup {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
 	
+	public Object getGroupHistory() {
+		return groupHistory;
+	}
+	
 	public Object getGroup() {
-		return group;
+		return RT.var("damp.ekeko.snippets.representation", "snippetgrouphistory-current").invoke(getGroupHistory());
 	}
 	
 	public int[] getActiveNodePos() {
@@ -53,6 +58,17 @@ public class SnippetGroup {
 		return result;
 	}
 	
+	public String toString(Object node) {
+		if (node == null)
+			return toString();
+		Object snippet = getSnippet(node);
+		if (snippet == null)
+			return toString();
+		Object[] code = getArray(RT.var("damp.ekeko.snippets.gui", "print-snippet-with-highlight").invoke(snippet, node));
+		activeNodePos = (int[]) code[1];
+		return code[0].toString();
+	}
+	
 	public String getLogicConditions(Object node) {
 		Object snippet = getSnippet(node);
 		Object conds;
@@ -68,48 +84,22 @@ public class SnippetGroup {
 		return strConds.substring(1, strConds.length() - 1).replace(") ", ") \n").replace("] ", "] \n");
 	}
 	
-	public String toString(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet == null)
-			return toString();
-		Object[] code = getArray(RT.var("damp.ekeko.snippets.gui", "print-snippet-with-highlight").invoke(snippet, node));
-		activeNodePos = (int[]) code[1];
-		return code[0].toString();
-	}
-	
 	public void addSnippetCode(String code) {
 		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
 		Object snippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
-		group = RT.var("damp.ekeko.snippets.operators", "add-snippet").invoke(getGroup(), snippet);
+		groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 	}
 
 	public void applyOperator(Object operator, Object node, String[] args) {
-		Object snippet = getSnippet(node);
-		Object newsnippet = snippet;
-		String opFunc = operator.toString().replace(":", "");
-		
-		if (args != null && args.length == 2)
-			if (opFunc.equals("add-node")) {
-				//add-node
-				Object newnode = RT.var("damp.ekeko.snippets.parsing", "parse-string-ast").invoke(args[0]);
-				newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node, newnode, Integer.parseInt(args[1]));
-			} else
-				newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node, args[0], args[1]);
-		else if (args != null && args.length == 1)
-			if (opFunc.equals("update-logic-conditions")) {
-				//update-logic-conditions
-				if (snippet == null)
-					group = RT.var("damp.ekeko.snippets.operators", "update-logic-conditions-to-snippetgroup").invoke(getGroup(), Symbol.intern(args[0].toString().replace("\n", "")));
-				else
-					newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, Symbol.intern(args[0].toString().replace("\n", "")));
-			} else
-				//introduce-logic-variable variant
-				newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node, Symbol.intern(args[0].toString()));
-		else
-			newsnippet = RT.var("damp.ekeko.snippets.operators", opFunc).invoke(snippet, node);
-			
-		if (snippet != null)
-			group = RT.var("damp.ekeko.snippets.representation", "snippetgroup-replace-snippet").invoke(getGroup(), snippet, newsnippet);		
+		groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, node, args);		
+	}
+	
+	public void undoOperator() {
+		groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "undo-operator").invoke(getGroupHistory());		
+	}
+	
+	public void redoOperator() {
+		groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "redo-operator").invoke(getGroupHistory());		
 	}
 	
 	public Object getObjectValue(Object node) {

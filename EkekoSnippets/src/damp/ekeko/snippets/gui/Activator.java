@@ -72,6 +72,7 @@ public class Activator extends AbstractUIPlugin {
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.representation");
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.parsing");
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.operators");
+		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.operatorsrep");
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.precondition");
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.querying");
 		ClojureOSGi.require(bundleContext, "damp.ekeko.snippets.gui");

@@ -196,82 +196,6 @@
   [snippet ast]
   (astnode/property-descriptor-id (astnode/owner-property ast)))
 
-;; Snippets Group Datatype
-;; ----------------------
-
-; Datatype representing a group (list) of Snippet(s) and additional logic condition
-
-(defrecord SnippetGroup [name snippetlist userquery])
-
-(defn 
-  snippetgroup-name
-  "Returns name of the given snippet group."
-  [snippetgroup]
-  (:name snippetgroup))
-
-(defn 
-  snippetgroup-snippetlist
-  "Returns the list of Snippet(s) of the given snippet group."
-  [snippetgroup]
-  (:snippetlist snippetgroup))
-
-(defn 
-  snippetgroup-userqueries
-  "Returns the logic conditions defined by users of the given snippet group."
-  [snippetgroup]
-  (let [query (:userquery snippetgroup)]
-        (if (nil? query)
-          '()
-          query)))
-
-(defn
-  snippetgroup-rootvars
-  "Returns all logic variables of root node of all snippets in snippet group."
-  [snippetgroup]
-  (map snippet-var-for-root (snippetgroup-snippetlist snippetgroup)))
-
-(declare flat-map)
-
-(defn
-  snippetgroup-vars
-  "Returns all logic variables from the given snippet group."
-  [snippetgroup]
-  (flat-map snippet-vars (snippetgroup-snippetlist snippetgroup)))
-
-(defn
-  snippetgroup-uservars
-  "Returns all user logic variables from the given snippet group."
-  [snippetgroup]
-  (flat-map snippet-uservars (snippetgroup-snippetlist snippetgroup)))
-
-(defn snippetgroup-snippet-for-node
-  [group node]
-  (defn find-snippet [listsnippet node]
-    (cond 
-      (= node nil) nil
-      (empty? listsnippet) nil
-      (contains? (:ast2var (first listsnippet)) node) (first listsnippet)
-      :else (find-snippet (rest listsnippet) node)))
-  (find-snippet (snippetgroup-snippetlist group) node))
-
-(defn snippetgroup-snippet-index
-  [group snippet]
-  (.indexOf (snippetgroup-snippetlist group) snippet))
-
-(defn snippetgroup-replace-snippet
-  [group oldsnippet newsnippet]
-  (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
-    (update-in group [:snippetlist] (fn [x] newlist))))
-
-(defn flat-map
-  "Returns list of results (= f(each-element)) in the form of flat list.
-   Function f here return a list.
-   flat-map similar with function map, but instead of return nested list, flat-map returns unnested list."
-  [f lst]
-  (if (empty? lst)
-    '()
-    (concat (f (first lst))
-            (flat-map f (rest lst)))))
   
 
 ;; Constructing Snippet instances
@@ -366,20 +290,8 @@
     @snippet))
 
 
-
-;; Constructing SnippetGroup instances
-;; -----------------------------------
-
-(defn 
-  make-snippetgroup
-  "Create SnippetGroup instance."
-  [name]
-  (let [snippetgroup (atom (SnippetGroup. name '() '()))]
-    @snippetgroup))
-
-
-;; Copying Snippet
-;; ------------------------
+;; Copying Snippet and Apply rewrite
+;; ---------------------------------
 
 (defn
   copy-snippet
@@ -422,4 +334,207 @@
       (copy-snippet snippet newsnippet)))) 
 
 
-  
+;; Snippets Group Datatype
+;; ----------------------
+
+; Datatype representing a group (list) of Snippet(s) and additional logic condition
+
+(defrecord SnippetGroup [name snippetlist userquery])
+
+(defn 
+  snippetgroup-name
+  "Returns name of the given snippet group."
+  [snippetgroup]
+  (:name snippetgroup))
+
+(defn 
+  snippetgroup-snippetlist
+  "Returns the list of Snippet(s) of the given snippet group."
+  [snippetgroup]
+  (:snippetlist snippetgroup))
+
+(defn 
+  snippetgroup-userqueries
+  "Returns the logic conditions defined by users of the given snippet group."
+  [snippetgroup]
+  (let [query (:userquery snippetgroup)]
+        (if (nil? query)
+          '()
+          query)))
+
+(defn
+  snippetgroup-rootvars
+  "Returns all logic variables of root node of all snippets in snippet group."
+  [snippetgroup]
+  (map snippet-var-for-root (snippetgroup-snippetlist snippetgroup)))
+
+(declare flat-map)
+
+(defn
+  snippetgroup-vars
+  "Returns all logic variables from the given snippet group."
+  [snippetgroup]
+  (flat-map snippet-vars (snippetgroup-snippetlist snippetgroup)))
+
+(defn
+  snippetgroup-uservars
+  "Returns all user logic variables from the given snippet group."
+  [snippetgroup]
+  (flat-map snippet-uservars (snippetgroup-snippetlist snippetgroup)))
+
+(defn snippetgroup-snippet-for-node
+  [group node]
+  (defn find-snippet [listsnippet node]
+    (cond 
+      (= node nil) nil
+      (empty? listsnippet) nil
+      (contains? (:ast2var (first listsnippet)) node) (first listsnippet)
+      :else (find-snippet (rest listsnippet) node)))
+  (find-snippet (snippetgroup-snippetlist group) node))
+
+(defn snippetgroup-snippet-index
+  [group snippet]
+  (.indexOf (snippetgroup-snippetlist group) snippet))
+
+(defn snippetgroup-replace-snippet
+  [group oldsnippet newsnippet]
+  (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
+    (update-in group [:snippetlist] (fn [x] newlist))))
+
+(defn flat-map
+  "Returns list of results (= f(each-element)) in the form of flat list.
+   Function f here return a list.
+   flat-map similar with function map, but instead of return nested list, flat-map returns unnested list."
+  [f lst]
+  (if (empty? lst)
+    '()
+    (concat (f (first lst))
+            (flat-map f (rest lst)))))
+
+
+;; Constructing SnippetGroup instances
+;; -----------------------------------
+
+(defn 
+  make-snippetgroup
+  "Create SnippetGroup instance."
+  [name]
+  (SnippetGroup. name '() '()))
+
+
+
+;; Snippets Group History Datatype
+;; --------------------------------
+
+; Datatype representing a group (list) of Original Snippet(s) and 
+; history of applied operators in order
+; original-snippetgroup --> original snippet group
+; operators-history --> vector of [applied operator-id, node, args]
+; operators-undo-history --> applied operator which are undo by user
+;                            list of [applied operator-id, node, args]
+
+(defrecord SnippetGroupHistory [original-snippetgroup current-snippetgroup operators-history operators-undohistory])
+
+
+(defn 
+  snippetgrouphistory-original
+  "Returns original snippet group of the given snippet group history."
+  [snippetgrouphistory]
+  (:original-snippetgroup snippetgrouphistory))
+
+(defn 
+  snippetgrouphistory-current
+  "Returns current snippet group of the given snippet group history."
+  [snippetgrouphistory]
+  (:current-snippetgroup snippetgrouphistory))
+
+(defn 
+  snippetgrouphistory-history
+  "Returns history of applied operators of the given snippet group history."
+  [snippetgrouphistory]
+  (:operators-history snippetgrouphistory))
+
+(defn 
+  snippetgrouphistory-undohistory
+  "Returns history of undo applied operators of the given snippet group history."
+  [snippetgrouphistory]
+  (:operators-undohistory snippetgrouphistory))
+
+(defn 
+  history-operator
+  "Returns operator id of the given history [op-id, node, args]."
+  [history]
+  (first history))
+
+(defn 
+  history-node
+  "Returns node of the given history [op-id, node, args]."
+  [history]
+  (fnext history))
+
+(defn 
+  history-args
+  "Returns arguments of the given history [op-id, node, args]."
+  [history]
+  (last history))
+
+;; Constructing SnippetGroupHistory instances
+;; -------------------------------------------
+
+(defn 
+  make-snippetgrouphistory
+  "Create SnippetGroup instance and keeping the track of operators history."
+  [name]
+  (let [snippetgroup (make-snippetgroup name)]
+    (SnippetGroupHistory. snippetgroup snippetgroup [] '())))
+
+(defn 
+  reset-snippetgrouphistory
+  "Reset SnippetGroupHistory instance, but keep the undo history."
+  [grouphistory]
+  (let [snippetgroup (:original-snippetgroup grouphistory)
+        undohistory (:operators-undohistory grouphistory)]
+    (SnippetGroupHistory. snippetgroup snippetgroup [] undohistory)))
+
+;; Updating SnippetGroupHistory instances
+;; -------------------------------------------
+
+(defn snippetgrouphistory-update-original-group
+  [grouphistory newgroup]
+  (update-in grouphistory [:original-snippetgroup] (fn [x] newgroup)))
+
+(defn snippetgrouphistory-update-group
+  [grouphistory newgroup]
+  (update-in grouphistory [:current-snippetgroup] (fn [x] newgroup)))
+
+(defn snippetgrouphistory-add-history
+  [grouphistory op-id node args]
+  (let [newhistory (conj (snippetgrouphistory-history grouphistory) [op-id node args])]
+    (update-in grouphistory [:operators-history] (fn [x] newhistory))))
+
+(defn snippetgrouphistory-last-history
+  [grouphistory]
+  "Returns last applied operators." 
+  (last (snippetgrouphistory-history grouphistory)))
+
+(defn snippetgrouphistory-first-undohistory
+  [grouphistory]
+  "Returns first undo applied operators." 
+  (first (snippetgrouphistory-undohistory grouphistory)))
+
+(defn snippetgrouphistory-add-undohistory
+  [grouphistory]
+  "Add the last element of list history as first element of undo history 
+   and returns new snippet group history." 
+  (let [lasthistory (snippetgrouphistory-last-history grouphistory)
+        newundohistory (cons lasthistory (snippetgrouphistory-undohistory grouphistory))]
+    (update-in grouphistory [:operators-undohistory] (fn [x] newundohistory))))
+
+(defn snippetgrouphistory-remove-undohistory
+  [grouphistory]
+  "Remove first undo applied operator from the list undo history,
+   and returns new snippet group history." 
+  (let [firstundo (snippetgrouphistory-first-undohistory grouphistory)
+        newundo (rest (snippetgrouphistory-undohistory grouphistory))]
+    (update-in grouphistory [:operators-undohistory] (fn [x] newundo))))
+
