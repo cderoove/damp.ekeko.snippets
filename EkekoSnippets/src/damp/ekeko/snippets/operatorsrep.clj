@@ -24,6 +24,7 @@
 
 (declare operator-information)
 (declare operator-arguments)
+(declare operator-arguments-with-precondition)
 (declare operatortype-information)
 
 (defn 
@@ -55,6 +56,23 @@
   "Returns operator arguments of given operator id."
   [op-id]
   (get operator-arguments op-id))
+
+(defn 
+  argument-precondition-id 
+  "Returns argument precondition id of given operator id."
+  [op-id]
+  (fnext (get operator-arguments-with-precondition op-id)))
+
+(defn 
+  operator-argument-with-precondition
+  "Returns operator argument with precondition of given operator id."
+  [op-id]
+  (first (get operator-arguments-with-precondition op-id)))
+
+(defn 
+  is-operator-argument-with-precondition?
+  [op-id]
+  (not (nil? (get operator-arguments-with-precondition op-id))))
 
 (defn 
   operator-type 
@@ -140,14 +158,17 @@
 (defn apply-operator-to-snippetgroup
   "Apply operator to group and related snippet inside group, returns new group."
   [snippetgroup op-id node args]
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)]
-    (if (nil? snippet)  
-      ;;apply operator (update-logic-conditions-to-snippetgroup) to group
-      (apply update-logic-conditions-to-snippetgroup snippetgroup args)
-      ;;apply operator to snippet
-      (do
-        (let [newsnippet (apply-operator snippet op-id node args)]
-          (representation/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))) 
+  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
+        op-func (operator-function op-id)]
+    (if (is-operator-argument-with-precondition? op-id) 
+      (apply op-func snippetgroup node args)
+      (if (nil? snippet)  
+        ;;apply operator (update-logic-conditions-to-snippetgroup) to group
+        (apply update-logic-conditions-to-snippetgroup snippetgroup args)
+        ;;apply operator to snippet
+        (do
+          (let [newsnippet (apply-operator snippet op-id node args)]
+            (representation/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
 
 (defn apply-operator-to-snippetgrouphistory
   "Apply operator to group history and save the applied operator, returns new group history."
@@ -256,13 +277,13 @@
                                                       "Desc"]
    :allow-variable-declaration-with-initializer      [:node     
                                                       allow-variable-declaration-with-initializer 
-                                                      :is-assignmentexpression?    
+                                                      :is-assignmentstatement?    
                                                       :generalization 
                                                       "allow-variable-declaration-with-initializer"
                                                       "Desc"]
    :inline-method-invocation                         [:node  
                                                       inline-method-invocation          
-                                                      :is-methodinvocationexpression? 
+                                                      :is-methodinvocationstatement? 
                                                       :refinement 
                                                       "inline-method-invocation"
                                                       "Desc"]
@@ -308,6 +329,24 @@
                                                       :generalization 
                                                       "remove-node"
                                                       "Desc"]
+   :match-invocation-declaration                     [:node  
+                                                      match-invocation-declaration          
+                                                      :is-methodinvocationexpression? 
+                                                      :refinement 
+                                                      "match-invocation-declaration"
+                                                      "Desc"]
+   :match-variable-declaration                       [:node  
+                                                      match-variable-declaration          
+                                                      :is-simplename? 
+                                                      :refinement 
+                                                      "match-variable-declaration"
+                                                      "Desc"]
+   :match-variable-samebinding                       [:node  
+                                                      match-variable-samebinding    
+                                                      :is-simplename? 
+                                                      :refinement 
+                                                      "match-variable-samebinding"
+                                                      "Desc"]
 	})
 
 
@@ -329,6 +368,13 @@
    :update-logic-conditions                          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
    :update-logic-conditions-to-snippetgroup          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
 	})
+
+(def 
+  operator-arguments-with-precondition
+  {:match-invocation-declaration                     ["Declaration Node" :is-methoddeclaration?]
+   :match-variable-declaration                       ["Declaration Node" :is-variabledeclarationfragment?]
+   :match-variable-samebinding                       ["Variable Node"    :is-simplename?]
+  })
 
 ;;Operators type
 ;;------------------------------

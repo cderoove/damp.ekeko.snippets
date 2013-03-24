@@ -15,10 +15,15 @@
 
 (defn 
   precondition-function 
-  "Returns precondition function of given operator id."
-  [op-id]
-  (get operator-precondition (precondition-id op-id)))
+  "Returns precondition function of given precondition id."
+  [pre-id]
+  (fnext (get operator-precondition pre-id)))
 
+(defn 
+  precondition-type 
+  "Returns precondition type of given precondition id."
+  [pre-id]
+  (first (get operator-precondition pre-id)))
 
 
 ;; Applicable Operator for snippet
@@ -28,8 +33,8 @@
   safe-operator-for-node?
   "Returns true if precondition of given operator is fulfilled by the node."
   [operator-id node]
-  (let [pre-func (precondition-function operator-id)
-        op-type  (operator-nodetype operator-id)]
+  (let [pre-func (precondition-function (precondition-id operator-id))
+        op-type  (precondition-type (precondition-id operator-id))]
     (if (contains? (set '(:node :property)) op-type) 
       (not (empty?
              (damp.ekeko/ekeko [?node] 
@@ -38,12 +43,12 @@
       true)))
 
 (defn 
-  node-possible-nodes-for-operator
-  "Returns list of possible nodes to be applied on, from given ast root (ASTNode)."
-  [ast operator-id]
+  node-possible-nodes
+  "Returns list of possible nodes from given precondition and ast root (ASTNode)."
+  [ast precondition-id]
   (let [root ast
-        pre-func (precondition-function operator-id)
-        op-type  (operator-nodetype operator-id)]
+        pre-func (precondition-function precondition-id)
+        op-type  (precondition-type precondition-id)]
     (case op-type 
         ;check astnode : the root itself and all childs
         :node     (concat (damp.ekeko/ekeko [?node] 
@@ -67,12 +72,12 @@
         '()))) 
     
 (defn 
-  nodelist-possible-nodes-for-operator
-  "Returns list of possible nodes to be applied on from given ast root (nodelist)."
-  [ast operator-id]
+  nodelist-possible-nodes
+  "Returns list of possible nodes from given precondition and ast root (nodelist)."
+  [ast precondition-id]
   (let [list     (:value ast)
-        pre-func (precondition-function operator-id)
-        op-type  (operator-nodetype operator-id)]
+        pre-func (precondition-function precondition-id)
+        op-type  (precondition-type precondition-id)]
     (case op-type 
         ;check astnode : the member of root and member of all childs
         :node     (concat (damp.ekeko/ekeko [?node] 
@@ -102,18 +107,45 @@
         '()))) 
 
 (defn 
-  possible-nodes-for-operator
-  "Returns list of possible nodes to be applied on."
-  [ast operator-id]
+  possible-nodes
+  "Returns list of possible nodes from given precondition."
+  [ast precondition-id]
   (cond 
-    (ast? ast) (node-possible-nodes-for-operator ast operator-id)
-    (lstvalue? ast) (nodelist-possible-nodes-for-operator ast operator-id) 
+    (ast? ast) (node-possible-nodes ast precondition-id)
+    (lstvalue? ast) (nodelist-possible-nodes ast precondition-id) 
     :else nil))
+
+(defn 
+  possible-nodes-in-list
+  [ast precondition-id]
+  (map (fn [x] (first x)) (possible-nodes ast precondition-id)))
+
+(defn 
+  possible-nodes-in-group
+  [snippetgroup pre-id]
+  (flat-map (fn [x] (possible-nodes-in-list (:ast x) pre-id)) (snippetgroup-snippetlist snippetgroup)))
+
+(defn 
+  possible-nodes-for-operator
+  "Returns list of possible nodes to be applied on to given operator."
+  [ast operator-id]
+  (possible-nodes-in-list ast (precondition-id operator-id)))
+
+(defn 
+  possible-nodes-for-operator-argument
+  "Returns list of possible nodes as argument of given operator."
+  [ast operator-id]
+  (possible-nodes-in-list ast (argument-precondition-id operator-id)))
 
 (defn 
   possible-nodes-for-operator-in-group
   [snippetgroup op-id]
-  (flat-map (fn [x] (possible-nodes-for-operator (:ast x) op-id)) (snippetgroup-snippetlist snippetgroup)))
+  (possible-nodes-in-group snippetgroup (precondition-id operator-id)))
+
+(defn 
+  possible-nodes-for-operator-argument-in-group
+  [snippetgroup op-id]
+  (possible-nodes-in-group snippetgroup (argument-precondition-id op-id)))
 
 (defn
   applicable-operators-for-node
@@ -229,7 +261,7 @@
     (ast :IfStatement ?node)))
 
 (defn
-  is-assignmentexpression?
+  is-assignmentstatement?
   "Relation of all list ASTNode instances type :ExpressionStatement with expression :Assignment."
   [?node]
   (fresh [?exp] 
@@ -238,13 +270,37 @@
     (ast :Assignment ?exp)))
 
 (defn
-  is-methodinvocationexpression?
+  is-methodinvocationstatement?
   "Relation of all list ASTNode instances type :ExpressionStatement with expression :MethodInvocation."
   [?node]
   (fresh [?exp] 
     (ast :ExpressionStatement ?node)
     (has :expression ?node ?exp)
     (ast :MethodInvocation ?exp)))
+
+(defn
+  is-methodinvocationexpression?
+  "Relation of all list ASTNode instances type :MethodInvocation."
+  [?node]
+    (ast :MethodInvocation ?node))
+
+(defn
+  is-methoddeclaration?
+  "Relation of all list ASTNode instances type :MethodDeclaration."
+  [?node]
+    (ast :MethodDeclaration ?node))
+
+(defn
+  is-simplename?
+  "Relation of all list ASTNode instances type :SimpleName."
+  [?node]
+    (ast :SimpleName ?node))
+
+(defn
+  is-variabledeclarationfragment?
+  "Relation of all list ASTNode instances type :VariableDeclarationFragment."
+  [?node]
+    (ast :VariableDeclarationFragment ?node))
 
 (defn 
   epsilon
@@ -257,13 +313,17 @@
 
 (def 
   operator-precondition
-  {:listvalue                            listvalue					          
-   :is-variabledeclarationstatement?     is-variabledeclarationstatement?
-   :is-ifstatement?                      is-ifstatement?  
-   :is-type?                             is-type?	
-   :is-assignmentexpression?             is-assignmentexpression?    
-   :is-methodinvocationexpression?       is-methodinvocationexpression? 
-   :is-ast?                              is-ast?      
-   :is-listmember?                       is-listmember?   
+  {:listvalue                            [:property listvalue]					          
+   :is-variabledeclarationstatement?     [:node is-variabledeclarationstatement?]
+   :is-ifstatement?                      [:node is-ifstatement?]  
+   :is-type?                             [:node is-type?]	
+   :is-assignmentstatement?              [:node is-assignmentstatement?]    
+   :is-methodinvocationstatement?        [:node is-methodinvocationstatement?] 
+   :is-ast?                              [:node is-ast?]      
+   :is-listmember?                       [:node is-listmember?]   
+   :is-methodinvocationexpression?       [:node is-methodinvocationexpression?] 
+   :is-methoddeclaration?                [:node is-methoddeclaration?]
+   :is-variabledeclarationfragment?      [:node is-variabledeclarationfragment?]
+   :is-simplename?                       [:node is-simplename?]
 	})
 

@@ -375,6 +375,12 @@
     cf-exact
     (= type :negated)
     cf-negated
+    (= type :match-invocation-declaration)
+    cf-exact
+    (= type :match-variable-declaration)
+    cf-exact
+    (= type :match-variable-samebinding)
+    cf-exact
     (= type :epsilon)
     make-epsilon-function
     :default

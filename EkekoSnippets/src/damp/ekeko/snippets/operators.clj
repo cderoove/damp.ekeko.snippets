@@ -11,6 +11,9 @@
              [astnode :as astnode]
              [reification :as reification]]))
   
+;; Operator for Snippet
+;; ---------------------
+
 (defn 
   update-groundf 
   "Update grounding function of a given node in a given snippet with new grounding function of given type
@@ -203,46 +206,6 @@
       (assoc snippet :userquery new-conditions))
     snippet))
   
-(defn 
-  add-snippet
-  "Add snippet to snippetgroup."
-  [snippetgroup snippet]
-  (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
-    (assoc snippetgroup :snippetlist new-snippetlist)))
-
-(defn 
-  add-snippet-to-snippetgrouphistory
-  "Add snippet to snippetgrouphistory."
-  [snippetgrouphistory snippet]
-  (let [new-snippetgroup (add-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
-        new-orisnippetgroup (add-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
-        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
-    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
-
-(defn
-  update-logic-conditions-to-snippetgroup
-  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...) or string."
-  [snippetgroup conditions]
-  (assoc snippetgroup :userquery (list (symbol conditions))))
-
-(defn
-  add-logic-conditions-to-snippetgroup
-  "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
-  [snippetgroup conditions]
-  (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
-      (assoc snippetgroup :userquery new-conditions))
-    snippetgroup))
-
-(defn
-  remove-logic-conditions-from-snippetgroup
-  "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
-  [snippetgroup conditions]
-  (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
-      (assoc snippetgroup :userquery new-conditions))
-    snippetgroup))
-
 (defn
   inline-method-invocation 
   "Inline statement of method invocation in given snippet, with statements from called method."
@@ -324,3 +287,92 @@
   (let [snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :negated)))
+
+
+;; Operator for SnippetGroup
+;; -------------------------
+
+(defn 
+  add-snippet
+  "Add snippet to snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
+    (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn
+  update-logic-conditions-to-snippetgroup
+  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...) or string."
+  [snippetgroup conditions]
+  (assoc snippetgroup :userquery (list (symbol conditions))))
+
+(defn
+  add-logic-conditions-to-snippetgroup
+  "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
+  [snippetgroup conditions]
+  (if (not (empty? conditions)) 
+    (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
+      (assoc snippetgroup :userquery new-conditions))
+    snippetgroup))
+
+(defn
+  remove-logic-conditions-from-snippetgroup
+  "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
+  [snippetgroup conditions]
+  (if (not (empty? conditions)) 
+    (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
+      (assoc snippetgroup :userquery new-conditions))
+    snippetgroup))
+
+(defn
+  match-invocation-declaration
+   "Match Relation between ASTNode invocation with it's declaration."
+  [snippetgroup node-invoke node-declare]
+  (let [snippet-invoke (representation/snippetgroup-snippet-for-node snippetgroup node-invoke)
+        snippet-declare (representation/snippetgroup-snippet-for-node snippetgroup node-declare)
+        var-invoke (representation/snippet-var-for-node snippet-invoke node-invoke)
+        var-declare (representation/snippet-var-for-node snippet-declare node-declare)
+        new-snippet-invoke (update-constrainf snippet-invoke node-invoke :match-invocation-declaration)
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-invoke new-snippet-invoke)] 
+    (add-logic-conditions-to-snippetgroup
+      new-group
+      `((damp.ekeko.snippets.runtime/ast-invocation-declaration ~var-invoke ~var-declare)))))
+
+(defn
+  match-variable-declaration
+   "Match Relation between ASTNode variable with it's declaration."
+  [snippetgroup node-var node-declare]
+  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-declare (representation/snippetgroup-snippet-for-node snippetgroup node-declare)
+        var-node (representation/snippet-var-for-node snippet-var node-var)
+        var-declare (representation/snippet-var-for-node snippet-declare node-declare)
+        new-snippet-var (update-constrainf snippet-var node-var :match-variable-declaration)
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
+    (add-logic-conditions-to-snippetgroup
+      new-group
+      `((damp.ekeko.snippets.runtime/ast-variable-declaration ~var-node ~var-declare)))))
+
+(defn
+  match-variable-samebinding
+   "Match Relation between ASTNode variable with other variable with same binding."
+  [snippetgroup node-var node-var2]
+  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-var2 (representation/snippetgroup-snippet-for-node snippetgroup node-var2)
+        var-node (representation/snippet-var-for-node snippet-var node-var)
+        var-node2 (representation/snippet-var-for-node snippet-var2 node-var2)
+        new-snippet-var (update-constrainf snippet-var node-var :match-variable-samebinding)
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
+    (add-logic-conditions-to-snippetgroup
+      new-group
+      `((damp.ekeko.snippets.runtime/ast-variable-samebinding ~var-node ~var-node2)))))
+
+;; Operator for SnippetGroupHistory
+;; --------------------------------
+
+(defn 
+  add-snippet-to-snippetgrouphistory
+  "Add snippet to snippetgrouphistory."
+  [snippetgrouphistory snippet]
+  (let [new-snippetgroup (add-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
+        new-orisnippetgroup (add-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
+        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
+    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))

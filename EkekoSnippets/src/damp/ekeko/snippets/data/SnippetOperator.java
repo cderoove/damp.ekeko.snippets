@@ -1,5 +1,6 @@
 package damp.ekeko.snippets.data;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
@@ -45,14 +46,32 @@ public class SnippetOperator {
 		root.setExpanded(true);
 	}
 
-	public static void setInputArguments(Table table, Object operator) {
+	public static void setInputArguments(Table table, Table tableNode, Object snippetgroup, Object operator) {
 		table.removeAll();
+		tableNode.removeAll();
 
 		String[] args = getArguments(operator);
 		for (int i = 0; i < args.length; i++) {
 			TableItem item = new TableItem(table, 0);
 			item.setText(new String[] { args[i] , "" });
 		}
+		
+		String arg = getArgumentWithPrecondition(operator);
+		if (arg != null) {
+			tableNode.getColumn(0).setText(arg);
+			Object[] nodes = possibleNodesForArgument(snippetgroup, operator);
+			if (nodes.length <= 0) {
+				TableItem item = new TableItem(tableNode, 0);
+				item.setText("No Match Node");
+			} else {
+				for (int i = 0; i < nodes.length; i++) {
+					TableItem item = new TableItem(tableNode, 0);
+					ASTNode node = (ASTNode) nodes[i];
+					item.setText(new String[] {node.toString(), node.getParent().toString()});
+					item.setData(nodes[i]);
+				}
+			}
+		} 
 	}
 
 	public static String[] getArguments(Object operator) {
@@ -62,6 +81,14 @@ public class SnippetOperator {
 			result[i] = args[i].toString();
 		}			
 		return result;
+	}
+
+	public static String getArgumentWithPrecondition(Object operator) {
+		return (String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-argument-with-precondition").invoke(operator);		
+	}
+
+	public static Object[] possibleNodesForArgument(Object snippetgroup, Object operator) {
+		return getArray(RT.var("damp.ekeko.snippets.precondition", "possible-nodes-for-operator-argument-in-group").invoke(snippetgroup, operator));		
 	}
 
 	public static String getDescription(Object operator) {

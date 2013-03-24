@@ -47,6 +47,8 @@ import org.eclipse.swt.graphics.Color;
 
 import clojure.lang.Keyword;
 import clojure.lang.Symbol;
+import org.eclipse.jface.layout.TableColumnLayout;
+import org.eclipse.jface.viewers.ColumnPixelData;
 
 public class SnippetView extends ViewPart {
 
@@ -62,10 +64,12 @@ public class SnippetView extends ViewPart {
 	private StyledText textOpInfo;
 	private Table tableOpArgs;
 	private TableDecorator tableOpArgsDecorator;
+	private Table tableNode;
 	
 	private SnippetGroup snippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
 	private Action actRedo;
+	private Table table_1;
 
 	public SnippetView() {
 	}
@@ -274,7 +278,9 @@ public class SnippetView extends ViewPart {
 		tableOpArgs = tableViewerOpArgs.getTable();
 		tableOpArgs.setLinesVisible(true);
 		tableOpArgs.setHeaderVisible(true);
-		tableOpArgs.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		GridData gd_tableOpArgs = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_tableOpArgs.heightHint = 31;
+		tableOpArgs.setLayoutData(gd_tableOpArgs);
 		tableOpArgsDecorator = new TableDecorator(tableOpArgs);
 		
 		TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewerOpArgs, SWT.NONE);
@@ -287,10 +293,30 @@ public class SnippetView extends ViewPart {
 		tblclmnNode.setWidth(150);
 		tblclmnNode.setText("Input");
 
+		TableViewer tableViewer = new TableViewer(group_4, SWT.BORDER | SWT.FULL_SELECTION);
+		tableNode = tableViewer.getTable();
+		tableNode.setHeaderVisible(true);
+		tableNode.setLinesVisible(true);
+		GridData gd_table = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_table.heightHint = 31;
+		tableNode.setLayoutData(gd_table);
+		
+		TableViewerColumn tableViewerColumn_2 = new TableViewerColumn(tableViewer, SWT.NONE);
+		TableColumn tblclmnArgument = tableViewerColumn_2.getColumn();
+		tblclmnArgument.setWidth(150);
+		tblclmnArgument.setText("Node");
+		
+		TableViewerColumn tableViewerColumn_3 = new TableViewerColumn(tableViewer, SWT.NONE);
+		TableColumn tblclmnProp = tableViewerColumn_3.getColumn();
+		tblclmnProp.setWidth(150);
+		tblclmnProp.setText("Parent");
+
 		TextViewer textViewer = new TextViewer(group_4, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		textOpInfo = textViewer.getTextWidget();
 		textOpInfo.setEditable(false);
-		textOpInfo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		GridData gd_textOpInfo = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_textOpInfo.heightHint = 41;
+		textOpInfo.setLayoutData(gd_textOpInfo);
 		
 	    createActions();
 		initializeToolBar();
@@ -366,8 +392,7 @@ public class SnippetView extends ViewPart {
 	}
 	
 	public Object getSelectedSnippet() {
-		Object data = treeViewerSnippet.getTree().getSelection()[0].getData();
-        return data;
+		return treeViewerSnippet.getTree().getSelection()[0].getData();
 	}
 	
 	public String[] getInputs(Table table, int column) {
@@ -378,6 +403,12 @@ public class SnippetView extends ViewPart {
 			result[i] = items[i].getText(column);
 		}		
 		return result;
+	}
+	
+	public Object getSelectedNode() {
+		if (tableNode.getSelectionCount() > 0)
+			return tableNode.getSelection()[0].getData();
+        return null;
 	}
 	
 	public SnippetGroupTreeContentProvider getContentProvider() {
@@ -450,11 +481,12 @@ public class SnippetView extends ViewPart {
 		SnippetOperator.setInput(treeOperator, getSelectedSnippet());
 		tableOpArgs.removeAll();
 		tableOpArgsDecorator.removeAllEditors();
+		tableNode.removeAll();
 	} 
 	
 	public void onOperatorSelection() {
 		tableOpArgsDecorator.removeAllEditors();
-		SnippetOperator.setInputArguments(tableOpArgs, getSelectedOperator());
+		SnippetOperator.setInputArguments(tableOpArgs, tableNode, snippetGroup.getGroup(), getSelectedOperator());
 		tableOpArgsDecorator.setTextEditor(1);
 		tableOpArgsDecorator.setButtonEditor(1);
 		textOpInfo.setText(SnippetOperator.getDescription(getSelectedOperator()));
@@ -477,9 +509,10 @@ public class SnippetView extends ViewPart {
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs());
+			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs(), getSelectedNode());
 			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 			treeViewerSnippet.setInput(snippetGroup.getGroup());
+			textCondition.setText(snippetGroup.getLogicConditions("Group"));
 		}
 
 		return dlg.getInputs();

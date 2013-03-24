@@ -90,8 +90,16 @@ public class SnippetGroup {
 		groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 	}
 
-	public void applyOperator(Object operator, Object node, String[] args) {
-		groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, node, args);		
+	public void applyOperator(Object operator, Object node, String[] args, Object selectedArgNode) {
+		if (selectedArgNode != null) {
+			Object[] targs = new Object[args.length+1];
+			for (int i = 0; i < args.length; i++) {
+				targs[i] = args[i];
+			}		
+			targs[args.length] = selectedArgNode;
+			groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, node, targs);		
+		} else
+			groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, node, args);		
 	}
 	
 	public void undoOperator() {
