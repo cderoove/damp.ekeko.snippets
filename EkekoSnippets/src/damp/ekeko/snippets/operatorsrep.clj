@@ -225,128 +225,127 @@
                                                       contains-elements-with-same-size                  
                                                       :listvalue					          
                                                       :generalization 
-                                                      "contains-elements-with-same-size"
-                                                      "Desc"]
+                                                      "Match list with same size"
+                                                      "Operator with matching strategy :list-same-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
    :contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          
                                                       :generalization 
-                                                      "contains-elements"
-                                                      "Desc"]
+                                                      "Match list with contains elements"
+                                                      "Operator with matching strategy :list-contains\nMatch nodelist which contains all elements of snippet nodelist"]
    :contains-elements-with-relative-order            [:property
                                                       contains-elements-with-relative-order     
                                                       :listvalue					          
                                                       :generalization 
-                                                      "contains-elements-with-relative-order"
-                                                      "Desc"]
+                                                      "Operator with matching strategy :list-relative-order\nMatch nodelist which contains all elements in same order with snippet nodelist"]
    :contains-elements-with-repetition                [:property 
                                                       contains-elements-with-repetition    
                                                       :listvalue					          
                                                       :generalization 
-                                                      "contains-elements-with-repetition"
-                                                      "Desc"]
+                                                      "Match list with elements repetition"
+                                                      "Operator with matching strategy :list-repetition\nMatch nodelist which contains all elements (possible has repetitive elements) with snippet nodelist"]
    :split-variable-declaration-statement             [:node 
                                                       split-variable-declaration-statement        
                                                       :is-variabledeclarationstatement?
                                                       :refinement 
-                                                      "split-variable-declaration-statement"
-                                                      "Desc"]
+                                                      "Split variable declaration fragments"
+                                                      "Operator to split variable declaration fragments into one fragment for each statement"] 
    :contains-variable-declaration-statement          [:node  
                                                       contains-variable-declaration-statement     
                                                       :is-variabledeclarationstatement?
                                                       :generalization 
-                                                      "contains-variable-declaration-statement"
-                                                      "Desc"]
+                                                      "Match variable declaration statements"
+                                                      "Operator with matching strategy :declaration-statements\nMatch statements which covers all variable declaration fragments in single statement in snippet"]
    :allow-ifstatement-with-else                      [:node   
                                                       allow-ifstatement-with-else  
                                                       :is-ifstatement?  
                                                       :generalization 
-                                                      "allow-ifstatement-with-else"
-                                                      "Desc"]
+                                                      "Match branch with/without else"
+                                                      "Operator with matching strategy :if-with-else\nMatch ifstatement node with or without else"]
    :allow-subtype-on-variable-declaration            [:node
                                                       allow-subtype-on-variable-declaration     
                                                       :is-type?	
                                                       :generalization 
-                                                      "allow-subtype-on-variable-declaration"
-                                                      "Desc"]
+                                                      "Match subtype on variable declaration"
+                                                      "Operator with matching strategy :subtype\nMatch node with same type or subtype of snippet node"]
    :allow-subtype-on-class-declaration-extends       [:node   
                                                       allow-subtype-on-class-declaration-extends   
                                                       :is-type?     	
                                                       :generalization 
-                                                      "allow-subtype-on-class-declaration-extends"
-                                                      "Desc"]
+                                                      "Match subtype on class declaration extends"
+                                                      "Operator with matching strategy :subtype\nMatch node with same type or subtype of snippet node"]
    :allow-variable-declaration-with-initializer      [:node     
                                                       allow-variable-declaration-with-initializer 
                                                       :is-assignmentstatement?    
                                                       :generalization 
-                                                      "allow-variable-declaration-with-initializer"
-                                                      "Desc"]
+                                                      "Match variable declaration with initializer"
+                                                      "Operator with matching strategy :declaration-initializer\nMatch variable declaration node with same initializer with assignment node in snippet"]
    :inline-method-invocation                         [:node  
                                                       inline-method-invocation          
                                                       :is-methodinvocationstatement? 
                                                       :refinement 
-                                                      "inline-method-invocation"
-                                                      "Desc"]
+                                                      "Inline method invocation"
+                                                      "Operator to replace method invocation with all statements in it's method declaration body"]
    :negated-node                                     [:node   
                                                       negated-node        
                                                       :is-ast?      
                                                       :refinement 
-                                                      "negated-node"
-                                                      "Desc"]
+                                                      "Match negated node"
+                                                      "Operator with matching strategy :negated\nMatch all node except given snippet node"]
    :introduce-logic-variable                         [:node  
                                                       introduce-logic-variable  
                                                       :is-ast?                 
                                                       :generalization 
-                                                      "introduce-logic-variable"
-                                                      "Desc"]
+                                                      "Introduce logic variable"
+                                                      "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-of-node-exact           [:node   
                                                       introduce-logic-variable-of-node-exact  
                                                       :is-ast?      
                                                       :netral 
-                                                      "introduce-logic-variable-of-node-exact"
-                                                      "Desc"]
+                                                      "Introduce logic variable of node exact"
+                                                      "Operator to introduce new logic variable without removing any it's property values"]
    :introduce-logic-variables                        [:node 
                                                       introduce-logic-variables  
                                                       :is-ast?					
                                                       :generalization 
-                                                      "introduce-logic-variables"
-                                                      "Desc"]
+                                                      "Introduce logic variables"
+                                                      "Operator to introduce new logic variables to all nodes with same binding with given snippet node"]
    :introduce-logic-variables-with-condition         [:node     
                                                       introduce-logic-variables-with-condition 
                                                       :is-ast?       	
                                                       :generalization 
-                                                      "introduce-logic-variables-with-condition"
-                                                      "Desc"]
+                                                      "Introduce logic variables with condition"
+                                                      "Operator to introduce new logic variables to all nodes with same binding with given snippet node, with additional user logic condition on it"]
    :add-node                                         [:property   
                                                       add-node                                          
                                                       :listvalue					          
                                                       :refinement 
-                                                      "add-node"
-                                                      "Desc"]
+                                                      "Add new node"
+                                                      "Operator to add new node"]
    :remove-node                                      [:node       
                                                       remove-node                                       
                                                       :is-listmember?   
                                                       :generalization 
-                                                      "remove-node"
-                                                      "Desc"]
+                                                      "Remove node"
+                                                      "Operator to remove node"]
    :match-invocation-declaration                     [:node  
                                                       match-invocation-declaration          
                                                       :is-methodinvocationexpression? 
                                                       :refinement 
-                                                      "match-invocation-declaration"
-                                                      "Desc"]
+                                                      "Match invocation declaration"
+                                                      "Operator with matching strategy :method-ref\nMatch method invocation node which has same reference to given method declaration"]
    :match-variable-declaration                       [:node  
                                                       match-variable-declaration          
                                                       :is-simplename? 
                                                       :refinement 
-                                                      "match-variable-declaration"
-                                                      "Desc"]
+                                                      "Match variable declaration"
+                                                      "Operator with matching strategy :variable-ref\nMatch variable node which has same reference to given variable declaration"]
    :match-variable-samebinding                       [:node  
                                                       match-variable-samebinding    
                                                       :is-simplename? 
                                                       :refinement 
-                                                      "match-variable-samebinding"
-                                                      "Desc"]
+                                                      "Match variable binding"
+                                                      "Operator with matching strategy :variable-binding\nMatch variable node which has same binding with given snippet node"]
 	})
 
 

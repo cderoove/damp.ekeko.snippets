@@ -355,31 +355,31 @@
     cf-exact
     (= type :list-exact)
     cf-list-exact
-    (= type :list-contains-with-same-size)
+    (= type :list-same-size)
     cf-list-contains-with-same-size
     (= type :list-contains)
     cf-list-contains
-    (= type :list-contains-with-relative-order)
+    (= type :list-relative-order)
     cf-list-contains-with-relative-order
-    (= type :list-contains-with-repetition)
+    (= type :list-repetition)
     cf-list-contains-with-repetition
     (= type :variable)
     cf-variable
-    (= type :exact-with-variable)
+    (= type :exact-variable)
     cf-exact-with-variable
     (= type :subtype)
     cf-subtype
-    (= type :variable-declaration-with-initializer)
+    (= type :declaration-initializer)
     cf-variable-declaration-with-initializer
     (= type :if-with-else)
     cf-exact
     (= type :negated)
     cf-negated
-    (= type :match-invocation-declaration)
+    (= type :method-ref)
     cf-exact
-    (= type :match-variable-declaration)
+    (= type :variable-ref)
     cf-exact
-    (= type :match-variable-samebinding)
+    (= type :variable-binding)
     cf-exact
     (= type :epsilon)
     make-epsilon-function

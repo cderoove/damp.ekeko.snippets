@@ -32,7 +32,7 @@
   contains-elements-with-same-size 
   "Contains all elements in a given nodelist (listval), and list has to be the same size."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-same-size))
+  (update-constrainf snippet node :list-same-size))
 
 (defn
   contains-elements
@@ -44,13 +44,13 @@
   contains-elements-with-relative-order 
   "Contains all elements in a given nodelist (listval), with relative order."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-relative-order))
+  (update-constrainf snippet node :list-relative-order))
 
 (defn
   contains-elements-with-repetition 
   "Contains all elements in a given nodelist (listval), with repetition."
   [snippet node]
-  (update-constrainf snippet node :list-contains-with-repetition))
+  (update-constrainf snippet node :list-repetition))
 
 (defn 
   remove-node-no-apply-rewrite 
@@ -180,7 +180,7 @@
   [snippet node]
   (let [snippet-without-assignment 
         (update-constrainf snippet (.getExpression node) :epsilon)]
-    (update-constrainf snippet-without-assignment node :variable-declaration-with-initializer)))
+    (update-constrainf snippet-without-assignment node :declaration-initializer)))
 
 (defn
   update-logic-conditions
@@ -225,7 +225,7 @@
   "Introduce logic variable to a given node, without removing any condition."
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))]
-    (update-constrainf snippet-with-uservar node :exact-with-variable)))
+    (update-constrainf snippet-with-uservar node :exact-variable)))
 
 (defn 
   introduce-logic-variable 
@@ -242,7 +242,7 @@
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
   [snippet node newuservar newcondition]
   (let [uservar (symbol newuservar)
-        condition (symbol newcondition)]
+        condition newcondition]
     (defn make-condition [condition uservar newvar]
       (if (not (empty? condition))
         (list (symbol (clojure.string/replace condition (str uservar) (str newvar))))
@@ -254,7 +254,7 @@
     (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
       (damp.ekeko/ekeko [?var] 
                         (reification/child+ root ?var)
-                        (runtime/ast-variable-samebinding node ?var)))
+                        (runtime/ast-variable-sameidentifier node ?var))) ;shud be ast-variable-samebinding
     (defn process-binding-variables [snippet nodes]
       (if (empty? nodes)
         snippet
@@ -331,7 +331,7 @@
         snippet-declare (representation/snippetgroup-snippet-for-node snippetgroup node-declare)
         var-invoke (representation/snippet-var-for-node snippet-invoke node-invoke)
         var-declare (representation/snippet-var-for-node snippet-declare node-declare)
-        new-snippet-invoke (update-constrainf snippet-invoke node-invoke :match-invocation-declaration)
+        new-snippet-invoke (update-constrainf snippet-invoke node-invoke :method-ref)
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-invoke new-snippet-invoke)] 
     (add-logic-conditions-to-snippetgroup
       new-group
@@ -345,7 +345,7 @@
         snippet-declare (representation/snippetgroup-snippet-for-node snippetgroup node-declare)
         var-node (representation/snippet-var-for-node snippet-var node-var)
         var-declare (representation/snippet-var-for-node snippet-declare node-declare)
-        new-snippet-var (update-constrainf snippet-var node-var :match-variable-declaration)
+        new-snippet-var (update-constrainf snippet-var node-var :variable-ref)
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
     (add-logic-conditions-to-snippetgroup
       new-group
@@ -359,7 +359,7 @@
         snippet-var2 (representation/snippetgroup-snippet-for-node snippetgroup node-var2)
         var-node (representation/snippet-var-for-node snippet-var node-var)
         var-node2 (representation/snippet-var-for-node snippet-var2 node-var2)
-        new-snippet-var (update-constrainf snippet-var node-var :match-variable-samebinding)
+        new-snippet-var (update-constrainf snippet-var node-var :variable-binding)
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
     (add-logic-conditions-to-snippetgroup
       new-group

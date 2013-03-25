@@ -133,3 +133,14 @@
   (cl/fresh [?model]
             (soot/ast-references-soot-model-may-alias ?ast1 ?ast2 ?model)))
   
+(defn
+  ast-variable-sameidentifier
+   "Relation between ASTNode var1 and var2 with the same identifier."
+  [?var1 ?var2]
+  (cl/fresh [?id1 ?id2 ?value]
+            (reification/ast :SimpleName ?var1)
+            (reification/ast :SimpleName ?var2)
+            (reification/has :identifier ?var1 ?id1) 
+            (reification/has :identifier ?var2 ?id2)
+            (reification/value-raw ?id1 ?value) 
+            (reification/value-raw ?id2 ?value))) 
