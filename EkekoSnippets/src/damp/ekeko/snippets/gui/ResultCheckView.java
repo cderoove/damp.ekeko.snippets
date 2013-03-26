@@ -160,7 +160,7 @@ public class ResultCheckView extends ViewPart {
 		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
 		tltmRemove.setText("Remove");
 		
-		Group group_2 = new Group(group, SWT.NONE);
+		/*Group group_2 = new Group(group, SWT.NONE);
 		GridData gd_group_2 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		gd_group_2.widthHint = 38;
 		group_2.setLayoutData(gd_group_2);
@@ -193,7 +193,7 @@ public class ResultCheckView extends ViewPart {
 			}
 		});
 		btnApply.setText("Apply");
-
+		*/
 		createActions();
 		initializeToolBar();
 		initializeMenu();

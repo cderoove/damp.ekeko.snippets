@@ -226,24 +226,24 @@
                                                       :listvalue					          
                                                       :generalization 
                                                       "Match list with same size"
-                                                      "Operator with matching strategy :list-same-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
+                                                      "Operator with matching strategy :list same-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
    :contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          
                                                       :generalization 
                                                       "Match list with contains elements"
-                                                      "Operator with matching strategy :list-contains\nMatch nodelist which contains all elements of snippet nodelist"]
+                                                      "Operator with matching strategy :list contains-elements\nMatch nodelist which contains all elements of snippet nodelist"]
    :contains-elements-with-relative-order            [:property
                                                       contains-elements-with-relative-order     
                                                       :listvalue					          
                                                       :generalization 
-                                                      "Operator with matching strategy :list-relative-order\nMatch nodelist which contains all elements in same order with snippet nodelist"]
+                                                      "Operator with matching strategy :list relative-order\nMatch nodelist which contains all elements in same order with snippet nodelist"]
    :contains-elements-with-repetition                [:property 
                                                       contains-elements-with-repetition    
                                                       :listvalue					          
                                                       :generalization 
                                                       "Match list with elements repetition"
-                                                      "Operator with matching strategy :list-repetition\nMatch nodelist which contains all elements (possible has repetitive elements) with snippet nodelist"]
+                                                      "Operator with matching strategy :list elements-repetition\nMatch nodelist which contains all elements (possible has repetitive elements) with snippet nodelist"]
    :split-variable-declaration-statement             [:node 
                                                       split-variable-declaration-statement        
                                                       :is-variabledeclarationstatement?
@@ -255,13 +255,13 @@
                                                       :is-variabledeclarationstatement?
                                                       :generalization 
                                                       "Match variable declaration statements"
-                                                      "Operator with matching strategy :declaration-statements\nMatch statements which covers all variable declaration fragments in single statement in snippet"]
+                                                      "Operator with matching strategy :dec-stat\nMatch statements which covers all variable declaration fragments in single statement in snippet"]
    :allow-ifstatement-with-else                      [:node   
                                                       allow-ifstatement-with-else  
                                                       :is-ifstatement?  
                                                       :generalization 
                                                       "Match branch with/without else"
-                                                      "Operator with matching strategy :if-with-else\nMatch ifstatement node with or without else"]
+                                                      "Operator with matching strategy :relax-branch\nMatch ifstatement node with or without else"]
    :allow-subtype-on-variable-declaration            [:node
                                                       allow-subtype-on-variable-declaration     
                                                       :is-type?	
@@ -279,7 +279,7 @@
                                                       :is-assignmentstatement?    
                                                       :generalization 
                                                       "Match variable declaration with initializer"
-                                                      "Operator with matching strategy :declaration-initializer\nMatch variable declaration node with same initializer with assignment node in snippet"]
+                                                      "Operator with matching strategy :dec-init\nMatch variable declaration node with same initializer with assignment node in snippet"]
    :inline-method-invocation                         [:node  
                                                       inline-method-invocation          
                                                       :is-methodinvocationstatement? 
@@ -333,19 +333,19 @@
                                                       :is-methodinvocationexpression? 
                                                       :refinement 
                                                       "Match invocation declaration"
-                                                      "Operator with matching strategy :method-ref\nMatch method invocation node which has same reference to given method declaration"]
+                                                      "Operator with matching strategy :method-dec\nMatch method invocation node which has same reference to given method declaration"]
    :match-variable-declaration                       [:node  
                                                       match-variable-declaration          
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Match variable declaration"
-                                                      "Operator with matching strategy :variable-ref\nMatch variable node which has same reference to given variable declaration"]
+                                                      "Operator with matching strategy :var-dec\nMatch variable node which has same reference to given variable declaration"]
    :match-variable-samebinding                       [:node  
                                                       match-variable-samebinding    
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Match variable binding"
-                                                      "Operator with matching strategy :variable-binding\nMatch variable node which has same binding with given snippet node"]
+                                                      "Operator with matching strategy :var-binding\nMatch variable node which has same binding with given snippet node"]
 	})
 
 
@@ -355,6 +355,7 @@
 (def 
   operator-arguments
   {:introduce-logic-variable                         ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variables                        ["Logic Variable (eg. ?v)"]
    :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
    :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
                                                       "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]

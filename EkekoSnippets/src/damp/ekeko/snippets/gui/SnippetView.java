@@ -14,6 +14,7 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextViewer;
@@ -418,10 +419,43 @@ public class SnippetView extends ViewPart {
 	public void setViewID(String secondaryId) {
 		this.viewID = secondaryId;
 	}
+	
+	public void setCFStyle(int start, int end) {
+		StyleRange styleRange = new StyleRange();
+	    styleRange.start = start;
+	    styleRange.length = end - start + 1;
+	    styleRange.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_GRAY);
+	    styleRange.fontStyle = SWT.BOLD;
+	    textSnippet.setStyleRange(styleRange);
+	}
+
+	public void clearCFStyle() {
+		StyleRange styleRange = new StyleRange();
+	    styleRange.start = 0;
+	    styleRange.length = textSnippet.getText().length();
+	    styleRange.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
+	    styleRange.fontStyle = SWT.NORMAL;
+	    textSnippet.setStyleRange(styleRange);
+	}
 
 	//-----------------------------------------------
 	//LOGIC PART
 	//all logic part for this View are written below
+	
+	public void markSnippet() {
+		clearCFStyle();
+		String text = textSnippet.getText();
+		int idx = 0, startIdx = 0, endIdx = 0;	
+		
+		while (idx < text.length() && startIdx > -1) {
+			startIdx = text.indexOf('@', idx);
+			if (startIdx > 0) {
+				endIdx = text.indexOf(')', startIdx);
+				setCFStyle(startIdx, endIdx);
+				idx = endIdx;
+			}
+		}
+	}
 	
 	public void addSnippet() {
 		textSnippet.setSelectionRange(0, 0);
@@ -430,6 +464,7 @@ public class SnippetView extends ViewPart {
 			snippetGroup.addSnippetCode(code);
 			textSnippet.setText(snippetGroup.toString());
 			treeViewerSnippet.setInput(snippetGroup.getGroup());
+			markSnippet();
 		}
 	}
 	
@@ -473,6 +508,7 @@ public class SnippetView extends ViewPart {
 	public void onSnippetSelection() {
 		textSnippet.setSelectionRange(0, 0);
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+		markSnippet();
 		int x = snippetGroup.getActiveNodePos()[0];
 		int y = snippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
@@ -513,6 +549,7 @@ public class SnippetView extends ViewPart {
 			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 			treeViewerSnippet.setInput(snippetGroup.getGroup());
 			textCondition.setText(snippetGroup.getLogicConditions("Group"));
+			markSnippet();
 		}
 
 		return dlg.getInputs();
@@ -522,11 +559,13 @@ public class SnippetView extends ViewPart {
 		snippetGroup.undoOperator();
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		markSnippet();
 	}
 
 	public void redo() {
 		snippetGroup.redoOperator();
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		markSnippet();
 	}
 }

@@ -274,7 +274,9 @@
            (representation/snippet-var-for-node snippet snippet-ast)
            var-userprovided
            (representation/snippet-uservar-for-var snippet var-match)]
-       `((cl/== ~var-userprovided ~var-match)))))
+       (if (nil? var-userprovided)
+         '() 
+         `((cl/== ~var-userprovided ~var-match))))))
 
 (defn
   cf-exact-with-variable
@@ -308,6 +310,14 @@
          (reification/ast ~snippet-keyw ~var-node)
            ~@child-conditions
            (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
+
+(defn
+  cf-subtype-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-subtype snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
 
 (defn 
   cf-variable-declaration-with-initializer
@@ -355,31 +365,31 @@
     cf-exact
     (= type :list-exact)
     cf-list-exact
-    (= type :list-same-size)
+    (= type :same-size)
     cf-list-contains-with-same-size
-    (= type :list-contains)
+    (= type :contains-elements)
     cf-list-contains
-    (= type :list-relative-order)
+    (= type :relative-order)
     cf-list-contains-with-relative-order
-    (= type :list-repetition)
+    (= type :elements-repetition)
     cf-list-contains-with-repetition
     (= type :variable)
     cf-variable
     (= type :exact-variable)
     cf-exact-with-variable
     (= type :subtype)
-    cf-subtype
-    (= type :declaration-initializer)
+    cf-subtype-with-variable
+    (= type :dec-init)
     cf-variable-declaration-with-initializer
-    (= type :if-with-else)
+    (= type :relax-branch)
     cf-exact
     (= type :negated)
     cf-negated
-    (= type :method-ref)
+    (= type :method-dec)
     cf-exact
-    (= type :variable-ref)
+    (= type :var-dec)
     cf-exact
-    (= type :variable-binding)
+    (= type :var-binding)
     cf-exact
     (= type :epsilon)
     make-epsilon-function

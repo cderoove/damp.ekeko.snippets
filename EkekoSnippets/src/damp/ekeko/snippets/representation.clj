@@ -118,9 +118,20 @@
 
 (defn 
   snippet-uservar-for-node 
-  "For the given logic var of the given snippet, returns the name of the user defined logic variable."
+  "For the given AST node of the given snippet, returns the name of the user logic
+   variable that will be bound to a matching AST node from the Java project."
   [snippet template-ast]
   (snippet-uservar-for-var snippet (snippet-var-for-node snippet template-ast)))
+
+(defn 
+  snippet-lvar-for-node 
+  "For the given AST node of the given snippet, returns the name of the user logic
+   variable (if exist) or default logic variable that will be bound to a matching AST node from the Java project."
+  [snippet snippet-var]
+  (let [uservar (snippet-uservar-for-node snippet snippet-var)]
+    (if (nil? uservar)
+      (snippet-var-for-node snippet snippet-var)
+      uservar)))
 
 (defn 
   snippet-node-with-member

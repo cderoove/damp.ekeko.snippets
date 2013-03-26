@@ -74,6 +74,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		Keyword constrainf = getConstrainF(node);
 		if (constrainf == Keyword.intern("exact") ||
 				constrainf == Keyword.intern("variable") || 
+				constrainf == Keyword.intern("exact-variable") || 
 				constrainf == Keyword.intern("epsilon")) 	
 			return true;
 		return false;
@@ -105,7 +106,13 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		Symbol uservar = getUserVar(node);
 		if (uservar != null) {
 			this.buffer.append(uservar);
-			return false;
+			Keyword constrainf = getConstrainF(node);
+			if (constrainf == Keyword.intern("variable")) 	
+				return false;
+			else {
+				this.buffer.append(": ");
+				return true;
+			}
 		}
 		return true;
 	}
