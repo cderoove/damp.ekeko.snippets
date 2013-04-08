@@ -344,6 +344,13 @@
     (let [newsnippet (document-as-snippet document)]
       (copy-snippet snippet newsnippet)))) 
 
+(defn 
+  snippet-new-state
+  [snippet]
+  (let [document (snippet-document snippet)]
+    (let [new-document (parsing/parse-string-to-document (.get document))
+          newsnippet (document-as-snippet new-document)]
+      (copy-snippet snippet newsnippet)))) 
 
 ;; Snippets Group Datatype
 ;; ----------------------
@@ -403,6 +410,16 @@
       :else (find-snippet (rest listsnippet) node)))
   (find-snippet (snippetgroup-snippetlist group) node))
 
+(defn snippetgroup-snippet-for-var
+  [group var]
+  (defn find-snippet [listsnippet var]
+    (cond 
+      (= var nil) nil
+      (empty? listsnippet) nil
+      (contains? (:var2ast (first listsnippet)) var) (first listsnippet)
+      :else (find-snippet (rest listsnippet) var)))
+  (find-snippet (snippetgroup-snippetlist group) var))
+
 (defn snippetgroup-snippet-index
   [group snippet]
   (.indexOf (snippetgroup-snippetlist group) snippet))
@@ -411,6 +428,20 @@
   [group oldsnippet newsnippet]
   (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
     (update-in group [:snippetlist] (fn [x] newlist))))
+
+(defn 
+  snippetgroup-var-for-node
+  [grp node]
+  (snippet-var-for-node
+    (snippetgroup-snippet-for-node grp node)
+    node))
+
+(defn 
+  snippetgroup-node-for-var
+  [grp var]
+  (snippet-node-for-var
+    (snippetgroup-snippet-for-var grp var)
+    var))
 
 (defn flat-map
   "Returns list of results (= f(each-element)) in the form of flat list.
@@ -422,7 +453,13 @@
     (concat (f (first lst))
             (flat-map f (rest lst)))))
 
-
+(defn
+  snippetgroup-new-state
+  [grp]
+  (let [new-snippetlist (map (fn [snippet] (snippet-new-state snippet)) (:snippetlist grp))] 
+    (update-in grp [:snippetlist] (fn [x] new-snippetlist))))
+  
+  
 ;; Constructing SnippetGroup instances
 ;; -----------------------------------
 
@@ -440,9 +477,11 @@
 ; Datatype representing a group (list) of Original Snippet(s) and 
 ; history of applied operators in order
 ; original-snippetgroup --> original snippet group
-; operators-history --> vector of [applied operator-id, node, args]
+; operators-history --> vector of [applied operator-id, var-node, args]
 ; operators-undo-history --> applied operator which are undo by user
-;                            list of [applied operator-id, node, args]
+;                            list of [applied operator-id, var-node, args]
+;; use vector for history, because always add element as last element
+;; and use list for undohistory, because always add element as first element
 
 (defrecord SnippetGroupHistory [original-snippetgroup current-snippetgroup operators-history operators-undohistory])
 
@@ -472,20 +511,30 @@
   (:operators-undohistory snippetgrouphistory))
 
 (defn 
+  snippetgrouphistory-var-for-node
+  [grp node]
+  (snippetgroup-var-for-node (:current-snippetgroup grp) node))
+
+(defn 
+  snippetgrouphistory-node-for-var
+  [grp var]
+  (snippetgroup-node-for-var (:current-snippetgroup grp) var))
+
+(defn 
   history-operator
-  "Returns operator id of the given history [op-id, node, args]."
+  "Returns operator id of the given history [op-id, var-node, args]."
   [history]
   (first history))
 
 (defn 
-  history-node
-  "Returns node of the given history [op-id, node, args]."
+  history-varnode
+  "Returns var node of the given history [op-id, var-node, args]."
   [history]
   (fnext history))
 
 (defn 
   history-args
-  "Returns arguments of the given history [op-id, node, args]."
+  "Returns arguments of the given history [op-id, var-node, args]."
   [history]
   (last history))
 
@@ -507,6 +556,27 @@
         undohistory (:operators-undohistory grouphistory)]
     (SnippetGroupHistory. snippetgroup snippetgroup [] undohistory)))
 
+(defn
+  snippetgrouphistory-clean-history
+  [grouphistory]
+  (update-in 
+    (update-in grouphistory [:operators-undohistory] (fn [x] '()))
+    [:operators-history]
+    (fn [x] [])))
+
+(defn
+  snippetgrouphistory-new-state
+  [grp]
+  (let [user-cond (:userquery (:current-snippetgroup grp))
+        new-grp (update-in (snippetgroup-new-state (:current-snippetgroup grp)) [:userquery] (fn [x] user-cond))]
+    (update-in
+      (update-in 
+        (snippetgrouphistory-clean-history grp) 
+        [:original-snippetgroup] (fn [x] new-grp))
+      [:current-snippetgroup] (fn [x] new-grp))))
+
+
+  
 ;; Updating SnippetGroupHistory instances
 ;; -------------------------------------------
 

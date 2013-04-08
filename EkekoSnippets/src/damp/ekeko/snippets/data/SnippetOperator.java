@@ -46,6 +46,22 @@ public class SnippetOperator {
 		root.setExpanded(true);
 	}
 
+	public static void setInputForTransformation(Tree tree, Object selectedNode) {
+		tree.removeAll();
+
+		TreeItem root = new TreeItem(tree, 0);
+		root.setText("Operator");
+		root.setData("");
+		
+		Object[] operators = getArray(RT.var("damp.ekeko.snippets.precondition", "applicable-operators-for-transformation").invoke(selectedNode));
+		for (int j = 0; j < operators.length; j++) {
+			TreeItem itemOp = new TreeItem(root, 0);
+			itemOp.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-name").invoke(operators[j]));
+			itemOp.setData(operators[j]);
+		}			
+		root.setExpanded(true);
+	}
+
 	public static void setInputArguments(Table table, Table tableNode, Object snippetgroup, Object operator) {
 		table.removeAll();
 		tableNode.removeAll();

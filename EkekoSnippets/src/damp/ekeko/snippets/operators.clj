@@ -60,6 +60,36 @@
   (update-constrainf snippet node :elements-repetition))
 
 (defn 
+  replace-node-no-apply-rewrite 
+  "Replace a node with new node in snippet."
+  [snippet node newnode]
+  (let [rewrite (representation/snippet-rewrite snippet)]
+    (.replace rewrite node newnode (new org.eclipse.text.edits.TextEditGroup "snippet"))
+    snippet))
+
+(defn 
+  change-property-node-no-apply-rewrite 
+  "Change property of given node in snippet."
+  [snippet node value]
+  (let [rewrite (representation/snippet-rewrite snippet)]
+    (.set rewrite (:owner node) (:property node) value)
+    snippet))
+
+(defn 
+  change-property-node 
+  "Change property of given node in snippet."
+  [snippet node value]
+  (change-property-node-no-apply-rewrite snippet node value)
+  (representation/apply-rewrite snippet)) 
+
+(defn 
+  replace-node 
+  "Replace a node with new node in snippet."
+  [snippet node newnode]
+  (replace-node-no-apply-rewrite snippet node newnode)
+  (representation/apply-rewrite snippet)) 
+
+(defn 
   remove-node-no-apply-rewrite 
   "Remove a given node from snippet, without apply rewrite."
   [snippet node]

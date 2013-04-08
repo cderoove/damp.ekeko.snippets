@@ -170,9 +170,9 @@
   (applicable-operators-for-node (:ast snippet)))
 
 (defn
-  applicable-operators-for-a-node
-  "Returns list of applicable operator-id from given node."
-  [node]
+  applicable-operators-for-a-node-with-operators
+  "Returns list of applicable operator-id from given node and operators-ids."
+  [node op-ids]
   (defn process-a-node [operators app-operators]
     (if (empty? operators)
       app-operators
@@ -180,24 +180,25 @@
         (if (safe-operator-for-node? op-id node)
           (process-a-node (rest operators) (cons op-id app-operators))
           (process-a-node (rest operators) app-operators)))))
-  (if (or (ast? node) (lstvalue? node))
-    (process-a-node (operator-ids) '())
-    '()))
+  (process-a-node op-ids '()))
+
+(defn
+  applicable-operators-for-a-node
+  "Returns list of applicable operator-id from given node."
+  [node]
+  (applicable-operators-for-a-node-with-operators node (operator-ids)))
 
 (defn
   applicable-operators-with-type
   "Returns list of applicable operator-id from given operator-type and node."
   [op-type node]
-  (defn process-a-node [operators app-operators]
-    (if (empty? operators)
-      app-operators
-      (let [op-id (first operators)]
-        (if (safe-operator-for-node? op-id node)
-          (process-a-node (rest operators) (cons op-id app-operators))
-          (process-a-node (rest operators) app-operators)))))
-  (if (or (ast? node) (lstvalue? node))
-    (process-a-node (operator-ids-with-type op-type) '())
-    '()))
+  (applicable-operators-for-a-node-with-operators node (operator-ids-with-type op-type)))
+
+(defn
+  applicable-operators-for-transformation
+  "Returns list of applicable operator-id from given node."
+  [node]
+  (applicable-operators-for-a-node-with-operators node (operator-ids-for-transformation)))
 
 ;; Macro 
 ;; -------
@@ -222,6 +223,13 @@
   [?raw]
   (all 
     (succeeds (lstvalueraw? ?raw))))
+
+(defn
+  primitive-or-null-value
+  "Relation of all value of ASTNode, but not listvalue."
+  [?val]
+  (conde [(primitivevalue ?val)]
+         [(nullvalue ?val)]))
 
 (defn
   is-ast?
@@ -314,6 +322,7 @@
 (def 
   operator-precondition
   {:listvalue                            [:property listvalue]					          
+   :primitive-or-null-value              [:property primitive-or-null-value]					          
    :is-variabledeclarationstatement?     [:node is-variabledeclarationstatement?]
    :is-ifstatement?                      [:node is-ifstatement?]  
    :is-type?                             [:node is-type?]	

@@ -140,6 +140,12 @@
   []
   (zipmap (operator-ids) (operator-functions)))
 
+(defn 
+  operator-ids-for-transformation
+  "Returns all operator ids for transformation."
+  []
+  (list :add-node :remove-node :replace-node :change-property-node)) 
+
 ;; Function apply-operator 
 ;; --------------------------------
 
@@ -150,6 +156,8 @@
     (cond 
       (= op-id :add-node)
       (op-func snippet node (parsing/parse-string-ast (first args)) (Integer/parseInt (fnext args)))
+      (= op-id :replace-node)
+      (op-func snippet node (parsing/parse-string-ast (first args)))
       (= op-id :update-logic-conditions)
       (apply op-func snippet args)
       :else
@@ -176,8 +184,9 @@
   (let [newgroup (apply-operator-to-snippetgroup
                    (representation/snippetgrouphistory-current snippetgrouphistory) 
                    op-id node args)
-        newgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory newgroup)]
-    (representation/snippetgrouphistory-add-history newgrouphistory op-id node args)))
+        newgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory newgroup)
+        var-node (representation/snippetgrouphistory-var-for-node snippetgrouphistory node)]
+    (representation/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
      
 
 ;; Function undo and redo 
@@ -194,7 +203,7 @@
           (apply-operator-to-snippetgrouphistory 
             grouphistory
             (representation/history-operator history)
-            (representation/history-node history)
+            (representation/snippetgrouphistory-node-for-var grouphistory (representation/history-varnode history))
             (representation/history-args history))
           (rest op-histories)))))
   (let [op-histories (drop-last (representation/snippetgrouphistory-history grouphistory))
@@ -212,7 +221,7 @@
       (apply-operator-to-snippetgrouphistory 
         redo-grouphistory
         (representation/history-operator redo)
-        (representation/history-node redo)
+        (representation/snippetgrouphistory-node-for-var redo-grouphistory (representation/history-varnode redo))
         (representation/history-args redo)))))
     
 
@@ -328,6 +337,18 @@
                                                       :generalization 
                                                       "Remove node"
                                                       "Operator to remove node"]
+   :replace-node                                     [:node       
+                                                      replace-node                                       
+                                                      :is-ast?   
+                                                      :refinement 
+                                                      "Replace node"
+                                                      "Operator to replace node with new node"]
+   :change-property-node                             [:property       
+                                                      change-property-node                                       
+                                                      :primitive-or-null-value   
+                                                      :refinement 
+                                                      "Change property node"
+                                                      "Operator to change value of property node"]
    :match-invocation-declaration                     [:node  
                                                       match-invocation-declaration          
                                                       :is-methodinvocationexpression? 
@@ -361,6 +382,8 @@
                                                       "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :add-node                                         ["New Node (eg. int x = 5;)"
                                                       "Index (eg. 1)"]
+   :replace-node                                     ["New Node (eg. int x = 5;)"]
+   :change-property-node                             ["New Value (eg. \"methodA\")"]
    :add-logic-conditions                             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :remove-logic-conditions                          ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :add-logic-conditions-to-snippetgroup             ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]

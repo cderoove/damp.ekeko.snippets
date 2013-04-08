@@ -34,7 +34,12 @@
       <view
             class="damp.ekeko.snippets.gui.ResultCheckView"
             id="damp.ekeko.snippets.gui.ResultCheckView"
-            name="Result Checking">
+            name="Ekeko Result Checking">
+      </view>
+      <view
+            class="damp.ekeko.snippets.gui.ProgramTransView"
+            id="damp.ekeko.snippets.gui.ProgramTransView"
+            name="Ekeko Transformation">
       </view>
    </extension>
    <extension

@@ -47,9 +47,6 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.graphics.Color;
 
 import clojure.lang.Keyword;
-import clojure.lang.Symbol;
-import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.viewers.ColumnPixelData;
 
 public class SnippetView extends ViewPart {
 
@@ -71,6 +68,7 @@ public class SnippetView extends ViewPart {
 	private SnippetGroupTreeContentProvider contentProvider;
 	private Action actRedo;
 	private Table table_1;
+	private Action actTrans;
 
 	public SnippetView() {
 	}
@@ -353,6 +351,14 @@ public class SnippetView extends ViewPart {
 			actRedo.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/etool16/redo_edit.gif"));
 			actRedo.setToolTipText("Redo");
 		}
+		{
+			actTrans = new Action("Program Transformation") {				public void run() {
+					transformation();
+				}
+			};
+			actTrans.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.egit.ui", "/icons/elcl16/filterresource.gif"));
+			actTrans.setToolTipText("Program Transformation");
+		}
 	}
 
 	/**
@@ -364,6 +370,7 @@ public class SnippetView extends ViewPart {
 		toolbarManager.add(actAddSnippet);
 		toolbarManager.add(actUndo);
 		toolbarManager.add(actRedo);
+		toolbarManager.add(actTrans);
 	}
 
 	/**
@@ -375,6 +382,7 @@ public class SnippetView extends ViewPart {
 		menuManager.add(actAddSnippet);
 		menuManager.add(actUndo);
 		menuManager.add(actRedo);
+		menuManager.add(actTrans);
 	}
 
 	@Override
@@ -567,5 +575,14 @@ public class SnippetView extends ViewPart {
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
 		markSnippet();
+	}
+
+	public void transformation() {
+		try {
+			ProgramTransView view = (ProgramTransView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ProgramTransView");
+			view.setSnippet(snippetGroup.newState());
+		} catch (PartInitException e) {
+			e.printStackTrace();
+		}
 	}
 }
