@@ -3,6 +3,7 @@
     :author "Coen De Roover, Siltvani"}
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
+             [gui :as gui]
              [querying :as querying]
              [operatorsrep :as operatorsrep]
              [representation :as representation]
@@ -102,14 +103,48 @@
     (.set rewrite node property value))) 
 
 
-; GENERATE EKEKO LOGIC
+; MAP FOR REWRITE SNIPPET
+; -----------------------------
+; Map {template-snippet rewrite-snippet}
+
+
+; ADD REWRITE SNIPPET
+; -----------------------
+
+(defn 
+  make-rewritemap
+  []
+  {})
+
+(defn
+  add-rewrite-snippet
+  [rewrite-map template-snippet rewrite-snippet]
+  (assoc rewrite-map template-snippet rewrite-snippet))
+
+(defn 
+  update-rewrite-snippet
+  [rewrite-map template-snippet rewrite-snippet]
+  (assoc rewrite-map template-snippet rewrite-snippet))
+  
+(defn 
+  get-rewrite-snippet
+  [rewrite-map template-snippet]
+  (get rewrite-map template-snippet))
+
+(defn 
+  remove-rewrite-snippet
+  [rewrite-map template-snippet]
+  (dissoc rewrite-map template-snippet))
+
+
+; GENERATE EKEKO REWRITE QUERY
 ; ----------------------------------------------
-; Generate ekeko logic based on changes history 
+; Generate ekeko rewrite query based on changes history 
 ; Operator history format
 ; history --> vector of [applied operator-id, var-node, args]
 
 (defn 
-  rewrite-query
+  rewrite-query-by-operator
   [snippetgroup op-id var-match args]
   (let [snippet (representation/snippetgroup-snippet-for-var snippetgroup var-match)
         node (representation/snippet-node-for-var snippet var-match)] 
@@ -133,42 +168,62 @@
       :default
       (throw (Exception. (str "Unknown changes: " op-id))))))
 
+(defn 
+  replace-node-with-logic-vars
+  [node str-new-node user-vars]
+  (defn 
+    generate-rewrite-snippet
+    [str-snippet user-vars]
+    (if (empty? user-vars)
+      str-snippet
+      (let [var (first (first user-vars))
+            node (fnext (first user-vars))]
+        (generate-rewrite-snippet
+          (clojure.string/replace str-snippet var (str node))
+          (rest user-vars)))))
+  (replace-node-in-rewrite-code 
+    node 
+    (generate-rewrite-snippet str-new-node user-vars)))
+
 (defn
   snippetgrouphistory-rewrite-query
-  "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory."
-  [snippetgrouphistory]
-  (defn snippetgroup-rewrite-query-rec [snippetgroup changes-history changes-query]
-    (if (empty? changes-history)
-      changes-query
-      (let [history (first changes-history)]
-        (snippetgroup-rewrite-query-rec 
-          snippetgroup 
-          (rest changes-history)
-          (concat 
-            changes-query 
-            (rewrite-query 
-              snippetgroup
-              (representation/history-operator history)
-              (representation/history-varnode history)
-              (representation/history-args history)))))))
+  "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
+  ;note : the string ? should be changed to other character, otherwise
+  ;error: Unsupported binding form: ?...
+  [snippetgrouphistory rewritemap]
+  (defn rewrite-query-rec [rewrite-map rewrite-query]
+    (if (empty? rewrite-map)
+      rewrite-query
+      (let [template-snippet (key (first rewrite-map))
+            rewrite-snippet (val (first rewrite-map))
+            var-match (representation/snippet-var-for-root template-snippet)
+            str-rewrite-snippet (clojure.string/replace (gui/print-snippet rewrite-snippet) "?" "*")             
+            user-vars (representation/snippet-uservars rewrite-snippet)
+            user-vars-condition
+            (for [var user-vars
+                  :let [str-var (clojure.string/replace (str var) "?" "*")]]
+              `[~str-var ~var]) 
+            query `((el/perform 
+                      (replace-node-with-logic-vars 
+                        ~var-match 
+                        ~str-rewrite-snippet 
+                        [~@user-vars-condition])))]
+        (rewrite-query-rec 
+          (remove-rewrite-snippet rewrite-map template-snippet)
+          (concat rewrite-query query))))) 
   (let [query (querying/snippetgroup-query 
                 (representation/snippetgrouphistory-original snippetgrouphistory)
                 'damp.ekeko/ekeko)]
-    `(~@(concat 
-          (butlast query)
-          (list (concat
-                  (last query) ;;get query inside fresh and concat it with rewrite query
-                  (snippetgroup-rewrite-query-rec 
-                    (representation/snippetgrouphistory-original snippetgrouphistory)
-                    (representation/snippetgrouphistory-history snippetgrouphistory)
-                    '())))))))  
+    (querying/add-query 
+      query 
+      (rewrite-query-rec rewritemap '())))) 
       
 (defn
   rewrite-query-by-snippetgrouphistory
-  "Excecute rewrite query of the given snippetgrouphistory."
+  "Excecute rewrite query of the given snippetgrouphistory and rewritemap."
   ;;note, if print is removed, when apply-rewrite is not working
-  [snippetgrouphistory]
+  [snippetgrouphistory rewritemap]
   (print
-    (eval (snippetgrouphistory-rewrite-query snippetgrouphistory))))
+    (eval (snippetgrouphistory-rewrite-query snippetgrouphistory rewritemap))))
 
 

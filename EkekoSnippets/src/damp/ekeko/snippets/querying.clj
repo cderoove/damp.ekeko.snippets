@@ -83,6 +83,26 @@
     (representation/snippetgroup-userqueries snippetgroup)))
 
     
-    
+; tool to add query
+; ------------------
+
+(defn add-query
+  [query additional-query]
+  `(~@(concat 
+        (butlast query)
+        (list (concat
+                (last query) ;;get query inside fresh and concat it with rewrite query
+                additional-query))))) 
+
+(defn add-query-on-top
+  [query additional-query]
+  (let [fresh-part (last query)]
+  `(~@(concat 
+        (butlast query)
+        (list 
+          (cons (first fresh-part)
+                (cons (fnext fresh-part)
+                      (concat additional-query
+                              (rest (rest query)))))))))) 
     
 

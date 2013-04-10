@@ -2,6 +2,7 @@
   ^{:doc "Operators for generalizing and refining snippets."
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.operators
+  (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
              [runtime :as runtime]
              [util :as util]
@@ -316,6 +317,44 @@
         new-snippet
         (rest nodes)
         (rest uservars)))))
+
+(defn 
+  introduce-logic-variables-for-node
+  "Introduce logic variable to all nodes with the same identifier as a given node.
+   The given node is not in the snippet."
+  [snippet node uservar]
+  (defn get-nodes [root node]
+    (damp.ekeko/ekeko 
+      [?var] 
+      (cl/fresh [?key ?key-id ?node-id ?id  ?identifier]
+                (reification/child+ root ?var)
+                (reification/ast ?key node)
+                (reification/ast ?key ?var)
+                (reification/has ?key-id ?var ?id)
+                (reification/has ?key-id node ?node-id)
+                (reification/value-raw ?id ?identifier)
+                (reification/value-raw ?node-id ?identifier))))
+  (defn process-introduce-variables [snippet nodes]
+    (if (empty? nodes)
+      snippet
+      (let [new-snippet (introduce-logic-variable snippet (first (first nodes)) uservar)]
+        (process-introduce-variables new-snippet (rest nodes)))))
+  (process-introduce-variables snippet (get-nodes (:ast snippet) node)))
+
+(defn 
+  introduce-logic-variables-for-snippet
+  "Introduce logic variable to all nodes based on all user vars of a given template snippet."
+  [snippet template-snippet]
+  (defn process-introduce-variables-rec [snippet var2uservar]
+    (if (empty? var2uservar)
+      snippet
+      (let [first-var (first var2uservar)
+            new-snippet (introduce-logic-variables-for-node 
+                          snippet 
+                          (representation/snippet-node-for-var template-snippet (key first-var))
+                          (val first-var))]
+        (process-introduce-variables-rec new-snippet (dissoc var2uservar (key first-var))))))
+  (process-introduce-variables-rec snippet (:var2uservar template-snippet)))
 
 (defn 
   negated-node 

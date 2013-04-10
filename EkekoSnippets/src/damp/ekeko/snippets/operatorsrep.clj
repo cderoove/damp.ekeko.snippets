@@ -144,7 +144,10 @@
   operator-ids-for-transformation
   "Returns all operator ids for transformation."
   []
-  (list :add-node :remove-node :replace-node :change-property-node)) 
+  (list :add-node :remove-node 
+        :replace-node :change-property-node 
+        :introduce-logic-variable
+        :introduce-logic-variables-for-snippet)) 
 
 ;; Function apply-operator 
 ;; --------------------------------
@@ -159,6 +162,8 @@
       (= op-id :replace-node)
       (op-func snippet node (parsing/parse-string-ast (first args)))
       (= op-id :update-logic-conditions)
+      (apply op-func snippet args)
+      (= op-id :introduce-logic-variables-for-snippet)
       (apply op-func snippet args)
       :else
       (apply op-func snippet node args))))
@@ -325,6 +330,12 @@
                                                       :generalization 
                                                       "Introduce logic variables with condition"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node, with additional user logic condition on it"]
+   :introduce-logic-variables-for-snippet            [:node     
+                                                      introduce-logic-variables-for-snippet 
+                                                      :is-ast?       	
+                                                      :none 
+                                                      "Introduce logic variables for snippet"
+                                                      "Operator to introduce new logic variables to all nodes based on logic variables in the template snippet"]
    :add-node                                         [:property   
                                                       add-node                                          
                                                       :listvalue					          

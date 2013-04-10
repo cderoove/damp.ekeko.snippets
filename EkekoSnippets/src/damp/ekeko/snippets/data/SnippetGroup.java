@@ -32,6 +32,11 @@ public class SnippetGroup {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
 	
+	/**
+	 * 
+	 * TEMPLATE SNIPPET PART
+	 */
+	
 	public void setGroupHistory(Object grp) {
 		groupHistory = grp;
 	}
@@ -89,10 +94,11 @@ public class SnippetGroup {
 		return strConds.substring(1, strConds.length() - 1).replace(") ", ") \n").replace("] ", "] \n");
 	}
 	
-	public void addSnippetCode(String code) {
+	public Object addSnippetCode(String code) {
 		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
 		Object snippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
 		groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), snippet);
+		return snippet;
 	}
 
 	public void applyOperator(Object operator, Object node, String[] args, Object selectedArgNode) {
@@ -170,21 +176,12 @@ public class SnippetGroup {
 			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet-with-header").invoke(snippet));
 	}
 
-	public String getTransformationQuery() {
-		Object query = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-query").invoke(getGroupHistory()); 		
-		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
-	}
-
-	public void doTransformation() {
-		RT.var("damp.ekeko.snippets.rewrite","rewrite-query-by-snippetgrouphistory").invoke(getGroupHistory()); 		
-		RT.var("damp.ekeko.snippets.rewrite","apply-and-reset-rewrites").invoke(); 		
-	}
-
 	public SnippetGroup newState() {
 		SnippetGroup newState = new SnippetGroup("Group");
 		newState.setGroupHistory(RT.var("damp.ekeko.snippets.representation","snippetgrouphistory-new-state").invoke(getGroupHistory())); 		
 		return newState;
 	}
 	
+
 	
 }
