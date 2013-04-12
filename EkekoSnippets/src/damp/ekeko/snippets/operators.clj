@@ -366,7 +366,6 @@
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :negated)))
 
-
 ;; Operator for SnippetGroup
 ;; -------------------------
 
@@ -383,6 +382,13 @@
   [snippetgroup snippet]
   (let [new-snippetlist (remove #{snippet} (representation/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn 
+  update-snippetflag
+  "Update snippet flag :mandatory or :optional of the given snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippet (representation/snippet-update-flag snippet)]
+    (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn
   update-logic-conditions-to-snippetgroup
@@ -417,10 +423,12 @@
         var-invoke (representation/snippet-lvar-for-node snippet-invoke node-invoke)
         var-declare (representation/snippet-lvar-for-node snippet-declare node-declare)
         new-snippet-invoke (update-constrainf-with-args snippet-invoke node-invoke :method-dec var-declare)
-        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-invoke new-snippet-invoke)] 
-    (add-logic-conditions-to-snippetgroup
-      new-group
-      `((damp.ekeko.snippets.runtime/ast-invocation-declaration ~var-invoke ~var-declare)))))
+        new-snippet-invoke-with-cond 
+        (add-logic-conditions 
+          new-snippet-invoke
+          `((damp.ekeko.snippets.runtime/ast-invocation-declaration ~var-invoke ~var-declare)))
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-invoke new-snippet-invoke-with-cond)] 
+    new-group))
 
 (defn
   match-variable-declaration
@@ -432,10 +440,13 @@
         var-declare (representation/snippet-lvar-for-node snippet-declare node-declare)
         var-declare-name (representation/snippet-lvar-for-node snippet-declare (.getName node-declare)) 
         new-snippet-var (update-constrainf-with-args snippet-var node-var :var-dec var-declare-name)
-        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
-    (add-logic-conditions-to-snippetgroup
-      new-group
-      `((damp.ekeko.snippets.runtime/ast-variable-declaration ~var-node ~var-declare)))))
+        new-snippet-var-with-cond
+        (add-logic-conditions
+          new-snippet-var
+          `((damp.ekeko.snippets.runtime/ast-variable-declaration ~var-node ~var-declare)))
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
+    (print "test here")
+    new-group))
 
 (defn
   match-variable-samebinding
@@ -446,10 +457,12 @@
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-node2 (representation/snippet-lvar-for-node snippet-var2 node-var2)
         new-snippet-var (update-constrainf-with-args snippet-var node-var :var-binding var-node2)
-        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var)] 
-    (add-logic-conditions-to-snippetgroup
-      new-group
-      `((damp.ekeko.snippets.runtime/ast-variable-samebinding ~var-node ~var-node2)))))
+        new-snippet-var-with-cond
+        (add-logic-conditions
+          new-snippet-var
+          `((damp.ekeko.snippets.runtime/ast-variable-samebinding ~var-node ~var-node2)))
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)] 
+    new-group))
 
 ;; Operator for SnippetGroupHistory
 ;; --------------------------------
@@ -471,3 +484,17 @@
         new-orisnippetgroup (remove-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
         new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
     (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
+
+(defn 
+  update-snippet-in-snippetgrouphistory
+  "Update snippet in snippetgrouphistory."
+  [snippetgrouphistory snippet newsnippet]
+  (let [new-snippetgroup (representation/snippetgroup-replace-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet newsnippet)]
+    (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)))
+
+(defn 
+  update-snippetflag-in-snippetgrouphistory
+  "Update snippet flag in snippetgrouphistory."
+  [snippetgrouphistory snippet]
+  (let [new-snippet (representation/snippet-update-flag snippet)]
+    (update-snippet-in-snippetgrouphistory snippetgrouphistory snippet new-snippet)))

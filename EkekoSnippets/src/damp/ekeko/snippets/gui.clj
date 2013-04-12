@@ -145,6 +145,16 @@
     (representation/snippetgroup-snippet-for-node snippetgroup element)
     element))
 
+(defn
+  snippetgroupviewercolumn-flag
+  [snippetgroup element]
+  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup element)]
+  (if (representation/snippet-is-mandatory? snippet)
+    (do
+      (if (= (:ast snippet) element) 
+        "m"
+        ""))
+    "")))
 
 ;; Opening a View
 ;; --------------

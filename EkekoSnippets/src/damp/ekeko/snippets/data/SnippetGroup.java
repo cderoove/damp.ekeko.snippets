@@ -145,10 +145,8 @@ public class SnippetGroup {
 	}
 	
 	public void removeSnippet(Object node) {
-		System.out.println("delete");
 		Object snippet = getSnippet(node);
 		if (snippet != null)	{
-			System.out.println("inside");
 			groupHistory = RT.var("damp.ekeko.snippets.operators", "remove-snippet-from-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 		}
 	}
@@ -157,6 +155,12 @@ public class SnippetGroup {
 		Object snippet = getSnippet(node);
 		if (snippet != null)		
 			RT.var("damp.ekeko.snippets.gui","view-snippet").invoke(snippet);		
+	}
+
+	public void updateSnippetFlag(Object node) {
+		Object snippet = getSnippet(node);
+		if (snippet != null)		
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "update-snippetflag-in-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 	}
 
 	public String getQuery(Object node) {

@@ -42,10 +42,14 @@
 ;   note: to use the Track, we should call the function track for each node before any modification of ASTRewrite
 ; - track2ast: map from track (in original document) to node 
 ;   {[property, start, length] ast}
+; - flag: :mandatory or :optional
+;   flag is used in the group to generate query for related mandatory snippets
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar userquery document rewrite track2ast])
+  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar userquery document rewrite track2ast flag])
+
+(declare flat-map)
 
 (defn 
   snippet-root 
@@ -213,11 +217,34 @@
           '()
           query)))
 
+(defn
+  snippet-userqueries-vars
+  [snippet]
+  (reduce 
+    (fn [list el] (concat list (rest el))) 
+    (rest (first (snippet-userqueries snippet)))  
+    (rest (snippet-userqueries snippet))))  
+  
+
 (defn 
   snippet-document
   "Returns the document of source code of the given snippet."
   [snippet]
   (:document snippet))
+
+(defn 
+  snippet-is-mandatory?
+  "Returns true if snippet flag = :mandatory."
+  [snippet]
+  (= (:flag snippet) :mandatory))
+
+(defn 
+  snippet-update-flag
+  "Update flag :mandatory or :optional."
+  [snippet]
+  (if (snippet-is-mandatory? snippet)
+    (assoc snippet :flag :optional)
+    (assoc snippet :flag :mandatory)))
 
 (defn 
   snippet-rewrite
@@ -263,7 +290,7 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} '() nil nil {}))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} '() nil nil {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -297,7 +324,7 @@
         (assoc-in [:track2ast arrTrack] value))))
   (let [n (parsing/parse-document doc)
         rw (make-astrewrite n)
-        snippet (atom (Snippet. n {} {} {} {} {} '() doc rw {}))]
+        snippet (atom (Snippet. n {} {} {} {} {} '() doc rw {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] 
@@ -411,13 +438,18 @@
           '()
           query)))
 
+(defn 
+  snippetgroup-snippets-userqueries
+  "Returns the logic conditions defined by users of the snippets in the snippet group."
+  [snippetgroup]
+  (flat-map snippet-userqueries (snippetgroup-snippetlist snippetgroup)))
+
 (defn
   snippetgroup-rootvars
   "Returns all logic variables of root node of all snippets in snippet group."
   [snippetgroup]
   (map snippet-var-for-root (snippetgroup-snippetlist snippetgroup)))
 
-(declare flat-map)
 
 (defn
   snippetgroup-vars
@@ -483,6 +515,18 @@
   (snippet-node-for-var
     (snippetgroup-snippet-for-var grp var)
     var))
+
+(defn
+  snippetgroup-related-snippets-basedon-userqueries
+  [grp snippet]
+  (let [related-snippets (map (fn [x] (snippetgroup-snippet-for-var grp x)) (snippet-userqueries-vars snippet))]
+    (filter (fn [x] (and (not (nil? x)) (not (= x snippet)))) related-snippets)))        
+
+(defn
+  snippetgroup-related-snippets
+  [grp snippet]
+  (let [related-snippets (filter (fn [x] (snippet-is-mandatory? x)) (snippetgroup-snippetlist grp))]
+    (remove #{snippet} related-snippets)))        
 
 (defn flat-map
   "Returns list of results (= f(each-element)) in the form of flat list.

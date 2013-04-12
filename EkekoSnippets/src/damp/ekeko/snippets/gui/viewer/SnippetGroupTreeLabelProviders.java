@@ -59,5 +59,15 @@ public class SnippetGroupTreeLabelProviders {
 		}
 	}
 
+	public static class FlagColumnLabelProvider extends SnippetGroupColumnLabelProvider {
+
+		public FlagColumnLabelProvider(SnippetView s) {
+			super(s);
+		}
+		
+		public String getText(Object element) {
+			return (String) RT.var("damp.ekeko.snippets.gui", "snippetgroupviewercolumn-flag").invoke(getGroup(), element);
+		}
+	}
 
 }

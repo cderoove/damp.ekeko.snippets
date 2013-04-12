@@ -193,6 +193,16 @@ public class SnippetView extends ViewPart {
 		tltmView.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/keygroups_obj.gif"));
 		tltmView.setToolTipText("View Snippet");
 				
+		ToolItem tltmFlag = new ToolItem(toolBar, SWT.NONE);
+		tltmFlag.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				flagSnippet();
+			}
+		});
+		tltmFlag.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/mandatory.gif"));
+		tltmFlag.setToolTipText("Update Snippet Status");
+
 		treeViewerSnippet = new TreeViewer(group_2, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		treeViewerSnippet.setAutoExpandLevel(1);
 		Tree treeSnippet = treeViewerSnippet.getTree();
@@ -205,6 +215,11 @@ public class SnippetView extends ViewPart {
 		trclmnNode.setWidth(150);
 		trclmnNode.setText("Snippet");
 		
+		TreeViewerColumn snippetNodeFlag = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
+		TreeColumn trclmnFlag = snippetNodeFlag.getColumn();
+		trclmnFlag.setWidth(20);
+		trclmnFlag.setText("");
+
 		TreeViewerColumn snippetPropCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
@@ -218,6 +233,7 @@ public class SnippetView extends ViewPart {
 		contentProvider = new SnippetGroupTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
 		snippetNodeCol.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetNodeFlag.setLabelProvider(new SnippetGroupTreeLabelProviders.FlagColumnLabelProvider(this));		
 		snippetPropCol.setLabelProvider(new SnippetGroupTreeLabelProviders.PropertyColumnLabelProvider(this));
 		snippetVarCol.setLabelProvider(new SnippetGroupTreeLabelProviders.VariableColumnLabelProvider(this));
 
@@ -482,6 +498,16 @@ public class SnippetView extends ViewPart {
 
 	public void removeSnippet() {
 		snippetGroup.removeSnippet(getSelectedSnippet());
+		textSnippet.setText(snippetGroup.toString());
+		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		markSnippet();
+	}
+
+	public void flagSnippet() {
+		snippetGroup.updateSnippetFlag(getSelectedSnippet());
+		textSnippet.setText(snippetGroup.toString());
+		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		markSnippet();
 	}
 
 	public void viewQuery() {

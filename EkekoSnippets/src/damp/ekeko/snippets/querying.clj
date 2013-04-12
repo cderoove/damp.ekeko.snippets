@@ -83,7 +83,9 @@
   (snippetgroup-query-with-conditions 
     snippetgroup ekekolaunchersymbol 
     (snippetgroup-conditions snippetgroup) 
-    (representation/snippetgroup-userqueries snippetgroup)))
+    (concat 
+      (representation/snippetgroup-snippets-userqueries snippetgroup)
+      (representation/snippetgroup-userqueries snippetgroup))))
 
     
 ; Converting snippet query depends on it's group
@@ -91,27 +93,32 @@
 
 (defn
   snippet-in-group-query-with-conditions
-  [snippet snippetgroup ekekolaunchersymbol conditions userconditions]
-  (let [group-without-snippet (operators/remove-snippet snippetgroup snippet)
+  [snippet snippetgroup ekekolaunchersymbol]
+  (let [related-snippets (representation/snippetgroup-related-snippets snippetgroup snippet)
+        grp-related-snippets (update-in (representation/make-snippetgroup "") [:snippetlist] (fn [x] related-snippets))
         root-var (representation/snippet-var-for-root snippet)
         uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))
-        uservars-exact-grp (into #{} (representation/snippetgroup-uservars-for-information group-without-snippet))
-        uservars-var (into #{} (representation/snippetgroup-uservars-for-variable snippetgroup))
-        vars (into #{} (remove #{root-var} (representation/snippetgroup-vars snippetgroup)))]
+        uservars-exact-grp (into #{} (representation/snippetgroup-uservars-for-information grp-related-snippets))
+        uservars-var (into #{} (representation/snippet-uservars-for-variable snippet))
+        uservars-var-grp (into #{} (representation/snippetgroup-uservars-for-variable grp-related-snippets))
+        vars (into #{} (remove #{root-var} (representation/snippet-vars snippet)))
+        vars-grp (into #{} (remove #{root-var} (representation/snippetgroup-vars grp-related-snippets)))
+        conds (snippet-conditions snippet) 
+        conds-grp (snippetgroup-conditions grp-related-snippets) 
+        userconds (representation/snippet-userqueries snippet)
+        userconds-grp (representation/snippetgroup-snippets-userqueries grp-related-snippets)]
     `(~ekekolaunchersymbol 
        [~root-var ~@uservars-exact]
-       (cl/fresh [~@vars ~@uservars-exact-grp ~@uservars-var]
-                 ~@conditions
-                 ~@userconditions))))
+       (cl/fresh [~@vars ~@vars-grp ~@uservars-exact-grp ~@uservars-var ~@uservars-var-grp]
+                 ~@conds ~@conds-grp
+                 ~@userconds ~@userconds-grp))))
 
 (defn
   snippet-in-group-query
   "Returns an Ekeko query that that will retrieve matches for the given snippet depends on it's group conditions."
   [snippet snippetgroup ekekolaunchersymbol]
   (snippet-in-group-query-with-conditions 
-    snippet snippetgroup ekekolaunchersymbol 
-    (snippetgroup-conditions snippetgroup) 
-    (representation/snippetgroup-userqueries snippetgroup)))
+    snippet snippetgroup ekekolaunchersymbol)) 
 
 ; tool to add query
 ; ------------------
