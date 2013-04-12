@@ -387,7 +387,7 @@
   update-snippetflag
   "Update snippet flag :mandatory or :optional of the given snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippet (representation/snippet-update-flag snippet)]
+  (let [new-snippet (representation/snippet-switch-flag snippet)]
     (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn
@@ -496,5 +496,5 @@
   update-snippetflag-in-snippetgrouphistory
   "Update snippet flag in snippetgrouphistory."
   [snippetgrouphistory snippet]
-  (let [new-snippet (representation/snippet-update-flag snippet)]
+  (let [new-snippet (representation/snippet-switch-flag snippet)]
     (update-snippet-in-snippetgrouphistory snippetgrouphistory snippet new-snippet)))

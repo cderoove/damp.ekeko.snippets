@@ -241,10 +241,16 @@
 (defn 
   snippet-update-flag
   "Update flag :mandatory or :optional."
+  [snippet flag]
+  (assoc snippet :flag flag))
+
+(defn 
+  snippet-switch-flag
+  "Update flag :mandatory or :optional."
   [snippet]
   (if (snippet-is-mandatory? snippet)
-    (assoc snippet :flag :optional)
-    (assoc snippet :flag :mandatory)))
+    (snippet-update-flag snippet :optional)
+    (snippet-update-flag snippet :mandatory)))
 
 (defn 
   snippet-rewrite
@@ -380,7 +386,7 @@
           (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])
           (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
         snippet)))
-  (let [snippet (atom newsnippet)
+  (let [snippet (atom (snippet-update-flag newsnippet (:flag oldsnippet)))
         rw (:rewrite oldsnippet)]
     (util/walk-jdt-node 
       (:ast oldsnippet)
