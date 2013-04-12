@@ -161,3 +161,31 @@
                 (reification/has ?key-id ?var2 ?var2-id)
                 (reification/value-raw ?var1-id ?identifier)
                 (reification/value-raw ?var2-id ?identifier)))
+
+(defn
+  ast-variable-type
+   "Relation between ASTNode var with it's type."
+  [?var ?type]
+  (cl/fresh [?node ?frags ?raw ?frag]
+            (reification/ast :VariableDeclarationStatement ?node)
+            (reification/has :fragments ?node ?frags)
+            (reification/listvalue ?frags) 
+            (reification/value-raw ?frags ?raw) 
+            (el/contains ?raw ?frag) 
+            (reification/ast :VariableDeclarationFragment ?frag)
+            (ast-variable-declaration ?var ?frag)
+            (reification/has :type ?node ?type)))
+                                    
+(defn
+  ast-variable-typestring
+   "Relation between ASTNode var with it's type name (in string)."
+  [?var ?typename]
+  (cl/fresh [?type]
+            (ast-variable-type ?var ?type)
+            (el/equals ?typename (str ?type))))
+
+(defn
+  ast-variable-typename
+   "Relation between ASTNode var with it's type name (in Name)."
+  [?var ?typename]
+  (ast-variable-typestring ?var (str ?typename)))

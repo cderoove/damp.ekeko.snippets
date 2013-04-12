@@ -445,7 +445,6 @@
           new-snippet-var
           `((damp.ekeko.snippets.runtime/ast-variable-declaration ~var-node ~var-declare)))
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
-    (print "test here")
     new-group))
 
 (defn
@@ -462,6 +461,22 @@
           new-snippet-var
           `((damp.ekeko.snippets.runtime/ast-variable-samebinding ~var-node ~var-node2)))
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)] 
+    new-group))
+
+(defn
+  match-variable-typename
+   "Match Relation between ASTNode variable with it's type name."
+  [snippetgroup node-var node-type]
+  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
+        var-node (representation/snippet-lvar-for-node snippet-var node-var)
+        var-type (representation/snippet-lvar-for-node snippet-type node-type)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-typename var-type)
+        new-snippet-var-with-cond
+        (add-logic-conditions
+          new-snippet-var
+          `((damp.ekeko.snippets.runtime/ast-variable-typename ~var-node ~var-type)))
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
     new-group))
 
 ;; Operator for SnippetGroupHistory

@@ -385,6 +385,12 @@
                                                       :refinement 
                                                       "Match variable binding"
                                                       "Operator with matching strategy :var-binding\nMatch variable node which has same binding with given snippet node"]
+   :match-variable-typename                          [:node  
+                                                      match-variable-typename
+                                                      :is-simplename? 
+                                                      :refinement 
+                                                      "Match variable type name"
+                                                      "Operator with matching strategy :var-typename\nMatch type name of node with (SimpleName, or QualifiedName) of given node"]
 	})
 
 
@@ -416,6 +422,7 @@
   {:match-invocation-declaration                     ["Declaration Node" :is-methoddeclaration?]
    :match-variable-declaration                       ["Declaration Node" :is-variabledeclarationfragment?]
    :match-variable-samebinding                       ["Variable Node"    :is-simplename?]
+   :match-variable-typename                          ["Variable Node"    :is-ast?]
   })
 
 ;;Operators type

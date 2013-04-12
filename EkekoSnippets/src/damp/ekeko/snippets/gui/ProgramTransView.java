@@ -340,6 +340,8 @@ public class ProgramTransView extends SnippetView {
 		int y = snippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
+		textRWSnippet.setSelectionRange(0, 0);
+		textRWSnippet.setText(rwSnippetGroup.toString(rwSnippetGroup.getRewriteSnippet(snippetGroup, getSelectedSnippet())));
 	} 
 	
 	public void onRWSnippetSelection() {

@@ -393,6 +393,8 @@
     cf-exact-with-variable
     (= type :var-binding)
     cf-exact-with-variable
+    (= type :var-typename)
+    cf-exact-with-variable
     (= type :epsilon)
     make-epsilon-function
     :default
