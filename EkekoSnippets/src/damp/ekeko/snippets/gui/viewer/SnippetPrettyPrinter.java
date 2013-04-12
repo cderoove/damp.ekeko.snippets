@@ -74,6 +74,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		Keyword constrainf = getConstrainF(node);
 		if (constrainf == Keyword.intern("exact") ||
 				constrainf == Keyword.intern("variable") || 
+				constrainf == Keyword.intern("variable-info") || 
 				constrainf == Keyword.intern("exact-variable") || 
 				constrainf == Keyword.intern("epsilon")) 	
 			return true;
@@ -107,7 +108,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (uservar != null) {
 			this.buffer.append(uservar);
 			Keyword constrainf = getConstrainF(node);
-			if (constrainf == Keyword.intern("variable")) 	
+			if (constrainf == Keyword.intern("variable") ||
+				constrainf == Keyword.intern("variable-info")) 	
 				return false;
 			else {
 				this.buffer.append(": ");
@@ -120,7 +122,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	public void preVisit(ASTNode node) {	
 		//if node is first member of NodeList, then preVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
-		if (property.isChildListProperty()) {
+		if (property != null && property.isChildListProperty()) {
 			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
@@ -129,7 +131,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 		//print bracket
 		if (!hasDefaultGroundf(node) || 
-				!hasDefaultConstrainf(node)) 
+				!hasDefaultConstrainf(node) ||
+				(getConstrainF(node) == Keyword.intern("exact-variable")))
 			this.buffer.append("&open");
 		
 		//color highlightNode
@@ -147,10 +150,12 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			fString += getConstrainFString(node);
 		if (!fString.isEmpty()) 
 			addBufferBeforeEOL("&close" + fString);
+		if (getConstrainF(node) == Keyword.intern("exact-variable"))
+			addBufferBeforeEOL("&close");
 
 		//if node is last member of NodeList, then postVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
-		if (property.isChildListProperty()) {
+		if (property != null && property.isChildListProperty()) {
 			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
@@ -165,7 +170,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	public void preVisitNodeList(PersistentArrayMap nodeListWrapper) {
 		//print bracket
 		if (!hasDefaultGroundf(nodeListWrapper) || 
-				!hasDefaultConstrainf(nodeListWrapper)) 
+				!hasDefaultConstrainf(nodeListWrapper) || 
+				(getConstrainF(nodeListWrapper) == Keyword.intern("exact-variable")))
 			this.buffer.append("&open");
 
 		//color highlightNode
@@ -183,6 +189,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			fString += getConstrainFString(nodeListWrapper);
 		if (!fString.isEmpty()) 
 			addBufferBeforeEOL("&close" + fString);
+		if (getConstrainF(nodeListWrapper) == Keyword.intern("exact-variable"))
+			addBufferBeforeEOL("&close");
 
 		//color highlightNode
 		if (highlightNode != null && highlightNode.equals(nodeListWrapper))

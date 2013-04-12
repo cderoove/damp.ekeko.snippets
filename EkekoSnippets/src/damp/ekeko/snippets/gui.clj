@@ -3,7 +3,7 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.gui
   (:import 
-    [org.eclipse.jdt.core.dom ASTNode]
+    [org.eclipse.jdt.core.dom ASTNode CompilationUnit]
     [org.eclipse.jface.viewers TreeViewerColumn]
     [org.eclipse.swt SWT]
     [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
@@ -102,7 +102,9 @@
 (defn
   snippetviewercolumn-property
   [snippet element]
-  (astnode/property-descriptor-id (astnode/owner-property element)))
+  (if (instance? CompilationUnit element)
+    "CompilationUnit"
+    (astnode/property-descriptor-id (astnode/owner-property element))))
 
 
 (defn

@@ -7,7 +7,8 @@
              [parsing :as parsing]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
-  (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
+  (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
+  (:import [org.eclipse.jdt.core.dom CompilationUnit]))
 
 
 ;; Snippet Datatype
@@ -176,6 +177,34 @@
   (vals (:var2uservar snippet)))
 
 (defn 
+  snippet-uservars-for-information
+  "Returns the logic variables of node with matching strategy :exact-variable or :variable-info of the given snippet."
+  [snippet]
+  (vals
+    (filter 
+      (fn [x] 
+        (let [cf (snippet-constrainer-for-node 
+                   snippet
+                   (snippet-node-for-var snippet (key x)))]
+          (or (= cf :exact-variable)
+              (= cf :variable-info))))
+      (:var2uservar snippet))))
+
+(defn 
+  snippet-uservars-for-variable
+  "Returns the logic variables of node with matching strategy != :exact-variable of the given snippet."
+  [snippet]
+  (vals
+    (filter 
+      (fn [x] 
+        (let [cf (snippet-constrainer-for-node 
+                   snippet
+                   (snippet-node-for-var snippet (key x)))]
+          (and (not (= cf :exact-variable))
+               (not (= cf :variable-info)))))
+      (:var2uservar snippet))))
+
+(defn 
   snippet-userqueries
   "Returns the logic conditions defined by users of the given snippet."
   [snippet]
@@ -205,7 +234,9 @@
 (defn
   snippet-property-for-node
   [snippet ast]
-  (astnode/property-descriptor-id (astnode/owner-property ast)))
+  (if (instance? CompilationUnit ast)
+    (clojure.core/type ast)
+    (astnode/property-descriptor-id (astnode/owner-property ast))))
 
   
 
@@ -399,6 +430,16 @@
   "Returns all user logic variables from the given snippet group."
   [snippetgroup]
   (flat-map snippet-uservars (snippetgroup-snippetlist snippetgroup)))
+
+(defn
+  snippetgroup-uservars-for-information
+  [snippetgroup]
+  (flat-map snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
+
+(defn
+  snippetgroup-uservars-for-variable
+  [snippetgroup]
+  (flat-map snippet-uservars-for-variable (snippetgroup-snippetlist snippetgroup)))
 
 (defn snippetgroup-snippet-for-node
   [group node]

@@ -235,22 +235,23 @@
 
 (def 
   operator-information
-  {:contains-elements-with-same-size                 [:property       
-                                                      contains-elements-with-same-size                  
-                                                      :listvalue					          
-                                                      :generalization 
-                                                      "Match list with same size"
-                                                      "Operator with matching strategy :list same-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
-   :contains-elements                                [:property   
+  {:contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          
                                                       :generalization 
                                                       "Match list with contains elements"
                                                       "Operator with matching strategy :list contains-elements\nMatch nodelist which contains all elements of snippet nodelist"]
+   :contains-elements-with-same-size                 [:property       
+                                                      contains-elements-with-same-size                  
+                                                      :listvalue					          
+                                                      :generalization 
+                                                      "Match list with same size"
+                                                      "Operator with matching strategy :list same-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
    :contains-elements-with-relative-order            [:property
                                                       contains-elements-with-relative-order     
                                                       :listvalue					          
                                                       :generalization 
+                                                      "Match list with relative order"
                                                       "Operator with matching strategy :list relative-order\nMatch nodelist which contains all elements in same order with snippet nodelist"]
    :contains-elements-with-repetition                [:property 
                                                       contains-elements-with-repetition    
@@ -312,11 +313,17 @@
                                                       :generalization 
                                                       "Introduce logic variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
+   :introduce-logic-variable-with-info               [:node  
+                                                      introduce-logic-variable-with-info  
+                                                      :is-ast?                 
+                                                      :generalization 
+                                                      "Introduce logic variable with information"
+                                                      "Operator to introduce new logic variable and remove all it's property values and add it as result in the query"]
    :introduce-logic-variable-of-node-exact           [:node   
                                                       introduce-logic-variable-of-node-exact  
                                                       :is-ast?      
                                                       :netral 
-                                                      "Introduce logic variable of node exact"
+                                                      "Introduce logic variable as information"
                                                       "Operator to introduce new logic variable without removing any it's property values"]
    :introduce-logic-variables                        [:node 
                                                       introduce-logic-variables  
@@ -387,8 +394,9 @@
 (def 
   operator-arguments
   {:introduce-logic-variable                         ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variables                        ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variable-with-info               ["Logic Variable (eg. ?v)"]
    :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variables                        ["Logic Variable (eg. ?v)"]
    :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
                                                       "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :add-node                                         ["New Node (eg. int x = 5;)"

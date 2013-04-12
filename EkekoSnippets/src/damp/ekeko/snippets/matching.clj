@@ -375,6 +375,8 @@
     cf-list-contains-with-repetition
     (= type :variable)
     cf-variable
+    (= type :variable-info)
+    cf-variable
     (= type :exact-variable)
     cf-exact-with-variable
     (= type :subtype)
@@ -382,15 +384,15 @@
     (= type :dec-init)
     cf-variable-declaration-with-initializer
     (= type :relax-branch)
-    cf-exact
+    cf-exact-with-variable
     (= type :negated)
     cf-negated
     (= type :method-dec)
-    cf-exact
+    cf-exact-with-variable
     (= type :var-dec)
-    cf-exact
+    cf-exact-with-variable
     (= type :var-binding)
-    cf-exact
+    cf-exact-with-variable
     (= type :epsilon)
     make-epsilon-function
     :default
@@ -415,6 +417,8 @@
         `(runtime/to-infix-expression-operator ~(.toString primitive))
         (instance? org.eclipse.jdt.core.dom.PrefixExpression$Operator primitive)
         `(runtime/to-prefix-expression-operator ~(.toString primitive))
+        (instance? org.eclipse.jdt.core.dom.PostfixExpression$Operator primitive)
+        `(runtime/to-postfix-expression-operator ~(.toString primitive))
         (nil? primitive) 
         (throw (Exception. (str "Encountered a null-valued property value that should have been wrapped by Ekeko.")))
         :else  (.toString primitive)))

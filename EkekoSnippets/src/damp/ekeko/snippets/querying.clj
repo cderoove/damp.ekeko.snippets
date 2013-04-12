@@ -5,6 +5,7 @@
   (:require [clojure.core.logic :as cl]) 
   (:require [damp.ekeko.snippets 
              [representation :as representation]
+             [operators :as operators]
              [util :as util]
              [matching :as matching] 
              ]))
@@ -35,11 +36,12 @@
   snippet-query-with-conditions
   [snippet ekekolaunchersymbol conditions userconditions]
   (let [root-var (representation/snippet-var-for-root snippet)
-        uservars (into #{} (representation/snippet-uservars snippet))
+        uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))
+        uservars-var (into #{} (representation/snippet-uservars-for-variable snippet))
         vars (disj (into #{} (representation/snippet-vars snippet)) root-var)]
     `(~ekekolaunchersymbol 
-       [~root-var ~@uservars]
-       (cl/fresh [~@vars]
+       [~root-var ~@uservars-exact]
+       (cl/fresh [~@vars ~@uservars-var]
                  ~@conditions
                  ~@userconditions))))
   
@@ -65,11 +67,12 @@
   snippetgroup-query-with-conditions
   [snippetgroup ekekolaunchersymbol conditions userconditions]
   (let [root-vars (representation/snippetgroup-rootvars snippetgroup)
-        uservars (into #{} (representation/snippetgroup-uservars snippetgroup))
+        uservars-exact (into #{} (representation/snippetgroup-uservars-for-information snippetgroup))
+        uservars-var (into #{} (representation/snippetgroup-uservars-for-variable snippetgroup))
         vars (into #{} (remove (set root-vars) (representation/snippetgroup-vars snippetgroup)))]
     `(~ekekolaunchersymbol 
-       [~@root-vars ~@uservars]
-       (cl/fresh [~@vars]
+       [~@root-vars ~@uservars-exact]
+       (cl/fresh [~@vars ~@uservars-var]
                  ~@conditions
                  ~@userconditions))))
 
@@ -83,6 +86,33 @@
     (representation/snippetgroup-userqueries snippetgroup)))
 
     
+; Converting snippet query depends on it's group
+;-----------------------------------------------
+
+(defn
+  snippet-in-group-query-with-conditions
+  [snippet snippetgroup ekekolaunchersymbol conditions userconditions]
+  (let [group-without-snippet (operators/remove-snippet snippetgroup snippet)
+        root-var (representation/snippet-var-for-root snippet)
+        uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))
+        uservars-exact-grp (into #{} (representation/snippetgroup-uservars-for-information group-without-snippet))
+        uservars-var (into #{} (representation/snippetgroup-uservars-for-variable snippetgroup))
+        vars (into #{} (remove #{root-var} (representation/snippetgroup-vars snippetgroup)))]
+    `(~ekekolaunchersymbol 
+       [~root-var ~@uservars-exact]
+       (cl/fresh [~@vars ~@uservars-exact-grp ~@uservars-var]
+                 ~@conditions
+                 ~@userconditions))))
+
+(defn
+  snippet-in-group-query
+  "Returns an Ekeko query that that will retrieve matches for the given snippet depends on it's group conditions."
+  [snippet snippetgroup ekekolaunchersymbol]
+  (snippet-in-group-query-with-conditions 
+    snippet snippetgroup ekekolaunchersymbol 
+    (snippetgroup-conditions snippetgroup) 
+    (representation/snippetgroup-userqueries snippetgroup)))
+
 ; tool to add query
 ; ------------------
 

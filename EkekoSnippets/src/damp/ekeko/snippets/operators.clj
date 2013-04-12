@@ -275,6 +275,15 @@
     (update-constrainf snippet-with-gf node :variable)))
 
 (defn 
+  introduce-logic-variable-with-info
+  "Introduce logic variable to a given node and add it as result in the query."
+  [snippet node uservar]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
+        snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet-with-uservar node)
+        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+    (update-constrainf snippet-with-gf node :variable-info)))
+
+(defn 
   introduce-logic-variables-with-condition
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
@@ -292,7 +301,7 @@
     (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
       (damp.ekeko/ekeko [?var] 
                         (reification/child+ root ?var)
-                        (runtime/ast-variable-sameidentifier node ?var))) ;shud be ast-variable-samebinding
+                        (runtime/ast-samekind-sameidentifier node ?var))) ;shud be ast-variable-samebinding
     (defn process-binding-variables [snippet nodes counter]
       (if (empty? nodes)
         snippet
@@ -324,16 +333,9 @@
    The given node is not in the snippet."
   [snippet node uservar]
   (defn get-nodes [root node]
-    (damp.ekeko/ekeko 
-      [?var] 
-      (cl/fresh [?key ?key-id ?node-id ?id  ?identifier]
-                (reification/child+ root ?var)
-                (reification/ast ?key node)
-                (reification/ast ?key ?var)
-                (reification/has ?key-id ?var ?id)
-                (reification/has ?key-id node ?node-id)
-                (reification/value-raw ?id ?identifier)
-                (reification/value-raw ?node-id ?identifier))))
+    (damp.ekeko/ekeko [?var] 
+                      (reification/child+ root ?var)
+                      (runtime/ast-samekind-sameidentifier node ?var))) 
   (defn process-introduce-variables [snippet nodes]
     (if (empty? nodes)
       snippet
@@ -372,7 +374,14 @@
   add-snippet
   "Add snippet to snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippetlist (cons snippet (representation/snippetgroup-snippetlist snippetgroup))]
+  (let [new-snippetlist (concat (representation/snippetgroup-snippetlist snippetgroup) (list snippet))]
+    (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn 
+  remove-snippet
+  "Remove snippet to snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippetlist (remove #{snippet} (representation/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
 (defn
@@ -451,5 +460,14 @@
   [snippetgrouphistory snippet]
   (let [new-snippetgroup (add-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
         new-orisnippetgroup (add-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
+        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
+    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
+
+(defn 
+  remove-snippet-from-snippetgrouphistory
+  "Remove snippet from snippetgrouphistory."
+  [snippetgrouphistory snippet]
+  (let [new-snippetgroup (remove-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
+        new-orisnippetgroup (remove-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
         new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
     (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))

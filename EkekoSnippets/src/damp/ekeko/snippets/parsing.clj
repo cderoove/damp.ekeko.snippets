@@ -68,6 +68,24 @@
       unit)))
 
 (defn 
+  parse-string-importdeclarations
+  "Parses the given string as list of Import Declarations."
+  [string]
+  (when-let [unit (parse-string-unit string)]
+    (when 
+      (empty? (.types unit))
+      (.imports unit))))
+
+(defn 
+  parse-string-importdeclaration
+  "Parses the given string as an Import Declaration."
+  [string]
+  (when-let [list (parse-string-importdeclarations string)]
+    (when 
+      (= (count list) 1)
+      (first list))))
+
+(defn 
   parse-string-declarations 
   "Parses the given string as a sequence of Java class body declarations (type, method, field)."
   [string]
@@ -116,9 +134,11 @@
                 (and 
                   (not (jdt-node-malformed? parsed))
                   [parsed symbol])))
-            [[parse-string-statement :statement]
+            [[parse-string-declaration :declaration] 
+             [parse-string-statement :statement]
              [parse-string-statements :statements]
-             [parse-string-declaration :declaration] 
+             [parse-string-importdeclaration :unit] 
+             [parse-string-importdeclarations :unit] 
              [parse-string-unit :unit]
              [parse-string-expression :expression]])))
 

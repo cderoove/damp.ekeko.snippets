@@ -481,7 +481,7 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		System.out.println("Remove Snippet");
+		snippetGroup.removeSnippet(getSelectedSnippet());
 	}
 
 	public void viewQuery() {

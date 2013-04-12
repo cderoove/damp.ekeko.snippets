@@ -10,7 +10,8 @@
              [soot :as soot]])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
-     InfixExpression$Operator PrefixExpression$Operator SimpleName VariableDeclarationFragment]))
+     InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
+     SimpleName VariableDeclarationFragment]))
 
 (defn to-primitive-type-code
   [string]
@@ -31,6 +32,10 @@
 (defn to-prefix-expression-operator
   [string]
   (PrefixExpression$Operator/toOperator string)) 
+
+(defn to-postfix-expression-operator
+  [string]
+  (PostfixExpression$Operator/toOperator string)) 
 
 (defn
   type-relaxmatch-subtype
@@ -144,3 +149,15 @@
             (reification/has :identifier ?var2 ?id2)
             (reification/value-raw ?id1 ?value) 
             (reification/value-raw ?id2 ?value))) 
+
+(defn
+  ast-samekind-sameidentifier
+   "Relation between ASTNode var1 and var2 with the same identifier."
+  [?var1 ?var2]
+      (cl/fresh [?key ?key-id ?var1-id ?var2-id  ?identifier]
+                (reification/ast ?key ?var1)
+                (reification/ast ?key ?var2)
+                (reification/has ?key-id ?var1 ?var1-id)
+                (reification/has ?key-id ?var2 ?var2-id)
+                (reification/value-raw ?var1-id ?identifier)
+                (reification/value-raw ?var2-id ?identifier)))

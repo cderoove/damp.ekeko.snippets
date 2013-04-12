@@ -144,6 +144,15 @@ public class SnippetGroup {
 		}
 	}
 	
+	public void removeSnippet(Object node) {
+		System.out.println("delete");
+		Object snippet = getSnippet(node);
+		if (snippet != null)	{
+			System.out.println("inside");
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "remove-snippet-from-snippetgrouphistory").invoke(getGroupHistory(), snippet);
+		}
+	}
+
 	public void viewSnippet(Object node) {
 		Object snippet = getSnippet(node);
 		if (snippet != null)		
@@ -156,7 +165,7 @@ public class SnippetGroup {
 		if (snippet == null)		
 			query = RT.var("damp.ekeko.snippets.querying","snippetgroup-query").invoke(getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
 		else 
-			query = RT.var("damp.ekeko.snippets.querying","snippet-query").invoke(snippet, Symbol.intern("damp.ekeko/ekeko*"));
+			query = RT.var("damp.ekeko.snippets.querying","snippet-in-group-query").invoke(snippet, getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
 		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 	}
 	
@@ -165,7 +174,7 @@ public class SnippetGroup {
 		if (snippet == null)		
 			RT.var("damp.ekeko.snippets","query-by-snippetgroup*").invoke(getGroup()); 		
 		else 
-			RT.var("damp.ekeko.snippets","query-by-snippet*").invoke(snippet);		
+			RT.var("damp.ekeko.snippets","query-by-snippet-in-group*").invoke(snippet, getGroup());		
 	}
 
 	public Object[] getQueryResult(Object node) {
@@ -173,7 +182,7 @@ public class SnippetGroup {
 		if (snippet == null)		
 			return getArray(RT.var("damp.ekeko.snippets","query-by-snippetgroup-with-header").invoke(getGroup())); 		
 		else 
-			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet-with-header").invoke(snippet));
+			return getArray(RT.var("damp.ekeko.snippets","query-by-snippet-in-group-with-header").invoke(snippet, getGroup()));
 	}
 
 	public SnippetGroup newState() {

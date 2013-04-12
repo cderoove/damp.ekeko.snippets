@@ -252,6 +252,7 @@
   [?node]
   (fresh [?key] 
     (ast ?key ?node)
+    (fails (ast :CompilationUnit ?node))
     (succeeds (property-descriptor-list? (.getLocationInParent ?node)))))
 
 (defn

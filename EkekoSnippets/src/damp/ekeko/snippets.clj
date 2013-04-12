@@ -7,10 +7,8 @@
   (:require [damp.ekeko.snippets 
              [querying :as querying]
              [representation :as representation]
-             [matching :as matching]
              [parsing :as parsing]
              [util :as util]
-             [gui :as gui]
              ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko])
@@ -40,6 +38,18 @@
   [snippet]
   (distinct (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
       
+(defn
+  query-by-snippet-in-group*
+  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition. Opens Eclipse view on results."
+  [snippet snippetgroup]
+  (eval (querying/snippet-in-group-query snippet snippetgroup 'damp.ekeko/ekeko*)))
+
+(defn
+  query-by-snippet-in-group
+  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition. Opens Eclipse view on results."
+  [snippet snippetgroup]
+  (distinct (eval (querying/snippet-in-group-query snippet snippetgroup 'damp.ekeko/ekeko))))
+
 (defn 
   query-by-snippet-incrementally*
   [snippet]
@@ -67,7 +77,7 @@
   (cons 
     (concat 
       (representation/snippetgroup-rootvars snippetgroup)
-      (representation/snippetgroup-uservars snippetgroup)) 
+      (representation/snippetgroup-uservars-for-information snippetgroup)) 
     (query-by-snippetgroup snippetgroup)))
 
 (defn
@@ -77,9 +87,18 @@
   (cons 
     (cons 
       (representation/snippet-var-for-root snippet)
-      (representation/snippet-uservars snippet)) 
+      (representation/snippet-uservars-for-information snippet)) 
     (query-by-snippet snippet)))
 
+(defn
+  query-by-snippet-in-group-with-header
+  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition."
+  [snippet snippetgroup]
+  (cons 
+    (cons 
+      (representation/snippet-var-for-root snippet)
+      (representation/snippet-uservars-for-information snippet)) 
+    (query-by-snippet-in-group snippet snippetgroup)))
 
 (comment 
   (use 'damp.ekeko.snippets)
@@ -163,7 +182,6 @@
   
   (query-by-snippet s)
   
-  (gui/view-snippet s)
 
   
 )
