@@ -331,19 +331,19 @@
                                                       "Operator to introduce new logic variable without removing any it's property values"]
    :introduce-logic-variables                        [:node 
                                                       introduce-logic-variables  
-                                                      :is-ast?					
+                                                      :is-simplename?					
                                                       :generalization 
                                                       "Introduce logic variables"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node"]
    :introduce-logic-variables-to-group               [:node 
                                                       introduce-logic-variables-to-group  
-                                                      :is-ast?					
+                                                      :is-simplename?					
                                                       :generalization 
                                                       "Introduce logic variables to group"
                                                       "Operator to introduce new logic variables to all nodes in group with same binding with given snippet node"]
    :introduce-logic-variables-with-condition         [:node     
                                                       introduce-logic-variables-with-condition 
-                                                      :is-ast?       	
+                                                      :is-simplename?       	
                                                       :generalization 
                                                       "Introduce logic variables with condition"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node, with additional user logic condition on it"]

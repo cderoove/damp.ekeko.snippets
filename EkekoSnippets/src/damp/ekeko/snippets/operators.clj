@@ -368,7 +368,7 @@
   (defn get-nodes [root node]
     (damp.ekeko/ekeko [?var] 
                       (reification/child+ root ?var)
-                      (runtime/ast-samekind-sameidentifier node ?var))) 
+                      (runtime/ast-variable-sameidentifier node ?var))) 
   (defn process-introduce-variables [snippet nodes]
     (if (empty? nodes)
       snippet

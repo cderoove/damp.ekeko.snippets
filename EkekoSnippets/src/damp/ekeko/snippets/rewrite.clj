@@ -119,12 +119,14 @@
 (defn
   add-rewrite-snippet
   [rewrite-map template-snippet rewrite-snippet]
-  (assoc rewrite-map template-snippet rewrite-snippet))
+  (if (not (nil? template-snippet))
+    (assoc rewrite-map template-snippet rewrite-snippet)))
 
 (defn 
   update-rewrite-snippet
   [rewrite-map template-snippet rewrite-snippet]
-  (assoc rewrite-map template-snippet rewrite-snippet))
+  (if (not (nil? template-snippet))
+    (assoc rewrite-map template-snippet rewrite-snippet)))
   
 (defn 
   get-rewrite-snippet
@@ -170,6 +172,8 @@
 
 (defn 
   replace-node-with-logic-vars
+  "Rewrite node with string str-new-node replaced user-var with actual node
+   user-vars -> [[?lvar actual-node] ...]."
   [node str-new-node user-vars]
   (defn 
     generate-rewrite-snippet

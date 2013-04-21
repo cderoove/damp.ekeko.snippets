@@ -74,9 +74,13 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 
 	public String getTransformationQuery(SnippetGroup snippetGroup) {
 		Object query = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-query").invoke(snippetGroup.getGroupHistory(), getRewriteMap()); 		
-		Object queryImport = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-import-declaration-query").invoke(snippetGroup.getGroupHistory(), getRewriteImportMap()); 		
-		return query.toString().replace(") ", ") \n").replace("] ", "] \n") + "\n" +
-			   queryImport.toString().replace(") ", ") \n").replace("] ", "] \n");
+		Object queryImport = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-import-declaration-query").invoke(snippetGroup.getGroupHistory(), getRewriteImportMap());
+		String result = "";
+		if (query != null)
+			result += query.toString().replace(") ", ") \n").replace("] ", "] \n");
+		if (queryImport != null)
+			result += queryImport.toString().replace(") ", ") \n").replace("] ", "] \n");
+		return result;
 	}
 
 	public void doTransformation(SnippetGroup snippetGroup) {
