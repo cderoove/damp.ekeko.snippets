@@ -8,6 +8,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
@@ -420,6 +421,10 @@ public class SnippetView extends ViewPart {
 		return treeViewerSnippet.getTree().getSelection()[0].getData();
 	}
 	
+	public TreeItem[] getSelectedSnippets() {
+		return treeViewerSnippet.getTree().getSelection();
+	}
+	
 	public String[] getInputs(Table table, int column) {
 		TableItem[] items = table.getItems();
 		String[] result = new String[items.length];
@@ -497,7 +502,10 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		snippetGroup.removeSnippet(getSelectedSnippet());
+		TreeItem[] items = getSelectedSnippets();
+		for (int i=0; i < items.length; i++) {
+			snippetGroup.removeSnippet(items[i].getData());
+		}
 		textSnippet.setText(snippetGroup.toString());
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
 		markSnippet();
@@ -563,7 +571,11 @@ public class SnippetView extends ViewPart {
 	} 
 	
 	public void onApplyOperator() {
-		applyOperator(getSelectedSnippet(), getSelectedOperator(), getInputs(tableOpArgs, 1));
+		TreeItem[] items = getSelectedSnippets();
+		if (items.length > 1) 
+			applyOperatorToNodes(items, getSelectedOperator(), getInputs(tableOpArgs, 1));
+		else
+			applyOperator(getSelectedSnippet(), getSelectedOperator(), getInputs(tableOpArgs, 1));
 	}
 	
 	public String[] applyOperator(Object selectedNode, Object selectedOperator, String[] inputs) {
@@ -589,6 +601,28 @@ public class SnippetView extends ViewPart {
 		return dlg.getInputs();
 	}
 	
+	public String[] applyOperatorToNodes(TreeItem[] selectedItems, Object selectedOperator, String[] inputs) {
+		String[] args = SnippetOperator.getArguments(selectedOperator);
+
+		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+				"Apply Operator", "Apply Operator to selected nodes", 
+				"\nApply the Operator?", args, inputs);
+		dlg.create();
+		
+		if (dlg.open() == Window.OK) {
+			for (int i=0; i < selectedItems.length; i++) {
+				System.out.println(selectedItems[i].getData());
+				snippetGroup.applyOperator(selectedOperator, selectedItems[i].getData(), dlg.getInputs(), getSelectedNode());
+			}
+			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+			treeViewerSnippet.setInput(snippetGroup.getGroup());
+			textCondition.setText(snippetGroup.getLogicConditions("Group"));
+			markSnippet();
+		}
+
+		return dlg.getInputs();
+	}
+
 	public void undo() {
 		snippetGroup.undoOperator();
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));

@@ -108,6 +108,13 @@
   (representation/apply-rewrite snippet)) 
 
 (defn 
+  remove-nodes 
+  "Remove given nodes from snippet."
+  [snippet nodes]
+  (map (fn [node] (remove-node-no-apply-rewrite snippet node)) nodes)
+  (representation/apply-rewrite snippet)) 
+
+(defn 
   add-node-no-apply-rewrite 
   "Add a given node in given idx inside the lst (listval) in snippet."
   [snippet list-container node idx]
@@ -284,10 +291,10 @@
     (update-constrainf snippet-with-gf node :variable-info)))
 
 (defn 
-  introduce-logic-variables-with-condition
+  internal-introduce-logic-variables-with-condition
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
    Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
-  [snippet node newuservar newcondition]
+  [snippet node newuservar newcondition count]
   (let [uservar (symbol newuservar)
         condition newcondition]
     (defn make-condition [condition uservar newvar]
@@ -307,8 +314,16 @@
         snippet
         (let [new-snippet (update-snippet-var-cond snippet (first (first nodes)) counter)]
           (process-binding-variables new-snippet (rest nodes) (+ counter 1)))))
-    (process-binding-variables snippet (get-binding-variables (:ast snippet) node) 1)))
+    (process-binding-variables snippet (get-binding-variables (:ast snippet) node) count)))
 
+(defn 
+  introduce-logic-variables-with-condition
+  "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
+   Logic variable for the nodes will be generated. Condition will be applied to all those nodes."
+  [snippet node newuservar newcondition]
+  (internal-introduce-logic-variables-with-condition
+    snippet node newuservar newcondition 1))
+  
 (defn 
   introduce-logic-variables
   "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
@@ -327,6 +342,24 @@
         (rest nodes)
         (rest uservars)))))
 
+(defn
+  introduce-logic-variables-with-condition-to-group
+  [snippetgroup node newuservar newcondition]
+  (defn process-binding-snippets [snippetlist counter resultlist]
+    (if (empty? snippetlist)
+      resultlist
+      (let [new-snippet   (internal-introduce-logic-variables-with-condition
+                            (first snippetlist) node newuservar newcondition counter)]
+        (process-binding-snippets 
+          (rest snippetlist) (+ counter 100) (concat resultlist (list new-snippet))))))
+  (assoc snippetgroup :snippetlist 
+         (process-binding-snippets (:snippetlist snippetgroup) 1 '())))
+  
+(defn 
+  introduce-logic-variables-to-group
+  [snippetgroup node uservar]
+  (introduce-logic-variables-with-condition-to-group snippetgroup node uservar '()))
+  
 (defn 
   introduce-logic-variables-for-node
   "Introduce logic variable to all nodes with the same identifier as a given node.
@@ -464,20 +497,56 @@
     new-group))
 
 (defn
-  match-variable-typename
-   "Match Relation between ASTNode variable with it's type name."
+  match-variable-typequalifiedname
+   "Match Relation between ASTNode variable with it's type qualified name."
   [snippetgroup node-var node-type]
   (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
         snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-type (representation/snippet-lvar-for-node snippet-type node-type)
-        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-typename var-type)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-type var-type)
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
-          `((damp.ekeko.snippets.runtime/ast-variable-typename ~var-node ~var-type)))
+          `((damp.ekeko.snippets.runtime/ast-variable-typequalifiedname ~var-node ~var-type)))
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
     new-group))
+
+(defn
+  match-variable-typequalifiednamestring
+   "Match Relation between ASTNode variable with it's type qualified name."
+  [snippet node-var string]
+  (let [var-node (representation/snippet-lvar-for-node snippet node-var)
+        new-snippet-var (update-constrainf-with-args snippet node-var :var-typename string)]
+    (add-logic-conditions
+      new-snippet-var
+      `((damp.ekeko.snippets.runtime/ast-variable-typequalifiednamestring ~var-node ~string)))))
+
+(defn
+  match-type-qualifiedname
+   "Match Relation between ASTNode type with it's type qualified name."
+  [snippetgroup node-var node-type]
+  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
+        var-node (representation/snippet-lvar-for-node snippet-var node-var)
+        var-type (representation/snippet-lvar-for-node snippet-type node-type)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :type-qname var-type)
+        new-snippet-var-with-cond
+        (add-logic-conditions
+          new-snippet-var
+          `((damp.ekeko.snippets.runtime/ast-type-qualifiedname ~var-node ~var-type)))
+        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
+    new-group))
+
+(defn
+  match-type-qualifiednamestring
+   "Match Relation between ASTNode type with it's type qualified name."
+  [snippet node-var string]
+  (let [var-node (representation/snippet-lvar-for-node snippet node-var)
+        new-snippet-var (update-constrainf-with-args snippet node-var :type-qnames string)]
+    (add-logic-conditions
+      new-snippet-var
+      `((damp.ekeko.snippets.runtime/ast-type-qualifiednamecontain ~var-node ~string)))))
 
 ;; Operator for SnippetGroupHistory
 ;; --------------------------------

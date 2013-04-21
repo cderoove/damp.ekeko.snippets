@@ -291,25 +291,34 @@
   is-methodinvocationexpression?
   "Relation of all list ASTNode instances type :MethodInvocation."
   [?node]
-    (ast :MethodInvocation ?node))
+  (ast :MethodInvocation ?node))
 
 (defn
   is-methoddeclaration?
   "Relation of all list ASTNode instances type :MethodDeclaration."
   [?node]
-    (ast :MethodDeclaration ?node))
+  (ast :MethodDeclaration ?node))
 
 (defn
   is-simplename?
   "Relation of all list ASTNode instances type :SimpleName."
   [?node]
-    (ast :SimpleName ?node))
+  (ast :SimpleName ?node))
 
 (defn
   is-variabledeclarationfragment?
   "Relation of all list ASTNode instances type :VariableDeclarationFragment."
   [?node]
-    (ast :VariableDeclarationFragment ?node))
+  (ast :VariableDeclarationFragment ?node))
+
+(defn
+  is-importlibrary?
+  "Relation of all list ASTNode instances type :QualifiedName in :ImportDeclaration."
+  [?node]
+  (fresh [?import]
+         (ast :QualifiedName ?node)
+         (equals ?import (.getParent ?node))
+         (ast :ImportDeclaration ?import)))
 
 (defn 
   epsilon
@@ -335,5 +344,6 @@
    :is-methoddeclaration?                [:node is-methoddeclaration?]
    :is-variabledeclarationfragment?      [:node is-variabledeclarationfragment?]
    :is-simplename?                       [:node is-simplename?]
+   :is-importlibrary?                    [:node is-importlibrary?]
 	})
 

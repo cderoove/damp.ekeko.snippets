@@ -162,7 +162,7 @@
       (= op-id :replace-node)
       (op-func snippet node (parsing/parse-string-ast (first args)))
       (= op-id :update-logic-conditions)
-      (apply op-func snippet args)
+      (apply update-logic-conditions snippet args)
       (= op-id :introduce-logic-variables-for-snippet)
       (apply op-func snippet args)
       :else
@@ -175,11 +175,15 @@
         op-func (operator-function op-id)]
     (if (is-operator-argument-with-precondition? op-id) 
       (apply op-func snippetgroup node args)
-      (if (nil? snippet)  
-        ;;apply operator (update-logic-conditions-to-snippetgroup) to group
+      (cond 
+        (nil? snippet)
         (apply update-logic-conditions-to-snippetgroup snippetgroup args)
+        (= op-id :introduce-logic-variables-to-group)
+        (apply introduce-logic-variables-to-group snippetgroup node args)
+        :else
         ;;apply operator to snippet
         (do
+          (println "snippet" op-id (first args))
           (let [newsnippet (apply-operator snippet op-id node args)]
             (representation/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
 
@@ -331,6 +335,12 @@
                                                       :generalization 
                                                       "Introduce logic variables"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node"]
+   :introduce-logic-variables-to-group               [:node 
+                                                      introduce-logic-variables-to-group  
+                                                      :is-ast?					
+                                                      :generalization 
+                                                      "Introduce logic variables to group"
+                                                      "Operator to introduce new logic variables to all nodes in group with same binding with given snippet node"]
    :introduce-logic-variables-with-condition         [:node     
                                                       introduce-logic-variables-with-condition 
                                                       :is-ast?       	
@@ -385,12 +395,30 @@
                                                       :refinement 
                                                       "Match variable binding"
                                                       "Operator with matching strategy :var-binding\nMatch variable node which has same binding with given snippet node"]
-   :match-variable-typename                          [:node  
-                                                      match-variable-typename
+   :match-variable-typequalifiedname                 [:node  
+                                                      match-variable-typequalifiedname
                                                       :is-simplename? 
                                                       :refinement 
-                                                      "Match variable type name"
-                                                      "Operator with matching strategy :var-typename\nMatch type name of node with (SimpleName, or QualifiedName) of given node"]
+                                                      "Match var-type qualified name"
+                                                      "Operator with matching strategy :var-type\nMatch variable with its type qualified name"]
+   :match-variable-typequalifiednamestring           [:node  
+                                                      match-variable-typequalifiednamestring
+                                                      :is-simplename? 
+                                                      :refinement 
+                                                      "Match var-type qualified name string"
+                                                      "Operator with matching strategy :var-typename\nMatch variable with its type qualified name"]
+   :match-type-qualifiedname                         [:node  
+                                                      match-type-qualifiedname
+                                                      :is-type? 
+                                                      :refinement 
+                                                      "Match type qualified name"
+                                                      "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
+   :match-type-qualifiednamestring                   [:node  
+                                                      match-type-qualifiednamestring
+                                                      :is-type? 
+                                                      :refinement 
+                                                      "Match type qualified name string"
+                                                      "Operator with matching strategy :type-qnames\nMatch type with its qualified name"]
 	})
 
 
@@ -403,6 +431,7 @@
    :introduce-logic-variable-with-info               ["Logic Variable (eg. ?v)"]
    :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
    :introduce-logic-variables                        ["Logic Variable (eg. ?v)"]
+   :introduce-logic-variables-to-group               ["Logic Variable (eg. ?v)"]
    :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
                                                       "Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :add-node                                         ["New Node (eg. int x = 5;)"
@@ -415,14 +444,17 @@
    :remove-logic-conditions-from-snippetgroup        ["Conditions \n(eg. ((damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\"))"]
    :update-logic-conditions                          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
    :update-logic-conditions-to-snippetgroup          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
+   :match-variable-typequalifiednamestring           ["QualifiedName (eg. \"java.util.LinkedList\")"]
+   :match-type-qualifiednamestring                   ["QualifiedName (eg. \"java.util.LinkedList\")"]
 	})
 
 (def 
   operator-arguments-with-precondition
-  {:match-invocation-declaration                     ["Declaration Node" :is-methoddeclaration?]
-   :match-variable-declaration                       ["Declaration Node" :is-variabledeclarationfragment?]
-   :match-variable-samebinding                       ["Variable Node"    :is-simplename?]
-   :match-variable-typename                          ["Variable Node"    :is-ast?]
+  {:match-invocation-declaration                     ["Declaration Node"       :is-methoddeclaration?]
+   :match-variable-declaration                       ["Declaration Node"       :is-variabledeclarationfragment?]
+   :match-variable-samebinding                       ["Variable Node"          :is-simplename?]
+   :match-variable-typequalifiedname                 ["Qualified Name Node"    :is-importlibrary?]
+   :match-type-qualifiedname                         ["Qualified Name Node"    :is-importlibrary?]
   })
 
 ;;Operators type

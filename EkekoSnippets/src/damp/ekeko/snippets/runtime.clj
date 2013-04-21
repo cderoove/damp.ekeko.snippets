@@ -11,7 +11,7 @@
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
-     SimpleName VariableDeclarationFragment]))
+     SimpleName VariableDeclarationFragment Type]))
 
 (defn to-primitive-type-code
   [string]
@@ -166,26 +166,64 @@
   ast-variable-type
    "Relation between ASTNode var with it's type."
   [?var ?type]
-  (cl/fresh [?node ?frags ?raw ?frag]
-            (reification/ast :VariableDeclarationStatement ?node)
-            (reification/has :fragments ?node ?frags)
-            (reification/listvalue ?frags) 
-            (reification/value-raw ?frags ?raw) 
-            (el/contains ?raw ?frag) 
-            (reification/ast :VariableDeclarationFragment ?frag)
-            (ast-variable-declaration ?var ?frag)
-            (reification/has :type ?node ?type)))
+  (cl/conde [(cl/fresh [?node ?frags ?raw ?frag]
+                       (reification/ast :VariableDeclarationStatement ?node)
+                       (reification/has :fragments ?node ?frags)
+                       (reification/listvalue ?frags) 
+                       (reification/value-raw ?frags ?raw) 
+                       (el/contains ?raw ?frag) 
+                       (reification/ast :VariableDeclarationFragment ?frag)
+                       (ast-variable-declaration ?var ?frag)
+                       (reification/has :type ?node ?type))]
+            [(cl/fresh [?node ?frags ?raw ?frag]
+                       (reification/ast :FieldDeclaration ?node)
+                       (reification/has :fragments ?node ?frags)
+                       (reification/listvalue ?frags) 
+                       (reification/value-raw ?frags ?raw) 
+                       (el/contains ?raw ?frag) 
+                       (reification/ast :VariableDeclarationFragment ?frag)
+                       (ast-variable-declaration ?var ?frag)
+                       (reification/has :type ?node ?type))]))
                                     
+(defn 
+  ast-type-qualifiednamestring
+   "Relation between ASTNode var with it's qualified name (in string)."
+  [?type ?string]
+  (cl/fresh [?binding]
+            (reification/ast :Type ?type)
+            (el/equals ?binding (.resolveBinding ^Type ?type))
+            (cl/!= nil ?binding)
+            (el/equals ?string (.getQualifiedName ?binding))))
+
+(defn 
+  ast-type-qualifiednamecontain
+   "Relation between ASTNode var with it's qualified name (contain the string)."
+  [?type ?string]
+  (cl/fresh [?qname]
+            (ast-type-qualifiednamestring ?type ?qname)
+            (el/succeeds (.contains ?qname ?string))))
+
+(defn 
+  ast-type-qualifiedname
+   "Relation between ASTNode var with it's qualified name."
+  [?type ?qname]
+  (cl/fresh [?string] 
+            (ast-type-qualifiednamestring ?type ?string)
+            (reification/ast :QualifiedName ?qname)
+            (el/succeeds (.contains ?string (str ?qname)))))
+  
 (defn
-  ast-variable-typestring
-   "Relation between ASTNode var with it's type name (in string)."
-  [?var ?typename]
+  ast-variable-typequalifiednamestring
+   "Relation between ASTNode var with it's type qualified name (in string)."
+  [?var ?string]
   (cl/fresh [?type]
             (ast-variable-type ?var ?type)
-            (el/equals ?typename (str ?type))))
+            (ast-type-qualifiednamecontain ?type ?string)))
 
 (defn
-  ast-variable-typename
-   "Relation between ASTNode var with it's type name (in Name)."
-  [?var ?typename]
-  (ast-variable-typestring ?var (str ?typename)))
+  ast-variable-typequalifiedname
+   "Relation between ASTNode var with it's type qualified name."
+  [?var ?qname]
+  (cl/fresh [?type]
+            (ast-variable-type ?var ?type)
+            (ast-type-qualifiedname ?type ?qname)))
