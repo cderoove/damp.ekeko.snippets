@@ -40,6 +40,7 @@ public class ProgramTransView extends SnippetView {
 	private String viewID;
 
 	private Action actAdd;
+	private Action actAddImp;
 	private StyledText textSnippet;
 	private StyledText textRWSnippet;
 	private TreeViewer treeViewerSnippet;
@@ -221,6 +222,15 @@ public class ProgramTransView extends SnippetView {
 			actAdd.setToolTipText("Add Rewritten Code");
 		}
 		{
+			actAddImp = new Action("Add Import Code") {
+				public void run() {
+					addRewriteImportSnippet();
+				}
+			};
+			actAddImp.setImageDescriptor(ResourceManager.getPluginImageDescriptor("EkekoSnippets", "icons/addbkmrk_co.gif"));
+			actAddImp.setToolTipText("Add Import Code");
+		}
+		{
 			actTrans = new Action("Transform") {
 				public void run() {
 					transform();
@@ -238,6 +248,7 @@ public class ProgramTransView extends SnippetView {
 		IToolBarManager toolbarManager = getViewSite().getActionBars()
 				.getToolBarManager();
 		toolbarManager.add(actAdd);
+		toolbarManager.add(actAddImp);
 		toolbarManager.add(actTrans);
 	}
 
@@ -248,6 +259,7 @@ public class ProgramTransView extends SnippetView {
 		IMenuManager menuManager = getViewSite().getActionBars()
 				.getMenuManager();
 		menuManager.add(actAdd);
+		menuManager.add(actAddImp);
 		menuManager.add(actTrans);
 	}
 
@@ -326,6 +338,17 @@ public class ProgramTransView extends SnippetView {
 		if (code != null && !code.isEmpty()) {
 			rwSnippetGroup.addRewriteSnippet(snippetGroup, getSelectedSnippet(), code);
 			Object rwSnippet = rwSnippetGroup.getRewriteSnippet(snippetGroup, getSelectedSnippet());
+			textRWSnippet.setText(rwSnippetGroup.toString(rwSnippet));
+			treeViewerRWSnippet.setInput(rwSnippetGroup.getGroup());
+		}
+	}
+
+	public void addRewriteImportSnippet() {
+		textRWSnippet.setSelectionRange(0, 0);
+		String code = getSelectedTextFromActiveEditor();
+		if (code != null && !code.isEmpty()) {
+			rwSnippetGroup.addRewriteImportSnippet(snippetGroup, getSelectedSnippet(), code);
+			Object rwSnippet = rwSnippetGroup.getRewriteImportSnippet(snippetGroup, getSelectedSnippet());
 			textRWSnippet.setText(rwSnippetGroup.toString(rwSnippet));
 			treeViewerRWSnippet.setInput(rwSnippetGroup.getGroup());
 		}

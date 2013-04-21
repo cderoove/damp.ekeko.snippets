@@ -5,10 +5,12 @@ import clojure.lang.RT;
 
 public class RewrittenSnippetGroup extends SnippetGroup{
 	private Object rewriteMap;
+	private Object rewriteImportMap;
 	
 	public RewrittenSnippetGroup(String name) {
 		super(name);
 		rewriteMap = RT.var("damp.ekeko.snippets.rewrite", "make-rewritemap").invoke();
+		rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite", "make-rewritemap").invoke();
 	}
 	
 
@@ -38,6 +40,27 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		rewriteMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteMap(), snippet, rewriteSnippet); 		
 	}
 	
+	public Object getRewriteImportMap() {
+		return rewriteImportMap;
+	}
+
+	public Object getRewriteImportSnippet(SnippetGroup sGroup, Object nodeInSnippet) {
+		Object snippet = sGroup.getSnippet(nodeInSnippet);
+		return RT.var("damp.ekeko.snippets.rewrite","get-rewrite-snippet").invoke(getRewriteImportMap(), snippet); 		
+	}
+
+	public void addRewriteImportSnippet(SnippetGroup sGroup, Object nodeInSnippet, String code) {
+		Object snippet = sGroup.getSnippet(nodeInSnippet);
+		Object rewriteSnippet = addSnippetCode(code);
+		rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite","add-rewrite-snippet").invoke(getRewriteImportMap(), snippet, rewriteSnippet); 		
+	}
+	
+	public void updateRewriteImportSnippet(SnippetGroup sGroup, Object nodeInSnippet, Object nodeInRewriteSnippet) {
+		Object snippet = sGroup.getSnippet(nodeInSnippet);
+		Object rewriteSnippet = getSnippet(nodeInRewriteSnippet);
+		rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteImportMap(), snippet, rewriteSnippet); 		
+	}
+	
 	public void applyOperator(Object operator, SnippetGroup sGroup, Object sNode, Object rwNode, String[] args) {
 		Object rwRoot = getRoot(rwNode);
 		//special case
@@ -51,11 +74,13 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 
 	public String getTransformationQuery(SnippetGroup snippetGroup) {
 		Object query = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-query").invoke(snippetGroup.getGroupHistory(), getRewriteMap()); 		
-		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
+		Object queryImport = RT.var("damp.ekeko.snippets.rewrite","snippetgrouphistory-rewrite-import-declaration-query").invoke(snippetGroup.getGroupHistory(), getRewriteImportMap()); 		
+		return query.toString().replace(") ", ") \n").replace("] ", "] \n") + "\n" +
+			   queryImport.toString().replace(") ", ") \n").replace("] ", "] \n");
 	}
 
 	public void doTransformation(SnippetGroup snippetGroup) {
-		RT.var("damp.ekeko.snippets.rewrite","rewrite-query-by-snippetgrouphistory").invoke(snippetGroup.getGroupHistory(), getRewriteMap()); 		
+		RT.var("damp.ekeko.snippets.rewrite","rewrite-query-by-snippetgrouphistory").invoke(snippetGroup.getGroupHistory(), getRewriteMap(), getRewriteImportMap()); 		
 		RT.var("damp.ekeko.snippets.rewrite","apply-and-reset-rewrites").invoke(); 		
 	}
 

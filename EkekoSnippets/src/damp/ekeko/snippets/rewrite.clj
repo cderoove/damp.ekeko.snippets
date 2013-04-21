@@ -205,17 +205,28 @@
       query))) 
   
 (defn
-  snippetgrouphistory-rewrite-query
+  snippet-rewrite-import-declaration-query
+  [template-snippet rewrite-snippet grp]
+  (let [var-match (representation/snippet-var-for-root template-snippet)
+        str-rewrite-snippet (gui/print-snippet rewrite-snippet)
+        var-cu '?cu
+        query `((cl/fresh [~var-cu]
+                          (el/equals ~var-cu (.getRoot ~var-match))
+                          (el/perform (add-node-in-rewrite-code ~var-cu :imports ~str-rewrite-snippet 0))))]
+    (querying/add-query 
+      (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
+      query))) 
+
+(defn
+  internal-snippetgrouphistory-rewrite-query
   "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
-  ;note : the string ? should be changed to other character, otherwise
-  ;error: Unsupported binding form: ?...
-  [snippetgrouphistory rewritemap]
+  [snippetgrouphistory rewritemap function-query]
   (defn rewrite-query-rec [rewrite-map rewrite-query]
     (if (empty? rewrite-map)
       rewrite-query
       (let [template-snippet (key (first rewrite-map))
             rewrite-snippet (val (first rewrite-map))
-            query (snippet-rewrite-query 
+            query (function-query 
                     template-snippet 
                     rewrite-snippet 
                     (representation/snippetgrouphistory-current snippetgrouphistory))]
@@ -225,11 +236,29 @@
   `(~@(rewrite-query-rec rewritemap '())))
       
 (defn
+  snippetgrouphistory-rewrite-query
+  "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
+  ;note : the string ? should be changed to other character, otherwise
+  ;error: Unsupported binding form: ?...
+  [snippetgrouphistory rewritemap]
+  (internal-snippetgrouphistory-rewrite-query
+    snippetgrouphistory rewritemap snippet-rewrite-query))
+
+(defn
+  snippetgrouphistory-rewrite-import-declaration-query
+  "Generate query the Ekeko projects for rewrite (add import declaration) of the given snippetgrouphistory and rewritemap."
+  [snippetgrouphistory rewritemap]
+  (internal-snippetgrouphistory-rewrite-query
+    snippetgrouphistory rewritemap snippet-rewrite-import-declaration-query))
+
+(defn
   rewrite-query-by-snippetgrouphistory
   "Excecute rewrite query of the given snippetgrouphistory and rewritemap."
   ;;note, if print is removed, when apply-rewrite is not working
-  [snippetgrouphistory rewritemap]
+  [snippetgrouphistory rewritemap rewritemap-import]
   (print
-    (map eval (snippetgrouphistory-rewrite-query snippetgrouphistory rewritemap))))
+    (map eval (snippetgrouphistory-rewrite-query snippetgrouphistory rewritemap)))
+  (print
+    (map eval (snippetgrouphistory-rewrite-import-declaration-query snippetgrouphistory rewritemap-import))))
 
 
