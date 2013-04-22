@@ -123,21 +123,29 @@
     (assoc rewrite-map template-snippet rewrite-snippet)))
 
 (defn 
-  update-rewrite-snippet
-  [rewrite-map template-snippet rewrite-snippet]
-  (if (not (nil? template-snippet))
-    (assoc rewrite-map template-snippet rewrite-snippet)))
-  
-(defn 
   get-rewrite-snippet
   [rewrite-map template-snippet]
   (get rewrite-map template-snippet))
 
 (defn 
+  update-rewrite-snippet
+  [rewrite-map template-snippet rewrite-snippet]
+  (if (and (not (nil? template-snippet))
+           (not (nil? (get-rewrite-snippet rewrite-map template-snippet))))
+    (assoc rewrite-map template-snippet rewrite-snippet)))
+  
+(defn 
   remove-rewrite-snippet
   [rewrite-map template-snippet]
   (dissoc rewrite-map template-snippet))
 
+(defn 
+  get-original-snippet
+  [rewrite-map rewrite-snippet]
+  (let [found-map (filter (fn [map] (= (val map) rewrite-snippet)) rewrite-map)]
+    (if (empty? found-map)
+      nil
+      (key (first found-map)))))
 
 ; GENERATE EKEKO REWRITE QUERY
 ; ----------------------------------------------

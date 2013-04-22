@@ -30,14 +30,22 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 
 	public void addRewriteSnippet(SnippetGroup sGroup, Object nodeInSnippet, String code) {
 		Object snippet = sGroup.getSnippet(nodeInSnippet);
-		Object rewriteSnippet = addSnippetCode(code);
+		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
+		Object rewriteSnippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
+		
+		Object oldRewriteSnippet = getRewriteSnippet(sGroup, nodeInSnippet);
+		if (oldRewriteSnippet == null)
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), rewriteSnippet);
+		else 
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRewriteSnippet, rewriteSnippet);
+
 		rewriteMap = RT.var("damp.ekeko.snippets.rewrite","add-rewrite-snippet").invoke(getRewriteMap(), snippet, rewriteSnippet); 		
 	}
 	
-	public void updateRewriteSnippet(SnippetGroup sGroup, Object nodeInSnippet, Object nodeInRewriteSnippet) {
-		Object snippet = sGroup.getSnippet(nodeInSnippet);
-		Object rewriteSnippet = getSnippet(nodeInRewriteSnippet);
-		rewriteMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteMap(), snippet, rewriteSnippet); 		
+	private void updateRewriteSnippet(Object snippet, Object oldRewriteSnippet, Object rewriteSnippet) {
+		Object oriSnippet = RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(getRewriteMap(), oldRewriteSnippet);
+		if (oriSnippet != null )
+			rewriteMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteMap(), snippet, rewriteSnippet); 		
 	}
 	
 	public Object getRewriteImportMap() {
@@ -51,25 +59,46 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 
 	public void addRewriteImportSnippet(SnippetGroup sGroup, Object nodeInSnippet, String code) {
 		Object snippet = sGroup.getSnippet(nodeInSnippet);
-		Object rewriteSnippet = addSnippetCode(code);
+		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
+		Object rewriteSnippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
+		
+		Object oldRewriteSnippet = getRewriteImportSnippet(sGroup, nodeInSnippet);
+		if (oldRewriteSnippet == null)
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), rewriteSnippet);
+		else 
+			groupHistory = RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRewriteSnippet, rewriteSnippet);
+
 		rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite","add-rewrite-snippet").invoke(getRewriteImportMap(), snippet, rewriteSnippet); 		
 	}
 	
-	public void updateRewriteImportSnippet(SnippetGroup sGroup, Object nodeInSnippet, Object nodeInRewriteSnippet) {
-		Object snippet = sGroup.getSnippet(nodeInSnippet);
-		Object rewriteSnippet = getSnippet(nodeInRewriteSnippet);
-		rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteImportMap(), snippet, rewriteSnippet); 		
+	private void updateRewriteImportSnippet(Object snippet, Object oldRewriteSnippet, Object rewriteSnippet) {
+		Object oriSnippet = RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(getRewriteImportMap(), oldRewriteSnippet);
+		if (oriSnippet != null )
+			rewriteImportMap = RT.var("damp.ekeko.snippets.rewrite","update-rewrite-snippet").invoke(getRewriteImportMap(), snippet, rewriteSnippet); 		
 	}
 	
+	public Object getOriginalSnippet(Object node) {
+		Object rwSnippet = getSnippet(node);
+		Object snippet = RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(getRewriteMap(), rwSnippet);
+		if (snippet == null )
+			snippet = RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(getRewriteImportMap(), rwSnippet);
+		return snippet;
+	}
+
 	public void applyOperator(Object operator, SnippetGroup sGroup, Object sNode, Object rwNode, String[] args) {
-		Object rwRoot = getRoot(rwNode);
+		Object snippet = sGroup.getSnippet(sNode);
+		Object oldRWSnippet = getSnippet(rwNode);
+		Object rwSnippet = getSnippet(rwNode);
+		
 		//special case
 		if (operator == Keyword.intern("introduce-logic-variables-for-snippet")) {
-			Object snippet = sGroup.getSnippet(sNode);
-			setGroupHistory(RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, rwNode, new Object[] {snippet}));		
+			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, new Object[] {snippet});		
 		} else
-			applyOperator(operator, rwNode, args, null);
-		updateRewriteSnippet(sGroup, sNode, rwRoot);
+			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, args);		
+		
+		groupHistory = RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet);
+		updateRewriteSnippet(snippet, oldRWSnippet, rwSnippet);
+		updateRewriteImportSnippet(snippet, oldRWSnippet, rwSnippet);
 	}
 
 	public String getTransformationQuery(SnippetGroup snippetGroup) {

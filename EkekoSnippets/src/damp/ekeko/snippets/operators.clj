@@ -107,12 +107,19 @@
   (remove-node-no-apply-rewrite snippet node)
   (representation/apply-rewrite snippet)) 
 
-(defn 
-  remove-nodes 
+(defn
+  remove-nodes
   "Remove given nodes from snippet."
   [snippet nodes]
-  (map (fn [node] (remove-node-no-apply-rewrite snippet node)) nodes)
-  (representation/apply-rewrite snippet)) 
+  (defn remove-nodes-rec [snippet nodes]
+    (if (empty? nodes)
+      snippet
+      (let [new-snippet (remove-node-no-apply-rewrite snippet (first nodes))]
+        (remove-nodes-rec
+          new-snippet
+          (rest nodes)))))
+  (representation/apply-rewrite
+    (remove-nodes-rec snippet nodes)))
 
 (defn 
   add-node-no-apply-rewrite 

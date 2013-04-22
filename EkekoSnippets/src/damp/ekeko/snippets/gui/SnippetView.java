@@ -421,8 +421,13 @@ public class SnippetView extends ViewPart {
 		return treeViewerSnippet.getTree().getSelection()[0].getData();
 	}
 	
-	public TreeItem[] getSelectedSnippets() {
-		return treeViewerSnippet.getTree().getSelection();
+	public Object[] getSelectedSnippets() {
+		TreeItem[] selectedItems = treeViewerSnippet.getTree().getSelection();
+		Object[] nodes = new Object[selectedItems.length];
+		for (int i=0; i < selectedItems.length; i++) {
+			nodes[i] = selectedItems[i].getData(); 
+		}
+		return nodes;
 	}
 	
 	public String[] getInputs(Table table, int column) {
@@ -486,14 +491,20 @@ public class SnippetView extends ViewPart {
 		}
 	}
 	
+	public void renderSnippet() {
+		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		if (treeViewerSnippet.getTree().getSelectionCount() == 0) {
+			TreeItem root = treeViewerSnippet.getTree().getItem(0);
+			treeViewerSnippet.getTree().setSelection(root);
+		}
+		onSnippetSelection();
+	}
+	
 	public void addSnippet() {
-		textSnippet.setSelectionRange(0, 0);
 		String code = getSelectedTextFromActiveEditor();
 		if (code != null && !code.isEmpty()) {
 			snippetGroup.addSnippetCode(code);
-			textSnippet.setText(snippetGroup.toString());
-			treeViewerSnippet.setInput(snippetGroup.getGroup());
-			markSnippet();
+			renderSnippet();
 		}
 	}
 	
@@ -502,20 +513,16 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		TreeItem[] items = getSelectedSnippets();
-		for (int i=0; i < items.length; i++) {
-			snippetGroup.removeSnippet(items[i].getData());
+		Object[] nodes = getSelectedSnippets();
+		for (int i=0; i < nodes.length; i++) {
+			snippetGroup.removeSnippet(nodes[i]);
 		}
-		textSnippet.setText(snippetGroup.toString());
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
-		markSnippet();
+		renderSnippet();
 	}
 
 	public void flagSnippet() {
 		snippetGroup.updateSnippetFlag(getSelectedSnippet());
-		textSnippet.setText(snippetGroup.toString());
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
-		markSnippet();
+		renderSnippet();
 	}
 
 	public void viewQuery() {
@@ -550,13 +557,15 @@ public class SnippetView extends ViewPart {
 	public void onSnippetSelection() {
 		textSnippet.setSelectionRange(0, 0);
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
+		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
 		markSnippet();
+
 		int x = snippetGroup.getActiveNodePos()[0];
 		int y = snippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
-		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
 		SnippetOperator.setInput(treeOperator, getSelectedSnippet());
+
 		tableOpArgs.removeAll();
 		tableOpArgsDecorator.removeAllEditors();
 		tableNode.removeAll();
@@ -571,9 +580,9 @@ public class SnippetView extends ViewPart {
 	} 
 	
 	public void onApplyOperator() {
-		TreeItem[] items = getSelectedSnippets();
-		if (items.length > 1) 
-			applyOperatorToNodes(items, getSelectedOperator(), getInputs(tableOpArgs, 1));
+		Object[] nodes = getSelectedSnippets();
+		if (nodes.length > 1) 
+			applyOperatorToNodes(nodes, getSelectedOperator(), getInputs(tableOpArgs, 1));
 		else
 			applyOperator(getSelectedSnippet(), getSelectedOperator(), getInputs(tableOpArgs, 1));
 	}
@@ -592,16 +601,13 @@ public class SnippetView extends ViewPart {
 		
 		if (dlg.open() == Window.OK) {
 			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs(), getSelectedNode());
-			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
-			treeViewerSnippet.setInput(snippetGroup.getGroup());
-			textCondition.setText(snippetGroup.getLogicConditions("Group"));
-			markSnippet();
+			renderSnippet();
 		}
 
 		return dlg.getInputs();
 	}
 	
-	public String[] applyOperatorToNodes(TreeItem[] selectedItems, Object selectedOperator, String[] inputs) {
+	public String[] applyOperatorToNodes(Object[] selectedNodes, Object selectedOperator, String[] inputs) {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
 
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
@@ -610,14 +616,8 @@ public class SnippetView extends ViewPart {
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			for (int i=0; i < selectedItems.length; i++) {
-				System.out.println(selectedItems[i].getData());
-				snippetGroup.applyOperator(selectedOperator, selectedItems[i].getData(), dlg.getInputs(), getSelectedNode());
-			}
-			textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
-			treeViewerSnippet.setInput(snippetGroup.getGroup());
-			textCondition.setText(snippetGroup.getLogicConditions("Group"));
-			markSnippet();
+			snippetGroup.applyOperatorToNodes(selectedOperator, selectedNodes, dlg.getInputs(), getSelectedNode());
+			renderSnippet();
 		}
 
 		return dlg.getInputs();
@@ -625,16 +625,12 @@ public class SnippetView extends ViewPart {
 
 	public void undo() {
 		snippetGroup.undoOperator();
-		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
-		markSnippet();
+		renderSnippet();
 	}
 
 	public void redo() {
 		snippetGroup.redoOperator();
-		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
-		markSnippet();
+		renderSnippet();
 	}
 
 	public void transformation() {

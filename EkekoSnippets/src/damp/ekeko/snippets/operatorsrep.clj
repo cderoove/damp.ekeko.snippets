@@ -166,12 +166,17 @@
       (= op-id :introduce-logic-variables-for-snippet)
       (apply op-func snippet args)
       :else
-      (apply op-func snippet node args))))
+      (do
+        (println "snippet" op-id (first args))
+        (apply op-func snippet node args)))))
 
 (defn apply-operator-to-snippetgroup
-  "Apply operator to group and related snippet inside group, returns new group."
+  "Apply operator to group and related snippet inside group, returns new group.
+   node can be many, but should be in one snippet."
   [snippetgroup op-id node args]
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
+  (let [snippet (if (or (sequential? node) (.isArray (.getClass node)))
+                  (representation/snippetgroup-snippet-for-node snippetgroup (first node))
+                  (representation/snippetgroup-snippet-for-node snippetgroup node))
         op-func (operator-function op-id)]
     (if (is-operator-argument-with-precondition? op-id) 
       (apply op-func snippetgroup node args)
@@ -365,6 +370,12 @@
                                                       :generalization 
                                                       "Remove node"
                                                       "Operator to remove node"]
+   :remove-nodes                                     [:node       
+                                                      remove-nodes                                       
+                                                      :is-listmember?   
+                                                      :none 
+                                                      "Remove nodes"
+                                                      "Operator to remove nodes"]
    :replace-node                                     [:node       
                                                       replace-node                                       
                                                       :is-ast?   

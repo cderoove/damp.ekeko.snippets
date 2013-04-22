@@ -9,7 +9,7 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class SnippetGroup {
-	private Object groupHistory;
+	protected Object groupHistory;
 	private int[] activeNodePos;
 	
 	static {
@@ -59,6 +59,10 @@ public class SnippetGroup {
 	
 	public Object getRoot(Object node) {
 		return RT.var("damp.ekeko.snippets.representation", "snippet-root").invoke(getSnippet(node));
+	}
+
+	public Object getRootOfSnippet(Object snippet) {
+		return RT.var("damp.ekeko.snippets.representation", "snippet-root").invoke(snippet);
 	}
 
 	public String toString() {
@@ -113,6 +117,17 @@ public class SnippetGroup {
 			groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), operator, node, args);		
 	}
 	
+	public void applyOperatorToNodes(Object operator, Object[] nodes, String[] args, Object selectedArgNode) {
+		//check special case for remove-node, should remove all nodes first before apply rewrite
+		if (operator.equals(Keyword.intern("remove-node"))) {
+			groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator-to-snippetgrouphistory").invoke(getGroupHistory(), Keyword.intern("remove-nodes"), nodes, args);		
+		} else {
+			for (int i=0; i < nodes.length; i++) {
+				applyOperator(operator, nodes[i], args, selectedArgNode);
+			}
+		}
+	}
+
 	public void undoOperator() {
 		groupHistory = RT.var("damp.ekeko.snippets.operatorsrep", "undo-operator").invoke(getGroupHistory());		
 	}
