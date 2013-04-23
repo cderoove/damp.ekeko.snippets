@@ -18,9 +18,9 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	private final String rep = "damp.ekeko.snippets.representation";
-	private Object snippet;
-	private Object highlightNode;
-	private int[] highlightPos;
+	protected Object snippet;
+	protected Object highlightNode;
+	protected int[] highlightPos;
 	
 	public SnippetPrettyPrinter () {
 		highlightPos = new int[2];
@@ -96,7 +96,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			return "";
 		else {
 			String function = functionList.first().toString();
-		 	String functionArgs = functionList.toString().replace(function, "").replace(" ", ","); 
+		 	String functionArgs = functionList.toString().replace(function, "").trim(); 
 		 	return function.replace(":", "@") + functionArgs;
 		}
 	}

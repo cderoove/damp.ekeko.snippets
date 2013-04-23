@@ -459,6 +459,7 @@ public class ProgramTransView extends SnippetView {
 			code += rwSnippetGroup.toString(data[i]) + "\n";
 		
 		textRWSnippet.setText(code);
+		markSnippet(textRWSnippet);
 		int x = rwSnippetGroup.getActiveNodePos()[0];
 		int y = rwSnippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}

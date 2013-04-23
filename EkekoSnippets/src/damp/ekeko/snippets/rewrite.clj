@@ -7,6 +7,7 @@
              [querying :as querying]
              [operatorsrep :as operatorsrep]
              [representation :as representation]
+             [util :as util]
              [parsing :as parsing]])
   (:require 
     [damp.ekeko [logic :as el]]
@@ -55,25 +56,6 @@
 
 ; Interface
 
-(defn replace-node 
-  "Replace node with newnode."
-  [node newnode]
-  (let [cu (.getRoot node)
-        rewrite (current-rewrite-for-cu cu)] 
-    (.replace rewrite node newnode nil)))
-
-(defn replace-node-in-rewrite-code
-  "Replace node with new string code as new nodes."
-  [node string]
-  (let [newnodes (parsing/parse-string-ast string)] 
-    (if (instance? ASTNode newnodes)
-      (replace-node node newnodes)
-      (let [parent (.getParent node)
-            property (.getLocationInParent node)
-            idx (.indexOf (.getStructuralProperty parent property) node)]
-        (remove-node node)
-        (add-node-in-rewrite-code parent (keyword (.getId property)) string idx)))))
-
 (defn remove-node 
   "Remove node."
   [node]
@@ -105,22 +87,30 @@
 
 (defn 
   add-sibling-node-in-rewrite-code
-  [node str-new-node user-vars]
-  (defn 
-    generate-rewrite-snippet
-    [str-snippet user-vars]
-    (if (empty? user-vars)
-      str-snippet
-      (let [var (first (first user-vars))
-            node (fnext (first user-vars))]
-        (generate-rewrite-snippet
-          (clojure.string/replace str-snippet var (str node))
-          (rest user-vars)))))
+  [node string]
   (let [parent (.getParent node)
         property (.getLocationInParent node)
-        idx (.indexOf (.getStructuralProperty parent property) node)
-        new-str (generate-rewrite-snippet str-new-node user-vars)]
-    (add-node-in-rewrite-code parent (keyword (.getId property)) new-str (+ 1 idx))))
+        idx (.indexOf (.getStructuralProperty parent property) node)]
+    (add-node-in-rewrite-code parent (keyword (.getId property)) string (+ 1 idx))))
+
+(defn replace-node 
+  "Replace node with newnode."
+  [node newnode]
+  (let [cu (.getRoot node)
+        rewrite (current-rewrite-for-cu cu)] 
+    (.replace rewrite node newnode nil)))
+
+(defn replace-node-in-rewrite-code
+  "Replace node with new string code as new nodes."
+  [node string]
+  (let [newnodes (parsing/parse-string-ast string)] 
+    (if (instance? ASTNode newnodes)
+      (replace-node node newnodes)
+      (let [parent (.getParent node)
+            property (.getLocationInParent node)
+            idx (.indexOf (.getStructuralProperty parent property) node)]
+        (remove-node node)
+        (add-node-in-rewrite-code parent (keyword (.getId property)) string idx)))))
 
 (defn change-property-node
   "Change property node."
@@ -133,13 +123,8 @@
 
 ; MAP FOR REWRITE SNIPPET
 ; -----------------------------
-; Map {template-snippet rewrite-snippet}
-
-
-; ADD REWRITE SNIPPET
-; -----------------------
-
 ; rewrite-map: map of {rewrite-snippet original-snippet}
+
 
 (defn 
   make-rewritemap
@@ -185,70 +170,47 @@
   
 ; GENERATE EKEKO REWRITE QUERY
 ; ----------------------------------------------
-; Generate ekeko rewrite query based on changes history 
-; Operator history format
-; history --> vector of [applied operator-id, var-node, args]
 
 (defn 
-  rewrite-query-by-operator
-  [snippetgroup op-id var-match args]
-  (let [snippet (representation/snippetgroup-snippet-for-var snippetgroup var-match)
-        node (representation/snippet-node-for-var snippet var-match)] 
-    (cond 
-      (= op-id :add-node)
-      (let [var-parent (representation/snippet-var-for-node snippet (:owner node))
-            property (astnode/ekeko-keyword-for-property-descriptor (:property node))
-            newnode (first args)
-            idx (fnext args)] 
-        `((el/perform (add-node-in-rewrite-code ~var-parent ~property ~newnode ~idx))))
-      (= op-id :remove-node)
-      `((el/perform (remove-node ~var-match)))
-      (= op-id :replace-node)
-      (let [newnode (first args)] 
-        `((el/perform (replace-node-in-rewrite-code ~var-match ~newnode))))
-      (= op-id :change-property-node)
-      (let [var-parent (representation/snippet-var-for-node snippet (:owner node))
-            property (astnode/ekeko-keyword-for-property-descriptor (:property node))
-            value (first args)] 
-        `((el/perform (change-property-node ~var-parent ~property ~value))))
-      :default
-      (throw (Exception. (str "Unknown changes: " op-id))))))
-
-(defn 
-  replace-node-with-logic-vars
-  "Rewrite node with string str-new-node replaced user-var with actual node
-   user-vars -> [[?lvar actual-node] ...]."
-  [node str-new-node user-vars]
-  (defn 
-    generate-rewrite-snippet
-    [str-snippet user-vars]
-    (if (empty? user-vars)
-      str-snippet
-      (let [var (first (first user-vars))
-            node (fnext (first user-vars))]
-        (generate-rewrite-snippet
-          (clojure.string/replace str-snippet var (str node))
-          (rest user-vars)))))
-  (replace-node-in-rewrite-code 
-    node 
-    (generate-rewrite-snippet str-new-node user-vars)))
+  print-rewrite-snippet
+  "Returns new string, replaced user-var with actual node
+   user-vars -> [[?lvar actual-node] [?lvar actual-node rule] ...].
+   example rule : \"add + [?lvar 3 7] + s\"."
+  [str-snippet user-vars]
+  (if (empty? user-vars)
+    str-snippet
+    (let [var (first (first user-vars))
+          node (fnext (first user-vars))
+          rule (fnext (next (first user-vars)))
+          rep-str (if (nil? rule)
+                    (.replace str-snippet var (str node))
+                    (.replace str-snippet var (util/change-string (.replace rule var (str node)))))]
+      (print-rewrite-snippet rep-str (rest user-vars)))))
 
 (defn
   snippet-rewrite-query
   [template-snippet rewrite-snippets]
-  (defn user-vars-str [user-vars]
+  (defn user-vars-str [snippet user-vars]
     (let [user-vars-condition
-          (for [var user-vars
-                :let [str-var (clojure.string/replace (str var) "?" "*")]]
-            `[~str-var ~var])]
+          (for [[var uservar] user-vars
+                :let [str-uservar (.replace (str uservar) "?" "*")
+                      node (representation/snippet-node-for-var snippet var)
+                      rule (if (= (representation/snippet-constrainer-for-node snippet node)  
+                                  :change-name)
+                             (.replace (first (representation/snippet-constrainer-args-for-node snippet node)) "?" "*")
+                             nil)]]
+            (if (nil? rule)
+              `[~str-uservar ~uservar]
+              `[~str-uservar ~uservar ~rule]))]
       user-vars-condition))
   (let [var-match (representation/snippet-var-for-root template-snippet)
         rewrite-str
         (for [snippet rewrite-snippets
-              :let [snippet-str (clojure.string/replace (gui/print-snippet snippet) "?" "*")
-                    user-vars (representation/snippet-uservars snippet)
-                    user-vars-condition (distinct (user-vars-str user-vars))]]             
-          `(el/perform (add-sibling-node-in-rewrite-code ~var-match ~snippet-str [~@user-vars-condition])))]
+              :let [snippet-str (.replace (gui/print-plain-snippet snippet) "?" "*")
+                    user-vars (:var2uservar snippet)
+                    user-vars-condition (distinct (user-vars-str snippet user-vars))]]             
+          `(el/perform (add-sibling-node-in-rewrite-code 
+                         ~var-match (print-rewrite-snippet ~snippet-str [~@user-vars-condition]))))]
     `(~@rewrite-str
        (el/perform (remove-node ~var-match)))))
         
@@ -259,7 +221,7 @@
         var-cu '?cu
         rewrite-str
         (for [snippet rewrite-snippets
-              :let [snippet-str (gui/print-snippet snippet)]]
+              :let [snippet-str (gui/print-plain-snippet snippet)]]
           `(el/perform (add-node-in-rewrite-code ~var-cu :imports ~snippet-str 0)))] 
     `((cl/fresh [~var-cu]
                 (el/equals ~var-cu (.getRoot ~var-match))

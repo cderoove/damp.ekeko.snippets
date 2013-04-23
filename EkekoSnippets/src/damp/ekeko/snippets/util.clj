@@ -66,3 +66,20 @@
 (defn dissoc-in [tmap keys]
   (let [newmap (dissoc ((first keys) tmap) (fnext keys))]
     (update-in tmap [(first keys)] (fn [x] newmap))))
+
+(defn
+  change-string
+  "Change a string with specific format to another string.
+   example : \"add + [getName 3 7] + s\" -> \"addNames\"."
+  [string]
+  (let [arr-str (seq (.split (.replace string "+" ";") ";"))
+        arr-size (.size arr-str)
+        name-idx (if (.contains (.get arr-str 0) "[") 0 1)
+        prefix (if (= name-idx 0) "" (.trim (.get arr-str 0)))
+        suffix (if (= name-idx (- arr-size 1)) "" (.trim (.get arr-str (- arr-size 1))))
+        arr-name (seq (.split (.replace (.replace (.trim (.get arr-str name-idx)) "[" "") "]" "") " "))
+        name (.substring 
+               (.get arr-name 0) 
+               (java.lang.Integer/valueOf (.get arr-name 1))
+               (java.lang.Integer/valueOf (.get arr-name 2)))]
+    (str prefix name suffix)))

@@ -406,6 +406,13 @@
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :negated)))
 
+(defn
+  change-name
+  "Operator to change name with rule.
+   Example: \"add + [getName 3 7] + s\" -> \"addNames\""
+  [snippet node-var rule]
+  (update-constrainf-with-args snippet node-var :change-name rule))
+
 ;; Operator for SnippetGroup
 ;; -------------------------
 

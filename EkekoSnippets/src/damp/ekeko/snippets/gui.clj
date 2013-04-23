@@ -211,6 +211,14 @@
 ;;--------------
 
 (defn
+  print-plain-snippet
+  [snippet]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.accept (:ast snippet) visitor)
+    (.getResult visitor)))
+
+(defn
   print-snippet-with-highlight
   [snippet highlightnode]
   (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter.)]
