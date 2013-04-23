@@ -135,6 +135,7 @@
                   (not (jdt-node-malformed? parsed))
                   [parsed symbol])))
             [[parse-string-declaration :declaration] 
+             [parse-string-declarations :declaration] 
              [parse-string-statement :statement]
              [parse-string-statements :statements]
              [parse-string-importdeclaration :unit] 

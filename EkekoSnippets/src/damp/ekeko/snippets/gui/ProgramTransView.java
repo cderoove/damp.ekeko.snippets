@@ -159,11 +159,21 @@ public class ProgramTransView extends SnippetView {
 		tltmRemove.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				removeRewriteSnippet();
+			}
+		});
+		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
+		tltmRemove.setToolTipText("Remove Rewritten Code");
+
+		ToolItem tltmImport = new ToolItem(toolBar, SWT.NONE);
+		tltmImport.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
 				addRewriteImportSnippet();
 			}
 		});
-		tltmRemove.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/addbkmrk_co.gif"));
-		tltmRemove.setToolTipText("Add Import Code");
+		tltmImport.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/addbkmrk_co.gif"));
+		tltmImport.setToolTipText("Add Import Code");
 		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
 		tltmAdd.addSelectionListener(new SelectionAdapter() {
@@ -299,18 +309,38 @@ public class ProgramTransView extends SnippetView {
 		return treeViewerRWSnippet.getTree().getSelection()[0].getData();
 	}
 	
+	public Object[] getSelectedRWSnippets() {
+		TreeItem[] selectedItems = treeViewerRWSnippet.getTree().getSelection();
+		Object[] nodes = new Object[selectedItems.length];
+		for (int i=0; i < selectedItems.length; i++) {
+			nodes[i] = selectedItems[i].getData(); 
+		}
+		return nodes;
+	}
+
 	public Object getSelectedSnippet() {
 		return treeViewerSnippet.getTree().getSelection()[0].getData();
 	}
 	
-	public TreeItem getTreeItem(Tree tree, Object data) {
+	public boolean arrayContain(Object[] array, Object data) {
+		for (int i=0; i < array.length; i++) {
+			if (array[i].equals(data)) 
+				return true;
+		}
+		return false;
+	}
+	
+	public TreeItem[] getTreeItem(Tree tree, Object[] data) {
 		TreeItem root = tree.getItem(0);
+		TreeItem[] selection = new TreeItem[data.length];
+		int j = 0;
 		for (int i=0; i < root.getItemCount(); i++) {
-			if (root.getItem(i).getData().equals(data)) {
-				return root.getItem(i);
+			if (arrayContain(data, root.getItem(i).getData())) {
+				selection[j] = root.getItem(i);
+				j++;
 			}
 		}
-		return null;
+		return selection;
 	}
 
 	public SnippetGroupTreeContentProvider getContentProvider() {
@@ -367,11 +397,19 @@ public class ProgramTransView extends SnippetView {
 	
 	public void renderSnippet() {
 		treeViewerRWSnippet.setInput(rwSnippetGroup.getGroup());
-		if (treeViewerSnippet.getTree().getSelectionCount() == 0) {
-			TreeItem root = treeViewerSnippet.getTree().getItem(0);
-			treeViewerSnippet.getTree().setSelection(root);
+		if (treeViewerRWSnippet.getTree().getSelectionCount() == 0) {
+			TreeItem root = treeViewerRWSnippet.getTree().getItem(0);
+			treeViewerRWSnippet.getTree().setSelection(root);
 		}
-		onSnippetSelection();
+		onRWSnippetSelection();
+	}
+
+	public void removeRewriteSnippet() {
+		Object[] nodes = getSelectedRWSnippets();
+		for (int i=0; i < nodes.length; i++) {
+			rwSnippetGroup.removeRewriteSnippet(nodes[i]);
+		}
+		renderSnippet();
 	}
 
 	public void addRewriteSnippet() {
@@ -401,9 +439,9 @@ public class ProgramTransView extends SnippetView {
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
 
-		Object rwSnippet = rwSnippetGroup.getRewriteSnippet(snippetGroup, getSelectedSnippet());
-		if (rwSnippet != null && selectFlag) {
-			TreeItem rwSelection = getTreeItem(treeViewerRWSnippet.getTree(), rwSnippetGroup.getRootOfSnippet(rwSnippet));
+		Object[] rwSnippets = rwSnippetGroup.getRewriteSnippets(snippetGroup, getSelectedSnippet());
+		if (rwSnippets.length > 0 && selectFlag) {
+			TreeItem[] rwSelection = getTreeItem(treeViewerRWSnippet.getTree(), rwSnippetGroup.getRootOfSnippets(rwSnippets));
 			treeViewerRWSnippet.getTree().setSelection(rwSelection);
 			selectFlag = false;
 			onRWSnippetSelection();
@@ -414,7 +452,13 @@ public class ProgramTransView extends SnippetView {
 	public void onRWSnippetSelection() {
 		SnippetOperator.setInputForTransformation(treeOperator, getSelectedRWSnippet());
 		textRWSnippet.setSelectionRange(0, 0);
-		textRWSnippet.setText(rwSnippetGroup.toString(getSelectedRWSnippet()));
+		
+		Object data[] = getSelectedRWSnippets();
+		String code = "";
+		for (int i=0; i<data.length; i++)
+			code += rwSnippetGroup.toString(data[i]) + "\n";
+		
+		textRWSnippet.setText(code);
 		int x = rwSnippetGroup.getActiveNodePos()[0];
 		int y = rwSnippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
@@ -422,7 +466,7 @@ public class ProgramTransView extends SnippetView {
 
 		Object snippet = rwSnippetGroup.getOriginalSnippet(getSelectedRWSnippet());
 		if (snippet != null && selectFlag) {
-			TreeItem selection = getTreeItem(treeViewerSnippet.getTree(), snippetGroup.getRootOfSnippet(snippet));
+			TreeItem[] selection = getTreeItem(treeViewerSnippet.getTree(), new Object[] {snippetGroup.getRootOfSnippet(snippet)});
 			treeViewerSnippet.getTree().setSelection(selection);
 			selectFlag = false;
 			onSnippetSelection();
@@ -431,10 +475,10 @@ public class ProgramTransView extends SnippetView {
 	} 
 	
 	public void onOperatorSelection() {
-		applyOperator(getSelectedSnippet(), getSelectedRWSnippet(), getSelectedOperator(), null);
+		applyOperator(getSelectedRWSnippet(), getSelectedOperator(), null);
 	} 
 	
-	public String[] applyOperator(Object selectedSnippet, Object selectedNode, Object selectedOperator, String[] inputs) {
+	public String[] applyOperator(Object selectedNode, Object selectedOperator, String[] inputs) {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
 		String nodeInfo = "Group";
 		if (selectedNode != null)
@@ -447,7 +491,7 @@ public class ProgramTransView extends SnippetView {
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			rwSnippetGroup.applyOperator(selectedOperator, snippetGroup, selectedSnippet, selectedNode, dlg.getInputs());
+			rwSnippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs());
 			renderSnippet();
 		}
 

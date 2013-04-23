@@ -8,7 +8,7 @@
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
-  (:import [org.eclipse.jdt.core.dom CompilationUnit]))
+  (:import [org.eclipse.jdt.core.dom ASTNode ASTNode$NodeList CompilationUnit]))
 
 
 ;; Snippet Datatype

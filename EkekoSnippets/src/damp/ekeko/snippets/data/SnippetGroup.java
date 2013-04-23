@@ -9,7 +9,7 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class SnippetGroup {
-	protected Object groupHistory;
+	private Object groupHistory;
 	private int[] activeNodePos;
 	
 	static {
@@ -63,6 +63,13 @@ public class SnippetGroup {
 
 	public Object getRootOfSnippet(Object snippet) {
 		return RT.var("damp.ekeko.snippets.representation", "snippet-root").invoke(snippet);
+	}
+
+	public Object[] getRootOfSnippets(Object[] snippets) {
+		Object[] roots = new Object[snippets.length];
+		for (int i=0; i<snippets.length; i++)
+			roots[i] = getRootOfSnippet(snippets[i]);
+		return roots;
 	}
 
 	public String toString() {

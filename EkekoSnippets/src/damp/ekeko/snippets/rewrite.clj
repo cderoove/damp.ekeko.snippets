@@ -63,10 +63,16 @@
     (.replace rewrite node newnode nil)))
 
 (defn replace-node-in-rewrite-code
-  "Replace node with new string code as new node."
+  "Replace node with new string code as new nodes."
   [node string]
-  (let [newnode (parsing/parse-string-ast string)] 
-    (replace-node node newnode)))
+  (let [newnodes (parsing/parse-string-ast string)] 
+    (if (instance? ASTNode newnodes)
+      (replace-node node newnodes)
+      (let [parent (.getParent node)
+            property (.getLocationInParent node)
+            idx (.indexOf (.getStructuralProperty parent property) node)]
+        (remove-node node)
+        (add-node-in-rewrite-code parent (keyword (.getId property)) string idx)))))
 
 (defn remove-node 
   "Remove node."
@@ -86,13 +92,35 @@
         index (if (instance? java.lang.String idx)
                (Integer/parseInt idx)
                idx)] 
+    (println "add node" newnode)
     (.insertAt list-rewrite newnode index nil)))
 
 (defn add-node-in-rewrite-code
-  "Add new string code as new node to propertyList of the given parent at idx position."
+  "Add new string code as new nodes to propertyList of the given parent starting from idx position."
   [parent property string idx]
-  (let [newnode (parsing/parse-string-ast string)]
-    (add-node parent property newnode idx)))
+  (let [newnodes (parsing/parse-string-ast string)]
+    (if (instance? ASTNode newnodes)
+      (add-node parent property newnodes idx)
+      (map (fn [newnode] (add-node parent property newnode idx)) (reverse newnodes)))))
+
+(defn 
+  add-sibling-node-in-rewrite-code
+  [node str-new-node user-vars]
+  (defn 
+    generate-rewrite-snippet
+    [str-snippet user-vars]
+    (if (empty? user-vars)
+      str-snippet
+      (let [var (first (first user-vars))
+            node (fnext (first user-vars))]
+        (generate-rewrite-snippet
+          (clojure.string/replace str-snippet var (str node))
+          (rest user-vars)))))
+  (let [parent (.getParent node)
+        property (.getLocationInParent node)
+        idx (.indexOf (.getStructuralProperty parent property) node)
+        new-str (generate-rewrite-snippet str-new-node user-vars)]
+    (add-node-in-rewrite-code parent (keyword (.getId property)) new-str (+ 1 idx))))
 
 (defn change-property-node
   "Change property node."
@@ -111,6 +139,8 @@
 ; ADD REWRITE SNIPPET
 ; -----------------------
 
+; rewrite-map: map of {rewrite-snippet original-snippet}
+
 (defn 
   make-rewritemap
   []
@@ -118,35 +148,41 @@
 
 (defn
   add-rewrite-snippet
-  [rewrite-map template-snippet rewrite-snippet]
+  [rewrite-map rewrite-snippet template-snippet]
   (if (not (nil? template-snippet))
-    (assoc rewrite-map template-snippet rewrite-snippet)))
-
-(defn 
-  get-rewrite-snippet
-  [rewrite-map template-snippet]
-  (get rewrite-map template-snippet))
-
-(defn 
-  update-rewrite-snippet
-  [rewrite-map template-snippet rewrite-snippet]
-  (if (and (not (nil? template-snippet))
-           (not (nil? (get-rewrite-snippet rewrite-map template-snippet))))
-    (assoc rewrite-map template-snippet rewrite-snippet)))
-  
-(defn 
-  remove-rewrite-snippet
-  [rewrite-map template-snippet]
-  (dissoc rewrite-map template-snippet))
+    (assoc rewrite-map rewrite-snippet template-snippet)))
 
 (defn 
   get-original-snippet
   [rewrite-map rewrite-snippet]
-  (let [found-map (filter (fn [map] (= (val map) rewrite-snippet)) rewrite-map)]
-    (if (empty? found-map)
-      nil
-      (key (first found-map)))))
+  (get rewrite-map rewrite-snippet))
 
+(defn 
+  get-original-snippets
+  [rewrite-map]
+  (distinct (vals rewrite-map)))
+
+(defn 
+  get-rewrite-snippets
+  [rewrite-map template-snippet]
+  (let [found-map (filter (fn [map] (= (val map) template-snippet)) rewrite-map)]
+    (keys found-map)))
+
+(defn 
+  remove-rewrite-snippet
+  [rewrite-map rewrite-snippet]
+  (dissoc rewrite-map rewrite-snippet))
+
+(defn 
+  update-rewrite-snippet
+  [rewrite-map old-rewrite-snippet new-rewrite-snippet]
+  (let [template-snippet (get-original-snippet rewrite-map old-rewrite-snippet)]
+    (if (not (nil? template-snippet))
+      (do
+        (add-rewrite-snippet (remove-rewrite-snippet rewrite-map old-rewrite-snippet)
+                             new-rewrite-snippet template-snippet))
+      rewrite-map)))
+  
 ; GENERATE EKEKO REWRITE QUERY
 ; ----------------------------------------------
 ; Generate ekeko rewrite query based on changes history 
@@ -199,53 +235,52 @@
 
 (defn
   snippet-rewrite-query
-  [template-snippet rewrite-snippet grp]
+  [template-snippet rewrite-snippets]
+  (defn user-vars-str [user-vars]
+    (let [user-vars-condition
+          (for [var user-vars
+                :let [str-var (clojure.string/replace (str var) "?" "*")]]
+            `[~str-var ~var])]
+      user-vars-condition))
   (let [var-match (representation/snippet-var-for-root template-snippet)
-        str-rewrite-snippet (clojure.string/replace (gui/print-snippet rewrite-snippet) "?" "*")             
-        user-vars (representation/snippet-uservars rewrite-snippet)
-        user-vars-condition
-        (for [var user-vars
-              :let [str-var (clojure.string/replace (str var) "?" "*")]]
-          `[~str-var ~var]) 
-        query `((el/perform 
-                  (replace-node-with-logic-vars 
-                    ~var-match 
-                    ~str-rewrite-snippet 
-                    [~@user-vars-condition])))]
-    (querying/add-query 
-      (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
-      query))) 
-  
+        rewrite-str
+        (for [snippet rewrite-snippets
+              :let [snippet-str (clojure.string/replace (gui/print-snippet snippet) "?" "*")
+                    user-vars (representation/snippet-uservars snippet)
+                    user-vars-condition (distinct (user-vars-str user-vars))]]             
+          `(el/perform (add-sibling-node-in-rewrite-code ~var-match ~snippet-str [~@user-vars-condition])))]
+    `(~@rewrite-str
+       (el/perform (remove-node ~var-match)))))
+        
 (defn
   snippet-rewrite-import-declaration-query
-  [template-snippet rewrite-snippet grp]
+  [template-snippet rewrite-snippets]
   (let [var-match (representation/snippet-var-for-root template-snippet)
-        str-rewrite-snippet (gui/print-snippet rewrite-snippet)
         var-cu '?cu
-        query `((cl/fresh [~var-cu]
-                          (el/equals ~var-cu (.getRoot ~var-match))
-                          (el/perform (add-node-in-rewrite-code ~var-cu :imports ~str-rewrite-snippet 0))))]
-    (querying/add-query 
-      (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
-      query))) 
+        rewrite-str
+        (for [snippet rewrite-snippets
+              :let [snippet-str (gui/print-snippet snippet)]]
+          `(el/perform (add-node-in-rewrite-code ~var-cu :imports ~snippet-str 0)))] 
+    `((cl/fresh [~var-cu]
+                (el/equals ~var-cu (.getRoot ~var-match))
+                ~@rewrite-str))))
 
 (defn
   internal-snippetgrouphistory-rewrite-query
   "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
-  [snippetgrouphistory rewritemap function-query]
-  (defn rewrite-query-rec [rewrite-map rewrite-query]
-    (if (empty? rewrite-map)
+  [grp rewritemap function-query]
+  (defn rewrite-query-rec [template-snippets rewrite-query]
+    (if (empty? template-snippets)
       rewrite-query
-      (let [template-snippet (key (first rewrite-map))
-            rewrite-snippet (val (first rewrite-map))
-            query (function-query 
-                    template-snippet 
-                    rewrite-snippet 
-                    (representation/snippetgrouphistory-current snippetgrouphistory))]
+      (let [template-snippet (first template-snippets)
+            rewrite-snippets (get-rewrite-snippets rewritemap template-snippet)
+            query     (querying/add-query 
+                        (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
+                        (function-query template-snippet rewrite-snippets))] 
         (rewrite-query-rec 
-          (remove-rewrite-snippet rewrite-map template-snippet)
+          (rest template-snippets)
           (cons query rewrite-query))))) 
-  `(~@(rewrite-query-rec rewritemap '())))
+  `(~@(rewrite-query-rec (get-original-snippets rewritemap) '())))
       
 (defn
   snippetgrouphistory-rewrite-query
