@@ -15,6 +15,7 @@ import clojure.lang.Symbol;
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	static {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.util"));
 	}
 
 	private final String rep = "damp.ekeko.snippets.representation";
@@ -88,6 +89,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	public String getConstrainFString(Object node) {
 		PersistentList functionArgs = (PersistentList) RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node); 
+		if (getConstrainF(node) == Keyword.intern("change-name")) 
+			return getFunctionStringForChangeName(functionArgs, node);
 		return getFunctionString(functionArgs);
 	}
 
@@ -101,6 +104,13 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		}
 	}
 	
+	public String getFunctionStringForChangeName(PersistentList functionList, Object node) {
+		String function = functionList.get(0).toString();
+	 	String functionArg = functionList.get(1).toString(); 
+	 	functionArg = (String) RT.var("damp.ekeko.snippets.util", "convert-rule-to-string").invoke(functionArg, node.toString());
+	 	return function.replace(":", "@") + "(" + functionArg + ")";
+	}
+
 	public boolean preVisit2(ASTNode node) {
 		preVisit(node);
 

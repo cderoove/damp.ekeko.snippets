@@ -175,7 +175,7 @@
   print-rewrite-snippet
   "Returns new string, replaced user-var with actual node
    user-vars -> [[?lvar actual-node] [?lvar actual-node rule] ...].
-   example rule : \"add + [?lvar 3 7] + s\"."
+   example rule : \"add + [?lvar 3 0] + s\"."
   [str-snippet user-vars]
   (if (empty? user-vars)
     str-snippet
@@ -184,7 +184,7 @@
           rule (fnext (next (first user-vars)))
           rep-str (if (nil? rule)
                     (.replace str-snippet var (str node))
-                    (.replace str-snippet var (util/change-string (.replace rule var (str node)))))]
+                    (.replace str-snippet var (util/convert-rule-to-name rule (str node))))]
       (print-rewrite-snippet rep-str (rest user-vars)))))
 
 (defn

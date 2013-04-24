@@ -5,6 +5,7 @@ import clojure.lang.Keyword;
 import clojure.lang.Symbol;
 
 public class SnippetPlainPrettyPrinter extends SnippetPrettyPrinter {
+
 	public SnippetPlainPrettyPrinter () {
 		super();
 	}

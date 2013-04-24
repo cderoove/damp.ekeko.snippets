@@ -436,7 +436,7 @@
                                                       :is-simplename?   
                                                       :none 
                                                       "Change name with rule"
-                                                      "Operator to change name with rule.\n Example: \"add + [getName 3 7] + s\" -> \"addNames\""]
+                                                      "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
 	})
 
 
@@ -464,7 +464,7 @@
    :update-logic-conditions-to-snippetgroup          ["Conditions \n(eg. (damp.ekeko.jdt.reification/has :identifier ?name ?id)\n      (damp.ekeko.jdt.reification/value-raw ?id \"methodX\")"]
    :match-variable-typequalifiednamestring           ["QualifiedName (eg. \"java.util.LinkedList\")"]
    :match-type-qualifiednamestring                   ["QualifiedName (eg. \"java.util.LinkedList\")"]
-   :change-name                                      ["Change Rule \n(eg. \"prefix+[?lvar start-idx end-idx]+suffix\""]
+   :change-name                                      ["Change Rule \n(eg. \"prefix[part-of-name]suffix\""]
 	})
 
 (def 

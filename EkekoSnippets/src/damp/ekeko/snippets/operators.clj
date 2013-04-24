@@ -409,9 +409,11 @@
 (defn
   change-name
   "Operator to change name with rule.
-   Example: \"add + [getName 3 7] + s\" -> \"addNames\""
-  [snippet node-var rule]
-  (update-constrainf-with-args snippet node-var :change-name rule))
+   Example: \"add[part-of-name]s\"."
+  [snippet node-var string]
+  (let [rule (util/convert-string-to-rule string (str node-var) 
+                                          (representation/snippet-uservar-for-node snippet node-var))]
+    (update-constrainf-with-args snippet node-var :change-name rule)))
 
 ;; Operator for SnippetGroup
 ;; -------------------------
