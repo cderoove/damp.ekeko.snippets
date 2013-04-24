@@ -1,8 +1,20 @@
-(ns damp.ekeko.snippets.searchspace)
+(ns damp.ekeko.snippets.searchspace
+  (:refer-clojure :exclude [== type])
+  (:require [clojure.core.logic :as cl]) 
+  (:require [damp.ekeko 
+             [snippets :as snippets]])
+  (:require [damp.ekeko.snippets 
+             [representation :as representation]
+             [operatorsrep :as operatorsrep]
+             [operators :as operators]
+             [precondition :as precondition]])
+  (:require [test.damp [ekeko :as test]])
+  (:require [damp.ekeko])
+  (:require [damp.ekeko.logic :as el]))    
 
 
 (defn dfs
-  [init-value goal values map-operators filter-function check-function]
+  [init-value goal values map-operators filter-function check-function opname-function]
 
   (defn nothing [x y] x)
   
@@ -51,12 +63,32 @@
       [list-todo goal]
       (let [todo (first list-todo)]
         (cond 
-          (empty? list-todo) (println "fail")
-          (check-function (process todo) goal) (println "succeed" (conj (path todo) [(operator todo) (value todo)]))
+          (empty? list-todo) (do (println "fail")
+                               [])
+          (check-function (process todo) goal) (do (println "succeed" (conj (path todo) [(operator todo) (value todo)]))
+                                                 (conj (path todo) [(opname-function (operator todo)) (value todo)]))
           :else (do
                   (println (operator todo)) 
                   (println (value todo)) 
                   (process-dfs (concat (children todo) (rest list-todo)) goal)))))
     
     (process-dfs (generate-todo init-value values) goal)))
+
+
+(defn dfs-snippet [group snippet goal] 
+  (defn result-equal 
+    [new-snippet goal]
+    (= (test/tuples-to-stringsetstring 
+         (snippets/query-by-snippet-in-group new-snippet (operators/remove-snippet group snippet)))
+       (test/tuples-to-stringsetstring goal)))
+  (let [snippet-nodes
+        (remove  (fn [x] (= (:ast snippet) x)) (representation/snippet-nodes snippet))]
+    (dfs 
+      snippet 
+      goal 
+      snippet-nodes
+      operatorsrep/searchspace-operators
+      precondition/safe-operator-for-node? 
+      result-equal
+      operatorsrep/operator-name)))
 

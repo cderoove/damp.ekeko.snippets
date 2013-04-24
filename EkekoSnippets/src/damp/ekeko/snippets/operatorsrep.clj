@@ -323,6 +323,12 @@
                                                       :generalization 
                                                       "Introduce logic variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
+   :introduce-logic-variable-by-random-var           [:node  
+                                                      introduce-logic-variable-by-random-var  
+                                                      :is-simplename?                 
+                                                      :none 
+                                                      "Introduce logic variable"
+                                                      "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-with-info               [:node  
                                                       introduce-logic-variable-with-info  
                                                       :is-ast?                 
@@ -491,16 +497,8 @@
 
 (def 
   searchspace-operators
-  {:contains-elements-with-same-size                  contains-elements-with-same-size                  
-   :contains-elements                                 contains-elements
-   :contains-elements-with-relative-order             contains-elements-with-relative-order     
-   :contains-elements-with-repetition                 contains-elements-with-repetition    
-   :split-variable-declaration-statement              split-variable-declaration-statement        
-   :contains-variable-declaration-statement           contains-variable-declaration-statement     
+  {:contains-elements                                 contains-elements
    :allow-ifstatement-with-else                       allow-ifstatement-with-else  
-   :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration     
-   :allow-subtype-on-class-declaration-extends        allow-subtype-on-class-declaration-extends   
-   :allow-variable-declaration-with-initializer       allow-variable-declaration-with-initializer 
-   :inline-method-invocation                          inline-method-invocation          
-   :negated-node                                      negated-node        
+   :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration
+   :introduce-logic-variable-by-random-var            introduce-logic-variable-by-random-var
 	})

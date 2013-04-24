@@ -21,6 +21,7 @@ public class SnippetGroup {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.querying"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.rewrite"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.searchspace"));
 	}
 
 	public SnippetGroup(String name) {
@@ -217,6 +218,12 @@ public class SnippetGroup {
 		return newState;
 	}
 	
+	public Object[] searchSpace(Object snippet, Object[] result) {
+		return getArray(RT.var("damp.ekeko.snippets.searchspace","dfs-snippet").invoke(getGroup(), snippet, result)); 		
+	}
 
+	public static Object parseStringsToNodes(String[] arrStr) {
+		return RT.var("damp.ekeko.snippets.parsing","parse-strings-to-nodes").invoke(arrStr); 		
+	}
 	
 }

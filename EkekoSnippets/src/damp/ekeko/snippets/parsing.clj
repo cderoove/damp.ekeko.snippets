@@ -167,3 +167,7 @@
   (parse-string-statement 
     (str (apply str (interpose \space modifiers)) " " type " " fragment ";")))
 
+(defn
+  parse-strings-to-nodes
+  [arr-string]
+  (map parse-string-ast (filter (fn [x] (not (nil? x))) arr-string)))

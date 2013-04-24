@@ -289,6 +289,12 @@
     (update-constrainf snippet-with-gf node :variable)))
 
 (defn 
+  introduce-logic-variable-by-random-var 
+  "Introduce logic variable to a given node."
+  [snippet node]
+  (introduce-logic-variable snippet node (util/gen-lvar)))
+
+(defn 
   introduce-logic-variable-with-info
   "Introduce logic variable to a given node and add it as result in the query."
   [snippet node uservar]

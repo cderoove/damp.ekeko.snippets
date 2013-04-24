@@ -1,7 +1,10 @@
 package damp.ekeko.snippets.gui;
 
+import java.util.Date;
+
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.text.TextViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -18,6 +21,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.wb.swt.ResourceManager;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
@@ -26,6 +30,8 @@ import org.eclipse.swt.graphics.Image;
 import clojure.lang.RT;
 import org.eclipse.swt.widgets.Label;
 
+import damp.ekeko.snippets.data.SnippetGroup;
+
 
 public class ResultCheckView extends ViewPart {
 
@@ -33,8 +39,10 @@ public class ResultCheckView extends ViewPart {
 	private Table tableResult;
 	private Table tableConfirmResult;
 	private TableDecorator tableConfirmResultDecorator;
-	private Table tableOperator;
 	private Object[] result;
+	private SnippetGroup snippetGroup;
+	private Object snippet;
+	private StyledText textSnippet;
 
 	public ResultCheckView() {
 	}
@@ -43,6 +51,14 @@ public class ResultCheckView extends ViewPart {
 		this.result = result;
 	}
 	
+	public void setGroup(SnippetGroup group) {
+		this.snippetGroup = group;
+	}
+
+	public void setSnippet(Object snippet) {
+		this.snippet = snippet;
+	}
+
 	/**
 	 * Create contents of the view part.
 	 * @param parent
@@ -160,7 +176,7 @@ public class ResultCheckView extends ViewPart {
 		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
 		tltmRemove.setText("Remove");
 		
-		/*Group group_2 = new Group(group, SWT.NONE);
+		Group group_2 = new Group(group, SWT.NONE);
 		GridData gd_group_2 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		gd_group_2.widthHint = 38;
 		group_2.setLayoutData(gd_group_2);
@@ -169,31 +185,37 @@ public class ResultCheckView extends ViewPart {
 		Label lblNewLabel_3 = new Label(group_2, SWT.NONE);
 		lblNewLabel_3.setText("Operator Suggestion");
 
-		tableOperator = new Table(group_2, SWT.BORDER | SWT.FULL_SELECTION);
-		tableOperator.setHeaderVisible(true);
-		GridData gd_tableOperator = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_tableOperator.heightHint = 213;
-		tableOperator.setLayoutData(gd_tableOperator);
-		
-		TableColumn tblclmnOperator = new TableColumn(tableOperator, SWT.NONE | SWT.H_SCROLL | SWT.V_SCROLL);
-		tblclmnOperator.setWidth(250);
-		tblclmnOperator.setText("Operator");
+		TextViewer textViewerSnippet = new TextViewer(group_2, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		textViewerSnippet.setEditable(false);
+		textSnippet = textViewerSnippet.getTextWidget();
+		textSnippet.setEditable(false);
+		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_textSnippet.heightHint = 213;
+		textSnippet.setLayoutData(gd_textSnippet);
 		
 		Group group_3 = new Group(group_2, SWT.NONE);
 		group_3.setLayout(new FlowLayout(FlowLayout.LEFT, 1, 1));
 		GridData gd_group_3 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_group_3.heightHint = 0;
-		gd_group_3.widthHint = 0;
 		group_3.setLayoutData(gd_group_3);
 		
 		Button btnApply = new Button(group_3, SWT.NONE);
 		btnApply.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				startSearch();
 			}
 		});
-		btnApply.setText("Apply");
-		*/
+		btnApply.setText("Start");
+		
+		Button btnStop = new Button(group_3, SWT.NONE);
+		btnStop.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				stopSearch();
+			}
+		});
+		btnStop.setText("Stop");
+
 		createActions();
 		initializeToolBar();
 		initializeMenu();
@@ -269,6 +291,15 @@ public class ResultCheckView extends ViewPart {
 		return arrStr;
 	}
 
+	public String[] getArrString(TableItem item) {
+		String[] arrStr = new String[tableConfirmResult.getColumnCount()];
+		for (int i = 0; i < tableConfirmResult.getColumnCount()-2; i++) {
+			System.out.println("fill array " + item.getText(i+2));
+			arrStr[i] = item.getText(i+2);
+		}
+		return arrStr;
+	}
+
 	public void putData() {
 		Object[] arrResult = result;
 		if (arrResult.length > 0)
@@ -321,6 +352,8 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResultDecorator.removeAllEditors();
 		TableItem lastItem = tableConfirmResult.getItem(tableConfirmResult.getItemCount()-1);
 		//set data for the last item --> item.setData(selected[i].getData());
+		lastItem.setData(SnippetGroup.parseStringsToNodes(getArrString(lastItem)));
+		System.out.println(lastItem.getData());
 		lastItem.setBackground(red);
 		lastItem.setImage(1, positiveIcon);
 		tableConfirmResultDecorator.setButtonEditorAtNewRow();
@@ -330,6 +363,7 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResultDecorator.removeAllEditors();
 		TableItem lastItem = tableConfirmResult.getItem(tableConfirmResult.getItemCount()-1);
 		//set data for the last item --> item.setData(selected[i].getData());
+		lastItem.setData(SnippetGroup.parseStringsToNodes(getArrString(lastItem)));
 		lastItem.setBackground(green);
 		lastItem.setImage(1, negativeIcon);
 		tableConfirmResultDecorator.setButtonEditorAtNewRow();
@@ -350,5 +384,65 @@ public class ResultCheckView extends ViewPart {
 		}
 		
 		tableConfirmResultDecorator.setButtonEditorAtNewRow();
+	}
+	
+	public Object[] getConfirmResult() {
+		TableItem[] items = tableConfirmResult.getItems();
+		Object[] temp = new Object[items.length];
+		int j=0;
+		for (int i=0; i<items.length-1; i++) {
+			if (items[i].getImage(1).equals(positiveIcon)) {
+				temp[j] = items[i].getData();
+				j++;
+			}
+		}
+
+		Object[] goal = new Object[j];
+		for (int i=0; i<j; i++) {
+			goal[i] = temp[i];
+		}
+		
+		return goal;
+	}
+	
+	class SearchThread extends Thread {
+		Object[] goal;
+		
+		public SearchThread (Object[] goal) {
+			this.goal = goal;
+		}
+		
+        public void run() {
+        	Date startTime = new Date();
+        	Object[] searchResult = snippetGroup.searchSpace(snippet, goal);
+        	String strResult = "Suggestion: \n \n";
+        	for (int i=0; i<searchResult.length; i++) {
+        		Object[] oneResult = getArray(searchResult[i]);
+        		strResult += oneResult[0].toString() + "\n" +
+        		             "    to " + oneResult[1];
+        	}
+        	
+        	final String strText = strResult;
+    		Display.getDefault().syncExec(new Runnable() {
+    		    public void run() {
+    	        	textSnippet.setText(strText);
+    		    }
+    		});
+
+        	System.out.println("Start : " + startTime);
+        	System.out.println("End   : " + new Date());
+        }
+    }	
+	
+	SearchThread searchThr; 
+	
+	public void startSearch() {
+    	textSnippet.setText("Processing...");
+		searchThr = new SearchThread(getConfirmResult());
+		searchThr.start();
+	}
+
+	public void stopSearch() {
+		searchThr.stop();
 	}
 }

@@ -542,6 +542,8 @@ public class SnippetView extends ViewPart {
 		try {
 			ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
 			view.setResult(snippetGroup.getQueryResult(getSelectedSnippet()));
+			view.setGroup(snippetGroup);
+			view.setSnippet(snippetGroup.getSnippet(getSelectedSnippet()));
 			view.putData();
 		} catch (PartInitException e) {
 			e.printStackTrace();
