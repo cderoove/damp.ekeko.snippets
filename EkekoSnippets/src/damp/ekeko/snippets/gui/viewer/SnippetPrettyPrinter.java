@@ -7,8 +7,6 @@ import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.internal.core.dom.NaiveASTFlattener;
 
 import clojure.lang.Keyword;
-import clojure.lang.PersistentArrayMap;
-import clojure.lang.PersistentList;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
@@ -27,6 +25,10 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		highlightPos = new int[2];
 	}
 	
+	public static Object[] getArray(Object clojureList) {
+		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
+	}
+
 	public void setSnippet(Object snippet) {
 		this.snippet = snippet;
 	}
@@ -47,24 +49,24 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return highlightPos;
 	}
 
-	public Symbol getVar(Object node) {
-		return (Symbol) RT.var(rep, "snippet-var-for-node").invoke(getSnippet(), node);
+	public Object getVar(Object node) {
+		return RT.var(rep, "snippet-var-for-node").invoke(getSnippet(), node);
 	}
 	
-	public Symbol getUserVar(Object node) {
-		return (Symbol) RT.var(rep, "snippet-uservar-for-node").invoke(getSnippet(), node);
+	public Object getUserVar(Object node) {
+		return RT.var(rep, "snippet-uservar-for-node").invoke(getSnippet(), node);
 	}
 
-	public Keyword getGroundF(Object node) {
-		return (Keyword) RT.var(rep, "snippet-grounder-for-node").invoke(getSnippet(), node);
+	public Object getGroundF(Object node) {
+		return RT.var(rep, "snippet-grounder-for-node").invoke(getSnippet(), node);
 	}
 
-	public Keyword getConstrainF(Object node) {
-		return (Keyword) RT.var(rep, "snippet-constrainer-for-node").invoke(getSnippet(), node);
+	public Object getConstrainF(Object node) {
+		return RT.var(rep, "snippet-constrainer-for-node").invoke(getSnippet(), node);
 	}
 
 	public boolean hasDefaultGroundf(Object node) {
-		Keyword groundf = getGroundF(node);
+		Object groundf = getGroundF(node);
 		if (groundf == Keyword.intern("minimalistic") ||
 				groundf == Keyword.intern("epsilon"))
 			return true;
@@ -72,7 +74,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public boolean hasDefaultConstrainf(Object node) {
-		Keyword constrainf = getConstrainF(node);
+		Object constrainf = getConstrainF(node);
 		if (constrainf == Keyword.intern("exact") ||
 				constrainf == Keyword.intern("variable") || 
 				constrainf == Keyword.intern("variable-info") || 
@@ -83,41 +85,45 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public String getGroundFString(Object node) {
-		PersistentList functionArgs = (PersistentList) RT.var(rep, "snippet-grounder-with-args-for-node").invoke(getSnippet(), node); 
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-grounder-with-args-for-node").invoke(getSnippet(), node)); 
 		return getFunctionString(functionArgs);
 	}
 
 	public String getConstrainFString(Object node) {
-		PersistentList functionArgs = (PersistentList) RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node); 
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node)); 
 		if (getConstrainF(node) == Keyword.intern("change-name")) 
-			return getFunctionStringForChangeName(functionArgs, node);
+			return getFunctionStringForChangeName(functionArgs);
 		return getFunctionString(functionArgs);
 	}
 
-	public String getFunctionString(PersistentList functionList) {
-		if (functionList == null || functionList.isEmpty())
+	public String getFunctionString(Object[] functionList) {
+		if (functionList == null || functionList.length == 0)
 			return "";
 		else {
-			String function = functionList.first().toString();
-		 	String functionArgs = functionList.toString().replace(function, "").trim(); 
-		 	return function.replace(":", "@") + functionArgs;
+			String function = functionList[0].toString();
+		 	String functionArgs = "";
+		 	for (int i=1; i<functionList.length; i++) {
+		 		functionArgs += functionList[i].toString() + " ";
+		 	}
+		 	return function.replace(":", "@") + "(" + functionArgs.trim() + ")";
 		}
 	}
 	
-	public String getFunctionStringForChangeName(PersistentList functionList, Object node) {
-		String function = functionList.get(0).toString();
-	 	String functionArg = functionList.get(1).toString(); 
-	 	functionArg = (String) RT.var("damp.ekeko.snippets.util", "convert-rule-to-string").invoke(functionArg, node.toString());
+	public String getFunctionStringForChangeName(Object[] functionList) {
+		String function = functionList[0].toString();
+	 	String rule = functionList[1].toString(); 
+	 	String nodeStr = functionList[2].toString(); 
+	 	String functionArg = (String) RT.var("damp.ekeko.snippets.util", "convert-rule-to-string").invoke(rule, nodeStr);
 	 	return function.replace(":", "@") + "(" + functionArg + ")";
 	}
 
 	public boolean preVisit2(ASTNode node) {
 		preVisit(node);
 
-		Symbol uservar = getUserVar(node);
+		Object uservar = getUserVar(node);
 		if (uservar != null) {
 			this.buffer.append(uservar);
-			Keyword constrainf = getConstrainF(node);
+			Object constrainf = getConstrainF(node);
 			if (constrainf == Keyword.intern("variable") ||
 				constrainf == Keyword.intern("variable-info")) 	
 				return false;
@@ -133,7 +139,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//if node is first member of NodeList, then preVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
+			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
 				preVisitNodeList(nodeListWrapper);
@@ -166,7 +172,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//if node is last member of NodeList, then postVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			PersistentArrayMap nodeListWrapper = (PersistentArrayMap) RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
+			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
 			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
 				postVisitNodeList(nodeListWrapper);
@@ -177,7 +183,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("&colorclose");
 	}
 	
-	public void preVisitNodeList(PersistentArrayMap nodeListWrapper) {
+	public void preVisitNodeList(Object nodeListWrapper) {
 		//print bracket
 		if (!hasDefaultGroundf(nodeListWrapper) || 
 				!hasDefaultConstrainf(nodeListWrapper) || 
@@ -189,7 +195,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("&coloropen");
 	}
 	
-	public void postVisitNodeList(PersistentArrayMap nodeListWrapper) {
+	public void postVisitNodeList(Object nodeListWrapper) {
 		String fString = "";
 
 		//print bracket, followed by groundf and constrainf

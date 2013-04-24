@@ -116,6 +116,14 @@
   (get-in snippet [:var2ast snippet-var]))
 
 (defn 
+  snippet-node-for-uservar 
+  "For the user logic variable of the given snippet, returns the AST node  
+   that is bound to a matching logic variable."
+  [snippet user-var]
+  (let [found-map (filter (fn [x] (= (val x) user-var)) (:var2uservar snippet))]
+    (snippet-node-for-var snippet (key (first found-map))))) 
+
+(defn 
   snippet-uservar-for-var 
   "For the given logic var of the given snippet, returns the name of the user defined logic variable."
   [snippet snippet-var]

@@ -34,7 +34,7 @@
   "Update constraining function of a given node in a given snippet with the new constraining function and args of given type
    Example: (update-constrainf snippet node :list-contains args)."
   [snippet node type args]
-  (update-in snippet [:ast2constrainf node] (fn [x] (list type args))))
+  (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
 
 (defn
   contains-elements-with-same-size 
@@ -410,10 +410,11 @@
   change-name
   "Operator to change name with rule.
    Example: \"add[part-of-name]s\"."
-  [snippet node-var string]
-  (let [rule (util/convert-string-to-rule string (str node-var) 
-                                          (representation/snippet-uservar-for-node snippet node-var))]
-    (update-constrainf-with-args snippet node-var :change-name rule)))
+  [snippet node-var string template-snippet]
+  (let [user-var (representation/snippet-uservar-for-node snippet node-var)
+        node-in-template (representation/snippet-node-for-uservar template-snippet user-var)
+        rule (util/convert-string-to-rule string (str node-in-template) user-var)]
+    (update-constrainf-with-args snippet node-var :change-name (list rule (str node-in-template)))))
 
 ;; Operator for SnippetGroup
 ;; -------------------------
@@ -471,7 +472,7 @@
         snippet-declare (representation/snippetgroup-snippet-for-node snippetgroup node-declare)
         var-invoke (representation/snippet-lvar-for-node snippet-invoke node-invoke)
         var-declare (representation/snippet-lvar-for-node snippet-declare node-declare)
-        new-snippet-invoke (update-constrainf-with-args snippet-invoke node-invoke :method-dec var-declare)
+        new-snippet-invoke (update-constrainf-with-args snippet-invoke node-invoke :method-dec (list var-declare))
         new-snippet-invoke-with-cond 
         (add-logic-conditions 
           new-snippet-invoke
@@ -488,7 +489,7 @@
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-declare (representation/snippet-lvar-for-node snippet-declare node-declare)
         var-declare-name (representation/snippet-lvar-for-node snippet-declare (.getName node-declare)) 
-        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-dec var-declare-name)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-dec (list var-declare-name))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
@@ -504,7 +505,7 @@
         snippet-var2 (representation/snippetgroup-snippet-for-node snippetgroup node-var2)
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-node2 (representation/snippet-lvar-for-node snippet-var2 node-var2)
-        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-binding var-node2)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-binding (list var-node2))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
@@ -520,7 +521,7 @@
         snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-type (representation/snippet-lvar-for-node snippet-type node-type)
-        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-type var-type)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :var-type (list var-type))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
@@ -533,7 +534,7 @@
    "Match Relation between ASTNode variable with it's type qualified name."
   [snippet node-var string]
   (let [var-node (representation/snippet-lvar-for-node snippet node-var)
-        new-snippet-var (update-constrainf-with-args snippet node-var :var-typename string)]
+        new-snippet-var (update-constrainf-with-args snippet node-var :var-typename (list string))]
     (add-logic-conditions
       new-snippet-var
       `((damp.ekeko.snippets.runtime/ast-variable-typequalifiednamestring ~var-node ~string)))))
@@ -546,7 +547,7 @@
         snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
         var-node (representation/snippet-lvar-for-node snippet-var node-var)
         var-type (representation/snippet-lvar-for-node snippet-type node-type)
-        new-snippet-var (update-constrainf-with-args snippet-var node-var :type-qname var-type)
+        new-snippet-var (update-constrainf-with-args snippet-var node-var :type-qname (list var-type))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
@@ -559,7 +560,7 @@
    "Match Relation between ASTNode type with it's type qualified name."
   [snippet node-var string]
   (let [var-node (representation/snippet-lvar-for-node snippet node-var)
-        new-snippet-var (update-constrainf-with-args snippet node-var :type-qnames string)]
+        new-snippet-var (update-constrainf-with-args snippet node-var :type-qnames (list string))]
     (add-logic-conditions
       new-snippet-var
       `((damp.ekeko.snippets.runtime/ast-type-qualifiednamecontain ~var-node ~string)))))
