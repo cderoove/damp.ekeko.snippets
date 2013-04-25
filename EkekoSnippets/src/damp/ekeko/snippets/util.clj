@@ -71,7 +71,6 @@
   convert-string-to-rule
   "Example: \"add[part-of-name]s\" will be converted to \"add + [?lvar start-idx remaining-chars-no] + s\"."
   [string name lvar]
-  (println string name lvar)
   (let [arr-str (seq (.split (.replace (.replace string "[" ";") "]" ";") ";"))
         prefix (.trim (.get arr-str 0))
         part-of-name (.trim (.get arr-str 1))
@@ -86,7 +85,6 @@
    Example : \"add + [?lvar 3 0] + s\" with ?lvar = \"getName\" -> \"add[Name]s\".
    with 3: start idx and 0: remaining chars no."
   [rule name]
-  (println rule name)
   (let [arr-rule (seq (.split (.replace rule "+" ";") ";"))
         prefix (.trim (.get arr-rule 0))
         suffix (if (< (.size arr-rule) 3) "" (.trim (.get arr-rule 2)))

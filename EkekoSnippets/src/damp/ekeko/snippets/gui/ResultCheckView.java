@@ -417,8 +417,9 @@ public class ResultCheckView extends ViewPart {
         	Object[] searchResult = snippetGroup.searchSpace(snippet, goal);
         	String strResult = "Suggestion: \n \n";
         	for (int i=0; i<searchResult.length; i++) {
-        		strResult += searchResult[i].toString().replace("[", "").replace("]", "").replace("#<", "\nto\n#<");
-        		strResult += "\n\n";
+        		String temp = searchResult[i].toString().replace("[", "").replace("]", "");
+        		temp = temp.replace("#<", "\n#<").replace(">", ">\n");
+        		strResult += temp.replace("\" ", "\"\nto\n");
         	}
         	
         	final String strText = strResult;

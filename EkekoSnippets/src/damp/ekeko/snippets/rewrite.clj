@@ -81,6 +81,8 @@
   "Add new string code as new nodes to propertyList of the given parent starting from idx position."
   [parent property string idx]
   (let [newnodes (parsing/parse-string-ast string)]
+    (println "add node in rewrite code")
+    (println property string idx)
     (if (instance? ASTNode newnodes)
       (add-node parent property newnodes idx)
       (map (fn [newnode] (add-node parent property newnode idx)) (reverse newnodes)))))
@@ -91,6 +93,7 @@
   (let [parent (.getParent node)
         property (.getLocationInParent node)
         idx (.indexOf (.getStructuralProperty parent property) node)]
+    (println "add sibling node in rewrite code")
     (add-node-in-rewrite-code parent (keyword (.getId property)) string (+ 1 idx))))
 
 (defn replace-node 
@@ -230,12 +233,13 @@
 (defn
   internal-snippetgrouphistory-rewrite-query
   "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
-  [grp rewritemap function-query]
+  [grphistory rewritemap function-query]
   (defn rewrite-query-rec [template-snippets rewrite-query]
     (if (empty? template-snippets)
       rewrite-query
       (let [template-snippet (first template-snippets)
             rewrite-snippets (get-rewrite-snippets rewritemap template-snippet)
+            grp (representation/snippetgrouphistory-current grphistory)
             query     (querying/add-query 
                         (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
                         (function-query template-snippet rewrite-snippets))] 

@@ -502,3 +502,5 @@
    :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration
    :introduce-logic-variable-by-random-var            introduce-logic-variable-by-random-var
 	})
+
+(defn searchspace-operator-ids [] (keys searchspace-operators))
