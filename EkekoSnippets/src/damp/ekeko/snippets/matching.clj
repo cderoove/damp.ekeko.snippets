@@ -86,6 +86,11 @@
 ;; ----------------------
 
 (defn 
+  is-ignored-property?
+  [property-keyw]
+  (= property-keyw :javadoc))
+
+(defn 
   cf-node-exact
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
      For ASTNode instances: ((ast :kind-of-node ?var-for-node-match)  
@@ -102,10 +107,12 @@
                     (seq snippet-properties)
                     :let [value     (retrievalf) 
                           var-value (representation/snippet-var-for-node snippet value)]]
-                `(reification/has ~property-keyw ~var-match ~var-value))]
+                (if (not (is-ignored-property? property-keyw))
+                  `(reification/has ~property-keyw ~var-match ~var-value)))
+          filtered-child-conditions (filter (fn [x] (not (nil? x))) child-conditions)]
       (if 
         (= snippet-ast (:ast snippet)) 
-        `(~@child-conditions) ;because snippet root is already ground to an ast of the right kind
+        `(~@filtered-child-conditions) ;because snippet root is already ground to an ast of the right kind
         `((reification/ast ~snippet-keyw ~var-match)
            ~@child-conditions)))))
 

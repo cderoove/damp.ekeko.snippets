@@ -95,7 +95,7 @@
   snippet-in-group-query-with-conditions
   "Query for snippet, depends on relation with other snippets in the group."
   [snippet snippetgroup ekekolaunchersymbol]
-  (let [related-snippets (representation/snippetgroup-related-snippets-basedon-userqueries snippetgroup snippet)
+  (let [related-snippets (representation/snippetgroup-related-snippets snippetgroup snippet)
         grp-related-snippets (update-in (representation/make-snippetgroup "") [:snippetlist] (fn [x] related-snippets))
         root-var (representation/snippet-var-for-root snippet)
         uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))

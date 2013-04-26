@@ -36,6 +36,19 @@
       (class-simplename (class value)))))
 
 (defn 
+  filtered-node-propertyvalues
+  "Returns all property values of given node, except :javadoc"
+  [val]
+  (filter 
+    (fn [propertyvalue]
+      (if (not (nil? (:owner propertyvalue)))
+        (let [parent (:owner propertyvalue)
+              property (astnode/node-property-descriptor-for-ekeko-keyword parent :javadoc)]
+          (not (= (:property propertyvalue) property)))
+        true))
+    (astnode/node-propertyvalues val)))
+
+(defn 
   walk-jdt-node
   "Recursive descent through a JDT node, applying given functions to the encountered 
    ASTNode instances and Ekeko wrappers for their property values."
@@ -49,7 +62,7 @@
           (astnode/ast? val)
           (do
             (node-f val)
-            (recur (concat (astnode/node-propertyvalues val) others)))
+            (recur (concat (filtered-node-propertyvalues val) others)))
           (astnode/lstvalue? val)
           (do 
             (list-f val)
