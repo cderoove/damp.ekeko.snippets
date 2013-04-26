@@ -542,6 +542,16 @@
   (let [related-snippets (filter (fn [x] (snippet-is-mandatory? x)) (snippetgroup-snippetlist grp))]
     (remove #{snippet} related-snippets)))        
 
+(defn
+  snippetgroup-related-snippets-basedon-mandatory-and-userqueries
+  [grp snippet]
+  (let [query-related-snippets (snippetgroup-related-snippets-basedon-userqueries grp snippet)
+        mandatory-related-snippets 
+        (filter
+          (fn [s] (.contains (snippetgroup-related-snippets-basedon-userqueries grp s) snippet))
+          (snippetgroup-related-snippets grp snippet))]
+    (distinct (concat query-related-snippets mandatory-related-snippets))))        
+
 (defn flat-map
   "Returns list of results (= f(each-element)) in the form of flat list.
    Function f here return a list.
