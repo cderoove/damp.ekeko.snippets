@@ -38,6 +38,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.window.Window;
 
+import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.SnippetGroup;
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
@@ -65,6 +66,7 @@ public class SnippetView extends ViewPart {
 	private TableDecorator tableOpArgsDecorator;
 	private Table tableNode;
 	
+	private Groups groups;
 	private SnippetGroup snippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
 	private Action actRedo;
@@ -73,6 +75,12 @@ public class SnippetView extends ViewPart {
 
 	public SnippetView() {
 	}
+	
+	public void setGroup(Groups groups, SnippetGroup group) {
+		this.groups = groups;
+		snippetGroup = group;
+		renderSnippet();
+	}
 
 	/**
 	 * Create contents of the view part.
@@ -80,8 +88,6 @@ public class SnippetView extends ViewPart {
 	 */
 	@Override
 	public void createPartControl(Composite parent) {
-		snippetGroup = new SnippetGroup("Group");
-
 		Composite container = new Composite(parent, SWT.NONE);
 		container.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
@@ -193,7 +199,7 @@ public class SnippetView extends ViewPart {
 		});
 		tltmView.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/keygroups_obj.gif"));
 		tltmView.setToolTipText("View Snippet");
-				
+		/*		
 		ToolItem tltmFlag = new ToolItem(toolBar, SWT.NONE);
 		tltmFlag.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -203,7 +209,7 @@ public class SnippetView extends ViewPart {
 		});
 		tltmFlag.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/mandatory.gif"));
 		tltmFlag.setToolTipText("Update Snippet Status");
-
+		*/
 		treeViewerSnippet = new TreeViewer(group_2, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		treeViewerSnippet.setAutoExpandLevel(1);
 		Tree treeSnippet = treeViewerSnippet.getTree();
@@ -215,12 +221,12 @@ public class SnippetView extends ViewPart {
 		TreeColumn trclmnNode = snippetNodeCol.getColumn();
 		trclmnNode.setWidth(150);
 		trclmnNode.setText("Snippet");
-		
+		/*
 		TreeViewerColumn snippetNodeFlag = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnFlag = snippetNodeFlag.getColumn();
 		trclmnFlag.setWidth(20);
 		trclmnFlag.setText("");
-
+		*/
 		TreeViewerColumn snippetPropCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
@@ -234,7 +240,7 @@ public class SnippetView extends ViewPart {
 		contentProvider = new SnippetGroupTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
 		snippetNodeCol.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetNodeFlag.setLabelProvider(new SnippetGroupTreeLabelProviders.FlagColumnLabelProvider(this));		
+		//snippetNodeFlag.setLabelProvider(new SnippetGroupTreeLabelProviders.FlagColumnLabelProvider(this));		
 		snippetPropCol.setLabelProvider(new SnippetGroupTreeLabelProviders.PropertyColumnLabelProvider(this));
 		snippetVarCol.setLabelProvider(new SnippetGroupTreeLabelProviders.VariableColumnLabelProvider(this));
 
@@ -484,7 +490,7 @@ public class SnippetView extends ViewPart {
 		while (idx < text.length() && startIdx > -1) {
 			startIdx = text.indexOf('@', idx);
 			if (startIdx > 0) {
-				endIdx = text.indexOf(')', startIdx);
+				endIdx = text.indexOf(' ', startIdx);
 				setCFStyle(startIdx, endIdx);
 				idx = endIdx;
 			}
@@ -638,7 +644,7 @@ public class SnippetView extends ViewPart {
 	public void transformation() {
 		try {
 			ProgramTransView view = (ProgramTransView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ProgramTransView");
-			view.setSnippet(snippetGroup.newState());
+			view.setRewrittenGroup(groups, snippetGroup);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

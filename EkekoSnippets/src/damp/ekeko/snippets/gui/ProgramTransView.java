@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
 
+import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.RewrittenSnippetGroup;
 import damp.ekeko.snippets.data.SnippetGroup;
 import damp.ekeko.snippets.data.SnippetOperator;
@@ -46,23 +47,25 @@ public class ProgramTransView extends SnippetView {
 
 	private Action actAdd;
 	private Action actAddImp;
+	private Action actTrans;
 	private StyledText textSnippet;
 	private StyledText textRWSnippet;
 	private TreeViewer treeViewerSnippet;
 	private TreeViewer treeViewerRWSnippet;
 	private Tree treeOperator;
 	
+	private Groups groups;
 	private SnippetGroup snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
-	private Action actTrans;
 
 	public ProgramTransView() {
 	}
 
-	public void setSnippet(SnippetGroup grp) {
-		snippetGroup = grp;
-		rwSnippetGroup = new RewrittenSnippetGroup("RewriteGroup");
+	public void setRewrittenGroup(Groups groups, SnippetGroup group) {
+		this.groups = groups;
+		snippetGroup = group;
+		rwSnippetGroup = groups.getRewrittenGroup(snippetGroup);
 		init();
 	}
 	
@@ -378,6 +381,7 @@ public class ProgramTransView extends SnippetView {
 		textSnippet.setText(snippetGroup.toString());
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
 		markSnippet(textSnippet);
+		renderSnippet();
 	}
 	
 	public void markSnippet(StyledText sText) {

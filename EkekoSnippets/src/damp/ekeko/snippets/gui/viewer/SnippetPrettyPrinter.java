@@ -65,6 +65,10 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return RT.var(rep, "snippet-constrainer-for-node").invoke(getSnippet(), node);
 	}
 
+	public Object[] getUserFS(Object node) {
+		return getArray(RT.var(rep, "snippet-userfs-for-node").invoke(getSnippet(), node));
+	}
+
 	public boolean hasDefaultGroundf(Object node) {
 		Object groundf = getGroundF(node);
 		if (groundf == Keyword.intern("minimalistic") ||
@@ -84,6 +88,13 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return false;
 	}
 
+	public boolean hasUserf(Object node) {
+		Object[] userf = getUserFS(node);
+		if (userf.length > 0)
+			return true;
+		return false;
+	}
+
 	public String getGroundFString(Object node) {
 		Object[] functionArgs = getArray(RT.var(rep, "snippet-grounder-with-args-for-node").invoke(getSnippet(), node)); 
 		return getFunctionString(functionArgs);
@@ -94,6 +105,15 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (getConstrainF(node) == Keyword.intern("change-name")) 
 			return getFunctionStringForChangeName(functionArgs);
 		return getFunctionString(functionArgs);
+	}
+
+	public String getUserFSString(Object node) {
+		Object[] userFS = getUserFS(node);
+		String result = "";
+		for (int i=0; i<userFS.length; i++) {
+			result += "@" + getFunctionString(getArray(userFS[i])) + " ";
+		}
+		return result;
 	}
 
 	public String getFunctionString(Object[] functionList) {
@@ -144,31 +164,14 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
 				preVisitNodeList(nodeListWrapper);
 		}
-
-		//print bracket
-		if (!hasDefaultGroundf(node) || 
-				!hasDefaultConstrainf(node) ||
-				(getConstrainF(node) == Keyword.intern("exact-variable")))
-			this.buffer.append("&open");
 		
-		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(node))
-			this.buffer.append("&coloropen");
+		printOpeningNode(node);
+		printOpeningHighlight(node);
 	}
 
 	public void postVisit(ASTNode node) {
-		String fString = "";
+		printClosingNode(node);
 		
-		//print bracket, followed by groundf and constrainf
-		if (!hasDefaultGroundf(node))
-			fString = getGroundFString(node);
-		if (!hasDefaultConstrainf(node))
-			fString += getConstrainFString(node);
-		if (!fString.isEmpty()) 
-			addBufferBeforeEOL("&close" + fString);
-		if (getConstrainF(node) == Keyword.intern("exact-variable"))
-			addBufferBeforeEOL("&close");
-
 		//if node is last member of NodeList, then postVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
@@ -178,38 +181,55 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 				postVisitNodeList(nodeListWrapper);
 		}
 		
-		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(node))
-			this.buffer.append("&colorclose");
+		printClosingHighlight(node);
 	}
 	
 	public void preVisitNodeList(Object nodeListWrapper) {
-		//print bracket
-		if (!hasDefaultGroundf(nodeListWrapper) || 
-				!hasDefaultConstrainf(nodeListWrapper) || 
-				(getConstrainF(nodeListWrapper) == Keyword.intern("exact-variable")))
-			this.buffer.append("&open");
-
-		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(nodeListWrapper))
-			this.buffer.append("&coloropen");
+		printOpeningNode(nodeListWrapper);
+		printOpeningHighlight(nodeListWrapper);
 	}
 	
 	public void postVisitNodeList(Object nodeListWrapper) {
+		printClosingNode(nodeListWrapper);
+		printClosingHighlight(nodeListWrapper);
+	}
+
+	public void printOpeningNode(Object node) {
+		//print bracket
+		if (!hasDefaultGroundf(node) || 
+				!hasDefaultConstrainf(node) || 
+				(getConstrainF(node) == Keyword.intern("exact-variable")) ||
+				hasUserf(node))
+			this.buffer.append("&open");
+	}
+	
+	public void printClosingNode(Object node) {
 		String fString = "";
 
 		//print bracket, followed by groundf and constrainf
-		if (!hasDefaultGroundf(nodeListWrapper))
-			fString = getGroundFString(nodeListWrapper);
-		if (!hasDefaultConstrainf(nodeListWrapper))
-			fString += getConstrainFString(nodeListWrapper);
-		if (!fString.isEmpty()) 
-			addBufferBeforeEOL("&close" + fString);
-		if (getConstrainF(nodeListWrapper) == Keyword.intern("exact-variable"))
-			addBufferBeforeEOL("&close");
+		if (!hasDefaultGroundf(node))
+			fString = getGroundFString(node) + " ";
+		if (!hasDefaultConstrainf(node))
+			fString += getConstrainFString(node) + " ";
+		fString += getUserFSString(node);
+		fString = fString.trim();
 
+		if (!fString.isEmpty()) 
+			addBufferBeforeEOL("&close" + fString.replace(" ", ",") + " ");
+		else
+			if (getConstrainF(node) == Keyword.intern("exact-variable"))
+				addBufferBeforeEOL("&close");
+	}
+
+	public void printOpeningHighlight(Object node) {
 		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(nodeListWrapper))
+		if (highlightNode != null && highlightNode.equals(node))
+			this.buffer.append("&coloropen");
+	}
+	
+	public void printClosingHighlight(Object node) {
+		//color highlightNode
+		if (highlightNode != null && highlightNode.equals(node))
 			this.buffer.append("&colorclose");
 	}
 

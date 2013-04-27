@@ -443,6 +443,12 @@
                                                       :none 
                                                       "Change name with rule"
                                                       "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
+   :add-user-defined-condition                       [:none       
+                                                      add-user-defined-condition                                       
+                                                      :none   
+                                                      :other 
+                                                      "Add manually defined condition"
+                                                      "Operator to add manually condition."]
 	})
 
 
@@ -471,6 +477,7 @@
    :match-variable-typequalifiednamestring           ["QualifiedName (eg. \"java.util.LinkedList\")"]
    :match-type-qualifiednamestring                   ["QualifiedName (eg. \"java.util.LinkedList\")"]
    :change-name                                      ["Change Rule \n(eg. \"prefix[part-of-name]suffix\""]
+   :add-user-defined-condition                       ["Condition \n(eg. (enclosing-class ?class))"]
 	})
 
 (def 
@@ -488,8 +495,9 @@
   operatortype-information
   {:generalization  "Generalization" 
    :refinement      "Refinement"
-   :netral          "Netral"
-  })
+   :netral          "Neutral"
+   :other           "Other"
+   })
 
 
 ;;Operators for searchspace

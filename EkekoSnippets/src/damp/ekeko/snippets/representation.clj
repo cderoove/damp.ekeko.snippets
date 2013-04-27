@@ -28,11 +28,14 @@
 ; - ast2var: map from an AST node of the snippet to the logic variable that is to be bound to its match
 ; - ast2groundf: map from an AST node of the snippet to a function that generates "grounding" conditions. 
 ;   These will ground the corresponding logic variable to an AST node of the Java project
-;   format of the function is list (:type arguments)
+;   format of the function is list (:type argument1 argument2 ..)
 ; - ast2constrainf:  map from an AST node of the snippet to a function that generates "constraining" conditions. 
 ;   These will constrain the bindings for the corresponding logic variable to an AST node of the Java project
 ;   that actually matches the AST node of the snippet. 
-;   format of the function is list (:type arguments)
+;   format of the function is list (:type argument1 argument2 ..)
+; - ast2userfs:  map from an AST node of the snippet to a user function. 
+;   format of the function is list of list ((fuction1 argument) (fuction2 argument) ..)
+;   generates query in group
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
 ; - var2uservar: map from logic variable to the user defined logic variable 
 ; - userquery: user defined logic conditions 
@@ -47,7 +50,8 @@
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf var2ast var2uservar userquery document rewrite track2ast flag])
+  [ast ast2var ast2groundf ast2constrainf ast2userfs var2ast var2uservar 
+   userquery document rewrite track2ast flag])
 
 (declare flat-map)
 
@@ -107,6 +111,16 @@
    that will generate constraining conditions for the corresponding logic variable."
   [snippet template-ast]
   (rest (get-in snippet [:ast2constrainf template-ast])))
+
+(defn 
+  snippet-userfs-for-node
+  "For the given AST node of the given snippet, returns list of user functions
+   with format ((function1 arg) (function2 arg) ..)."
+  [snippet template-ast]
+  (let [userfs (get-in snippet [:ast2userfs template-ast])]
+    (if (nil? userfs)
+      '()
+      userfs)))
 
 (defn 
   snippet-node-for-var 
@@ -173,6 +187,12 @@
   "Returns all AST nodes of the given snippet."
   [snippet]
   (keys (:ast2var snippet)))
+
+(defn
+  snippet-userfs
+  "Returns all ast to user functions of the given snippet."
+  [snippet]
+  (:ast2userfs snippet))
 
 (defn 
   snippet-vars
@@ -304,7 +324,7 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} '() nil nil {} :mandatory))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -338,7 +358,7 @@
         (assoc-in [:track2ast arrTrack] value))))
   (let [n (parsing/parse-document doc)
         rw (make-astrewrite n)
-        snippet (atom (Snippet. n {} {} {} {} {} '() doc rw {} :mandatory))]
+        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] 
@@ -551,6 +571,12 @@
           (fn [s] (.contains (snippetgroup-related-snippets-basedon-userqueries grp s) snippet))
           (snippetgroup-related-snippets grp snippet))]
     (distinct (concat query-related-snippets mandatory-related-snippets))))        
+
+(defn
+  snippetgroup-userfs
+  [grp]
+  "Returns all ast to user functions of the given grp."
+  (flat-map (fn [s] (snippet-userfs s)) (:snippetlist grp)))
 
 (defn flat-map
   "Returns list of results (= f(each-element)) in the form of flat list.

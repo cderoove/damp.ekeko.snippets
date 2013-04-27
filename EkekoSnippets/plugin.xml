@@ -41,6 +41,11 @@
             id="damp.ekeko.snippets.gui.ProgramTransView"
             name="Ekeko Transformation">
       </view>
+      <view
+            class="damp.ekeko.snippets.gui.GroupView"
+            id="damp.ekeko.snippets.gui.GroupView"
+            name="Ekeko Snippets Group">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.commands">

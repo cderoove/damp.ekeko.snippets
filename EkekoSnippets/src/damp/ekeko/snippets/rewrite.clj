@@ -274,4 +274,3 @@
   (print
     (map eval (snippetgrouphistory-rewrite-import-declaration-query snippetgrouphistory rewritemap-import))))
 
-

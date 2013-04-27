@@ -96,7 +96,6 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 
 	public void doTransformation(SnippetGroup snippetGroup) {
 		RT.var("damp.ekeko.snippets.rewrite","rewrite-query-by-snippetgrouphistory").invoke(snippetGroup.getGroupHistory(), getRewriteMap(), getRewriteImportMap()); 		
-		RT.var("damp.ekeko.snippets.rewrite","apply-and-reset-rewrites").invoke(); 		
 	}
 
 	
