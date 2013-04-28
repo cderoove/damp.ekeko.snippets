@@ -33,7 +33,7 @@
 	      (fn [lstval] (swap! query concat (conditions lstval)))
 	      (fn [primval] (swap! query concat (conditions primval)))
 	      (fn [nilval] (swap! query concat (conditions nilval))))
-	    @query))
+	    (filter (fn[q] (not (nil? q))) @query)))
 	
 	(defn
 	  snippet-query-with-conditions

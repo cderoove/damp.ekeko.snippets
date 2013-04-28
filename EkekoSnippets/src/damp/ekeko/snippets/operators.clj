@@ -51,6 +51,13 @@
   (update-constrainf snippet node :same-size))
 
 (defn
+  contains-any-elements
+  "Contains any elements or none in a given nodelist (listval)."
+  [snippet node]
+  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)]
+    (update-constrainf snippet-with-epsilon node :any-elements)))
+
+(defn
   contains-elements
   "Contains all elements in a given nodelist (listval), and list does not have to be the same size."
   [snippet node]

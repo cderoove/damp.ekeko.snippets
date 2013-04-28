@@ -34,6 +34,24 @@
   [?var1 ?var2]
   (runtime/ast-variable-samebinding ?var1 ?var2))
 
+(defn
+  enclosing-class
+   "Relation between ASTNode var with its enclosing class."
+  [?var ?class]
+  (cl/fresh [?body ?list]
+            (reification/ast :TypeDeclaration ?class)    
+            (reification/has :bodyDeclarations ?class ?body)
+            (reification/value-raw ?body ?list)
+            (el/contains ?list ?var)))
+
+(defn
+  enclosing-method
+   "Relation between ASTNode var with its enclosing method."
+  [?var ?method]
+  (cl/fresh [?body ?list]
+            (reification/ast :MethodDeclaration ?method)    
+            (reification/child+ ?method ?var)))
+
 
 ; ---------------------------------
 ; REWRITE FUNCTIONS
