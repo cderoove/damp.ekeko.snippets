@@ -386,12 +386,12 @@
 ;;-----------------------------
 
 (defn 
-  remove-gf-cf-from-snippet
-  "Clear grounding & constraining function for all child of a given node in snippet."
-  [snippet node]
+  update-gf-cf-for-node
+  "Update grounding & constraining function for node and all child+ of a given node in snippet."
+  [snippet node gf cf]
   (defn update-snippet-value [snippet value]
-    (update-in snippet [:ast2groundf value] (fn [x] (list :epsilon)))
-    (update-in snippet [:ast2constrainf value] (fn [x] (list :epsilon))))
+    (update-in snippet [:ast2groundf value] (fn [x] (list gf)))
+    (update-in snippet [:ast2constrainf value] (fn [x] (list cf))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
       node
@@ -400,6 +400,12 @@
       (fn [primval]  (swap! snippet update-snippet-value primval))
       (fn [nilval] (swap! snippet update-snippet-value nilval)))
     @snippet))
+
+(defn 
+  remove-gf-cf-for-node
+  "Clear grounding & constraining function for node and all child of a given node in snippet."
+  [snippet node]
+  (update-gf-cf-for-node snippet node :epsilon :epsilon))
 
 
 ;; Copying Snippet and Apply rewrite

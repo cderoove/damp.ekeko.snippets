@@ -105,13 +105,15 @@
 
 (defn
   ast-variable-declaration-binding
-  "Relation between an variable declaration fragment instance ?ast,
+  "Relation between a simple name ?ast (reside in variable declaration fragment),
    the keyword ?key representing its kind,
    and the IBinding ?binding for its type."
   [?key ?ast ?binding]
-  (cl/all
-    (reification/ast :VariableDeclarationFragment ?ast)
-    (el/equals ?binding (.resolveBinding ^VariableDeclarationFragment ?ast))
+  (cl/fresh [?fragment]
+    (reification/ast :SimpleName ?ast)
+    (el/equals ?fragment (.getParent ?ast))
+    (reification/ast :VariableDeclarationFragment ?fragment)
+    (el/equals ?binding (.resolveBinding ^VariableDeclarationFragment ?fragment))
     (cl/!= nil ?binding)
     (reification/ast ?key ?ast)))
 

@@ -320,6 +320,15 @@
          (equals ?import (.getParent ?node))
          (ast :ImportDeclaration ?import)))
 
+(defn
+  is-variabledeclaration?
+  "Relation of all list ASTNode instances type :SimpleName as child of :VariableDeclarationFragment."
+  [?node]
+  (fresh [?fragment]
+         (ast :SimpleName ?node)
+         (equals ?fragment (.getParent ?node))
+         (ast :VariableDeclarationFragment ?fragment)))
+
 (defn 
   epsilon
   []
@@ -343,6 +352,7 @@
    :is-methodinvocationexpression?       [:node is-methodinvocationexpression?] 
    :is-methoddeclaration?                [:node is-methoddeclaration?]
    :is-variabledeclarationfragment?      [:node is-variabledeclarationfragment?]
+   :is-variabledeclaration?              [:node is-variabledeclaration?]
    :is-simplename?                       [:node is-simplename?]
    :is-importlibrary?                    [:node is-importlibrary?]
 	})

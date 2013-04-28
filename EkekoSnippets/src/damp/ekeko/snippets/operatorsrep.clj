@@ -247,7 +247,13 @@
 
 (def 
   operator-information
-  {:contains-elements                                [:property   
+  {:node-deep                                        [:node   
+                                                      node-deep
+                                                      :is-ast?					          
+                                                      :generalization 
+                                                      "Match node deep"
+                                                      "Operator with matching strategy :node-deep \nAllows node as child or nested child of its parent."]
+   :contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          
                                                       :generalization 
@@ -321,7 +327,7 @@
                                                       "Operator with matching strategy :negated\nMatch all node except given snippet node"]
    :introduce-logic-variable                         [:node  
                                                       introduce-logic-variable  
-                                                      :is-ast?                 
+                                                      :none                 
                                                       :generalization 
                                                       "Introduce logic variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
@@ -333,13 +339,13 @@
                                                       "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-with-info               [:node  
                                                       introduce-logic-variable-with-info  
-                                                      :is-ast?                 
+                                                      :none                 
                                                       :generalization 
                                                       "Introduce logic variable with information"
                                                       "Operator to introduce new logic variable and remove all it's property values and add it as result in the query"]
    :introduce-logic-variable-of-node-exact           [:node   
                                                       introduce-logic-variable-of-node-exact  
-                                                      :is-ast?      
+                                                      :none      
                                                       :netral 
                                                       "Introduce logic variable as information"
                                                       "Operator to introduce new logic variable without removing any it's property values"]
@@ -485,7 +491,7 @@
 (def 
   operator-arguments-with-precondition
   {:match-invocation-declaration                     ["Declaration Node"       :is-methoddeclaration?]
-   :match-variable-declaration                       ["Declaration Node"       :is-variabledeclarationfragment?]
+   :match-variable-declaration                       ["Declaration Node"       :is-variabledeclaration?]
    :match-variable-samebinding                       ["Variable Node"          :is-simplename?]
    :match-variable-typequalifiedname                 ["Qualified Name Node"    :is-importlibrary?]
    :match-type-qualifiedname                         ["Qualified Name Node"    :is-importlibrary?]
@@ -511,6 +517,7 @@
    :allow-ifstatement-with-else                       allow-ifstatement-with-else  
    :allow-subtype-on-variable-declaration             allow-subtype-on-variable-declaration
    :introduce-logic-variable-by-random-var            introduce-logic-variable-by-random-var
+   :node-deep                                         node-deep
 	})
 
 (defn searchspace-operator-ids [] (keys searchspace-operators))

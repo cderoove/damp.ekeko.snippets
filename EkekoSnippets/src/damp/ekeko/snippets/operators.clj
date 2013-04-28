@@ -37,6 +37,14 @@
   (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
 
 (defn
+  node-deep 
+  "Allows node as child+ of its parent."
+  [snippet node]
+  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet (.getParent node))
+        snippet-with-exact-node (representation/update-gf-cf-for-node snippet-with-epsilon node :minimalistic :exact)]
+    (update-groundf snippet-with-exact-node node :node-deep)))
+
+(defn
   contains-elements-with-same-size 
   "Contains all elements in a given nodelist (listval), and list has to be the same size."
   [snippet node]
@@ -284,7 +292,7 @@
   "Introduce logic variable to a given node."
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
-        snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet-with-uservar node)
+        snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :variable)))
 
@@ -299,7 +307,7 @@
   "Introduce logic variable to a given node and add it as result in the query."
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
-        snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet-with-uservar node)
+        snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :variable-info)))
 
@@ -393,7 +401,7 @@
   negated-node 
   "Match all kind of node, except the given node."
   [snippet node]
-  (let [snippet-with-epsilon (representation/remove-gf-cf-from-snippet snippet node)
+  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
     (update-constrainf snippet-with-gf node :negated)))
 

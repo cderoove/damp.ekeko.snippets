@@ -53,7 +53,7 @@
             var-match-owner (representation/snippet-var-for-node snippet snippet-owner)
             owner-property  (astnode/owner-property snippet-ast) 
             owner-property-keyw (astnode/ekeko-keyword-for-property-descriptor owner-property)]
-        `((has ~owner-property-keyw ~var-match-owner ~var-match)))))
+        `((reification/has ~owner-property-keyw ~var-match-owner ~var-match)))))
 
 (defn 
   gf-node-deep
@@ -64,9 +64,8 @@
       (let [snippet-owner  (astnode/owner snippet-ast)
             var-match       (representation/snippet-var-for-node snippet snippet-ast) 
             var-match-owner (representation/snippet-var-for-node snippet snippet-owner)]
-        `((child+ ~var-match-owner ~var-match)))))
+        `((reification/child+ ~var-match-owner ~var-match)))))
 
- ;still not sure whether gf-node-exact & gf-node-deep is necessarry, because it maybe belongs to cf
 (defn 
   make-grounding-function
   [type]
