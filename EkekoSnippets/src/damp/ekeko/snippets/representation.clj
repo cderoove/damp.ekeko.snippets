@@ -161,6 +161,15 @@
       uservar)))
 
 (defn 
+  snippet-node-for-lvar 
+  "For the given var or user var of the given snippet, returns ASTNode bound to it."
+  [snippet snippet-var]
+  (let [node (snippet-node-for-var snippet snippet-var)]
+    (if (nil? node)
+      (snippet-node-for-uservar snippet snippet-var)
+      node)))
+
+(defn 
   snippet-node-with-member
   "Returns node (= wrapper of NodeList) which it's :value (= NodeList) has member mbr."
   [snippet mbr]
@@ -524,6 +533,7 @@
       (= var nil) nil
       (empty? listsnippet) nil
       (contains? (:var2ast (first listsnippet)) var) (first listsnippet)
+      (.contains (snippet-uservars (first listsnippet)) var) (first listsnippet)
       :else (find-snippet (rest listsnippet) var)))
   (find-snippet (snippetgroup-snippetlist group) var))
 
@@ -546,7 +556,7 @@
 (defn 
   snippetgroup-node-for-var
   [grp var]
-  (snippet-node-for-var
+  (snippet-node-for-lvar
     (snippetgroup-snippet-for-var grp var)
     var))
 

@@ -7,6 +7,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.TreeItem;
@@ -17,8 +20,12 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.swt.widgets.Tree;
+import org.eclipse.jface.viewers.ColumnPixelData;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
@@ -39,27 +46,28 @@ import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
 
 import org.eclipse.swt.graphics.Color;
 
-public class ProgramTransView extends SnippetView {
+public class TransformsView extends SnippetView {
 
-	public static final String ID = "damp.ekeko.snippets.gui.ProgramTransView"; //$NON-NLS-1$
+	public static final String ID = "damp.ekeko.snippets.gui.TransformsView"; //$NON-NLS-1$
 
 	private String viewID;
 
-	private Action actAdd;
-	private Action actAddImp;
+	private Action actQuery;
 	private Action actTrans;
 	private StyledText textSnippet;
 	private StyledText textRWSnippet;
 	private TreeViewer treeViewerSnippet;
 	private TreeViewer treeViewerRWSnippet;
 	private Tree treeOperator;
-	
+	private Table tableRW;
+	private Text textDesc;
+
 	private Groups groups;
 	private SnippetGroup snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
 
-	public ProgramTransView() {
+	public TransformsView() {
 	}
 
 	public void setRewrittenGroup(Groups groups, SnippetGroup group) {
@@ -76,9 +84,13 @@ public class ProgramTransView extends SnippetView {
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite container = new Composite(parent, SWT.NONE);
-		container.setLayout(new FillLayout(SWT.HORIZONTAL));
+		container.setLayout(new GridLayout(1, false));
 		
-		Group group_1 = new Group(container, SWT.NONE);
+		Group group = new Group(container, SWT.NONE);
+		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		group.setLayout(new FillLayout(SWT.HORIZONTAL));
+		
+		Group group_1 = new Group(group, SWT.NONE);
 		group_1.setLayout(new GridLayout(1, false));
 		
 		Label lblSnippet = new Label(group_1, SWT.NONE);
@@ -96,7 +108,7 @@ public class ProgramTransView extends SnippetView {
 		textSnippet.setLayoutData(gd_textSnippet);
 		textSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
 		
-		Group group_2 = new Group(container, SWT.NONE);
+		Group group_2 = new Group(group, SWT.NONE);
 		group_2.setLayout(new GridLayout(1, false));
 		
 		Label lblSnippet2 = new Label(group_2, SWT.NONE);
@@ -133,7 +145,7 @@ public class ProgramTransView extends SnippetView {
 			}
 		});		
 		
-		Group group_11 = new Group(container, SWT.NONE);
+		Group group_11 = new Group(group, SWT.NONE);
 		group_11.setLayout(new GridLayout(1, false));
 
 		Label lblNewLabel = new Label(group_11, SWT.NONE);
@@ -147,11 +159,11 @@ public class ProgramTransView extends SnippetView {
 		textRWSnippet = textViewerSnippet1.getTextWidget();
 		textRWSnippet.setEditable(false);
 		GridData gd_textSnippet1 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_textSnippet1.heightHint = 421;
+		gd_textSnippet1.heightHint = 400;
 		textRWSnippet.setLayoutData(gd_textSnippet1);
 		textRWSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
 		
-		Group group_21 = new Group(container, SWT.NONE);
+		Group group_21 = new Group(group, SWT.NONE);
 		group_21.setLayout(new GridLayout(1, false));
 
 		ToolBar toolBar = new ToolBar(group_21, SWT.FLAT | SWT.RIGHT);
@@ -168,16 +180,6 @@ public class ProgramTransView extends SnippetView {
 		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
 		tltmRemove.setToolTipText("Remove Rewritten Code");
 
-		ToolItem tltmImport = new ToolItem(toolBar, SWT.NONE);
-		tltmImport.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				addRewriteImportSnippet();
-			}
-		});
-		tltmImport.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/addbkmrk_co.gif"));
-		tltmImport.setToolTipText("Add Import Code");
-		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
 		tltmAdd.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -216,7 +218,7 @@ public class ProgramTransView extends SnippetView {
 			}
 		});		
 
-		Group group_3 = new Group(container, SWT.NONE);
+		Group group_3 = new Group(group, SWT.NONE);
 		group_3.setLayout(new GridLayout(1, false));
 		
 		Label lblOperator = new Label(group_3, SWT.NONE);
@@ -238,7 +240,45 @@ public class ProgramTransView extends SnippetView {
 			}
 		});		
 		
-	    createActions();
+		Group group_4 = new Group(container, SWT.NONE);
+		group_4.setLayout(new GridLayout(2, false));
+		GridData gd_group_4 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_group_4.heightHint = 300;
+		group_4.setLayoutData(gd_group_4);
+		
+		Composite composite = new Composite(group_4, SWT.NONE);
+		GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_composite.widthHint = 700;
+		composite.setLayoutData(gd_composite);
+		TableColumnLayout tcl_composite = new TableColumnLayout();
+		composite.setLayout(tcl_composite);
+		
+		TableViewer tableViewer = new TableViewer(composite, SWT.BORDER | SWT.FULL_SELECTION);
+		tableRW = tableViewer.getTable();
+		tableRW.setHeaderVisible(true);
+		tableRW.setLinesVisible(true);
+		
+		TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, SWT.NONE);
+		TableColumn tblclmnOperation = tableViewerColumn.getColumn();
+		tcl_composite.setColumnData(tblclmnOperation, new ColumnPixelData(130, true, true));
+		tblclmnOperation.setText("Operation");
+		
+		TableViewerColumn tableViewerColumn_1 = new TableViewerColumn(tableViewer, SWT.NONE);
+		TableColumn tblclmnOriginalCode = tableViewerColumn_1.getColumn();
+		tcl_composite.setColumnData(tblclmnOriginalCode, new ColumnPixelData(330, true, true));
+		tblclmnOriginalCode.setText("Original Code");
+		
+		TableViewerColumn tableViewerColumn_2 = new TableViewerColumn(tableViewer, SWT.NONE);
+		TableColumn tblclmnRewrittenCode = tableViewerColumn_2.getColumn();
+		tcl_composite.setColumnData(tblclmnRewrittenCode, new ColumnPixelData(330, true, true));
+		tblclmnRewrittenCode.setText("Rewritten Code");
+		
+		textDesc = new Text(group_4, SWT.BORDER);
+		textDesc.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+
+		contentProvider = new SnippetGroupTreeContentProvider();
+
+		createActions();
 		initializeToolBar();
 		initializeMenu();
 	}
@@ -249,22 +289,13 @@ public class ProgramTransView extends SnippetView {
 	private void createActions() {
 		// Create the actions
 		{
-			actAdd = new Action("Add Rewritten Code") {
+			actQuery = new Action("Show Query") {
 				public void run() {
-					addRewriteSnippet();
+					showQuery();
 				}
 			};
-			actAdd.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/obj16/add_obj.gif"));
-			actAdd.setToolTipText("Add Rewritten Code");
-		}
-		{
-			actAddImp = new Action("Add Import Code") {
-				public void run() {
-					addRewriteImportSnippet();
-				}
-			};
-			actAddImp.setImageDescriptor(ResourceManager.getPluginImageDescriptor("EkekoSnippets", "icons/addbkmrk_co.gif"));
-			actAddImp.setToolTipText("Add Import Code");
+			actQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.jdt.ui", "/icons/full/obj16/occ_write.gif"));
+			actQuery.setToolTipText("Show Query");
 		}
 		{
 			actTrans = new Action("Transform") {
@@ -272,7 +303,7 @@ public class ProgramTransView extends SnippetView {
 					transform();
 				}
 			};
-			actTrans.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.jdt.ui", "/icons/full/obj16/occ_write.gif"));
+			actTrans.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
 			actTrans.setToolTipText("Transform");
 		}
 	}
@@ -283,8 +314,7 @@ public class ProgramTransView extends SnippetView {
 	private void initializeToolBar() {
 		IToolBarManager toolbarManager = getViewSite().getActionBars()
 				.getToolBarManager();
-		toolbarManager.add(actAdd);
-		toolbarManager.add(actAddImp);
+		toolbarManager.add(actQuery);
 		toolbarManager.add(actTrans);
 	}
 
@@ -294,8 +324,7 @@ public class ProgramTransView extends SnippetView {
 	private void initializeMenu() {
 		IMenuManager menuManager = getViewSite().getActionBars()
 				.getMenuManager();
-		menuManager.add(actAdd);
-		menuManager.add(actAddImp);
+		menuManager.add(actQuery);
 		menuManager.add(actTrans);
 	}
 
@@ -309,7 +338,10 @@ public class ProgramTransView extends SnippetView {
 	}
 	
 	public Object getSelectedRWSnippet() {
-		return treeViewerRWSnippet.getTree().getSelection()[0].getData();
+		TreeItem[] selectedItems = treeViewerRWSnippet.getTree().getSelection();
+		if (selectedItems.length > 0)
+			return selectedItems[0].getData();
+		return null;
 	}
 	
 	public Object[] getSelectedRWSnippets() {
@@ -322,7 +354,10 @@ public class ProgramTransView extends SnippetView {
 	}
 
 	public Object getSelectedSnippet() {
-		return treeViewerSnippet.getTree().getSelection()[0].getData();
+		TreeItem[] selectedItems = treeViewerSnippet.getTree().getSelection();
+		if (selectedItems.length > 0)
+			return selectedItems[0].getData();
+		return null;
 	}
 	
 	public boolean arrayContain(Object[] array, Object data) {
@@ -405,13 +440,15 @@ public class ProgramTransView extends SnippetView {
 			TreeItem root = treeViewerRWSnippet.getTree().getItem(0);
 			treeViewerRWSnippet.getTree().setSelection(root);
 		}
+		
+		rwSnippetGroup.setTableRW(tableRW, snippetGroup);
 		onRWSnippetSelection();
 	}
 
 	public void removeRewriteSnippet() {
 		Object[] nodes = getSelectedRWSnippets();
 		for (int i=0; i < nodes.length; i++) {
-			rwSnippetGroup.removeRewriteSnippet(nodes[i]);
+			rwSnippetGroup.removeSnippet(nodes[i]);
 		}
 		renderSnippet();
 	}
@@ -419,20 +456,10 @@ public class ProgramTransView extends SnippetView {
 	public void addRewriteSnippet() {
 		String code = getSelectedTextFromActiveEditor();
 		if (code != null && !code.isEmpty()) {
-			rwSnippetGroup.addRewriteSnippet(snippetGroup, getSelectedSnippet(), code);
+			rwSnippetGroup.addSnippetCode(code);
 			renderSnippet();
 		}
 	}
-
-	public void addRewriteImportSnippet() {
-		String code = getSelectedTextFromActiveEditor();
-		if (code != null && !code.isEmpty()) {
-			rwSnippetGroup.addRewriteImportSnippet(snippetGroup, getSelectedSnippet(), code);
-			renderSnippet();
-		}
-	}
-	
-	private boolean selectFlag = true;
 
 	public void onSnippetSelection() {
 		textSnippet.setSelectionRange(0, 0);
@@ -442,15 +469,6 @@ public class ProgramTransView extends SnippetView {
 		int y = snippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
-
-		Object[] rwSnippets = rwSnippetGroup.getRewriteSnippets(snippetGroup, getSelectedSnippet());
-		if (rwSnippets.length > 0 && selectFlag) {
-			TreeItem[] rwSelection = getTreeItem(treeViewerRWSnippet.getTree(), rwSnippetGroup.getRootOfSnippets(rwSnippets));
-			treeViewerRWSnippet.getTree().setSelection(rwSelection);
-			selectFlag = false;
-			onRWSnippetSelection();
-		} else
-			selectFlag = true;
 	} 
 	
 	public void onRWSnippetSelection() {
@@ -468,42 +486,33 @@ public class ProgramTransView extends SnippetView {
 		int y = rwSnippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textRWSnippet.setSelectionRange(x, y-x);
-
-		Object snippet = rwSnippetGroup.getOriginalSnippet(getSelectedRWSnippet());
-		if (snippet != null && selectFlag) {
-			TreeItem[] selection = getTreeItem(treeViewerSnippet.getTree(), new Object[] {snippetGroup.getRootOfSnippet(snippet)});
-			treeViewerSnippet.getTree().setSelection(selection);
-			selectFlag = false;
-			onSnippetSelection();
-		} else
-			selectFlag = true;
 	} 
 	
 	public void onOperatorSelection() {
-		applyOperator(getSelectedRWSnippet(), getSelectedOperator(), null);
+		applyOperator(getSelectedSnippet(), getSelectedRWSnippet(), getSelectedOperator());
 	} 
 	
-	public String[] applyOperator(Object selectedNode, Object selectedOperator, String[] inputs) {
+	public String[] applyOperator(Object selectedNode, Object selectedRWNode, Object selectedOperator) {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
 		String nodeInfo = "Group";
 		if (selectedNode != null)
-			nodeInfo = "Node " + SnippetGroup.getTypeValue(selectedNode) + 
+			nodeInfo = "Node " + SnippetGroup.getTypeValue(selectedRWNode) + 
 				"\n" + selectedNode.toString().replace(", :",  "\n:") ;
 
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
 				"Apply Operator", "Apply Operator to " + nodeInfo, 
-				"\nApply the Operator?", args, inputs);
+				"\nApply the Operator?", args, null);
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			rwSnippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs());
+			rwSnippetGroup.applyOperator(selectedOperator, snippetGroup, selectedNode, selectedRWNode, dlg.getInputs());
 			renderSnippet();
 		}
 
 		return dlg.getInputs();
 	}
 	
-	public void transform() {
+	public void showQuery() {
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
 				"Apply Transformation", rwSnippetGroup.getTransformationQuery(snippetGroup), 
 				"", null, null);
@@ -512,7 +521,18 @@ public class ProgramTransView extends SnippetView {
 		if (dlg.open() == Window.OK) {
 			rwSnippetGroup.doTransformation(snippetGroup);
 			 boolean b = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
-					 "Info", "Process of program transformation is done.");
+					 "Info", "Transformation of this group is saved. To process the actual transformation, please activate button Transform in main menu.");
+		}
+	}
+
+	public void transform() {
+		boolean b = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+				 "Transformation", "Apply Transformation?");
+		
+		if (b) {
+			rwSnippetGroup.doTransformation(snippetGroup);
+			 boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+					 "Info", "Transformation of this group is saved. To process the actual transformation, please activate button Transform in main menu.");
 		}
 	}
 }

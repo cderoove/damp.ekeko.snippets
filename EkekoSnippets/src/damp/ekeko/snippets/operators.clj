@@ -390,21 +390,6 @@
   (process-introduce-variables snippet (get-nodes (:ast snippet) node)))
 
 (defn 
-  introduce-logic-variables-for-snippet
-  "Introduce logic variable to all nodes based on all user vars of a given template snippet."
-  [snippet template-snippet]
-  (defn process-introduce-variables-rec [snippet var2uservar]
-    (if (empty? var2uservar)
-      snippet
-      (let [first-var (first var2uservar)
-            new-snippet (introduce-logic-variables-for-node 
-                          snippet 
-                          (representation/snippet-node-for-var template-snippet (key first-var))
-                          (val first-var))]
-        (process-introduce-variables-rec new-snippet (dissoc var2uservar (key first-var))))))
-  (process-introduce-variables-rec snippet (:var2uservar template-snippet)))
-
-(defn 
   negated-node 
   "Match all kind of node, except the given node."
   [snippet node]
@@ -444,15 +429,6 @@
                              (representation/snippet-userfs-for-node snippet node-var))]
     (update-in snippet [:ast2userfs node-var] (fn [x] new-conditions))))
 
-(defn
-  change-name
-  "Operator to change name with rule.
-   Example: \"add[part-of-name]s\"."
-  [snippet node-var string template-snippet]
-  (let [user-var (representation/snippet-uservar-for-node snippet node-var)
-        node-in-template (representation/snippet-node-for-uservar template-snippet user-var)
-        rule (util/convert-string-to-rule string (str node-in-template) user-var)]
-    (update-constrainf-with-args snippet node-var :change-name (list rule (str node-in-template)))))
 
 ;; Operator for SnippetGroup
 ;; -------------------------
@@ -597,3 +573,35 @@
   [snippetgrouphistory snippet]
   (let [new-snippet (representation/snippet-switch-flag snippet)]
     (update-snippet-in-snippetgrouphistory snippetgrouphistory snippet new-snippet)))
+
+
+;; Operator for Transformation
+;; ---------------------------
+
+(defn 
+  introduce-logic-variables-for-snippet
+  "Introduce logic variable to all nodes based on all user vars of a given template snippet."
+  [snippet template-snippet]
+  (defn process-introduce-variables-rec [snippet var2uservar]
+    (if (empty? var2uservar)
+      snippet
+      (let [first-var (first var2uservar)
+            new-snippet (introduce-logic-variables-for-node 
+                          snippet 
+                          (representation/snippet-node-for-var template-snippet (key first-var))
+                          (val first-var))]
+        (process-introduce-variables-rec new-snippet (dissoc var2uservar (key first-var))))))
+  (process-introduce-variables-rec snippet (:var2uservar template-snippet)))
+
+(defn
+  change-name
+  "Operator to change name with rule.
+   Example: \"add[part-of-name]s\"."
+  [snippet node-var string template-snippet]
+  (let [user-var (representation/snippet-uservar-for-node snippet node-var)
+        node-in-template (representation/snippet-node-for-uservar template-snippet user-var)
+        rule (util/convert-string-to-rule string (str node-in-template) user-var)]
+    (update-constrainf-with-args snippet node-var :change-name (list rule (str node-in-template)))))
+
+
+

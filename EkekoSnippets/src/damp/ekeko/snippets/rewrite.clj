@@ -4,7 +4,6 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
              [gui :as gui]
-             [querying :as querying]
              [operatorsrep :as operatorsrep]
              [representation :as representation]
              [util :as util]
@@ -87,15 +86,6 @@
       (add-node parent property newnodes idx)
       (map (fn [newnode] (add-node parent property newnode idx)) (reverse newnodes)))))
 
-(defn 
-  add-sibling-node-in-rewrite-code
-  [node string]
-  (let [parent (.getParent node)
-        property (.getLocationInParent node)
-        idx (.indexOf (.getStructuralProperty parent property) node)]
-    (println "add sibling node in rewrite code")
-    (add-node-in-rewrite-code parent (keyword (.getId property)) string (+ 1 idx))))
-
 (defn replace-node 
   "Replace node with newnode."
   [node newnode]
@@ -141,12 +131,40 @@
     (assoc rewrite-map rewrite-snippet template-snippet)))
 
 (defn 
+  get-original-snippets
+  "Get original snippets based on var-match in :var2userfs of (:ast rewrite-snippet)."
+  [group rewrite-snippet]
+  (let [userfs (representation/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
+    (if (nil? userfs)
+      '()
+      (map 
+        (fn [userf]
+          (representation/snippetgroup-snippet-for-var group (symbol (fnext userf))))
+        userfs))))
+
+(defn 
   get-original-snippet
+  [group rewrite-snippet]
+  (first (get-original-snippets group rewrite-snippet)))
+
+(defn 
+  get-original-nodes
+  [group rewrite-snippet]
+  (let [userfs (representation/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
+    (if (nil? userfs)
+      '()
+      (map 
+        (fn [userf]
+          (representation/snippetgroup-node-for-var group (symbol (fnext userf))))
+        userfs))))
+
+(defn 
+  get-original-snippet2
   [rewrite-map rewrite-snippet]
   (get rewrite-map rewrite-snippet))
 
 (defn 
-  get-original-snippets
+  get-original-snippets2
   [rewrite-map]
   (distinct (vals rewrite-map)))
 
@@ -171,11 +189,12 @@
                              new-rewrite-snippet template-snippet))
       rewrite-map)))
   
-; GENERATE EKEKO REWRITE QUERY
+
+; Prepare string snippet and pairs of uservars
 ; ----------------------------------------------
 
 (defn 
-  print-rewrite-snippet
+  snippet-rewrite-string
   "Returns new string, replaced user-var with actual node
    user-vars -> [[?lvar actual-node] [?lvar actual-node rule] ...].
    example rule : \"add + [?lvar 3 0] + s\"."
@@ -188,89 +207,42 @@
           rep-str (if (nil? rule)
                     (.replace str-snippet var (str node))
                     (.replace str-snippet var (util/convert-rule-to-name rule (str node))))]
-      (print-rewrite-snippet rep-str (rest user-vars)))))
+      (snippet-rewrite-string rep-str (rest user-vars)))))
+
+(defn snippet-rewrite-uservar-pairs 
+  "Returns pairs of user vars of the given snippet 
+   in a form [\"?lvar\" ?lvar] or [\"?lvar\" ?lvar rule]."
+  [snippet]
+  (let [user-vars-condition
+        (for [[var uservar] (:var2uservar snippet)
+              :let [str-uservar (.replace (str uservar) "?" "*")
+                    node (representation/snippet-node-for-var snippet var)
+                    rule (if (= (representation/snippet-constrainer-for-node snippet node)  
+                                :change-name)
+                           (.replace (first (representation/snippet-constrainer-args-for-node snippet node)) "?" "*")
+                           nil)]]
+          (if (nil? rule)
+            `[~str-uservar ~uservar]
+            `[~str-uservar ~uservar ~rule]))]
+      (distinct user-vars-condition)))
 
 (defn
-  snippet-rewrite-query
-  [template-snippet rewrite-snippets]
-  (defn user-vars-str [snippet user-vars]
-    (let [user-vars-condition
-          (for [[var uservar] user-vars
-                :let [str-uservar (.replace (str uservar) "?" "*")
-                      node (representation/snippet-node-for-var snippet var)
-                      rule (if (= (representation/snippet-constrainer-for-node snippet node)  
-                                  :change-name)
-                             (.replace (first (representation/snippet-constrainer-args-for-node snippet node)) "?" "*")
-                             nil)]]
-            (if (nil? rule)
-              `[~str-uservar ~uservar]
-              `[~str-uservar ~uservar ~rule]))]
-      user-vars-condition))
-  (let [var-match (representation/snippet-var-for-root template-snippet)
-        rewrite-str
-        (for [snippet rewrite-snippets
-              :let [snippet-str (.replace (gui/print-plain-snippet snippet) "?" "*")
-                    user-vars (:var2uservar snippet)
-                    user-vars-condition (distinct (user-vars-str snippet user-vars))]]             
-          `(el/perform (add-sibling-node-in-rewrite-code 
-                         ~var-match (print-rewrite-snippet ~snippet-str [~@user-vars-condition]))))]
-    `(~@rewrite-str
-       (el/perform (remove-node ~var-match)))))
-        
-(defn
-  snippet-rewrite-import-declaration-query
-  [template-snippet rewrite-snippets]
-  (let [var-match (representation/snippet-var-for-root template-snippet)
-        var-cu '?cu
-        rewrite-str
-        (for [snippet rewrite-snippets
-              :let [snippet-str (gui/print-plain-snippet snippet)]]
-          `(el/perform (add-node-in-rewrite-code ~var-cu :imports ~snippet-str 0)))] 
-    `((cl/fresh [~var-cu]
-                (el/equals ~var-cu (.getRoot ~var-match))
-                ~@rewrite-str))))
+  snippet-rewrite-mapping
+  [group snippet]
+  "Returns rewrite mapping, list of (operation original-node rewritten-node)."
+  (let [userfs (representation/snippet-userfs-for-node snippet (:ast snippet))]
+    (map 
+      (fn [userf] 
+        (let [function (first userf)
+              node (representation/snippetgroup-node-for-var group (symbol (fnext userf)))]
+          (list function node (:ast snippet))))
+      userfs)))
 
 (defn
-  internal-snippetgrouphistory-rewrite-query
-  "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
-  [grphistory rewritemap function-query]
-  (defn rewrite-query-rec [template-snippets rewrite-query]
-    (if (empty? template-snippets)
-      rewrite-query
-      (let [template-snippet (first template-snippets)
-            rewrite-snippets (get-rewrite-snippets rewritemap template-snippet)
-            grp (representation/snippetgrouphistory-current grphistory)
-            query     (querying/add-query 
-                        (querying/snippet-in-group-query template-snippet grp 'damp.ekeko/ekeko)      
-                        (function-query template-snippet rewrite-snippets))] 
-        (rewrite-query-rec 
-          (rest template-snippets)
-          (cons query rewrite-query))))) 
-  `(~@(rewrite-query-rec (get-original-snippets rewritemap) '())))
-      
-(defn
-  snippetgrouphistory-rewrite-query
-  "Generate query the Ekeko projects for rewrite of the given snippetgrouphistory and rewritemap."
-  ;note : the string ? should be changed to other character, otherwise
-  ;error: Unsupported binding form: ?...
-  [snippetgrouphistory rewritemap]
-  (internal-snippetgrouphistory-rewrite-query
-    snippetgrouphistory rewritemap snippet-rewrite-query))
-
-(defn
-  snippetgrouphistory-rewrite-import-declaration-query
-  "Generate query the Ekeko projects for rewrite (add import declaration) of the given snippetgrouphistory and rewritemap."
-  [snippetgrouphistory rewritemap]
-  (internal-snippetgrouphistory-rewrite-query
-    snippetgrouphistory rewritemap snippet-rewrite-import-declaration-query))
-
-(defn
-  rewrite-query-by-snippetgrouphistory
-  "Excecute rewrite query of the given snippetgrouphistory and rewritemap."
-  ;;note, if print is removed, when apply-rewrite is not working
-  [snippetgrouphistory rewritemap rewritemap-import]
-  (print
-    (map eval (snippetgrouphistory-rewrite-query snippetgrouphistory rewritemap)))
-  (print
-    (map eval (snippetgrouphistory-rewrite-import-declaration-query snippetgrouphistory rewritemap-import))))
+  snippetgroup-rewrite-mapping
+  [original-group rw-group]
+  "Returns rewrite mapping, list of (operation original-node rewritten-node)."
+  (representation/flat-map (fn [s] (println "snippet" (snippet-rewrite-mapping original-group s))
+                             (snippet-rewrite-mapping original-group s)
+                             ) (:snippetlist rw-group)))
 

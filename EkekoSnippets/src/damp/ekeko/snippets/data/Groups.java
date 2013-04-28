@@ -43,10 +43,12 @@ public class Groups {
 	}
 	
 	public void transform() {
+		/*
 		RewrittenSnippetGroup[] arrRWGroups = (RewrittenSnippetGroup[]) groups.values().toArray();
 		for (int i=0; i<arrRWGroups.length; i++) {
 			arrRWGroups[i].doTransformation(getGroup(arrRWGroups[i].getName()));
 		}
+		*/
 		RT.var("damp.ekeko.snippets.rewrite","apply-and-reset-rewrites").invoke(); 		
 	}
 }

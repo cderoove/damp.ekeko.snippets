@@ -643,7 +643,7 @@ public class SnippetView extends ViewPart {
 
 	public void transformation() {
 		try {
-			ProgramTransView view = (ProgramTransView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ProgramTransView");
+			TransformsView view = (TransformsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.TransformsView");
 			view.setRewrittenGroup(groups, snippetGroup);
 		} catch (PartInitException e) {
 			e.printStackTrace();

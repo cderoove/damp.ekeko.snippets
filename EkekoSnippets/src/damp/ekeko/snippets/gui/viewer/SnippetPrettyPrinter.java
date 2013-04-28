@@ -253,7 +253,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		highlightPos[1] = result.indexOf("&colorclose");
 		result = result.replaceAll("&colorclose", "");
 		
-		return result;
+		return result + " ";
 	}
 
 	public void addBufferBeforeEOL(String str) {

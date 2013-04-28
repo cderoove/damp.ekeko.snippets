@@ -8,7 +8,10 @@
 	             [operators :as operators]
 	             [util :as util]
 	             [matching :as matching] 
-	             ]))
+	             [gui :as gui] 
+	             [rewrite :as rewrite]]) 
+   (:require 
+     [damp.ekeko [logic :as el]]))
 	  
 	;; Converting a snippet to a query
 	;; -------------------------------
@@ -65,7 +68,7 @@
    (defn userfs-to-query [var-match userfs] 
      (map 
        (fn [userf] 
-         (let [function (symbol (str "damp.ekeko.snippets.runtime/" (first userf)))
+         (let [function (symbol (str "damp.ekeko.snippets.public/" (first userf)))
                var-arg (symbol (fnext userf))]
            (println function " " var-match " " var-arg)
            `(~function ~var-match ~var-arg)))
@@ -117,6 +120,49 @@
 	      (snippetgroup-query-for-userfs snippetgroup))))
 	
 	    
+	; Converting snippet group to rewrite query
+	;------------------------------------------
+	
+	(defn
+	  snippet-rewrite-query-for-userfs
+	  [snippet]
+	  "Returns all user rewrite functions of the given snippet.
+	  ((function var-match string) ...)."
+   (defn userfs-to-query [userfs snippet-str user-vars] 
+     (map 
+       (fn [userf] 
+         (let [function (symbol (str "damp.ekeko.snippets.public/" (first userf)))
+               var-match (symbol (fnext userf))]
+           (println function " " var-match " " snippet-str " " user-vars)
+           `(el/perform (~function ~var-match (rewrite/snippet-rewrite-string ~snippet-str [~@user-vars])))))
+       userfs))
+   (let [snippet-str (.replace (gui/print-plain-snippet snippet) "?" "*")
+         user-vars (rewrite/snippet-rewrite-uservar-pairs snippet)
+         userfs (representation/snippet-userfs-for-node snippet (:ast snippet))]
+     (userfs-to-query userfs snippet-str user-vars)))
+	
+	(defn
+	  snippetgroup-rewrite-query-for-userfs
+	  [grp]
+	  "Returns all user rewrite functions of the given grp.
+	  ((function var-match string) ...)."
+	  (representation/flat-map (fn [s] (snippet-rewrite-query-for-userfs s)) (:snippetlist grp)))
+	
+	(defn
+	  snippetgroup-rewrite-query
+	  "Returns an Ekeko rewrite query that will rewrite nodes for the given snippet group."
+	  [snippetgroup snippetgrouprewrite ekekolaunchersymbol]
+	  (snippetgroup-query-with-conditions 
+	    snippetgroup ekekolaunchersymbol 
+	    (snippetgroup-conditions snippetgroup) 
+	    (concat 
+	      (representation/snippetgroup-snippets-userqueries snippetgroup)
+	      (representation/snippetgroup-userqueries snippetgroup)
+	      (snippetgroup-query-for-userfs snippetgroup)
+        (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
+	
+
+
 	; Converting snippet query depends on it's group
 	;-----------------------------------------------
 	

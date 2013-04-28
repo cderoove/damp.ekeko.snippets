@@ -228,20 +228,3 @@
             (ast-variable-type ?var ?type)
             (ast-type-qualifiedname ?type ?qname)))
 
-(defn
-  method-dec
-   "Relation between ASTNode invocation with it's declaration."
-  [?inv ?dec]
-  (ast-invocation-declaration ?inv ?dec))
-
-(defn
-  var-dec
-   "Relation between ASTNode variable with it's declaration."
-  [?var ?dec]
-  (ast-variable-declaration ?var ?dec))
-
-(defn
-  var-binding
-   "Relation between ASTNode var1 and var2 with the same resolveBinding."
-  [?var1 ?var2]
-  (ast-variable-samebinding ?var1 ?var2))

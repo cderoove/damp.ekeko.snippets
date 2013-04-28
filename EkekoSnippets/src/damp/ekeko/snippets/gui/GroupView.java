@@ -3,6 +3,7 @@ package damp.ekeko.snippets.gui;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.PartInitException;
@@ -113,6 +114,12 @@ public class GroupView extends ViewPart {
 			grpGroup_1.setLayout(new GridLayout(1, false));
 			
 			Button btnTransform = new Button(grpGroup_1, SWT.NONE);
+			btnTransform.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					transform();
+				}
+			});
 			btnTransform.setText("Transform");
 			
 			txtApplyTransformationTo = new Text(grpGroup_1, SWT.BORDER);
@@ -190,6 +197,17 @@ public class GroupView extends ViewPart {
 			} catch (PartInitException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public void transform() {
+		boolean b = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+				 "Transformation", "Apply Transformation?");
+		
+		if (b) {
+			groups.transform();
+			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+					"Info", "Transformation process is done.");
 		}
 	}
 }

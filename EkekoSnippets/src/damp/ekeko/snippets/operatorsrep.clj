@@ -144,11 +144,11 @@
   operator-ids-for-transformation
   "Returns all operator ids for transformation."
   []
-  (list :add-node :remove-node 
-        :replace-node :change-property-node 
-        :introduce-logic-variable
-        :introduce-logic-variables-for-snippet
-        :change-name)) 
+  (concat 
+    (list :introduce-logic-variable
+          :add-user-defined-condition)
+    (operator-ids-with-type :transform)))
+
 
 ;; Function apply-operator 
 ;; --------------------------------
@@ -165,7 +165,9 @@
       (= op-id :update-logic-conditions)
       (apply update-logic-conditions snippet args)
       (= op-id :introduce-logic-variables-for-snippet)
-      (apply op-func snippet args)
+      (do
+        (println "snippet" op-id (first args))
+        (apply op-func snippet args))
       :else
       (do
         (println "snippet" op-id (first args))
@@ -359,12 +361,6 @@
                                                       :generalization 
                                                       "Introduce logic variables with condition"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node, with additional user logic condition on it"]
-   :introduce-logic-variables-for-snippet            [:node     
-                                                      introduce-logic-variables-for-snippet 
-                                                      :is-ast?       	
-                                                      :none 
-                                                      "Introduce logic variables for snippet"
-                                                      "Operator to introduce new logic variables to all nodes based on logic variables in the template snippet"]
    :add-node                                         [:property   
                                                       add-node                                          
                                                       :listvalue					          
@@ -437,18 +433,24 @@
                                                       :refinement 
                                                       "Match type qualified name string"
                                                       "Operator with matching strategy :type-qnames\nMatch type with its qualified name"]
-   :change-name                                      [:node       
-                                                      change-name                                       
-                                                      :is-simplename?   
-                                                      :none 
-                                                      "Change name with rule"
-                                                      "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
    :add-user-defined-condition                       [:none       
                                                       add-user-defined-condition                                       
                                                       :none   
                                                       :other 
                                                       "Add manually defined condition"
                                                       "Operator to add manually condition."]
+   :introduce-logic-variables-for-snippet            [:node     
+                                                      introduce-logic-variables-for-snippet 
+                                                      :is-ast?       	
+                                                      :transform 
+                                                      "Introduce logic variables for snippet"
+                                                      "Operator to introduce new logic variables to all nodes based on logic variables in the template snippet"]
+   :change-name                                      [:node       
+                                                      change-name                                       
+                                                      :is-simplename?   
+                                                      :transform 
+                                                      "Change name with rule"
+                                                      "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
 	})
 
 

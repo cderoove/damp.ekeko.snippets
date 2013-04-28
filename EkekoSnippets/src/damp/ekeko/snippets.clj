@@ -15,18 +15,6 @@
   (:require [damp.ekeko.logic :as el]))    
     
 (defn
-  query-by-snippetgroup*
-  "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
-  [snippetgroup]
-  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)))
-
-(defn
-  query-by-snippetgroup
-  "Queries the Ekeko projects for matches for the given snippet."
-  [snippetgroup]
-  (distinct (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
-
-(defn
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]
@@ -38,6 +26,24 @@
   [snippet]
   (distinct (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
       
+(defn
+  query-by-snippetgroup*
+  "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
+  [snippetgroup]
+  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)))
+
+(defn
+  query-by-snippetgroup
+  "Queries the Ekeko projects for matches for the given snippetgroup."
+  [snippetgroup]
+  (distinct (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
+
+(defn
+  query-rewrite-by-snippetgroup
+  "Queries the Ekeko projects for rewriting for the given snippetgroup and snippetgrouprewrite."
+  [snippetgroup snippetgrouprewrite]
+  (print (eval (querying/snippetgroup-rewrite-query snippetgroup snippetgrouprewrite 'damp.ekeko/ekeko))))
+
 (defn
   query-by-snippet-in-group*
   "Queries the Ekeko projects for matches for the given snippet depending on it's group condition. Opens Eclipse view on results."
