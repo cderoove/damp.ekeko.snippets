@@ -389,22 +389,6 @@
   (introduce-logic-variables-with-condition-to-group snippetgroup node uservar '()))
   
 (defn 
-  introduce-logic-variables-for-node
-  "Introduce logic variable to all nodes with the same identifier as a given node.
-   The given node is not in the snippet."
-  [snippet node uservar]
-  (defn get-nodes [root node]
-    (damp.ekeko/ekeko [?var] 
-                      (reification/child+ root ?var)
-                      (runtime/ast-variable-sameidentifier node ?var))) 
-  (defn process-introduce-variables [snippet nodes]
-    (if (empty? nodes)
-      snippet
-      (let [new-snippet (introduce-logic-variable snippet (first (first nodes)) uservar)]
-        (process-introduce-variables new-snippet (rest nodes)))))
-  (process-introduce-variables snippet (get-nodes (:ast snippet) node)))
-
-(defn 
   negated-node 
   "Match all kind of node, except the given node."
   [snippet node]
@@ -594,6 +578,22 @@
 ;; ---------------------------
 
 (defn 
+  introduce-logic-variables-for-node
+  "Introduce logic variable to all nodes with the same identifier as a given node.
+   The given node is not in the snippet."
+  [snippet node uservar]
+  (defn get-nodes [root node]
+    (damp.ekeko/ekeko [?var] 
+                      (reification/child+ root ?var)
+                      (runtime/ast-variable-sameidentifier node ?var))) 
+  (defn process-introduce-variables [snippet nodes]
+    (if (empty? nodes)
+      snippet
+      (let [new-snippet (introduce-logic-variable snippet (first (first nodes)) uservar)]
+        (process-introduce-variables new-snippet (rest nodes)))))
+  (process-introduce-variables snippet (get-nodes (:ast snippet) node)))
+
+(defn 
   introduce-logic-variables-for-snippet
   "Introduce logic variable to all nodes based on all user vars of a given template snippet."
   [snippet template-snippet]
@@ -612,11 +612,39 @@
   change-name
   "Operator to change name with rule.
    Example: \"add[part-of-name]s\"."
-  [snippet node-var string template-snippet]
-  (let [user-var (representation/snippet-uservar-for-node snippet node-var)
-        node-in-template (representation/snippet-node-for-uservar template-snippet user-var)
-        rule (util/convert-string-to-rule string (str node-in-template) user-var)]
-    (update-constrainf-with-args snippet node-var :change-name (list rule (str node-in-template)))))
+  [snippet node template-snippet template-node string]
+  (let [user-var (representation/snippet-lvar-for-node template-snippet template-node)
+        new-snippet (introduce-logic-variable snippet node user-var)
+        rule (util/convert-string-to-rule string (str template-node) user-var)]
+    (update-constrainf-with-args new-snippet node :change-name (list rule (str template-node)))))
 
+(defn
+  t-internal-user-defined-condition
+  [snippet node template-snippet template-node function-string]
+  (let [user-var (representation/snippet-lvar-for-node template-snippet template-node)]
+    (add-user-defined-condition snippet node (str function-string " " user-var))))
 
+(defn
+  t-add-node-after
+  "Operator to add node after original node."
+  [snippet node template-snippet template-node]
+  (t-internal-user-defined-condition snippet node template-snippet template-node "add-node-after"))
+
+(defn
+  t-add-node-before
+  "Operator to add node before original node."
+  [snippet node template-snippet template-node]
+  (t-internal-user-defined-condition snippet node template-snippet template-node "add-node-before"))
+
+(defn
+  t-add-member-node
+  "Operator to replace node."
+  [snippet node template-snippet template-node]
+  (t-internal-user-defined-condition snippet node template-snippet template-node "add-member-node"))
+
+(defn
+  t-replace-node
+  "Operator to replace node."
+  [snippet node template-snippet template-node]
+  (t-internal-user-defined-condition snippet node template-snippet template-node "replace-node"))
 

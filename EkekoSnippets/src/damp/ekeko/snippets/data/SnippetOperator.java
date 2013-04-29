@@ -113,4 +113,9 @@ public class SnippetOperator {
 			return "";
 		return result;		
 	}
+
+	public static boolean isTransformOperator(Object operator) {
+		return (boolean) RT.var("damp.ekeko.snippets.operatorsrep","is-transform-operator?").invoke(operator);
+	}
+
 }

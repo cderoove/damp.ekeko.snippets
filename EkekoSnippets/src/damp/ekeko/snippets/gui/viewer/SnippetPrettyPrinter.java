@@ -145,7 +145,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append(uservar);
 			Object constrainf = getConstrainF(node);
 			if (constrainf == Keyword.intern("variable") ||
-				constrainf == Keyword.intern("variable-info")) 	
+				constrainf == Keyword.intern("variable-info") || 	
+				constrainf == Keyword.intern("change-name")) 	
 				return false;
 			else {
 				this.buffer.append(": ");

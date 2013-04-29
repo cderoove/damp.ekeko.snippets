@@ -204,11 +204,17 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippetgroup-viewer snippetgroup))))
 
 
-;; Print Snippet
-;;-------------------
 
 ;; Print Snippet
 ;;--------------
+
+(defn
+  print-plain-node
+  [snippet node]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.accept node visitor)
+    (.getResult visitor)))
 
 (defn
   print-plain-snippet
@@ -275,7 +281,7 @@
   (let [page (-> (PlatformUI/getWorkbench)
                .getActiveWorkbenchWindow ;nil if called from non-ui thread 
                .getActivePage)
-        qvid (damp.ekeko.snippets.gui.SnippetView/ID)
+        qvid (damp.ekeko.snippets.gui.GroupView/ID)
         uniqueid (str @plugin-viewer-cnt)
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
     (swap! plugin-viewer-cnt inc)

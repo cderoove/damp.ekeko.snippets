@@ -31,11 +31,11 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		
 		//special case
 		if (operator == Keyword.intern("introduce-logic-variables-for-snippet")) {
-			snippet = getOriginalSnippet(sGroup, oldRWSnippet);
 			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, new Object[] {snippet});		
 		} else if (operator == Keyword.intern("change-name")) {
-			snippet = getOriginalSnippet(sGroup, oldRWSnippet);
-			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, new Object[] {args[0], snippet});		
+			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, new Object[] {snippet, sNode, args[0]});		
+		} else if (SnippetOperator.isTransformOperator(operator)) {
+			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, new Object[] {snippet, sNode});		
 		} else 
 			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, args);		
 		

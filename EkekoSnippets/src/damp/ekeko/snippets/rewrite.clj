@@ -229,20 +229,22 @@
 (defn
   snippet-rewrite-mapping
   [group snippet]
-  "Returns rewrite mapping, list of (operation original-node rewritten-node)."
-  (let [userfs (representation/snippet-userfs-for-node snippet (:ast snippet))]
+  "Returns rewrite mapping, list of (operation original-node rewritten-node) of the given snippet and original group."
+  (defn userfs-mapping [ast userfs] 
     (map 
       (fn [userf] 
         (let [function (first userf)
               node (representation/snippetgroup-node-for-var group (symbol (fnext userf)))]
-          (list function node (:ast snippet))))
-      userfs)))
+          (list function node ast)))
+      userfs))
+  (representation/flat-map 
+    (fn [ast2userfs] 
+      (userfs-mapping (key ast2userfs) (val ast2userfs)))
+    (:ast2userfs snippet)))
 
 (defn
   snippetgroup-rewrite-mapping
   [original-group rw-group]
   "Returns rewrite mapping, list of (operation original-node rewritten-node)."
-  (representation/flat-map (fn [s] (println "snippet" (snippet-rewrite-mapping original-group s))
-                             (snippet-rewrite-mapping original-group s)
-                             ) (:snippetlist rw-group)))
+  (representation/flat-map (fn [s] (snippet-rewrite-mapping original-group s)) (:snippetlist rw-group)))
 

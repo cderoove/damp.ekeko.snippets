@@ -128,18 +128,22 @@
 	  [snippet]
 	  "Returns all user rewrite functions of the given snippet.
 	  ((function var-match string) ...)."
-   (defn userfs-to-query [userfs snippet-str user-vars] 
+   (defn userfs-to-query [userfs node-str user-vars] 
      (map 
        (fn [userf] 
          (let [function (symbol (str "damp.ekeko.snippets.public/" (first userf)))
                var-match (symbol (fnext userf))]
-           (println function " " var-match " " snippet-str " " user-vars)
-           `(el/perform (~function ~var-match (rewrite/snippet-rewrite-string ~snippet-str [~@user-vars])))))
+           (println function " " var-match " " node-str " " user-vars)
+           `(el/perform (~function ~var-match (rewrite/snippet-rewrite-string ~node-str [~@user-vars])))))
        userfs))
-   (let [snippet-str (.replace (gui/print-plain-snippet snippet) "?" "*")
-         user-vars (rewrite/snippet-rewrite-uservar-pairs snippet)
-         userfs (representation/snippet-userfs-for-node snippet (:ast snippet))]
-     (userfs-to-query userfs snippet-str user-vars)))
+   (let [user-vars (rewrite/snippet-rewrite-uservar-pairs snippet)]
+     (representation/flat-map 
+       (fn [ast2userfs] 
+         (let [ast (key ast2userfs)
+               userfs (val ast2userfs)
+               node-str (.replace (gui/print-plain-node snippet ast) "?" "*")]
+           (userfs-to-query userfs node-str user-vars)))
+       (:ast2userfs snippet))))
 	
 	(defn
 	  snippetgroup-rewrite-query-for-userfs

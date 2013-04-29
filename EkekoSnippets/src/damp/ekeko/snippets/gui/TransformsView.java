@@ -492,24 +492,29 @@ public class TransformsView extends SnippetView {
 		applyOperator(getSelectedSnippet(), getSelectedRWSnippet(), getSelectedOperator());
 	} 
 	
-	public String[] applyOperator(Object selectedNode, Object selectedRWNode, Object selectedOperator) {
+	public void applyOperator(Object selectedNode, Object selectedRWNode, Object selectedOperator) {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
-		String nodeInfo = "Group";
-		if (selectedNode != null)
-			nodeInfo = "Node " + SnippetGroup.getTypeValue(selectedRWNode) + 
-				"\n" + selectedNode.toString().replace(", :",  "\n:") ;
 
-		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
-				"Apply Operator", "Apply Operator to " + nodeInfo, 
-				"\nApply the Operator?", args, null);
-		dlg.create();
-		
-		if (dlg.open() == Window.OK) {
-			rwSnippetGroup.applyOperator(selectedOperator, snippetGroup, selectedNode, selectedRWNode, dlg.getInputs());
-			renderSnippet();
+		if (selectedRWNode != null) {
+			String	nodeInfo = "Rewritten Node\n " + SnippetGroup.getTypeValue(selectedRWNode) + 
+					"\n" + selectedRWNode.toString().replace(", :",  "\n:") ;
+
+			if (SnippetOperator.isTransformOperator(selectedOperator)) {
+				nodeInfo = "Original Node \n" + SnippetGroup.getTypeValue(selectedNode) + 
+						"\n" + selectedNode.toString().replace(", :",  "\n:") + "\n \n" + nodeInfo;
+			}
+			
+			SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+					"Apply Operator", "Apply Operator to " + nodeInfo, 
+					"\nApply the Operator?", args, null);
+			dlg.create();
+			
+			if (dlg.open() == Window.OK) {
+				rwSnippetGroup.applyOperator(selectedOperator, snippetGroup, selectedNode, selectedRWNode, dlg.getInputs());
+				renderSnippet();
+			}
 		}
-
-		return dlg.getInputs();
+	
 	}
 	
 	public void showQuery() {

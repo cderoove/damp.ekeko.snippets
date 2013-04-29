@@ -149,6 +149,11 @@
           :add-user-defined-condition)
     (operator-ids-with-type :transform)))
 
+(defn 
+  is-transform-operator?
+  [op-id]
+  (= (operator-type op-id) :transform)) 
+  
 
 ;; Function apply-operator 
 ;; --------------------------------
@@ -463,6 +468,30 @@
                                                       :transform 
                                                       "Change name with rule"
                                                       "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
+   :t-add-node-after                                 [:node       
+                                                      t-add-node-after                                       
+                                                      :is-ast?   
+                                                      :transform 
+                                                      "Add node after"
+                                                      "Operator to add node after selected original node."]
+   :t-add-node-before                                [:node       
+                                                      t-add-node-before                                       
+                                                      :is-ast?   
+                                                      :transform 
+                                                      "Add node before"
+                                                      "Operator to add node before selected original node."]
+   :t-add-member-node                                [:node       
+                                                      t-add-member-node                                       
+                                                      :is-ast?   
+                                                      :transform 
+                                                      "Add node as member"
+                                                      "Operator to add node as member of selected original node."]
+   :t-replace-node                                   [:node       
+                                                      t-replace-node
+                                                      :is-ast?   
+                                                      :transform 
+                                                      "Replace node"
+                                                      "Operator to replace node."]
 	})
 
 
