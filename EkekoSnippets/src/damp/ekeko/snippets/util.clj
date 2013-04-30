@@ -112,3 +112,26 @@
   convert-rule-to-name
   [rule name]
   (.replace (.replace (convert-rule-to-string rule name) "[" "") "]" ""))
+
+(defn
+  string-to-keyword
+  [string]
+  (keyword (.replaceFirst string ":" "")))
+
+(defn
+  string-to-list
+  [string]
+  (let [list (seq (.split (.replace (.replace string ")" "") "(" "") " "))]
+    (map (fn [str] 
+           (if (= (.indexOf str ":") 0)
+             (string-to-keyword str)
+             str))
+         list)))
+
+(defn
+  string-to-list-of-list
+  [string]
+  (map string-to-list 
+       (filter (fn [x] (not (empty? x))) 
+               (seq (.split (.replace string "(" "open") "open")))))   ;cannot use "(" in split
+

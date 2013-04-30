@@ -51,7 +51,7 @@
 (defrecord 
   Snippet
   [ast ast2var ast2groundf ast2constrainf ast2userfs var2ast var2uservar 
-   userquery document rewrite track2ast flag])
+   userquery document rewrite track2ast ast2track flag])
 
 (declare flat-map)
 
@@ -301,6 +301,12 @@
   [snippet track]
   (get-in snippet [:track2ast track]))
 
+(defn 
+  snippet-track-for-node 
+  "Returns node track in document of the given snippet for the given AST node."
+  [snippet node]
+  (get-in snippet [:ast2track node]))
+
 (defn
   snippet-property-for-node
   [snippet ast]
@@ -333,7 +339,7 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} :mandatory))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -364,10 +370,11 @@
         (assoc-in [:ast2groundf value] (list :minimalistic))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value)
-        (assoc-in [:track2ast arrTrack] value))))
+        (assoc-in [:track2ast arrTrack] value)
+        (assoc-in [:ast2track value] arrTrack))))
   (let [n (parsing/parse-document doc)
         rw (make-astrewrite n)
-        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} :mandatory))]
+        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} {} :mandatory))]
     (util/walk-jdt-node 
       n
       (fn [astval] 
@@ -415,6 +422,11 @@
   copy-snippet
   "Copy all informations in oldsnippet to newsnippet, comparing each node with NodeTrackPosition of ASTRewrite."
   [oldsnippet newsnippet]
+  (defn update-userfs [snippet newast value]
+    (let [userfs (get-in oldsnippet [:ast2userfs value])]
+      (if (not (nil? userfs)) 
+        (assoc-in snippet [:ast2userfs newast] userfs)
+        snippet)))
   (defn update-newsnippet-value [snippet value track]
     (let [arrTrack [(snippet-property-for-node oldsnippet value) 
                     (.getStartPosition track) 
@@ -426,10 +438,11 @@
           (update-in [:ast2var newast] (fn [x] (snippet-var-for-node oldsnippet value)))
           (update-in [:ast2groundf newast] (fn [x] (get-in oldsnippet [:ast2groundf value])))
           (update-in [:ast2constrainf newast] (fn [x] (get-in oldsnippet [:ast2constrainf value])))
-          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])
+          (update-userfs newast value)
+          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])      ;new variable replaced by old variable 
           (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
         snippet)))
-  (let [snippet (atom (snippet-update-flag newsnippet (:flag oldsnippet)))
+  (let [snippet (atom newsnippet)
         rw (:rewrite oldsnippet)]
     (util/walk-jdt-node 
       (:ast oldsnippet)
@@ -439,6 +452,7 @@
       (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
     (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
     (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
+    (swap! snippet update-in [:flag] (fn [x] (:flag oldsnippet)))
     @snippet))
 
 (defn 
