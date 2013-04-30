@@ -45,13 +45,14 @@ public class Groups {
 		return groups.keySet().toArray();
 	}
 	
-	public void transform() {
-		/*
-		RewrittenSnippetGroup[] arrRWGroups = (RewrittenSnippetGroup[]) groups.values().toArray();
-		for (int i=0; i<arrRWGroups.length; i++) {
-			arrRWGroups[i].doTransformation(getGroup(arrRWGroups[i].getName()));
+	public void transform(Object[] names) {
+		RT.var("damp.ekeko.snippets.rewrite","reset-rewrites!").invoke();
+		
+		for (int i=0; i<names.length; i++) {
+			SnippetGroup sGroup = groups.get(names[i].toString());
+			RewrittenSnippetGroup rwGroup = rewrittenGroups.get(names[i].toString());
+			rwGroup.doTransformation(sGroup);
 		}
-		*/
 		RT.var("damp.ekeko.snippets.rewrite","apply-and-reset-rewrites").invoke(); 		
 	}
 

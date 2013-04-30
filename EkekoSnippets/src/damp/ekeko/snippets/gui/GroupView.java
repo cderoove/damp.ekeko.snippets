@@ -1,5 +1,7 @@
 package damp.ekeko.snippets.gui;
 
+import java.util.LinkedList;
+
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.InputDialog;
@@ -41,6 +43,9 @@ public class GroupView extends ViewPart {
 	private Text txtApplyTransformationTo;
 	private Groups groups;
 	private Text txtDoubleClickOn;
+	private Text txtLoadGroupsFrom;
+	private Text text;
+	private Text txtSaveGroups;
 
 	public GroupView() {
 		groups = new Groups();
@@ -88,14 +93,21 @@ public class GroupView extends ViewPart {
 			tltmAdd.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/add_obj.gif"));
 			tltmAdd.setToolTipText("Add Group");
 
-			TableViewer tableViewer = new TableViewer(grpGroup, SWT.BORDER | SWT.FULL_SELECTION);
+			TableViewer tableViewer = new TableViewer(grpGroup, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION);
 			tableGroup = tableViewer.getTable();
+			tableGroup.setLinesVisible(true);
+			tableGroup.setHeaderVisible(true);
 			tableGroup.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 			
 			TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, SWT.NONE);
 			TableColumn tblclmnGroup = tableViewerColumn.getColumn();
 			tblclmnGroup.setWidth(100);
-			tblclmnGroup.setText("Group");
+			tblclmnGroup.setText("Name");
+			
+			TableViewerColumn tableViewerColumn_1 = new TableViewerColumn(tableViewer, SWT.NONE);
+			TableColumn tblclmnDescription = tableViewerColumn_1.getColumn();
+			tblclmnDescription.setWidth(300);
+			tblclmnDescription.setText("Description");
 			
 			txtDoubleClickOn = new Text(grpGroup, SWT.BORDER);
 			txtDoubleClickOn.setText("Double click on group to open Snippet View");
@@ -111,10 +123,15 @@ public class GroupView extends ViewPart {
 }
 		{
 			Group grpGroup_1 = new Group(container, SWT.NONE);
-			grpGroup_1.setText("Transformation");
-			grpGroup_1.setLayout(new GridLayout(1, false));
+			grpGroup_1.setLayout(new GridLayout(2, false));
+			
+			text = new Text(grpGroup_1, SWT.BORDER);
+			text.setEditable(false);
+			text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+			text.setText("Ekeko Snippets and Transformation");
 			
 			Button btnTransform = new Button(grpGroup_1, SWT.NONE);
+			btnTransform.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 			btnTransform.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
@@ -124,11 +141,29 @@ public class GroupView extends ViewPart {
 			btnTransform.setText("Transform");
 			
 			txtApplyTransformationTo = new Text(grpGroup_1, SWT.BORDER);
-			txtApplyTransformationTo.setEditable(false);
-			txtApplyTransformationTo.setText("Apply Transformation to all groups");
 			txtApplyTransformationTo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+			txtApplyTransformationTo.setEditable(false);
+			txtApplyTransformationTo.setText("Check on groups, and apply transformation to selected groups.");
+			
+			Button btnLoad = new Button(grpGroup_1, SWT.NONE);
+			btnLoad.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/fldr_obj.gif"));
+			btnLoad.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+			btnLoad.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					load();
+				}
+			});
+			btnLoad.setText("Load");
+			
+			txtLoadGroupsFrom = new Text(grpGroup_1, SWT.BORDER);
+			txtLoadGroupsFrom.setEditable(false);
+			txtLoadGroupsFrom.setText("Load groups from file.");
+			txtLoadGroupsFrom.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 			
 			Button btnSave = new Button(grpGroup_1, SWT.NONE);
+			btnSave.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/saveas_edit.gif"));
+			btnSave.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 			btnSave.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
@@ -137,14 +172,11 @@ public class GroupView extends ViewPart {
 			});
 			btnSave.setText("Save");
 			
-			Button btnLoad = new Button(grpGroup_1, SWT.NONE);
-			btnLoad.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					load();
-				}
-			});
-			btnLoad.setText("Load");
+			txtSaveGroups = new Text(grpGroup_1, SWT.BORDER);
+			txtSaveGroups.setEditable(false);
+			txtSaveGroups.setText("Save groups.");
+			txtSaveGroups.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+			new Label(grpGroup_1, SWT.NONE);
 		}
 
 		createActions();
@@ -178,6 +210,18 @@ public class GroupView extends ViewPart {
 	@Override
 	public void setFocus() {
 		// Set the focus
+	}
+	
+	public Object[] getCheckedGroup() {
+		TableItem[] items = tableGroup.getItems();
+		LinkedList list = new LinkedList();
+
+		for (int i=0; i<items.length; i++) {
+			if (items[i].getChecked())
+				list.add(items[i].getText());
+		}
+		
+		return list.toArray();
 	}
 
 	public void renderGroups() {
@@ -224,7 +268,7 @@ public class GroupView extends ViewPart {
 				 "Transformation", "Apply Transformation?");
 		
 		if (b) {
-			groups.transform();
+			groups.transform(getCheckedGroup());
 			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
 					"Info", "Transformation process is done.");
 		}
@@ -233,7 +277,6 @@ public class GroupView extends ViewPart {
 	public void save() {
 		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
 		String filename = dialog.open();
-		System.out.println(filename);
 		if (filename != null && !filename.isEmpty()) {
 			groups.save(filename+".snp");	
 			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
@@ -245,7 +288,6 @@ public class GroupView extends ViewPart {
 		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
 		dialog.setFilterExtensions(new String[] { "*.snp", "*.*" });
 		String filename = dialog.open();
-		System.out.println(filename);
 		if (filename != null && !filename.isEmpty()) {
 			groups.load(filename);
 			renderGroups();
