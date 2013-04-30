@@ -708,10 +708,16 @@
 
 (defn 
   make-snippetgrouphistory
-  "Create SnippetGroup instance and keeping the track of operators history."
+  "Create SnippetGroupHistory instance and keeping the track of operators history."
   [name]
   (let [snippetgroup (make-snippetgroup name)]
     (SnippetGroupHistory. snippetgroup snippetgroup [] '())))
+
+(defn 
+  make-snippetgrouphistory-from-snippetgroup
+  "Create SnippetGroupHistory instance from given group."
+  [snippetgroup]
+  (SnippetGroupHistory. snippetgroup snippetgroup [] '()))
 
 (defn 
   reset-snippetgrouphistory

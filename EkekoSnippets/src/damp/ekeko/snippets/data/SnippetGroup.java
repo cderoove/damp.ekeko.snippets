@@ -29,6 +29,13 @@ public class SnippetGroup {
 		activeNodePos = new int[2];
 	}
 	
+	public SnippetGroup(Object group) {
+		//given clojure SnippetGroup
+		System.out.println("inside group construct");
+		groupHistory = RT.var("damp.ekeko.snippets.representation", "make-snippetgrouphistory-from-snippetgroup").invoke(group);
+		activeNodePos = new int[2];
+	}
+	
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}

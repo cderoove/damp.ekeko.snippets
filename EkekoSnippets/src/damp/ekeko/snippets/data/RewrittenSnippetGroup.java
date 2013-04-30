@@ -14,6 +14,10 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		super(name);
 	}
 	
+	public RewrittenSnippetGroup(Object group) {
+		//given clojure SnippetGroup
+		super(group);
+	}
 
 	/**
 	 * 

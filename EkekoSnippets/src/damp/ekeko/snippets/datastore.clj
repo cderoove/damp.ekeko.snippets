@@ -8,6 +8,31 @@
              [parsing :as parsing]]))
 
 
+;; Json function
+;; ----------------------------------------------------------------------
+
+(defn 
+  get-in-json
+  [jsonobj [key key2]]
+  (let [el (.get jsonobj (str key))]
+    (if (nil? el)
+      nil
+      (.get el (str key2)))))
+  
+(defn 
+  read-json-file
+  "Read file, returns json object."
+  [filename]
+  (damp.ekeko.snippets.db.JSONFile/read filename))
+
+(defn 
+  write-json-file
+  "Write json object to file."
+  [filename json]
+  (damp.ekeko.snippets.db.JSONFile/write filename json))
+
+
+
 ;; Data Format
 ;; --------------------------------------------------------------------------
 
@@ -105,14 +130,6 @@
 
 
 (defn 
-  get-in-json
-  [jsonobj [key key2]]
-  (let [el (.get jsonobj (str key))]
-    (if (nil? el)
-      nil
-      (.get el (str key2)))))
-  
-(defn 
   snippet-to-snippetjson
   "Convert snippet to jsonobject."
   [snippet]
@@ -167,18 +184,6 @@
     @snippet))
 
 (defn 
-  read-json-file
-  "Read file, returns json object."
-  [filename]
-  (damp.ekeko.snippets.db.JSONFile/read filename))
-
-(defn 
-  write-json-file
-  "Write json object to file."
-  [filename json]
-  (damp.ekeko.snippets.db.JSONFile/write filename json))
-
-(defn 
   snippetgroup-to-map
   [group]
   (let [grp-map {}]
@@ -209,3 +214,33 @@
                                         (list (symbol (.substring userquery 1 (- (.length userquery) 1)))))))
       (update-in [:snippetlist] (fn [x] (map snippetjson-to-snippet (seq (.get json ":snippetlist"))))))))
 
+(defn 
+  groups-to-json
+  "Convert list of snippet group and rewritten group to json."
+  [snippet-groups rewritten-groups]
+  (let [json (org.json.simple.JSONObject.)
+        snippet-groups-json (map snippetgroup-to-json snippet-groups)
+        rewritten-groups-json (map snippetgroup-to-json rewritten-groups)]
+    (.put json "snippet-groups" snippet-groups-json)
+    (.put json "rewritten-groups" rewritten-groups-json)
+    json))
+    
+(defn 
+  json-to-groups
+  "Convert json to group of group [snippet-groups rewritten-groups]."
+  [json]
+  (let [snippet-groups (map json-to-snippetgroup (seq (.get json "snippet-groups"))) 
+        rewritten-groups (map json-to-snippetgroup (seq (.get json "rewritten-groups")))]
+    [snippet-groups rewritten-groups]))
+    
+(defn
+  save-groups
+  "Save list of snippet group and rewritten group to file."
+  [filename snippet-groups rewritten-groups]
+  (write-json-file filename (groups-to-json snippet-groups rewritten-groups)))
+
+(defn 
+  load-groups
+  "Load list of snippet group and rewritten group from file, returns [snippet-groups rewritten-groups]."
+  [filename]
+  (json-to-groups (read-json-file filename)))

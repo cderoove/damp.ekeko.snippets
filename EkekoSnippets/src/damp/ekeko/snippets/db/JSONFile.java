@@ -32,14 +32,14 @@ public class JSONFile {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.print("write : " + obj);
+		//System.out.print("write : " + obj);
 	}
 
 	public static JSONObject read(String filename) {
 		JSONParser parser = new JSONParser();
 		try {
 			Object obj = parser.parse(new FileReader(filename));
-			System.out.print("read : " + obj);
+			//System.out.print("read : " + obj);
 			return (JSONObject) obj;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

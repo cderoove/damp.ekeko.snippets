@@ -16,6 +16,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TableItem;
@@ -126,6 +127,24 @@ public class GroupView extends ViewPart {
 			txtApplyTransformationTo.setEditable(false);
 			txtApplyTransformationTo.setText("Apply Transformation to all groups");
 			txtApplyTransformationTo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+			
+			Button btnSave = new Button(grpGroup_1, SWT.NONE);
+			btnSave.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					save();
+				}
+			});
+			btnSave.setText("Save");
+			
+			Button btnLoad = new Button(grpGroup_1, SWT.NONE);
+			btnLoad.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					load();
+				}
+			});
+			btnLoad.setText("Load");
 		}
 
 		createActions();
@@ -208,6 +227,28 @@ public class GroupView extends ViewPart {
 			groups.transform();
 			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
 					"Info", "Transformation process is done.");
+		}
+	}
+	
+	public void save() {
+		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
+		String filename = dialog.open();
+		System.out.println(filename);
+		if (filename != null && !filename.isEmpty()) {
+			groups.save(filename+".snp");	
+			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+					"Info", "Snippet groups are saved.");
+		}
+	}
+
+	public void load() {
+		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
+		dialog.setFilterExtensions(new String[] { "*.snp", "*.*" });
+		String filename = dialog.open();
+		System.out.println(filename);
+		if (filename != null && !filename.isEmpty()) {
+			groups.load(filename);
+			renderGroups();
 		}
 	}
 }

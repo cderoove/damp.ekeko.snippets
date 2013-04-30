@@ -7,12 +7,16 @@ package damp.ekeko.snippets.db;
  * and JSONObject as Snippet
  */
 
+import damp.ekeko.snippets.gui.*;
 import java.io.FileReader;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -38,7 +42,7 @@ public class JSONSnippet {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		
+		/*
 		Object snippet = addSnippetCode("int i = 0;");
 		JSONObject snippetjson = (JSONObject)RT.var("damp.ekeko.snippets.datastore", "snippet-to-snippetjson").invoke(snippet);
 		JSONFile.write("c:\\test.json", snippetjson);		 
@@ -47,6 +51,8 @@ public class JSONSnippet {
 		JSONObject jsonObject = JSONFile.read("c:\\test.json");
 		Object newSnippet = RT.var("damp.ekeko.snippets.datastore", "snippetjson-to-snippet").invoke(jsonObject);
 		System.out.println("new : " + newSnippet.toString());
+		*/
+		
 	}
 	 
 	public static JSONObject mapToJson(PersistentArrayMap clojureSnippetMap) {
