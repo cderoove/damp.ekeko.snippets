@@ -122,16 +122,18 @@
   string-to-list
   [string]
   (let [list (seq (.split (.replace (.replace string ")" "") "(" "") " "))]
-    (map (fn [str] 
-           (if (= (.indexOf str ":") 0)
-             (string-to-keyword str)
-             str))
-         list)))
+    (seq 
+      (map (fn [str] 
+             (if (= (.indexOf str ":") 0)
+               (string-to-keyword str)
+               (.replace str "\"" "")))   ;;remove "" in the string
+           list))))
 
 (defn
   string-to-list-of-list
   [string]
-  (map string-to-list 
-       (filter (fn [x] (not (empty? x))) 
-               (seq (.split (.replace string "(" "open") "open")))))   ;cannot use "(" in split
+  (seq 
+    (map string-to-list 
+         (filter (fn [x] (not (empty? x))) 
+                 (seq (.split (.replace string "(" "open") "open"))))))   ;cannot use "(" in split
 

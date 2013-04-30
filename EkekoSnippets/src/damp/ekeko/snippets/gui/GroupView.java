@@ -278,7 +278,8 @@ public class GroupView extends ViewPart {
 		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.SAVE);
 		String filename = dialog.open();
 		if (filename != null && !filename.isEmpty()) {
-			groups.save(filename+".snp");	
+			if (!filename.contains(".snp")) filename += ".snp";
+			groups.save(filename);	
 			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
 					"Info", "Snippet groups are saved.");
 		}

@@ -28,6 +28,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.wb.swt.ResourceManager;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -519,11 +520,15 @@ public class SnippetView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		Object[] nodes = getSelectedSnippets();
-		for (int i=0; i < nodes.length; i++) {
-			snippetGroup.removeSnippet(nodes[i]);
+		boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+				"Delete", "Are you sure you want to delete selected snippets?");
+		if (m) {
+			Object[] nodes = getSelectedSnippets();
+			for (int i=0; i < nodes.length; i++) {
+				snippetGroup.removeSnippet(nodes[i]);
+			}
+			renderSnippet();
 		}
-		renderSnippet();
 	}
 
 	public void flagSnippet() {
