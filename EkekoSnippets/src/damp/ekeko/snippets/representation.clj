@@ -309,9 +309,10 @@
 
 (defn
   snippet-property-for-node
+  "Used together with track to identify node."
   [snippet ast]
-  (if (instance? CompilationUnit ast)
-    (clojure.core/type ast)
+  (if (or (instance? CompilationUnit ast) (= ast (:ast snippet)))
+    (util/class-simplename (class ast))
     (astnode/property-descriptor-id (astnode/owner-property ast))))
 
   

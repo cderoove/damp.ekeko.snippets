@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Text;
 
 import damp.ekeko.snippets.data.Groups;
+import damp.ekeko.snippets.gui.SnippetView.QueryResultThread;
 
 public class GroupView extends ViewPart {
 
@@ -263,14 +264,34 @@ public class GroupView extends ViewPart {
 		}
 	}
 	
+	class TransformThread extends Thread {
+		Object[] checkedGroups;
+		
+		public TransformThread (Object[] checkedGroups) {
+			this.checkedGroups = checkedGroups;
+		}
+		
+        public void run() {
+			groups.transform(checkedGroups);
+
+			Display.getDefault().syncExec(new Runnable() {
+    		    public void run() {
+    				boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
+    						"Info", "Transformation process is done.");
+    		    }
+    		});
+        }
+    }	
+	
+	TransformThread trThread; 
+	
 	public void transform() {
 		boolean b = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
 				 "Transformation", "Apply Transformation?");
 		
 		if (b) {
-			groups.transform(getCheckedGroup());
-			boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
-					"Info", "Transformation process is done.");
+			trThread = new TransformThread(getCheckedGroup());
+			trThread.start();
 		}
 	}
 	

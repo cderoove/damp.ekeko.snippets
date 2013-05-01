@@ -1,5 +1,7 @@
 package damp.ekeko.snippets.gui;
 
+import java.util.Date;
+
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.swt.SWT;
@@ -42,6 +44,7 @@ import org.eclipse.jface.window.Window;
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.SnippetGroup;
 import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.gui.ResultCheckView.SearchThread;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
 
@@ -549,16 +552,37 @@ public class SnippetView extends ViewPart {
 		snippetGroup.runQuery(getSelectedSnippet());
 	}
 	
-	public void checkResult() {
-		try {
-			ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
-			view.setResult(snippetGroup.getQueryResult(getSelectedSnippet()));
-			view.setGroup(snippetGroup);
-			view.setSnippet(snippetGroup.getSnippet(getSelectedSnippet()));
-			view.putData();
-		} catch (PartInitException e) {
-			e.printStackTrace();
+	class QueryResultThread extends Thread {
+		Object selectedSnippet;
+		
+		public QueryResultThread (Object selectedSnippet) {
+			this.selectedSnippet = selectedSnippet;
 		}
+		
+        public void run() {
+			final Object[] result = snippetGroup.getQueryResult(selectedSnippet);
+			
+    		Display.getDefault().syncExec(new Runnable() {    			
+    		    public void run() {
+    				try {
+    					ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
+    					view.setResult(result);
+    					view.setGroup(snippetGroup);
+    					view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
+    					view.putData();
+    				} catch (PartInitException e) {
+    					e.printStackTrace();
+    				}
+    		    }
+    		});
+        }
+    }	
+	
+	QueryResultThread qsThread; 
+	
+	public void checkResult() {
+		qsThread = new QueryResultThread(getSelectedSnippet());
+		qsThread.start();
 	}
 
 	public void addLogicCondition() {
