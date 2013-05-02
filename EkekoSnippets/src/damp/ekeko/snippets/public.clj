@@ -38,19 +38,17 @@
   enclosing-class
    "Relation between ASTNode var with its enclosing class."
   [?var ?class]
-  (cl/fresh [?body ?list]
-            (reification/ast :TypeDeclaration ?class)    
-            (reification/has :bodyDeclarations ?class ?body)
-            (reification/value-raw ?body ?list)
-            (el/contains ?list ?var)))
+  (cl/all
+    (reification/ast :TypeDeclaration ?class)    
+    (reification/child+ ?class ?var)))
 
 (defn
   enclosing-method
    "Relation between ASTNode var with its enclosing method."
   [?var ?method]
-  (cl/fresh [?body ?list]
-            (reification/ast :MethodDeclaration ?method)    
-            (reification/child+ ?method ?var)))
+  (cl/all
+    (reification/ast :MethodDeclaration ?method)    
+    (reification/child+ ?method ?var)))
 
 
 ; ---------------------------------

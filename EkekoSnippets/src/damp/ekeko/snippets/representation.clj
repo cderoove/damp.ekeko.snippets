@@ -362,7 +362,8 @@
   [doc]
   (defn assoc-snippet-value [snippet value track]
     (let [lvar (util/gen-readable-lvar-for-value value)
-          arrTrack [(snippet-property-for-node snippet value) 
+          arrTrack [(util/class-simplename (class value))
+                    (snippet-property-for-node snippet value) 
                     (.getStartPosition track) 
                     (.getLength track)]]
       (->
@@ -429,7 +430,8 @@
         (assoc-in snippet [:ast2userfs newast] userfs)
         snippet)))
   (defn update-newsnippet-value [snippet value track]
-    (let [arrTrack [(snippet-property-for-node oldsnippet value) 
+    (let [arrTrack [(util/class-simplename (class value))
+                    (snippet-property-for-node oldsnippet value) 
                     (.getStartPosition track) 
                     (.getLength track)]
           newast (snippet-node-for-track snippet arrTrack)] 

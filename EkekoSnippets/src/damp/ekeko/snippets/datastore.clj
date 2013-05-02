@@ -63,8 +63,8 @@
       (->
         snippetmap
         (assoc-in [:track2var track]        (str (get-in snippet [:ast2var value])))
-        (assoc-in [:track2groundf track]    (str (get-in snippet [:ast2groundf value])))
-        (assoc-in [:track2constrainf track] (str (get-in snippet [:ast2constrainf value])))
+        (assoc-in [:track2groundf track]    (str (seq (get-in snippet [:ast2groundf value]))))
+        (assoc-in [:track2constrainf track] (str (seq (get-in snippet [:ast2constrainf value]))))
         (update-userfs  track value)
         (update-uservar track value))))
   (let [snippetmap (atom {})]
@@ -96,11 +96,8 @@
       (if (not (nil? uservar)) 
         (assoc-in snippet [:var2uservar var] (symbol uservar))
         snippet)))
-  (defn update-snippet [snippet value track]
-    (let [arrTrack [(representation/snippet-property-for-node snippet value) 
-                    (.getStartPosition track) 
-                    (.getLength track)]
-          strTrack (str arrTrack)
+  (defn update-snippet [snippet value]
+    (let [strTrack (str (representation/snippet-track-for-node snippet value))
           var (symbol (get-in snippetmap [:track2var strTrack]))]
       (->
         snippet
@@ -113,14 +110,13 @@
         (update-uservar var strTrack))))
   (let [doc (parsing/parse-string-to-document (:document snippetmap))
         snippet (atom (representation/document-as-snippet doc))
-        rw (:rewrite @snippet)
         userquery (:userquery snippetmap)]
     (util/walk-jdt-node 
       (:ast @snippet)
-      (fn [astval]  (swap! snippet update-snippet astval  (.track rw astval)))
-      (fn [lstval]  (swap! snippet update-snippet lstval  (.track rw (:owner lstval))))
-      (fn [primval] (swap! snippet update-snippet primval (.track rw (:owner primval))))
-      (fn [nilval]  (swap! snippet update-snippet nilval  (.track rw (:owner nilval)))))
+      (fn [astval]  (swap! snippet update-snippet astval))
+      (fn [lstval]  (swap! snippet update-snippet lstval))
+      (fn [primval] (swap! snippet update-snippet primval))
+      (fn [nilval]  (swap! snippet update-snippet nilval)))
     (swap! snippet update-in [:userquery] 
            (fn [x] (if (empty? userquery)
                      '()
@@ -151,11 +147,8 @@
       (if (not (nil? uservar)) 
         (assoc-in snippet [:var2uservar var] (symbol uservar))
         snippet)))
-  (defn update-snippet [snippet value track]
-    (let [arrTrack [(representation/snippet-property-for-node snippet value) 
-                    (.getStartPosition track) 
-                    (.getLength track)]
-          strTrack (str arrTrack)
+  (defn update-snippet [snippet value]
+    (let [strTrack (str (representation/snippet-track-for-node snippet value))
           var (symbol (get-in-json snippetjson [:track2var strTrack]))]
       (->
         snippet
@@ -172,10 +165,10 @@
         userquery (.get snippetjson ":userquery")]
     (util/walk-jdt-node 
       (:ast @snippet)
-      (fn [astval]  (swap! snippet update-snippet astval  (.track rw astval)))
-      (fn [lstval]  (swap! snippet update-snippet lstval  (.track rw (:owner lstval))))
-      (fn [primval] (swap! snippet update-snippet primval (.track rw (:owner primval))))
-      (fn [nilval]  (swap! snippet update-snippet nilval  (.track rw (:owner nilval)))))
+      (fn [astval]  (swap! snippet update-snippet astval))
+      (fn [lstval]  (swap! snippet update-snippet lstval))
+      (fn [primval] (swap! snippet update-snippet primval))
+      (fn [nilval]  (swap! snippet update-snippet nilval)))
     (swap! snippet update-in [:userquery] 
            (fn [x] (if (empty? userquery)
                      '()

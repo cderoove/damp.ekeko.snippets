@@ -159,7 +159,9 @@
   parse-document
   "Returns node, parsed from Document doc." 
   [doc]
-  (first (first (parse-string (.get doc)))))
+  (first 
+    (first 
+      (filter (fn [x] (instance? ASTNode (first x))) (parse-string (.get doc))))))
 
 (defn
   make-variable-declaration-statement
