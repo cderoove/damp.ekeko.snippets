@@ -378,7 +378,7 @@
     cf-list-contains-with-relative-order
     (= type :elements-repetition)
     cf-list-contains-with-repetition
-    (= type :any-elements)
+    (= type :any-element)
     make-epsilon-function
     (= type :variable)
     cf-variable

@@ -54,7 +54,7 @@
   "Contains any elements or none in a given nodelist (listval)."
   [snippet node]
   (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)]
-    (update-constrainf snippet-with-epsilon node :any-elements)))
+    (update-constrainf snippet-with-epsilon node :any-element)))
 
 (defn
   contains-elements
@@ -442,7 +442,7 @@
             snippet-nodelist (update-constrainf snippet-node (representation/snippet-node-with-member snippet-node node) :epsilon)]
         (change-cf-parent snippet-nodelist (.getParent node)))))
   (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
-        var-parent (representation/snippet-var-for-node snippet parent)
+        var-parent (representation/snippet-lvar-for-node snippet parent)
         new-gf-snippet (update-groundf-with-args (change-cf-parent snippet node) node :node-deep (list var-parent))
         new-snippet (update-constrainf new-gf-snippet node :exact)]
     (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))

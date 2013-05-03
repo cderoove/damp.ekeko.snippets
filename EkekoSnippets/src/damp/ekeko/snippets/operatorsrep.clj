@@ -258,12 +258,12 @@
                                                       :generalization 
                                                       "Match node deep"
                                                       "Operator with matching strategy :node-deep \nAllows node as child or nested child of its parent."]
-   :any-elements                                     [:property   
+   :any-element                                      [:property   
                                                       contains-any-elements
-                                                      :listvalue					          
+                                                      :none					          
                                                       :generalization 
-                                                      "Match list with any elements"
-                                                      "Operator with matching strategy :list any-elements\nMatch nodelist which any elements of none of snippet nodelist"]
+                                                      "Match any element"
+                                                      "Operator with matching strategy  :any-elements\nMatch node with any element."]
    :contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          
