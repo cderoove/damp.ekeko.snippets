@@ -61,9 +61,8 @@
    For AST node is the value of a property: ((child+ ?var-for-owner-match ?var-for-node-match))"
   [snippet-ast]
   (fn [snippet] 
-      (let [snippet-owner  (astnode/owner snippet-ast)
-            var-match       (representation/snippet-var-for-node snippet snippet-ast) 
-            var-match-owner (representation/snippet-var-for-node snippet snippet-owner)]
+      (let [var-match       (representation/snippet-var-for-node snippet snippet-ast) 
+            var-match-owner (first (representation/snippet-grounder-args-for-node snippet snippet-ast))]
         `((reification/child+ ~var-match-owner ~var-match)))))
 
 (defn 

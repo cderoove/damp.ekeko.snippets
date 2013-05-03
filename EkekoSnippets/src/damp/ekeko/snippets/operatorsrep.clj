@@ -530,6 +530,7 @@
    :match-variable-samebinding                       ["Variable Node"          :is-simplename?]
    :match-variable-typequalifiedname                 ["Qualified Name Node"    :is-importlibrary?]
    :match-type-qualifiedname                         ["Qualified Name Node"    :is-importlibrary?]
+   :node-deep                                        ["Parent Node"            :is-ast?]
   })
 
 ;;Operators type

@@ -23,6 +23,13 @@
   (update-in snippet [:ast2groundf node] (fn [x] (list type))))
 
 (defn 
+  update-groundf-with-args 
+  "Update grounding function of a given node in a given snippet with the new grounding  function and args of given type
+   Example: (update-groundf snippet node :node-deep args)."
+  [snippet node type args]
+  (update-in snippet [:ast2groundf node] (fn [x] (concat (list type) args))))
+
+(defn 
   update-constrainf 
   "Update constraining function of a given node in a given snippet with the new constraining function of given type
    Example: (update-constrainf snippet node :list-contains)."
@@ -35,14 +42,6 @@
    Example: (update-constrainf snippet node :list-contains args)."
   [snippet node type args]
   (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
-
-(defn
-  node-deep 
-  "Allows node as child+ of its parent."
-  [snippet node]
-  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet (.getParent node))
-        snippet-with-exact-node (representation/update-gf-cf-for-node snippet-with-epsilon node :minimalistic :exact)]
-    (update-groundf snippet-with-exact-node node :node-deep)))
 
 (defn
   contains-elements-with-same-size 
@@ -431,6 +430,23 @@
 
 ;; Operator for SnippetGroup
 ;; -------------------------
+
+(defn
+  node-deep 
+  "Allows node as child+ of its parent."
+  [snippetgroup node parent]
+  (defn change-cf-parent [snippet node]
+    (if (= node parent)
+      (update-constrainf snippet (representation/snippet-node-with-member snippet node) :epsilon)
+      (let [snippet-node (update-constrainf snippet node :epsilon)
+            snippet-nodelist (update-constrainf snippet-node (representation/snippet-node-with-member snippet-node node) :epsilon)]
+        (change-cf-parent snippet-nodelist (.getParent node)))))
+  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
+        var-parent (representation/snippet-var-for-node snippet parent)
+        new-gf-snippet (update-groundf-with-args (change-cf-parent snippet node) node :node-deep (list var-parent))
+        new-snippet (update-constrainf new-gf-snippet node :exact)]
+    (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
+
 
 (defn 
   add-snippet

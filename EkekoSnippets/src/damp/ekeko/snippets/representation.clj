@@ -395,11 +395,25 @@
 ;;-----------------------------
 
 (defn 
-  update-gf-cf-for-node
-  "Update grounding & constraining function for node and all child+ of a given node in snippet."
-  [snippet node gf cf]
+  update-gf-for-node
+  "Update grounding function for node and all child+ of a given node in snippet."
+  [snippet node gf]
   (defn update-snippet-value [snippet value]
-    (update-in snippet [:ast2groundf value] (fn [x] (list gf)))
+    (update-in snippet [:ast2groundf value] (fn [x] (list gf))))
+  (let [snippet (atom snippet)]
+    (util/walk-jdt-node 
+      node
+      (fn [astval] (swap! snippet update-snippet-value astval))
+      (fn [lstval] (swap! snippet update-snippet-value lstval))
+      (fn [primval]  (swap! snippet update-snippet-value primval))
+      (fn [nilval] (swap! snippet update-snippet-value nilval)))
+    @snippet))
+
+(defn 
+  update-cf-for-node
+  "Update constraining function for node and all child+ of a given node in snippet."
+  [snippet node cf]
+  (defn update-snippet-value [snippet value]
     (update-in snippet [:ast2constrainf value] (fn [x] (list cf))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
@@ -411,11 +425,24 @@
     @snippet))
 
 (defn 
-  remove-gf-cf-for-node
-  "Clear grounding & constraining function for node and all child of a given node in snippet."
+  remove-gf-for-node
+  "Clear grounding function for node and all child of a given node in snippet."
   [snippet node]
-  (update-gf-cf-for-node snippet node :epsilon :epsilon))
+  (update-gf-for-node snippet node :epsilon))
 
+(defn 
+  remove-cf-for-node
+  "Clear constarining function for node and all child of a given node in snippet."
+  [snippet node]
+  (update-cf-for-node snippet node :epsilon))
+
+(defn 
+  remove-gf-cf-for-node
+  "Clear grounding and constraining function for node and all child of a given node in snippet."
+  [snippet node]
+  (update-gf-for-node 
+    (update-cf-for-node snippet node :epsilon)
+    node :epsilon))
 
 ;; Copying Snippet and Apply rewrite
 ;; ---------------------------------
