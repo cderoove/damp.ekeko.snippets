@@ -146,7 +146,9 @@
 (defn 
   parse-string-ast
   [string] 
-  (first (first (parse-string string))))
+  (first 
+    (first 
+      (filter (fn [x] (instance? ASTNode (first x))) (parse-string string)))))
 
 (defn 
   parse-string-to-document
