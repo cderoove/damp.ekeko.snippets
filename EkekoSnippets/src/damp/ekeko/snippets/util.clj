@@ -124,7 +124,7 @@
   (let [list (seq (.split (.replace (.replace string ")" "") "(" "") " "))]
     (seq 
       (map (fn [str] 
-             (if (= (.indexOf str ":") 0)
+             (if (= (.indexOf str ":") 0)  ;;add if symbol
                (string-to-keyword str)
                (.replace str "\"" "")))   ;;remove "" in the string
            list))))

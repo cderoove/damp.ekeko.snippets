@@ -427,7 +427,7 @@ public class TransformsView extends SnippetView {
 		while (idx < text.length() && startIdx > -1) {
 			startIdx = text.indexOf('@', idx);
 			if (startIdx > 0) {
-				endIdx = text.indexOf(')', startIdx);
+				endIdx = text.indexOf(") ", startIdx);
 				setCFStyle(sText, startIdx, endIdx);
 				idx = endIdx;
 			}

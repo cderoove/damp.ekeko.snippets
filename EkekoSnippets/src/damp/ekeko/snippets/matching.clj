@@ -288,7 +288,7 @@
   [snippet-val]
   (fn [snippet] 
     (concat 
-      ((cf-node-exact snippet-val) snippet)
+      ((cf-exact snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
 (defn 

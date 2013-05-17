@@ -494,7 +494,7 @@ public class SnippetView extends ViewPart {
 		while (idx < text.length() && startIdx > -1) {
 			startIdx = text.indexOf('@', idx);
 			if (startIdx > 0) {
-				endIdx = text.indexOf(' ', startIdx);
+				endIdx = text.indexOf(") ", startIdx);
 				setCFStyle(startIdx, endIdx);
 				idx = endIdx;
 			}
