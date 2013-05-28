@@ -41,6 +41,51 @@
           `((reification/ast ~snippet-ast-keyw ~var-match)))
         '()))))
 
+(defn 
+  gf-member-exact
+  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
+   For AST node is the member of the list : condition depends on cf of list owner
+       cf = exact    -> ((el/equals ~var-el (.get ~var-list ~idx-el)))
+       cf = contains -> ((el/contains ~var-list ~var-el))"
+  [snippet-ast]
+  (fn [snippet] 
+    (if 
+      (= snippet-ast (:ast snippet))
+      (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
+            var-match (representation/snippet-var-for-node snippet snippet-ast)] 
+        `((reification/ast ~snippet-ast-keyw ~var-match)))
+      (let [list-owner      (representation/snippet-node-with-member snippet snippet-ast)
+            list-raw        (representation/snippet-value-for-node snippet list-owner)
+            cf-list-owner   (representation/snippet-constrainer-for-node snippet list-owner)
+            var-match-raw   (representation/snippet-var-for-node snippet list-raw)
+            var-match       (representation/snippet-var-for-node snippet snippet-ast) 
+            index-match     (.indexOf list-raw snippet-ast)]
+        (if (not (nil? cf-list-owner))
+          (cond
+            (= cf-list-owner :exact)
+            `((el/equals ~var-match (.get ~var-match-raw ~index-match)))
+            (or (= cf-list-owner :contains) (= cf-list-owner :contains-eq-size))
+            `((el/contains ~var-match-raw ~var-match))
+            (= cf-list-owner :contains-eq-order)
+            (if (> index-match 0)
+              (let [prev-member    (.get list-raw (- index-match 1))
+                    var-match-prev (representation/snippet-var-for-node snippet prev-member)]
+                `((el/contains ~var-match-raw ~var-match)
+                   (el/succeeds (> (.indexOf ~var-match-raw ~var-match) (.indexOf ~var-match-raw ~var-match-prev)))))
+              `((el/contains ~var-match-raw ~var-match)))
+            (= cf-list-owner :contains-repetition)
+            (if (> index-match 0)
+              (let [element-conditions 
+                    (for [n  (take index-match (iterate inc 0))]
+                      (let [nth-member    (.get list-raw n)
+                            var-match-nth (representation/snippet-var-for-node snippet nth-member)]
+                        `(el/fails (el/equals ~var-match ~var-match-nth))))]
+                (println element-conditions)
+                `((el/contains ~var-match-raw ~var-match)
+                   ~@element-conditions))
+              `((el/contains ~var-match-raw ~var-match)))
+            :default
+            '()))))))
   
 (defn 
   gf-node-exact
@@ -56,13 +101,28 @@
         `((reification/has ~owner-property-keyw ~var-match-owner ~var-match)))))
 
 (defn 
-  gf-node-deep
+  gf-exact
+  [snippet-val]
+  (cond
+    (and (instance? org.eclipse.jdt.core.dom.ASTNode snippet-val)  
+         (not (instance? org.eclipse.jdt.core.dom.CompilationUnit snippet-val))  
+         (.isChildListProperty (.getLocationInParent snippet-val))) ;check if its a member of a list
+    (gf-member-exact snippet-val)
+    :default
+    (gf-minimalistic snippet-val)))
+
+(defn 
+  gf-deep
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
    For AST node is the value of a property: ((child+ ?var-for-owner-match ?var-for-node-match))"
   [snippet-ast]
   (fn [snippet] 
-      (let [var-match       (representation/snippet-var-for-node snippet snippet-ast) 
-            var-match-owner (first (representation/snippet-grounder-args-for-node snippet snippet-ast))]
+      (let [var-match       (representation/snippet-var-for-node snippet snippet-ast)
+            args            (representation/snippet-grounder-args-for-node snippet snippet-ast)
+            var-match-owner 
+            (if (empty? args)
+              (representation/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
+              (first args))]                                                            ;for gf :deep
         `((reification/child+ ~var-match-owner ~var-match)))))
 
 (defn 
@@ -71,10 +131,12 @@
   (cond 
     (= type :minimalistic)
     gf-minimalistic
-    (= type :node-exact)
-    gf-node-exact
-    (= type :node-deep)
-    gf-node-deep
+    (= type :exact)
+    gf-exact
+    (= type :deep)
+    gf-deep
+    (= type :child+)
+    gf-deep
     (= type :epsilon)
     make-epsilon-function
     :default
@@ -123,7 +185,7 @@
            (value-raw ?var-match ?newly-generated-var)
            (equals snippet-list-size (.size ?newly-generated-var)) {If type = :samesize}
            (element-conditions)"
-  [snippet snippet-val type function-element-condition]
+  [snippet snippet-val type] ; function-element-condition]
   (let [lst (representation/snippet-value-for-node snippet snippet-val)
         snippet-list-size (.size lst)
         var-match (representation/snippet-var-for-node snippet snippet-val)
@@ -131,27 +193,24 @@
         size-condition
         (if (= type :samesize)
           `((el/equals ~snippet-list-size (.size ~var-match-raw)))
-          `())
-        element-conditions 
-        (for [element lst
-              :let [idx-el (.indexOf lst element)
-                    var-el (representation/snippet-var-for-node snippet element)]]
-          (function-element-condition var-match-raw var-el idx-el))]
+          `())]
+        ;element-conditions -> moved to gf-member-exact
+        ;(for [element lst
+        ;      :let [idx-el (.indexOf lst element)
+        ;            var-el (representation/snippet-var-for-node snippet element)]]
+        ;  (function-element-condition var-match-raw var-el idx-el))]
     `((reification/listvalue ~var-match)
        (reification/value-raw ~var-match ~var-match-raw)
-       ~@size-condition
-       ~@element-conditions)))
+       ~@size-condition)))
+       ;~@element-conditions)))
 
 (defn
   cf-list-exact
   "Returns a function that will generate constraining conditions for the given property value of a code snippet.
-   Conditions : - size of list need to be the same
-                - for each element (el/equals ?var-el (.get ?var-list ?idx-el))"
+   Conditions : - size of list need to be the same"
   [snippet-val]
   (fn [snippet] 
-    (internal-cf-list snippet snippet-val :samesize 
-                      (fn [var-list var-el idx-el] 
-                        `(el/equals ~var-el (.get ~var-list ~idx-el))))))
+    (internal-cf-list snippet snippet-val :samesize))) 
 
 (defn
   cf-primitive-exact
@@ -197,77 +256,13 @@
 ;; ----------------------
 
 (defn
-  cf-list-contains-with-same-size
+  cf-list-relax-size
   "Returns a function that will generate constraining conditions for the given property value of a code snippet.
-   Conditions : - size of list need to be the same
-                - for each element (el/contains ?var-list ?var-el)"
+   Conditions : - size of list no need to be the same"
   [snippet-val]
   (fn [snippet] 
-    (internal-cf-list snippet snippet-val :samesize 
-                      (fn [var-list var-el idx-el] 
-                        `(el/contains ~var-list ~var-el)))))
-
-(defn
-  cf-list-contains
-  "Returns a function that will generate constraining conditions for the given property value of a code snippet.
-   Conditions : - size of list no need to be the same
-                - for each element (el/contains ?var-list ?var-el)"
-  [snippet-val]
-  (fn [snippet] 
-    (internal-cf-list snippet snippet-val :notsamesize 
-                      (fn [var-list var-el idx-el] 
-                        `(el/contains ~var-list ~var-el)))))
+    (internal-cf-list snippet snippet-val :notsamesize))) 
   
-(defn 
-  internal-cf-list-contains-with-relative-order
-  "Returns constraining conditions of relative elements order for the given nodelist of a code snippet.
-   (succeeds (< (.indexOf alist el1) (.indexOf alist el2)))
-   (succeeds (< (.indexOf alist el2) (.indexOf alist el3))) ... "
-  [snippet var-list alist]
-  (if (empty?  (next alist))
-    '()
-    (let [var-el1 (representation/snippet-var-for-node snippet (first alist))
-          var-el2 (representation/snippet-var-for-node snippet (fnext alist))]
-      (cons
-        `(el/succeeds (< (.indexOf ~var-list ~var-el1) (.indexOf ~var-list ~var-el2)))
-        (internal-cf-list-contains-with-relative-order snippet var-list (next alist))))))
-    
-(defn 
-  cf-list-contains-with-relative-order
-  [snippet-val]
-  (fn [snippet]
-    (let [lst (representation/snippet-value-for-node snippet snippet-val)
-          var-match-raw (representation/snippet-var-for-node snippet lst)]
-      (concat
-        ((cf-list-contains snippet-val) snippet)
-        (internal-cf-list-contains-with-relative-order snippet var-match-raw lst)))))
-
-(defn 
-  internal-cf-list-contains-with-repetition
-  "Returns constraining conditions of list having repetition elements for the given nodelist of a code snippet.
-   (fails (equals el1 el2)) 
-   (fails (equals el1 el3)) ... "
-  [snippet alist]
-  (if (empty?  (next alist))
-    '()
-    (let [var-first-el (representation/snippet-var-for-node snippet (first alist))
-          element-conditions 
-          (for [element (next alist)
-                :let [var-el (representation/snippet-var-for-node snippet element)]]
-            `(el/fails (el/equals ~var-first-el ~var-el)))]
-      (concat
-        `(~@element-conditions)
-        (internal-cf-list-contains-with-repetition snippet (next alist))))))
-    
-(defn 
-  cf-list-contains-with-repetition
-  [snippet-val]
-  (fn [snippet]
-    (let [lst (representation/snippet-value-for-node snippet snippet-val)]
-      (concat
-        ((cf-list-contains snippet-val) snippet)
-        (internal-cf-list-contains-with-repetition snippet lst)))))
-
 (defn
   cf-variable
   "Returns a function that will generate a condition that will unify the match for the
@@ -342,7 +337,7 @@
   (defn 
     conditions
     [ast-or-list]
-    (concat ((gf-minimalistic ast-or-list) snippet)
+    (concat ((gf-exact ast-or-list) snippet)
             ((cf-exact ast-or-list) snippet)))
   (let [query (atom '())]
     (util/walk-jdt-node 
@@ -368,27 +363,27 @@
   (cond
     (= type :exact)
     cf-exact
-    (= type :list-exact)
-    cf-list-exact
-    (= type :same-size)
-    cf-list-contains-with-same-size
-    (= type :contains-elements)
-    cf-list-contains
-    (= type :relative-order)
-    cf-list-contains-with-relative-order
-    (= type :elements-repetition)
-    cf-list-contains-with-repetition
-    (= type :any-element)
+    (= type :any)
     make-epsilon-function
+    (= type :child+)
+    cf-list-relax-size
+    (= type :contains)
+    cf-list-relax-size
+    (= type :contains-eq-size)
+    cf-list-exact
+    (= type :contains-eq-order)
+    cf-list-relax-size
+    (= type :contains-repetition)
+    cf-list-relax-size
     (= type :variable)
     cf-variable
     (= type :variable-info)
     cf-variable
     (= type :exact-variable)
     cf-exact-with-variable
-    (= type :subtype)
+    (= type :relax-type)
     cf-subtype-with-variable
-    (= type :dec-init)
+    (= type :relax-assign)
     cf-variable-declaration-with-initializer
     (= type :relax-branch)
     cf-exact-with-variable

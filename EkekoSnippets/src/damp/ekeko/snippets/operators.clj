@@ -12,7 +12,7 @@
              [astnode :as astnode]
              [reification :as reification]]))
   
-;; Operator for Snippet
+;; Helper Functions
 ;; ---------------------
 
 (defn 
@@ -43,36 +43,53 @@
   [snippet node type args]
   (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
 
+
+;; Operator for Snippet
+;; ---------------------
+
+(defn
+  contains-deep 
+  "Allows elements of given node as child+ of given node."
+  [snippet node]
+  (defn change-gf-elements [snippet alist]
+    (if (empty? alist)
+      snippet
+      (let [snippet-node (update-groundf snippet (first alist) :child+)]
+        (change-gf-elements snippet-node (next alist)))))
+  (let [list-raw (:value node)
+        new-gf-snippet (change-gf-elements snippet list-raw)]
+    (update-constrainf new-gf-snippet node :child+)))
+
 (defn
   contains-elements-with-same-size 
   "Contains all elements in a given nodelist (listval), and list has to be the same size."
   [snippet node]
-  (update-constrainf snippet node :same-size))
+  (update-constrainf snippet node :contains-eq-size))
 
 (defn
   contains-any-elements
   "Contains any elements or none in a given nodelist (listval)."
   [snippet node]
   (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)]
-    (update-constrainf snippet-with-epsilon node :any-element)))
+    (update-constrainf snippet-with-epsilon node :any)))
 
 (defn
   contains-elements
   "Contains all elements in a given nodelist (listval), and list does not have to be the same size."
   [snippet node]
-  (update-constrainf snippet node :contains-elements))
+  (update-constrainf snippet node :contains))
 
 (defn
   contains-elements-with-relative-order 
   "Contains all elements in a given nodelist (listval), with relative order."
   [snippet node]
-  (update-constrainf snippet node :relative-order))
+  (update-constrainf snippet node :contains-eq-order))
 
 (defn
   contains-elements-with-repetition 
   "Contains all elements in a given nodelist (listval), with repetition."
   [snippet node]
-  (update-constrainf snippet node :elements-repetition))
+  (update-constrainf snippet node :contains-repetition))
 
 (defn 
   replace-node-no-apply-rewrite 
@@ -229,24 +246,18 @@
     (update-constrainf snippet-without-else node :relax-branch)))
 
 (defn
-  allow-subtype-on-variable-declaration
+  allow-subtype
   "Allow match given node (= field/variable type) with same type or its' subtype."
   [snippet node]
-  (update-constrainf snippet node :subtype))
+  (update-constrainf snippet node :relax-type))
   
-(defn
-  allow-subtype-on-class-declaration-extends
-  "Allow match given node (= class declaration extends type) with same type or its' subtype."
-  [snippet node]
-  (update-constrainf snippet node :subtype))
-
 (defn
   allow-variable-declaration-with-initializer
   "Allow match given node (= assignment expression) with local variable declaration with initializer."
   [snippet node]
   (let [snippet-without-assignment 
         (update-constrainf snippet (.getExpression node) :epsilon)]
-    (update-constrainf snippet-without-assignment node :dec-init)))
+    (update-constrainf snippet-without-assignment node :relax-assign)))
 
 (defn
   update-logic-conditions
@@ -299,7 +310,7 @@
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
         snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
-        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+        snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :variable)))
 
 (defn 
@@ -314,7 +325,7 @@
   [snippet node uservar]
   (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
         snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
-        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+        snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :variable-info)))
 
 (defn 
@@ -392,7 +403,7 @@
   "Match all kind of node, except the given node."
   [snippet node]
   (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)
-        snippet-with-gf (update-groundf snippet-with-epsilon node :minimalistic)]
+        snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :negated)))
 
 (defn
@@ -443,10 +454,9 @@
         (change-cf-parent snippet-nodelist (.getParent node)))))
   (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
         var-parent (representation/snippet-lvar-for-node snippet parent)
-        new-gf-snippet (update-groundf-with-args (change-cf-parent snippet node) node :node-deep (list var-parent))
+        new-gf-snippet (update-groundf-with-args (change-cf-parent snippet node) node :deep (list var-parent))
         new-snippet (update-constrainf new-gf-snippet node :exact)]
     (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
-
 
 (defn 
   add-snippet
@@ -637,8 +647,9 @@
 (defn
   t-internal-user-defined-condition
   [snippet node template-snippet template-node function-string]
-  (let [user-var (representation/snippet-lvar-for-node template-snippet template-node)]
-    (add-user-defined-condition snippet node (str function-string " " user-var))))
+  (let [bound-snippet (introduce-logic-variables-for-snippet snippet template-snippet)
+        user-var (representation/snippet-lvar-for-node template-snippet template-node)]
+    (add-user-defined-condition bound-snippet node (str function-string " " user-var))))
 
 (defn
   t-add-node-after

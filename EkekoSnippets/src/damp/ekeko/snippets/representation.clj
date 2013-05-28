@@ -328,7 +328,7 @@
 (defn 
   jdt-node-as-snippet
   "Interpretes the given JDT ASTNode as a snippet with default matching 
-   strategies (i.e., grounding=:minimalistic, constaining=:exact)
+   strategies (i.e., grounding=:exact, constaining=:exact)
    for the values of its properties.
    note: Only used to test operators related binding."
   [n]
@@ -337,7 +337,7 @@
       (->
         snippet
         (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] (list :minimalistic))
+        (assoc-in [:ast2groundf value] (list :exact))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
   (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} {} :mandatory))]
@@ -356,7 +356,8 @@
 
 (defn 
   document-as-snippet
-  "Parse Document doc as a snippet with default matching strategies (i.e., grounding=:minimalistic, constaining=:exact)
+  "Parse Document doc as a snippet with default matching strategies 
+   (i.e., grounding=:exact, constaining=:exact)
    for the values of its properties.
    Function ASTRewrite/track is called for each ASTNode to activate the Node Tracking in ASTRewrite." 
   [doc]
@@ -369,7 +370,7 @@
       (->
         snippet
         (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] (list :minimalistic))
+        (assoc-in [:ast2groundf value] (list :exact))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value)
         (assoc-in [:track2ast arrTrack] value)

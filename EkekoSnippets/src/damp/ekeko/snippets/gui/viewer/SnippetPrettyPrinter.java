@@ -72,6 +72,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	public boolean hasDefaultGroundf(Object node) {
 		Object groundf = getGroundF(node);
 		if (groundf == Keyword.intern("minimalistic") ||
+				groundf == Keyword.intern("exact") ||
+				groundf == Keyword.intern("child+") ||
 				groundf == Keyword.intern("epsilon"))
 			return true;
 		return false;
