@@ -357,6 +357,32 @@
     (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
       `((el/fails (cl/all ~@conditions-of-ast))))))
 
+(defn 
+  cf-relax-loop
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+     For ASTNode instances: ((ast :ForStatement/WhileStatement/DoStatement ?var-for-node-match)  
+                               (has :property1 ?var-for-node-match ?var-for-child1-match)
+                               (has :property2 ?var-for-node-match ''primitive-valued-child-as-string''))
+                               ...."
+  [snippet-ast]
+  (fn [snippet]
+    (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
+          snippet-properties (astnode/node-ekeko-properties snippet-ast)
+          var-match          (representation/snippet-var-for-node snippet snippet-ast)
+          child-conditions 
+              (for [[property-keyw retrievalf] 
+                    (seq snippet-properties)
+                    :let [value     (retrievalf) 
+                          var-value (representation/snippet-var-for-node snippet value)]]
+                (if (and (not (is-ignored-property? property-keyw))
+                         (not (= property-keyw :updaters))
+                         (not (= property-keyw :initializers)))
+                  `(reification/has ~property-keyw ~var-match ~var-value)))]
+      `((cl/conde [(reification/ast :ForStatement ~var-match)]
+                  [(reification/ast :WhileStatement ~var-match)]
+                  [(reification/ast :DoStatement ~var-match)])
+         ~@child-conditions))))
+
 (defn
   make-constraining-function
   [type]
@@ -389,6 +415,8 @@
     cf-exact-with-variable
     (= type :negated)
     cf-negated
+    (= type :relax-loop)
+    cf-relax-loop
     (= type :method-dec)
     cf-exact-with-variable
     (= type :var-dec)

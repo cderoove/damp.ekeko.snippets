@@ -318,6 +318,12 @@
                                                       :generalization 
                                                       "Allow relax assignment"
                                                       "Operator with matching strategy :relax-assign\nMatch variable declaration node with same initializer with assignment node in snippet"]
+   :allow-relax-loop                                 [:node
+                                                      allow-relax-loop
+                                                      :is-loop?	
+                                                      :generalization 
+                                                      "Allow relax loop"
+                                                      "Operator with matching strategy :relax-loop\nAllow loop node as for, while or do statement."]
    :introduce-logic-variable                         [:node  
                                                       introduce-logic-variable  
                                                       :none                 

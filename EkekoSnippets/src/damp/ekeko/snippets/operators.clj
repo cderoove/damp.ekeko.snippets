@@ -48,6 +48,21 @@
 ;; ---------------------
 
 (defn
+  allow-relax-loop 
+  "Allow relax loop (for, do, while)."
+  [snippet node]
+  (if (instance? org.eclipse.jdt.core.dom.ForStatement node)
+    (update-constrainf 
+      (representation/remove-gf-cf-for-node 
+        (representation/remove-gf-cf-for-node 
+          snippet 
+          (astnode/make-value node (astnode/node-property-descriptor-for-ekeko-keyword node :initializers) (.initializers node)))
+        (astnode/make-value node (astnode/node-property-descriptor-for-ekeko-keyword node :updaters) (.updaters node)))
+      node 
+      :relax-loop)
+    (update-constrainf snippet node :relax-loop)))
+
+(defn
   contains-deep 
   "Allows elements of given node as child+ of given node."
   [snippet node]

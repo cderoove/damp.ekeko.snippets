@@ -329,6 +329,14 @@
          (equals ?fragment (.getParent ?node))
          (ast :VariableDeclarationFragment ?fragment)))
 
+(defn
+  is-loop?
+  "Relation of loop kind of statement."
+  [?node]
+  (conde [(ast :ForStatement ?node)]
+         [(ast :WhileStatement ?node)]
+         [(ast :DoStatement ?node)]))
+
 (defn 
   epsilon
   []
@@ -355,5 +363,6 @@
    :is-variabledeclaration?              [:node is-variabledeclaration?]
    :is-simplename?                       [:node is-simplename?]
    :is-importlibrary?                    [:node is-importlibrary?]
+   :is-loop?                             [:node is-loop?]
 	})
 
