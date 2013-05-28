@@ -122,7 +122,7 @@
             var-match-owner 
             (if (empty? args)
               (representation/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
-              (first args))]                                                            ;for gf :deep
+              (symbol (first args)))]                                                            ;for gf :deep
         `((reification/child+ ~var-match-owner ~var-match)))))
 
 (defn 

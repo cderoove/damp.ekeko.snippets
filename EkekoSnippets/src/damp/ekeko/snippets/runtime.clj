@@ -168,24 +168,22 @@
   ast-variable-type
    "Relation between ASTNode var with it's type."
   [?var ?type]
-  (cl/conde [(cl/fresh [?node ?frags ?raw ?frag]
-                       (reification/ast :VariableDeclarationStatement ?node)
-                       (reification/has :fragments ?node ?frags)
-                       (reification/listvalue ?frags) 
-                       (reification/value-raw ?frags ?raw) 
-                       (el/contains ?raw ?frag) 
+  (cl/conde [(cl/fresh [?dec ?stat ?frag]
+                       (ast-variable-declaration ?var ?dec)
+                       (reification/ast :SimpleName ?dec)
+                       (el/equals ?frag (.getParent ?dec))
                        (reification/ast :VariableDeclarationFragment ?frag)
-                       (ast-variable-declaration ?var ?frag)
-                       (reification/has :type ?node ?type))]
-            [(cl/fresh [?node ?frags ?raw ?frag]
-                       (reification/ast :FieldDeclaration ?node)
-                       (reification/has :fragments ?node ?frags)
-                       (reification/listvalue ?frags) 
-                       (reification/value-raw ?frags ?raw) 
-                       (el/contains ?raw ?frag) 
+                       (el/equals ?stat (.getParent ?frag))
+                       (reification/ast :VariableDeclarationStatement ?stat)
+                       (reification/has :type ?stat ?type))]
+            [(cl/fresh [?dec ?stat ?frag]
+                       (ast-variable-declaration ?var ?dec)
+                       (reification/ast :SimpleName ?dec)
+                       (el/equals ?frag (.getParent ?dec))
                        (reification/ast :VariableDeclarationFragment ?frag)
-                       (ast-variable-declaration ?var ?frag)
-                       (reification/has :type ?node ?type))]))
+                       (el/equals ?stat (.getParent ?frag))
+                       (reification/ast :FieldDeclaration ?stat)
+                       (reification/has :type ?stat ?type))]))
                                     
 (defn 
   ast-type-qualifiednamestring

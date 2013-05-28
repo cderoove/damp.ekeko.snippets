@@ -17,6 +17,15 @@
 ; ---------------------------------
 
 (defn
+  var-type
+   "Relation between ASTNode variable with it's type."
+  [?var ?type]
+  (cl/fresh [?qname ?var-type]
+            (runtime/ast-variable-type ?var ?var-type)
+            (runtime/ast-type-qualifiednamestring ?var-type ?qname)
+            (runtime/ast-type-qualifiednamestring ?type ?qname)))
+
+(defn
   method-dec
    "Relation between ASTNode invocation with it's declaration."
   [?inv ?dec]

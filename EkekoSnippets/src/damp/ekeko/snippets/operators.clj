@@ -538,6 +538,12 @@
   (internal-user-defined-condition snippetgroup node-var node-arg "var-binding"))
 
 (defn
+  match-variable-type
+   "Match Relation between ASTNode invocation with it's type."
+  [snippetgroup node-var node-arg]
+  (internal-user-defined-condition snippetgroup node-var node-arg "var-type"))
+
+(defn
   match-variable-typequalifiedname
    "Match Relation between ASTNode variable with it's type qualified name."
   [snippetgroup node-var node-type]

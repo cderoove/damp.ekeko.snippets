@@ -426,30 +426,36 @@
                                                       :refinement 
                                                       "Bind to variable"
                                                       "Operator with matching strategy :var-binding\nMatch variable node which has same binding with given snippet node"]
+   :match-variable-type                             [:node  
+                                                      match-variable-type    
+                                                      :is-simplename? 
+                                                      :refinement 
+                                                      "Match variable type"
+                                                      "Operator with matching strategy :var-type\nMatch type of variable node to the given type"]
    :match-variable-typequalifiedname                 [:node  
                                                       match-variable-typequalifiedname
                                                       :is-simplename? 
-                                                      :refinement 
+                                                      :none 
                                                       "Match var-type qualified name"
                                                       "Operator with matching strategy :var-type\nMatch variable with its type qualified name"]
    :match-variable-typequalifiednamestring           [:node  
                                                       match-variable-typequalifiednamestring
                                                       :is-simplename? 
                                                       :refinement 
-                                                      "Match var-type qualified name string"
-                                                      "Operator with matching strategy :var-typename\nMatch variable with its type qualified name"]
+                                                      "Match variable type with qualified name"
+                                                      "Operator with matching strategy :var-qname\nMatch variable with its type qualified name"]
    :match-type-qualifiedname                         [:node  
                                                       match-type-qualifiedname
                                                       :is-type? 
-                                                      :refinement 
+                                                      :none 
                                                       "Match type qualified name"
                                                       "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
    :match-type-qualifiednamestring                   [:node  
                                                       match-type-qualifiednamestring
                                                       :is-type? 
                                                       :refinement 
-                                                      "Match type qualified name string"
-                                                      "Operator with matching strategy :type-qnames\nMatch type with its qualified name"]
+                                                      "Match type with qualified name"
+                                                      "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
    :add-user-defined-condition                       [:none       
                                                       add-user-defined-condition                                       
                                                       :none   
@@ -534,6 +540,7 @@
   {:match-invocation-declaration                     ["Declaration Node"       :is-methoddeclaration?]
    :match-variable-declaration                       ["Declaration Node"       :is-variabledeclaration?]
    :match-variable-samebinding                       ["Variable Node"          :is-simplename?]
+   :match-variable-type                              ["Type Node  "            :is-type?]
    :match-variable-typequalifiedname                 ["Qualified Name Node"    :is-importlibrary?]
    :match-type-qualifiedname                         ["Qualified Name Node"    :is-importlibrary?]
    :node-deep                                        ["Parent Node"            :is-ast?]
