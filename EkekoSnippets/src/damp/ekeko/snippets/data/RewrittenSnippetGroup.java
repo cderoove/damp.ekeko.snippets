@@ -46,6 +46,12 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
 	}
 
+	public void removeRule(Object rwNode) {
+		Object oldRWSnippet = getSnippet(rwNode);
+		Object rwSnippet = RT.var("damp.ekeko.snippets.operators", "remove-user-defined-condition").invoke(oldRWSnippet, rwNode);		
+		setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
+	}
+
 	public String getTransformationQuery(SnippetGroup sGroup) {
 		Object query = RT.var("damp.ekeko.snippets.querying","snippetgroup-rewrite-query").invoke(sGroup.getGroup(), getGroup(), Symbol.intern("damp.ekeko/ekeko")); 		
 		if (query != null)
@@ -64,7 +70,8 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		for (int i = 0; i < mapping.length; i++) {
 			Object[] oneMapping = getArray(mapping[i]);
 			TableItem item = new TableItem(table, 0);
-			item.setText(new String[] { oneMapping[0].toString() , oneMapping[1].toString(), oneMapping[2].toString() });
+			item.setData(oneMapping[2]);
+			item.setText(new String[] { oneMapping[0].toString() , sGroup.nodeToString(oneMapping[1]), nodeToString(oneMapping[2]) });
 		}
 		
 	}

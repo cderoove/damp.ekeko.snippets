@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
@@ -60,7 +61,6 @@ public class TransformsView extends SnippetView {
 	private TreeViewer treeViewerRWSnippet;
 	private Tree treeOperator;
 	private Table tableRW;
-	private Text textDesc;
 
 	private Groups groups;
 	private SnippetGroup snippetGroup;
@@ -241,10 +241,23 @@ public class TransformsView extends SnippetView {
 		});		
 		
 		Group group_4 = new Group(container, SWT.NONE);
-		group_4.setLayout(new GridLayout(2, false));
+		group_4.setLayout(new GridLayout(1, false));
 		GridData gd_group_4 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		gd_group_4.heightHint = 300;
 		group_4.setLayoutData(gd_group_4);
+		
+		ToolBar toolBar_1 = new ToolBar(group_4, SWT.FLAT | SWT.RIGHT);
+		toolBar_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		
+		ToolItem toolItem = new ToolItem(toolBar_1, SWT.NONE);
+		toolItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				removeRewriteRule();
+			}
+		});
+		toolItem.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
+		toolItem.setToolTipText("Remove Rule");
 		
 		Composite composite = new Composite(group_4, SWT.NONE);
 		GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
@@ -272,9 +285,6 @@ public class TransformsView extends SnippetView {
 		TableColumn tblclmnRewrittenCode = tableViewerColumn_2.getColumn();
 		tcl_composite.setColumnData(tblclmnRewrittenCode, new ColumnPixelData(330, true, true));
 		tblclmnRewrittenCode.setText("Rewritten Code");
-		
-		textDesc = new Text(group_4, SWT.BORDER);
-		textDesc.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
 		contentProvider = new SnippetGroupTreeContentProvider();
 
@@ -355,6 +365,13 @@ public class TransformsView extends SnippetView {
 
 	public Object getSelectedSnippet() {
 		TreeItem[] selectedItems = treeViewerSnippet.getTree().getSelection();
+		if (selectedItems.length > 0)
+			return selectedItems[0].getData();
+		return null;
+	}
+	
+	public Object getSelectedRule() {
+		TableItem[] selectedItems = tableRW.getSelection();
 		if (selectedItems.length > 0)
 			return selectedItems[0].getData();
 		return null;
@@ -443,6 +460,12 @@ public class TransformsView extends SnippetView {
 		
 		rwSnippetGroup.setTableRW(tableRW, snippetGroup);
 		onRWSnippetSelection();
+	}
+
+	public void removeRewriteRule() {
+		Object node = getSelectedRule();
+		rwSnippetGroup.removeRule(node);
+		renderSnippet();
 	}
 
 	public void removeRewriteSnippet() {

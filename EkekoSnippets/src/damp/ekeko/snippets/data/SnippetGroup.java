@@ -104,6 +104,17 @@ public class SnippetGroup {
 		return code[0].toString();
 	}
 	
+	public String nodeToString(Object node) {
+		if (node == null)
+			return toString();
+		Object snippet = getSnippet(node);
+		if (snippet == null)
+			return toString();
+		String result = (String) RT.var("damp.ekeko.snippets.gui", "print-plain-node").invoke(snippet, node);
+		System.out.println(result);
+		return result;
+	}
+	
 	public String getLogicConditions(Object node) {
 		Object snippet = getSnippet(node);
 		Object conds;

@@ -31,4 +31,7 @@ public class SnippetPlainPrettyPrinter extends SnippetPrettyPrinter {
 	public void postVisit(ASTNode node) {
 	}
 	
+	public String getResult(){
+		return getPlainResult() + " \n\n";
+	}
 }

@@ -438,6 +438,12 @@
                              (representation/snippet-userfs-for-node snippet node-var))]
     (update-in snippet [:ast2userfs node-var] (fn [x] new-conditions))))
 
+(defn
+  remove-user-defined-condition
+  "Remove user defined condition for a given node-var."
+  [snippet node-var]
+  (update-in snippet [:ast2userfs node-var] (fn [x] '())))
+
 
 ;; Operator for SnippetGroup
 ;; -------------------------

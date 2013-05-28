@@ -243,6 +243,10 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("&colorclose");
 	}
 
+	public String getPlainResult(){
+		return super.getResult();
+	}
+	
 	public String getResult(){
 		String result = super.getResult();
 		
@@ -266,7 +270,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//delete ]@(,) in the last part
 		result = result.substring(0, result.length()-7);
 		
-		return result + " ";
+		return result + " \n\n";
 	}
 
 	public void addBufferBeforeEOL(String str) {

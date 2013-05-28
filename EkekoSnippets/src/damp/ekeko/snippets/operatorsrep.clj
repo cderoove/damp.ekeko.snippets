@@ -454,8 +454,14 @@
                                                       add-user-defined-condition                                       
                                                       :none   
                                                       :other 
-                                                      "Add user-defined predicate"
-                                                      "Operator to add manually condition."]
+                                                      "Add user-defined condition"
+                                                      "Operator to add user-defined condition."]
+   :remove-user-defined-condition                    [:none       
+                                                      remove-user-defined-condition                                       
+                                                      :none   
+                                                      :other 
+                                                      "Remove user-defined condition"
+                                                      "Operator to remove user-defined condition."]
    :introduce-logic-variables-for-snippet            [:node     
                                                       introduce-logic-variables-for-snippet 
                                                       :is-ast?       	
