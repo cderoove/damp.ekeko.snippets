@@ -256,14 +256,6 @@
 ;; ----------------------
 
 (defn
-  cf-list-relax-size
-  "Returns a function that will generate constraining conditions for the given property value of a code snippet.
-   Conditions : - size of list no need to be the same"
-  [snippet-val]
-  (fn [snippet] 
-    (internal-cf-list snippet snippet-val :notsamesize))) 
-  
-(defn
   cf-variable
   "Returns a function that will generate a condition that will unify the match for the
    given code snippet AST node with a user-provided logic variable:
@@ -279,11 +271,41 @@
          `((cl/== ~var-userprovided ~var-match))))))
 
 (defn
+  cf-epsilon-with-variable
+  [snippet-val]
+  (fn [snippet] 
+     (let [var-match 
+           (representation/snippet-var-for-node snippet snippet-val)
+           var-userprovided
+           (representation/snippet-uservar-for-var snippet var-match)]
+       (if (nil? var-userprovided)
+         ((make-epsilon-function snippet-val) snippet)
+         (concat 
+           ((gf-node-exact snippet-val) snippet)
+           ((cf-variable snippet-val) snippet))))))
+
+(defn
   cf-exact-with-variable
   [snippet-val]
   (fn [snippet] 
     (concat 
       ((cf-exact snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
+
+(defn
+  cf-list-relax-size
+  "Returns a function that will generate constraining conditions for the given property value of a code snippet.
+   Conditions : - size of list no need to be the same"
+  [snippet-val]
+  (fn [snippet] 
+    (internal-cf-list snippet snippet-val :notsamesize))) 
+  
+(defn
+  cf-list-relax-size-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-list-relax-size snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
 (defn 
@@ -330,6 +352,14 @@
           var-right    (representation/snippet-var-for-node snippet (.getRightHandSide (.getExpression snippet-ast)))]
       `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
 
+(defn
+  cf-variable-declaration-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-variable-declaration-with-initializer snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
+
 (defn 
   ast-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
@@ -356,6 +386,14 @@
   (fn [snippet]
     (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
       `((el/fails (cl/all ~@conditions-of-ast))))))
+
+(defn
+  cf-negated-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-negated snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
 
 (defn 
   cf-relax-loop
@@ -384,23 +422,31 @@
          ~@child-conditions))))
 
 (defn
+  cf-relax-loop-with-variable
+  [snippet-val]
+  (fn [snippet] 
+    (concat 
+      ((cf-relax-loop snippet-val) snippet)
+      ((cf-variable snippet-val) snippet))))
+
+(defn
   make-constraining-function
   [type]
   (cond
     (= type :exact)
-    cf-exact
+    cf-exact-with-variable
     (= type :any)
-    make-epsilon-function
+    cf-epsilon-with-variable
     (= type :child+)
-    cf-list-relax-size
+    cf-list-relax-size-with-variable
     (= type :contains)
-    cf-list-relax-size
+    cf-list-relax-size-with-variable
     (= type :contains-eq-size)
-    cf-list-exact
+    cf-exact-with-variable
     (= type :contains-eq-order)
-    cf-list-relax-size
+    cf-list-relax-size-with-variable
     (= type :contains-repetition)
-    cf-list-relax-size
+    cf-list-relax-size-with-variable
     (= type :variable)
     cf-variable
     (= type :variable-info)
@@ -410,13 +456,13 @@
     (= type :relax-type)
     cf-subtype-with-variable
     (= type :relax-assign)
-    cf-variable-declaration-with-initializer
+    cf-variable-declaration-with-variable
     (= type :relax-branch)
     cf-exact-with-variable
     (= type :negated)
-    cf-negated
+    cf-negated-with-variable
     (= type :relax-loop)
-    cf-relax-loop
+    cf-relax-loop-with-variable
     (= type :method-dec)
     cf-exact-with-variable
     (= type :var-dec)
@@ -425,14 +471,12 @@
     cf-exact-with-variable
     (= type :var-type)
     cf-exact-with-variable
-    (= type :var-typename)
+    (= type :var-qname)
     cf-exact-with-variable
     (= type :type-qname)
     cf-exact-with-variable
-    (= type :type-qnames)
-    cf-exact-with-variable
     (= type :epsilon)
-    make-epsilon-function
+    cf-epsilon-with-variable
     :default
     (throw (Exception. (str "Unknown constraining function type: " type))))) 
 

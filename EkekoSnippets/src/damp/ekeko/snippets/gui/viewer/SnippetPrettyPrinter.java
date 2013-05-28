@@ -103,10 +103,14 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	public String getConstrainFString(Object node) {
 		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node)); 
-		if (getConstrainF(node) == Keyword.intern("change-name")) 
+		Object constrainf = getConstrainF(node);
+
+		if (constrainf == Keyword.intern("change-name")) 
 			return getFunctionStringForChangeName(functionArgs);
+		
 		if (getConstrainF(node) == Keyword.intern("exact-variable")) 
 			return getFunctionStringForExactVariable(getUserVar(node));
+		
 		return getFunctionString(functionArgs);
 	}
 
@@ -117,6 +121,20 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			result += getFunctionString(getArray(userFS[i])) + ",";
 		}
 		return result.substring(0, result.length()-1);
+	}
+
+	public String getUserVarString(Object node) {
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node)); 
+		Object constrainf = getConstrainF(node);
+		Object uservar = getUserVar(node);
+		
+		if ((uservar != null) && 
+				(constrainf != Keyword.intern("exact-variable")) &&
+				(constrainf != Keyword.intern("variable")) &&
+				(constrainf != Keyword.intern("variable-info")))  	
+			return getFunctionStringForExactVariable(uservar);
+		
+		return "";
 	}
 
 	public String getFunctionString(Object[] functionList) {
@@ -220,6 +238,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			fString += getConstrainFString(node) + ",";
 		if (hasUserf(node))
 			fString += getUserFSString(node) + ",";
+		if (!getUserVarString(node).isEmpty())
+			fString += getUserVarString(node) + ",";
 		
 		if (!fString.isEmpty()) { 
 			fString = fString.substring(0,fString.length()-1);

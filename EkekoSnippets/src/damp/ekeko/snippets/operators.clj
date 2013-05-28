@@ -426,7 +426,7 @@
    "Match Relation between ASTNode variable with it's type qualified name."
   [snippet node-var string]
   (let [var-node (representation/snippet-lvar-for-node snippet node-var)
-        new-snippet-var (update-constrainf-with-args snippet node-var :var-typename (list string))]
+        new-snippet-var (update-constrainf-with-args snippet node-var :var-qname (list string))]
     (add-logic-conditions
       new-snippet-var
       `((damp.ekeko.snippets.runtime/ast-variable-typequalifiednamestring ~var-node ~string)))))
@@ -436,7 +436,7 @@
    "Match Relation between ASTNode type with it's type qualified name."
   [snippet node-var string]
   (let [var-node (representation/snippet-lvar-for-node snippet node-var)
-        new-snippet-var (update-constrainf-with-args snippet node-var :type-qnames (list string))]
+        new-snippet-var (update-constrainf-with-args snippet node-var :type-qname (list string))]
     (add-logic-conditions
       new-snippet-var
       `((damp.ekeko.snippets.runtime/ast-type-qualifiednamecontain ~var-node ~string)))))
@@ -469,7 +469,8 @@
   [snippetgroup node parent]
   (defn change-cf-parent [snippet node]
     (if (= node parent)
-      (update-constrainf snippet (representation/snippet-node-with-member snippet node) :epsilon)
+      ;(update-constrainf snippet (representation/snippet-node-with-member snippet node) :epsilon)
+      snippet
       (let [snippet-node (update-constrainf snippet node :epsilon)
             snippet-nodelist (update-constrainf snippet-node (representation/snippet-node-with-member snippet-node node) :epsilon)]
         (change-cf-parent snippet-nodelist (.getParent node)))))
@@ -558,6 +559,7 @@
   [snippetgroup node-var node-arg]
   (internal-user-defined-condition snippetgroup node-var node-arg "var-type"))
 
+;;not used
 (defn
   match-variable-typequalifiedname
    "Match Relation between ASTNode variable with it's type qualified name."
@@ -574,6 +576,7 @@
         new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
     new-group))
 
+;;not used
 (defn
   match-type-qualifiedname
    "Match Relation between ASTNode type with it's type qualified name."
