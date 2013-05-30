@@ -539,6 +539,12 @@
   (flat-map snippet-userqueries (snippetgroup-snippetlist snippetgroup)))
 
 (defn
+  snippetgroup-nodes
+  "Returns all nodes from the given snippet group."
+  [snippetgroup]
+  (flat-map snippet-nodes (snippetgroup-snippetlist snippetgroup)))
+
+(defn
   snippetgroup-rootvars
   "Returns all logic variables of root node of all snippets in snippet group."
   [snippetgroup]

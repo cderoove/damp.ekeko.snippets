@@ -477,7 +477,7 @@
    :introduce-logic-variables-for-snippet            [:node     
                                                       introduce-logic-variables-for-snippet 
                                                       :is-ast?       	
-                                                      :transform 
+                                                      :none 
                                                       "Introduce logic variables for snippet"
                                                       "Operator to introduce new logic variables to all nodes based on logic variables in the template snippet"]
    :change-name                                      [:node       

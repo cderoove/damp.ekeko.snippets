@@ -225,14 +225,14 @@ public class TransformsView extends SnippetView {
 		GridData gd_lblOperator = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
 		gd_lblOperator.heightHint = 22;
 		lblOperator.setLayoutData(gd_lblOperator);
-		lblOperator.setText("Operator");
+		lblOperator.setText("Rewrite Action");
 		
 		treeOperator = new Tree(group_3, SWT.BORDER  | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		treeOperator.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
 		TreeColumn trclmnOperator = new TreeColumn(treeOperator, SWT.NONE);
 		trclmnOperator.setWidth(300);
-		trclmnOperator.setText("Operator");
+		trclmnOperator.setText("Rewrite Action");
 		
 		treeOperator.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -241,12 +241,16 @@ public class TransformsView extends SnippetView {
 		});		
 		
 		Group group_4 = new Group(container, SWT.NONE);
-		group_4.setLayout(new GridLayout(1, false));
+		group_4.setLayout(new GridLayout(2, false));
 		GridData gd_group_4 = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		gd_group_4.heightHint = 300;
 		group_4.setLayoutData(gd_group_4);
 		
+		Label lblNewLabel_1 = new Label(group_4, SWT.NONE);
+		lblNewLabel_1.setText("Rewrite Rule");
+		
 		ToolBar toolBar_1 = new ToolBar(group_4, SWT.FLAT | SWT.RIGHT);
+		toolBar_1.setOrientation(SWT.RIGHT_TO_LEFT);
 		toolBar_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		
 		ToolItem toolItem = new ToolItem(toolBar_1, SWT.NONE);
@@ -260,7 +264,7 @@ public class TransformsView extends SnippetView {
 		toolItem.setToolTipText("Remove Rule");
 		
 		Composite composite = new Composite(group_4, SWT.NONE);
-		GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
 		gd_composite.widthHint = 700;
 		composite.setLayoutData(gd_composite);
 		TableColumnLayout tcl_composite = new TableColumnLayout();

@@ -92,7 +92,7 @@
       result-equal
       operatorsrep/operator-name)))
 
-(defn dfs-snippet [group snippet goal] 
+(defn dfs-snippet-old [group snippet goal] 
   (defn result-equal 
     [new-snippet goal]
     (= (test/tuples-to-stringsetstring 
@@ -124,3 +124,36 @@
   (let [snippet-nodes
         (remove  (fn [x] (= (:ast snippet) x)) (representation/snippet-nodes snippet))]
     (apply-operators snippet (operatorsrep/searchspace-operator-ids) snippet-nodes)))
+
+;snippet is not needed anymore
+(defn dfs-snippet [group snippet goal] 
+  (defn result-equal 
+    [new-group goal]
+    (= (test/tuples-to-stringsetstring 
+         (snippets/query-by-snippetgroup new-group))
+       (test/tuples-to-stringsetstring goal)))
+  (defn apply-operator-to-nodes
+    [group operator nodes]
+    (println "next operator")
+    (if (empty? nodes) 
+      []
+      (if (precondition/safe-operator-for-node? operator (first nodes))
+        (let [new-group (operatorsrep/apply-operator-to-snippetgroup group operator (first nodes) nil)]
+          (println "process" operator (first nodes))
+          (if (result-equal new-group goal)
+            (do 
+              (println "succeed" operator (first nodes))
+              [[(operatorsrep/operator-name operator) (first nodes)]])
+            (apply-operator-to-nodes group operator (rest nodes))))
+        (apply-operator-to-nodes group operator (rest nodes)))))
+  (defn apply-operators
+    [group operators nodes]
+    (println "start")
+    (if (empty? operators) 
+      []
+      (let [result (apply-operator-to-nodes group (first operators) nodes)]
+        (if (empty? result)
+          (apply-operators group (rest operators) nodes)
+          result))))
+  (let [group-nodes (representation/snippetgroup-nodes group)]
+    (apply-operators group (operatorsrep/searchspace-operator-ids) group-nodes)))

@@ -29,22 +29,22 @@
             category="EkekoSnippets"
             class="damp.ekeko.snippets.gui.SnippetView"
             id="damp.ekeko.snippets.gui.SnippetView"
-            name="Ekeko Snippet">
+            name="Ekeko Snippets">
       </view>
       <view
             class="damp.ekeko.snippets.gui.ResultCheckView"
             id="damp.ekeko.snippets.gui.ResultCheckView"
-            name="Ekeko Result Checking">
+            name="Ekeko Candidate Subjects Checking">
       </view>
       <view
             class="damp.ekeko.snippets.gui.GroupView"
             id="damp.ekeko.snippets.gui.GroupView"
-            name="Ekeko Snippets Group">
+            name="Ekeko Groups">
       </view>
       <view
             class="damp.ekeko.snippets.gui.TransformsView"
             id="damp.ekeko.snippets.gui.TransformsView"
-            name="Ekeko Transformation">
+            name="Ekeko Transformations">
       </view>
    </extension>
    <extension

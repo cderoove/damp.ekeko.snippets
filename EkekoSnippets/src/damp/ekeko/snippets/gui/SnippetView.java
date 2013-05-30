@@ -560,7 +560,8 @@ public class SnippetView extends ViewPart {
 		}
 		
         public void run() {
-			final Object[] result = snippetGroup.getQueryResult(selectedSnippet);
+        	//result check view only for group
+			final Object[] result = snippetGroup.getQueryResult("Group");
 			
     		Display.getDefault().syncExec(new Runnable() {    			
     		    public void run() {
@@ -568,7 +569,8 @@ public class SnippetView extends ViewPart {
     					ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
     					view.setResult(result);
     					view.setGroup(snippetGroup);
-    					view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
+    					//view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
+    					view.setSnippet(null);
     					view.putData();
     				} catch (PartInitException e) {
     					e.printStackTrace();
