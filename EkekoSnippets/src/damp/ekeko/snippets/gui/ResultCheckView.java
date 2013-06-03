@@ -386,12 +386,12 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResultDecorator.setButtonEditorAtNewRow();
 	}
 	
-	public Object[] getConfirmResult() {
+	public Object[] getConfirmResult(Image icon) {
 		TableItem[] items = tableConfirmResult.getItems();
 		Object[] temp = new Object[items.length];
 		int j=0;
 		for (int i=0; i<items.length-1; i++) {
-			if (items[i].getImage(1).equals(positiveIcon)) {
+			if (items[i].getImage(1).equals(icon)) {
 				temp[j] = items[i].getData();
 				j++;
 			}
@@ -405,16 +405,26 @@ public class ResultCheckView extends ViewPart {
 		return goal;
 	}
 	
+	public Object[] getPositiveExamples() {
+		return getConfirmResult(positiveIcon);
+	}
+	
+	public Object[] getNegativeExamples() {
+		return getConfirmResult(negativeIcon);
+	}
+
 	class SearchThread extends Thread {
-		Object[] goal;
+		Object[] positiveExamples;
+		Object[] negativeExamples;
 		
-		public SearchThread (Object[] goal) {
-			this.goal = goal;
+		public SearchThread (Object[] p, Object[] n) {
+			positiveExamples = p;
+			negativeExamples = n;
 		}
 		
         public void run() {
         	Date startTime = new Date();
-        	Object[] searchResult = snippetGroup.searchSpace(snippet, goal);
+        	Object[] searchResult = snippetGroup.searchSpace(positiveExamples, negativeExamples);
         	String strResult = "Suggestion: \n \n";
         	for (int i=0; i<searchResult.length; i++) {
         		String temp = searchResult[i].toString().replace("[", "").replace("]", "");
@@ -438,7 +448,7 @@ public class ResultCheckView extends ViewPart {
 	
 	public void startSearch() {
     	textSnippet.setText("Processing...");
-		searchThr = new SearchThread(getConfirmResult());
+		searchThr = new SearchThread(getPositiveExamples(), getNegativeExamples());
 		searchThr.start();
 	}
 

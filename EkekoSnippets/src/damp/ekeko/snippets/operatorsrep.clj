@@ -333,8 +333,8 @@
    :introduce-logic-variable-by-random-var           [:node  
                                                       introduce-logic-variable-by-random-var  
                                                       :is-simplename?                 
-                                                      :none 
-                                                      "Introduce logic variable"
+                                                      :generalization 
+                                                      "Introduce logic variable by random variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-with-info               [:node  
                                                       introduce-logic-variable-with-info  
@@ -380,7 +380,7 @@
                                                       "Operator to replace method invocation with all statements in it's method declaration body"]
    :negated-node                                     [:node   
                                                       negated-node        
-                                                      :is-ast?      
+                                                      :is-simplename?      
                                                       :refinement 
                                                       "Match negated node"
                                                       "Operator with matching strategy :negated\nMatch all node except given snippet node"]
@@ -569,10 +569,14 @@
 (def 
   searchspace-operators
   {:contains-elements                                 contains-elements
+   :allow-relax-loop                                  allow-relax-loop
    :allow-ifstatement-with-else                       allow-ifstatement-with-else  
    :allow-subtype                                     allow-subtype
-   :introduce-logic-variable-by-random-var            introduce-logic-variable-by-random-var
-   :node-deep                                         node-deep
+   :negated-node                                      negated-node
 	})
 
 (defn searchspace-operator-ids [] (keys searchspace-operators))
+(defn searchspace-refinement-operator-ids [] 
+  (keys (filter (fn [x] (= (operator-type (first x)) :refinement)) searchspace-operators)))
+(defn searchspace-generalization-operator-ids [] 
+  (keys (filter (fn [x] (= (operator-type (first x)) :generalization)) searchspace-operators)))
