@@ -29,6 +29,7 @@ See [screen recording](http://youtu.be/x5lt-jh7P-M):
 Open view by launching "Ekeko Snippets" (with eclipse icon) in the toolbar, or on menu Window -> Show View -> Other -> EkekoSnippets.
 
 Ekeko Group
+
 1. Add group.
 2. Click on the group to open Ekeko Template view.
 
@@ -46,6 +47,7 @@ Ekeko Candidate Subjects Checking
 9. Run operator suggestion. Click button "Start" to search operator to be applied on snippet to get expected result.
 
 Ekeko Tranformation
+
 In Ekeko Template view, click "Program Transformation" to open Ekeko Transformation view.
 
 10. Add rewritten code. Select source code from editor and click "Add Rewritten code". The relation of "Before" and "After" snippet is one to many.
