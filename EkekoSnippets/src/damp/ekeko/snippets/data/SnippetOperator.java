@@ -50,7 +50,7 @@ public class SnippetOperator {
 		tree.removeAll();
 
 		TreeItem root = new TreeItem(tree, 0);
-		root.setText("Operator");
+		root.setText("Action");
 		root.setData("");
 		
 		Object[] operators = getArray(RT.var("damp.ekeko.snippets.precondition", "applicable-operators-for-transformation").invoke(selectedNode));

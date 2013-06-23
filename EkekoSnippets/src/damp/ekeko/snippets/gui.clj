@@ -294,3 +294,8 @@
   []
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-plugin-viewer))))
 
+;;OTHER FUNCTIONS' NAME
+;;---------------------------
+
+(defn print-template [s] (print (print-snippet s)))
+(defn print-rewrite-sequence [s] (print (print-snippet s)))

@@ -106,6 +106,14 @@
       (representation/snippet-uservars-for-information snippet)) 
     (query-by-snippet-in-group snippet snippetgroup)))
 
+;;OTHER FUNCTIONS' NAME
+;;---------------------------
+
+(def query-by-templategroup query-by-snippetgroup)
+(def query-by-templategroup* query-by-snippetgroup*)
+(def query-rewrite-by-templategroup query-rewrite-by-snippetgroup)
+
+
 (comment 
   (use 'damp.ekeko.snippets)
   (in-ns 'damp.ekeko.snippets)

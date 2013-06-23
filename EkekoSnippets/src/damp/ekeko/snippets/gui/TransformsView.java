@@ -247,7 +247,7 @@ public class TransformsView extends SnippetView {
 		group_4.setLayoutData(gd_group_4);
 		
 		Label lblNewLabel_1 = new Label(group_4, SWT.NONE);
-		lblNewLabel_1.setText("Rewrite Rule");
+		lblNewLabel_1.setText("Rewrite Sequence");
 		
 		ToolBar toolBar_1 = new ToolBar(group_4, SWT.FLAT | SWT.RIGHT);
 		toolBar_1.setOrientation(SWT.RIGHT_TO_LEFT);

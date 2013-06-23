@@ -415,7 +415,10 @@
   "Update constraining function for node and all child+ of a given node in snippet."
   [snippet node cf]
   (defn update-snippet-value [snippet value]
-    (update-in snippet [:ast2constrainf value] (fn [x] (list cf))))
+    (if (or (= (snippet-constrainer-for-node snippet value) :variable)
+            (= (snippet-constrainer-for-node snippet value) :variable-info))
+      snippet
+      (update-in snippet [:ast2constrainf value] (fn [x] (list cf)))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
       node
@@ -826,4 +829,12 @@
   (let [firstundo (snippetgrouphistory-first-undohistory grouphistory)
         newundo (rest (snippetgrouphistory-undohistory grouphistory))]
     (update-in grouphistory [:operators-undohistory] (fn [x] newundo))))
+
+;;OTHER FUNCTIONS' NAME
+;;---------------------------
+
+(def document-as-template document-as-snippet)
+(def template-root snippet-root)
+(def make-templategroup make-snippetgroup)
+
 

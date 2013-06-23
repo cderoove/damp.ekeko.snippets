@@ -29,7 +29,7 @@
             category="EkekoSnippets"
             class="damp.ekeko.snippets.gui.SnippetView"
             id="damp.ekeko.snippets.gui.SnippetView"
-            name="Ekeko Snippets">
+            name="Ekeko Template">
       </view>
       <view
             class="damp.ekeko.snippets.gui.ResultCheckView"
@@ -39,12 +39,12 @@
       <view
             class="damp.ekeko.snippets.gui.GroupView"
             id="damp.ekeko.snippets.gui.GroupView"
-            name="Ekeko Groups">
+            name="Ekeko Group">
       </view>
       <view
             class="damp.ekeko.snippets.gui.TransformsView"
             id="damp.ekeko.snippets.gui.TransformsView"
-            name="Ekeko Transformations">
+            name="Ekeko Transformation">
       </view>
    </extension>
    <extension

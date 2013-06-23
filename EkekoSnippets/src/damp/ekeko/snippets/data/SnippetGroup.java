@@ -246,8 +246,8 @@ public class SnippetGroup {
 	}
 	
 	public Object[] searchSpace(Object[] positiveExamples, Object[] negativeExamples) {
-		return getArray(RT.var("damp.ekeko.snippets.searchspace","dfs-snippet").invoke(getGroup(), positiveExamples, negativeExamples)); 		
-		//return getArray(RT.var("damp.ekeko.snippets.searchspace","iterate-snippet").invoke(getGroup(), positiveExamples, negativeExamples)); 		
+		//return getArray(RT.var("damp.ekeko.snippets.searchspace","dfs-snippet").invoke(getGroup(), positiveExamples, negativeExamples)); 		
+		return getArray(RT.var("damp.ekeko.snippets.searchspace","iterate-snippet").invoke(getGroup(), positiveExamples, negativeExamples)); 		
 	}
 
 	public static Object parseStringsToNodes(String[] arrStr) {

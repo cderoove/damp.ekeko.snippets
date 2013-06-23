@@ -312,6 +312,12 @@
                                                       :generalization 
                                                       "Allow relax type"
                                                       "Operator with matching strategy :relax-type\nMatch node with same type or subtype of snippet node"]
+   :relax-typeoftype                                 [:node
+                                                      relax-typeoftype     
+                                                      :is-type?	
+                                                      :generalization 
+                                                      "Allow relax type of type"
+                                                      "Operator with matching strategy :relax-typeoftype\nMatch node (=type) to simple type or parameterized type"]
    :allow-variable-declaration-with-initializer      [:node     
                                                       allow-variable-declaration-with-initializer 
                                                       :is-assignmentstatement?    
@@ -346,7 +352,7 @@
                                                       introduce-logic-variable-of-node-exact  
                                                       :none      
                                                       :netral 
-                                                      "Introduce logic variable as information"
+                                                      "Bind logic variable"
                                                       "Operator to introduce new logic variable without removing any it's property values"]
    :introduce-logic-variables                        [:node 
                                                       introduce-logic-variables  
@@ -462,6 +468,18 @@
                                                       :refinement 
                                                       "Match type with qualified name"
                                                       "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
+   :bind-variables                                   [:node 
+                                                      bind-variables  
+                                                      :is-simplename?					
+                                                      :generalization 
+                                                      "Bind variables"
+                                                      "Operator to introduce new logic variables to all nodes with same binding with given snippet node and bind those variables"]
+   :refer-variables-to-variable-declaration          [:node 
+                                                      refer-variables-to-variable-declaration
+                                                      :is-variabledeclaration?					
+                                                      :generalization 
+                                                      "Refer variables to variable declarations"
+                                                      "Operator to introduce new logic variables to all nodes with same binding with given snippet node and refer those variables to its declaration"]
    :add-user-defined-condition                       [:none       
                                                       add-user-defined-condition                                       
                                                       :none   
@@ -568,10 +586,10 @@
 
 (def 
   searchspace-operators
-  {:contains-elements                                 contains-elements
-   :allow-relax-loop                                  allow-relax-loop
+  {:allow-relax-loop                                  allow-relax-loop
    :allow-ifstatement-with-else                       allow-ifstatement-with-else  
    :allow-subtype                                     allow-subtype
+   :relax-typeoftype                                  relax-typeoftype
    :negated-node                                      negated-node
 	})
 

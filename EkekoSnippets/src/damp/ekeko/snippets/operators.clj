@@ -267,6 +267,14 @@
   (update-constrainf snippet node :relax-type))
   
 (defn
+  relax-typeoftype
+  "Allow match given node (= type) as simple type or parameterized type."
+  [snippet node]
+  (let [snippet-epsilon (representation/remove-gf-cf-for-node snippet node)
+        snippet-type    (representation/update-cf-for-node snippet-epsilon (.getType node) :exact)]
+    (update-constrainf snippet-type node :relax-typeoftype)))
+
+(defn
   allow-variable-declaration-with-initializer
   "Allow match given node (= assignment expression) with local variable declaration with initializer."
   [snippet node]
@@ -559,6 +567,55 @@
   [snippetgroup node-var node-arg]
   (internal-user-defined-condition snippetgroup node-var node-arg "var-type"))
 
+(defn 
+  internal-bind-variables
+  "Introduce logic variable to a given node, and other nodes with the same ast kind and identifier.
+   Logic variable for the nodes will be generated. Then bind the variables."
+  [snippet node newuservar count function-string]
+  (let [uservar (symbol newuservar)]
+    (defn update-snippet-var-cond [snippet value counter]
+      (let [newvar     (symbol (str uservar counter))
+            newsnippet (introduce-logic-variable snippet value newvar)]
+        (if (= counter 1)
+          newsnippet
+          (add-user-defined-condition newsnippet value (str function-string " " uservar "1")))))
+    (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
+      (damp.ekeko/ekeko [?var] 
+                        (reification/child+ root ?var)
+                        (runtime/ast-samekind-sameidentifier node ?var))) ;shud be ast-variable-samebinding
+    (defn process-binding-variables [snippet nodes counter]
+      (if (empty? nodes)
+        snippet
+        (let [new-snippet (update-snippet-var-cond snippet (first (first nodes)) counter)]
+          (process-binding-variables new-snippet (rest nodes) (+ counter 1)))))
+    (process-binding-variables snippet (get-binding-variables (:ast snippet) node) count)))
+
+(defn
+  bind-variables
+  [snippetgroup node newuservar]
+  (defn process-binding-snippets [snippetlist counter resultlist]
+    (if (empty? snippetlist)
+      resultlist
+      (let [new-snippet   (internal-bind-variables
+                            (first snippetlist) node newuservar counter "var-binding")]
+        (process-binding-snippets 
+          (rest snippetlist) (+ counter 100) (concat resultlist (list new-snippet))))))
+  (assoc snippetgroup :snippetlist 
+         (process-binding-snippets (:snippetlist snippetgroup) 1 '())))
+
+(defn
+  refer-variables-to-variable-declaration
+  [snippetgroup node newuservar]
+  (defn process-binding-snippets [snippetlist counter resultlist]
+    (if (empty? snippetlist)
+      resultlist
+      (let [new-snippet   (internal-bind-variables
+                            (first snippetlist) node newuservar counter "var-dec")]
+        (process-binding-snippets 
+          (rest snippetlist) (+ counter 100) (concat resultlist (list new-snippet))))))
+  (assoc snippetgroup :snippetlist 
+         (process-binding-snippets (:snippetlist snippetgroup) 1 '())))
+
 ;;not used
 (defn
   match-variable-typequalifiedname
@@ -705,3 +762,10 @@
   [snippet node template-snippet template-node]
   (t-internal-user-defined-condition snippet node template-snippet template-node "replace-node"))
 
+;;OTHER FUNCTIONS' NAME
+;;---------------------------
+
+(def bind-logic-variable introduce-logic-variable-of-node-exact)
+(def add-template add-snippet)
+(def remove-template remove-snippet)
+(def add-rewrite-sequence add-snippet)

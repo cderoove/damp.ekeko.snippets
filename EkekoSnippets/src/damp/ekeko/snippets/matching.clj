@@ -341,6 +341,17 @@
       ((cf-subtype snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
+(defn
+  cf-relax-typeoftype
+  [snippet-val]
+  (fn [snippet]
+    (let [cond-exact ((cf-exact snippet-val) snippet)
+          snippet-var (representation/snippet-var-for-node snippet snippet-val)
+          type-var (representation/snippet-var-for-node snippet (.getType snippet-val))]
+      `((cl/conde 
+          [~@cond-exact]
+          [(el/equals ~snippet-var ~type-var)])))))
+
 (defn 
   cf-variable-declaration-with-initializer
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
@@ -455,6 +466,8 @@
     cf-exact-with-variable
     (= type :relax-type)
     cf-subtype-with-variable
+    (= type :relax-typeoftype)
+    cf-relax-typeoftype
     (= type :relax-assign)
     cf-variable-declaration-with-variable
     (= type :relax-branch)

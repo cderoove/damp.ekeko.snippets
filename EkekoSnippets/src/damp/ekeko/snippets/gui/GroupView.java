@@ -45,7 +45,7 @@ public class GroupView extends ViewPart {
 	private Groups groups;
 	private Text txtDoubleClickOn;
 	private Text txtLoadGroupsFrom;
-	private Text text;
+	private Text txtEkekoTemplateAnd;
 	private Text txtSaveGroups;
 
 	public GroupView() {
@@ -111,7 +111,7 @@ public class GroupView extends ViewPart {
 			tblclmnDescription.setText("Description");
 			
 			txtDoubleClickOn = new Text(grpGroup, SWT.BORDER);
-			txtDoubleClickOn.setText("Double click on group to open Snippet View");
+			txtDoubleClickOn.setText("Double click on group to open Ekeko Template");
 			txtDoubleClickOn.setEditable(false);
 			txtDoubleClickOn.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
@@ -125,11 +125,12 @@ public class GroupView extends ViewPart {
 		{
 			Group grpGroup_1 = new Group(container, SWT.NONE);
 			grpGroup_1.setLayout(new GridLayout(2, false));
+			new Label(grpGroup_1, SWT.NONE);
 			
-			text = new Text(grpGroup_1, SWT.BORDER);
-			text.setEditable(false);
-			text.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
-			text.setText("Ekeko Snippets and Transformation");
+			txtEkekoTemplateAnd = new Text(grpGroup_1, SWT.BORDER);
+			txtEkekoTemplateAnd.setEditable(false);
+			txtEkekoTemplateAnd.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1));
+			txtEkekoTemplateAnd.setText("Ekeko Template and Transformation");
 			
 			Button btnTransform = new Button(grpGroup_1, SWT.NONE);
 			btnTransform.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
