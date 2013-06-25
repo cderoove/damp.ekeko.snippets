@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="damp.ekeko.snippets.feature"
+      label="Ekeko Snippets"
+      version="1.0.1">
+
+   <description>
+      EkekoSnippets provides language and tool support for specifying
+and performing program transformations in an incremental manner.
+   </description>
+
+   <copyright>
+      (c) 2013 Coen De Roover, Siltvani
+   </copyright>
+
+   <license url="">
+      Distributed under the Eclipse Public License (EPL) version 1.0.
+   </license>
+
+   <url>
+      <update label="Ekeko Update Site" url="http://soft.vub.ac.be/~cderoove/eclipse/"/>
+   </url>
+
+   <requires>
+      <import plugin="damp.ekeko.plugin" version="1.0.3" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.osgi.services" version="3.3.100" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.osgi.util" version="3.2.300" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui"/>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.jdt.core" version="3.8.1" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jface.text" version="3.8.1" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui.workbench.texteditor" version="3.8.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.eclipse.jdt.astview" version="1.1.8" match="greaterOrEqual"/>
+      <import feature="damp.ekeko.feature" version="2.0.0"/>
+      <import feature="org.eclipse.jdt.astview.feature" version="1.1.8.201210112025"/>
+   </requires>
+
+   <plugin
+         id="EkekoSnippets"
+         download-size="0"
+         install-size="0"
+         version="1.0.1"
+         unpack="false"/>
+
+</feature>
