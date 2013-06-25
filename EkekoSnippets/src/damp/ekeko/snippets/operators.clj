@@ -3,6 +3,7 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.operators
   (:require [clojure.core.logic :as cl])
+  (:require [damp.ekeko])
   (:require [damp.ekeko.snippets 
              [runtime :as runtime]
              [util :as util]

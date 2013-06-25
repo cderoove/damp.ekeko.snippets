@@ -7,7 +7,8 @@
             [damp.ekeko.jdt
              [basic :as basic]
              [reification :as reification]
-             [soot :as soot]])
+             ;[soot :as soot]
+             ])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
@@ -133,12 +134,12 @@
             (ast-variable-binding ?k-var ?var ?b)
             (ast-variable-declaration-binding ?k-dec ?dec ?b)))
 
-(defn
-  ast-may-alias
-   "Relation between ASTNode ast1 may alias ast2."
-  [?ast1 ?ast2]
-  (cl/fresh [?model]
-            (soot/ast-references-soot-model-may-alias ?ast1 ?ast2 ?model)))
+;(defn
+;  ast-may-alias
+;   "Relation between ASTNode ast1 may alias ast2."
+;  [?ast1 ?ast2]
+;  (cl/fresh [?model]
+;            (soot/ast-references-soot-model-may-alias ?ast1 ?ast2 ?model)))
   
 (defn
   ast-variable-sameidentifier
