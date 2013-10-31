@@ -78,7 +78,7 @@
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
-            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+            locationURI="menu:damp.ekeko.menus.sampleMenu?after=additions">
          <menu
                id="EkekoSnippets.menus.sampleMenu"
                label="EkekoSnippets"
@@ -89,18 +89,6 @@
                   mnemonic="S">
             </command>
          </menu>
-      </menuContribution>
-      <menuContribution
-            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
-         <toolbar
-               id="EkekoSnippets.toolbars.sampleToolbar">
-            <command
-                  commandId="EkekoSnippets.commands.sampleCommand"
-                  icon="icons/sample.gif"
-                  id="EkekoSnippets.toolbars.sampleCommand"
-                  tooltip="Ekeko Snippets">
-            </command>
-         </toolbar>
       </menuContribution>
    </extension>
    <extension

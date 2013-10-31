@@ -5,8 +5,6 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import clojure.lang.RT;
-import clojure.lang.Symbol;
 import ccw.util.osgi.ClojureOSGi;
 
 /**
@@ -33,7 +31,7 @@ public class Activator extends AbstractUIPlugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;		
-		//startClojureCode(context);
+		startClojureCode(context);
 	}
 
 	/*
