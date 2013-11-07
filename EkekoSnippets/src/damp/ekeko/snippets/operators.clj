@@ -45,7 +45,7 @@
   (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
 
 
-;; Operator for Snippet
+;; Operators for Snippet
 ;; ---------------------
 
 (defn

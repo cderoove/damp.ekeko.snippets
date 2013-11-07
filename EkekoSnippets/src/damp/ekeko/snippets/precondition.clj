@@ -118,7 +118,7 @@
 (defn 
   possible-nodes-in-list
   [ast precondition-id]
-  (map (fn [x] (first x)) (possible-nodes ast precondition-id)))
+  (map first (possible-nodes ast precondition-id)))
 
 (defn 
   possible-nodes-in-group
@@ -251,8 +251,8 @@
   "Relation of all list ASTNode instances which is member of Nodelist."
   [?node]
   (fresh [?key] 
+    (!= :CompilationUnit ?key)
     (ast ?key ?node)
-    (fails (ast :CompilationUnit ?node))
     (succeeds (property-descriptor-list? (.getLocationInParent ?node)))))
 
 (defn

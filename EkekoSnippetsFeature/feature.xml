@@ -2,7 +2,7 @@
 <feature
       id="damp.ekeko.snippets.feature"
       label="Ekeko Snippets"
-      version="1.0.1">
+      version="1.0.4">
 
    <description>
       EkekoSnippets provides language and tool support for specifying
@@ -31,16 +31,18 @@ and performing program transformations in an incremental manner.
       <import plugin="org.eclipse.jface.text" version="3.8.1" match="greaterOrEqual"/>
       <import plugin="org.eclipse.ui.workbench.texteditor" version="3.8.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.core.resources"/>
-      <import plugin="org.eclipse.jdt.astview" version="1.1.8" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.jdt.astview" match="greaterOrEqual"/>
+      <import plugin="damp.libs" version="2.0.2" match="greaterOrEqual"/>
       <import feature="damp.ekeko.feature" version="2.0.0"/>
-      <import feature="org.eclipse.jdt.astview.feature" version="1.1.8.201210112025"/>
+      <import feature="org.eclipse.jdt.astview.feature" match="greaterOrEqual"/>
+      <import plugin="ccw.core"/>
    </requires>
 
    <plugin
          id="EkekoSnippets"
          download-size="0"
          install-size="0"
-         version="1.0.1"
+         version="1.0.4"
          unpack="false"/>
 
 </feature>

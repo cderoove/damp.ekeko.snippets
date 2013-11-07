@@ -352,6 +352,7 @@
       "#{(\"public int rmethodJ(){\\n  Integer o=1;\\n  Integer x=0;\\n  O test;\\n{\\n    int y=0;\\n    int z=x + y;\\n  }\\n  return x;\\n}\\n\" \"rmethodJ\") 
          (\"public int rmethodI(){\\n  Number o=1;\\n  Integer x=0;\\n  O test;\\n{\\n    int y=0;\\n    int z=x + y;\\n  }\\n  return x;\\n}\\n\" \"rmethodI\")}")))
 
+
 ;; Operator: allow-subtype-on-class-declaration-extends
 ;; ------------------------------------------
 (defn class-with-name 
