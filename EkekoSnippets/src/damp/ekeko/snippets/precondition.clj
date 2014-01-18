@@ -5,7 +5,7 @@
   (:refer-clojure :exclude [== type])
   (:use [clojure.core.logic])
   (:use [damp.ekeko logic])
-  (:use [damp.ekeko.jdt astnode basic reification])
+  (:use [damp.ekeko.jdt astnode ast])
   (:use [damp.ekeko.snippets representation operatorsrep]))
 
 ;; Precondition Data
@@ -228,8 +228,8 @@
   primitive-or-null-value
   "Relation of all value of ASTNode, but not listvalue."
   [?val]
-  (conde [(primitivevalue ?val)]
-         [(nullvalue ?val)]))
+  (conde [(value|primitive ?val)]
+         [(value|null ?val)]))
 
 (defn
   is-ast?
@@ -348,7 +348,7 @@
 
 (def 
   operator-precondition
-  {:listvalue                            [:property listvalue]					          
+  {:listvalue                            [:property value|list]					          
    :primitive-or-null-value              [:property primitive-or-null-value]					          
    :is-variabledeclarationstatement?     [:node is-variabledeclarationstatement?]
    :is-ifstatement?                      [:node is-ifstatement?]  

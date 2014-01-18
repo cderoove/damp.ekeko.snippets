@@ -5,8 +5,7 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko [logic :as el]]
             [damp.ekeko.jdt
-             [basic :as basic]
-             [reification :as reification]])
+             [ast :as ast]])
   (:require [damp.ekeko.snippets
              [runtime :as runtime]
              [rewrite :as rewrite]]))
@@ -48,16 +47,16 @@
    "Relation between ASTNode var with its enclosing class."
   [?var ?class]
   (cl/all
-    (reification/ast :TypeDeclaration ?class)    
-    (reification/child+ ?class ?var)))
+    (ast/ast :TypeDeclaration ?class)    
+    (ast/child+ ?class ?var)))
 
 (defn
   enclosing-method
    "Relation between ASTNode var with its enclosing method."
   [?var ?method]
   (cl/all
-    (reification/ast :MethodDeclaration ?method)    
-    (reification/child+ ?method ?var)))
+    (ast/ast :MethodDeclaration ?method)    
+    (ast/child+ ?method ?var)))
 
 
 ; ---------------------------------

@@ -11,7 +11,7 @@
              [representation :as representation]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
-             [reification :as reification]]))
+             [ast :as ast]]))
   
 ;; Helper Functions
 ;; ---------------------
@@ -369,7 +369,7 @@
         (add-logic-conditions newsnippet (make-condition condition uservar newvar))))
     (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
       (damp.ekeko/ekeko [?var] 
-                        (reification/child+ root ?var)
+                        (ast/child+ root ?var)
                         (runtime/ast-samekind-sameidentifier node ?var))) ;shud be ast-variable-samebinding
     (defn process-binding-variables [snippet nodes counter]
       (if (empty? nodes)
@@ -582,7 +582,7 @@
           (add-user-defined-condition newsnippet value (str function-string " " uservar "1")))))
     (defn get-binding-variables [root node] ;returns list of nodes (variables) with the same binding as node 
       (damp.ekeko/ekeko [?var] 
-                        (reification/child+ root ?var)
+                        (ast/child+ root ?var)
                         (runtime/ast-samekind-sameidentifier node ?var))) ;shud be ast-variable-samebinding
     (defn process-binding-variables [snippet nodes counter]
       (if (empty? nodes)
@@ -698,7 +698,7 @@
   [snippet node uservar]
   (defn get-nodes [root node]
     (damp.ekeko/ekeko [?var] 
-                      (reification/child+ root ?var)
+                      (ast/child+ root ?var)
                       (runtime/ast-variable-sameidentifier node ?var))) 
   (defn process-introduce-variables [snippet nodes]
     (if (empty? nodes)

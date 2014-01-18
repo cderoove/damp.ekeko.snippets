@@ -5,8 +5,10 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko [logic :as el]]
             [damp.ekeko.jdt
-             [basic :as basic]
-             [reification :as reification]
+             [ast :as ast]
+             [aststructure :as aststructure]
+             [structure :as structure]
+             [astbindings :as astbindings]
              ;[soot :as soot]
              ])
   (:import 
@@ -44,53 +46,53 @@
   [?keyword ?type ?ltype]
   (cl/conde [(el/equals ?type ?ltype)]
             [(cl/fresh [?itype ?iltype]
-                       (reification/ast-type-type ?keyword ?type ?itype)
-                       (reification/ast-type-type ?keyword ?ltype ?iltype)
-                       (reification/type-super-type ?iltype ?itype))]))            
+                       (aststructure/ast|type-type ?keyword ?type ?itype)
+                       (aststructure/ast|type-type ?keyword ?ltype ?iltype)
+                       (structure/type-type|super ?iltype ?itype))]))            
              
 (defn
   assignment-relaxmatch-variable-declaration
   "Predicate to check relaxmatch of VariableDeclarationStatement (+ initializer) with Assignment."
   [?statement ?left ?right]
   (cl/conde [(cl/fresh [?assignment]
-                       (reification/ast :ExpressionStatement ?statement)
-                       (reification/has :expression ?statement ?assignment)                        
-                       (reification/has :leftHandSide ?assignment ?left)
-                       (reification/has :rightHandSide ?assignment ?right))]
+                       (ast/ast :ExpressionStatement ?statement)
+                       (ast/has :expression ?statement ?assignment)                        
+                       (ast/has :leftHandSide ?assignment ?left)
+                       (ast/has :rightHandSide ?assignment ?right))]
             [(cl/fresh [?fragments ?fragmentsraw ?fragment ?fvalue ?avalue ?fname ?aname]
-                       (reification/ast :VariableDeclarationStatement ?statement)
-                       (reification/has :fragments ?statement ?fragments)
-                       (reification/listvalue ?fragments)
-                       (reification/value-raw ?fragments ?fragmentsraw)
+                       (ast/ast :VariableDeclarationStatement ?statement)
+                       (ast/has :fragments ?statement ?fragments)
+                       (ast/value|list ?fragments)
+                       (ast/value-raw ?fragments ?fragmentsraw)
                        (el/equals 1 (.size ?fragmentsraw))
                        (el/equals ?fragment (.get ?fragmentsraw 0))
-                       (reification/ast :VariableDeclarationFragment ?fragment)
-                       (reification/has :name ?fragment ?left)
-                       (reification/has :initializer ?fragment ?right))]))
+                       (ast/ast :VariableDeclarationFragment ?fragment)
+                       (ast/has :name ?fragment ?left)
+                       (ast/has :initializer ?fragment ?right))]))
 
 (defn
   ast-invocation-declaration
    "Relation between ASTNode invocation with it's declaration."
   [?inv ?dec]
   (cl/fresh [?k-inv ?k-dec ?b]
-            (reification/ast-invocation-binding ?k-inv ?inv ?b)
-            (reification/ast-declares-binding ?k-dec ?dec ?b)))
+            (astbindings/ast|invocation-binding|method ?k-inv ?inv ?b)
+            (astbindings/ast|declaration-binding ?k-dec ?dec ?b)))
 
 (defn
   ast-fieldaccess-samebinding
    "Relation between ASTNode var1 and var2 with the same resolveBinding."
   [?var1 ?var2]
   (cl/fresh [?k-var ?b]
-            (reification/ast-fieldaccess-binding ?k-var ?var1 ?b)
-            (reification/ast-fieldaccess-binding ?k-var ?var2 ?b)))
+            (astbindings/ast|fieldaccess-binding|variable ?k-var ?var1 ?b)
+            (astbindings/ast|fieldaccess-binding|variable ?k-var ?var2 ?b)))
 
 (defn
   ast-fieldaccess-declaration
    "Relation between ASTNode fieldaccess with it's declaration."
   [?var ?dec]
   (cl/fresh [?k-var ?k-dec ?b]
-            (reification/ast-fieldaccess-binding ?k-var ?var ?b)
-            (reification/ast-declares-binding ?k-dec ?dec ?b)))
+            (astbindings/ast|fieldaccess-binding|variable ?k-var ?var ?b)
+            (astbindings/ast|declaration-binding ?k-dec ?dec ?b)))
 
 (defn
   ast-variable-binding
@@ -99,10 +101,10 @@
    and the IBinding ?binding for its type."
   [?key ?ast ?binding]
   (cl/all
-    (reification/ast :SimpleName ?ast)
+    (ast/ast :SimpleName ?ast)
     (el/equals ?binding (.resolveBinding ^SimpleName ?ast))
     (cl/!= nil ?binding)
-    (reification/ast ?key ?ast)))
+    (ast/ast ?key ?ast)))
 
 (defn
   ast-variable-declaration-binding
@@ -111,12 +113,12 @@
    and the IBinding ?binding for its type."
   [?key ?ast ?binding]
   (cl/fresh [?fragment]
-    (reification/ast :SimpleName ?ast)
+    (ast/ast :SimpleName ?ast)
     (el/equals ?fragment (.getParent ?ast))
-    (reification/ast :VariableDeclarationFragment ?fragment)
+    (ast/ast :VariableDeclarationFragment ?fragment)
     (el/equals ?binding (.resolveBinding ^VariableDeclarationFragment ?fragment))
     (cl/!= nil ?binding)
-    (reification/ast ?key ?ast)))
+    (ast/ast ?key ?ast)))
 
 (defn
   ast-variable-samebinding
@@ -146,24 +148,24 @@
    "Relation between ASTNode var1 and var2 with the same identifier."
   [?var1 ?var2]
   (cl/fresh [?id1 ?id2 ?value]
-            (reification/ast :SimpleName ?var1)
-            (reification/ast :SimpleName ?var2)
-            (reification/has :identifier ?var1 ?id1) 
-            (reification/has :identifier ?var2 ?id2)
-            (reification/value-raw ?id1 ?value) 
-            (reification/value-raw ?id2 ?value))) 
+            (ast/ast :SimpleName ?var1)
+            (ast/ast :SimpleName ?var2)
+            (ast/has :identifier ?var1 ?id1) 
+            (ast/has :identifier ?var2 ?id2)
+            (ast/value-raw ?id1 ?value) 
+            (ast/value-raw ?id2 ?value))) 
 
 (defn
   ast-samekind-sameidentifier
    "Relation between ASTNode var1 and var2 with the same identifier."
   [?var1 ?var2]
       (cl/fresh [?key ?key-id ?var1-id ?var2-id  ?identifier]
-                (reification/ast ?key ?var1)
-                (reification/ast ?key ?var2)
-                (reification/has ?key-id ?var1 ?var1-id)
-                (reification/has ?key-id ?var2 ?var2-id)
-                (reification/value-raw ?var1-id ?identifier)
-                (reification/value-raw ?var2-id ?identifier)))
+                (ast/ast ?key ?var1)
+                (ast/ast ?key ?var2)
+                (ast/has ?key-id ?var1 ?var1-id)
+                (ast/has ?key-id ?var2 ?var2-id)
+                (ast/value-raw ?var1-id ?identifier)
+                (ast/value-raw ?var2-id ?identifier)))
 
 (defn
   ast-variable-type
@@ -171,27 +173,27 @@
   [?var ?type]
   (cl/conde [(cl/fresh [?dec ?stat ?frag]
                        (ast-variable-declaration ?var ?dec)
-                       (reification/ast :SimpleName ?dec)
+                       (ast/ast :SimpleName ?dec)
                        (el/equals ?frag (.getParent ?dec))
-                       (reification/ast :VariableDeclarationFragment ?frag)
+                       (ast/ast :VariableDeclarationFragment ?frag)
                        (el/equals ?stat (.getParent ?frag))
-                       (reification/ast :VariableDeclarationStatement ?stat)
-                       (reification/has :type ?stat ?type))]
+                       (ast/ast :VariableDeclarationStatement ?stat)
+                       (ast/has :type ?stat ?type))]
             [(cl/fresh [?dec ?stat ?frag]
                        (ast-variable-declaration ?var ?dec)
-                       (reification/ast :SimpleName ?dec)
+                       (ast/ast :SimpleName ?dec)
                        (el/equals ?frag (.getParent ?dec))
-                       (reification/ast :VariableDeclarationFragment ?frag)
+                       (ast/ast :VariableDeclarationFragment ?frag)
                        (el/equals ?stat (.getParent ?frag))
-                       (reification/ast :FieldDeclaration ?stat)
-                       (reification/has :type ?stat ?type))]))
+                       (ast/ast :FieldDeclaration ?stat)
+                       (ast/has :type ?stat ?type))]))
                                     
 (defn 
   ast-type-qualifiednamestring
    "Relation between ASTNode var with it's qualified name (in string)."
   [?type ?string]
   (cl/fresh [?binding]
-            (reification/ast :Type ?type)
+            (ast/ast :Type ?type)
             (el/equals ?binding (.resolveBinding ^Type ?type))
             (cl/!= nil ?binding)
             (el/equals ?string (.getQualifiedName ?binding))))
@@ -210,7 +212,7 @@
   [?type ?qname]
   (cl/fresh [?string] 
             (ast-type-qualifiednamestring ?type ?string)
-            (reification/ast :QualifiedName ?qname)
+            (ast/ast :QualifiedName ?qname)
             (el/succeeds (.contains ?string (str ?qname)))))
   
 (defn

@@ -78,7 +78,7 @@
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
-            locationURI="menu:damp.ekeko.menus.sampleMenu?after=additions">
+            locationURI="menu:damp.ekeko.menus.ekekoMenu?after=additions">
          <menu
                id="EkekoSnippets.menus.sampleMenu"
                label="EkekoSnippets"

@@ -11,7 +11,7 @@
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
      [astnode :as astnode]
-     [reification :as reification]]))
+     [ast :as ast]]))
 
 ;; for each grounding or constraining function maker, there are additional arguments beside snippet-ast,
 ;; which can be accessed in snippet :ast2groundf or :ast2constrainf via getter function
@@ -38,7 +38,7 @@
       (if 
         (= snippet-ast (:ast snippet))
         (let [var-match (representation/snippet-var-for-node snippet snippet-ast)] 
-          `((reification/ast ~snippet-ast-keyw ~var-match)))
+          `((ast/ast ~snippet-ast-keyw ~var-match)))
         '()))))
 
 (defn 
@@ -53,7 +53,7 @@
       (= snippet-ast (:ast snippet))
       (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
             var-match (representation/snippet-var-for-node snippet snippet-ast)] 
-        `((reification/ast ~snippet-ast-keyw ~var-match)))
+        `((ast/ast ~snippet-ast-keyw ~var-match)))
       (let [list-owner      (representation/snippet-node-with-member snippet snippet-ast)
             list-raw        (representation/snippet-value-for-node snippet list-owner)
             cf-list-owner   (representation/snippet-constrainer-for-node snippet list-owner)
@@ -98,7 +98,7 @@
             var-match-owner (representation/snippet-var-for-node snippet snippet-owner)
             owner-property  (astnode/owner-property snippet-ast) 
             owner-property-keyw (astnode/ekeko-keyword-for-property-descriptor owner-property)]
-        `((reification/has ~owner-property-keyw ~var-match-owner ~var-match)))))
+        `((ast/has ~owner-property-keyw ~var-match-owner ~var-match)))))
 
 (defn 
   gf-exact
@@ -123,7 +123,7 @@
             (if (empty? args)
               (representation/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
               (symbol (first args)))]                                                            ;for gf :deep
-        `((reification/child+ ~var-match-owner ~var-match)))))
+        `((ast/child+ ~var-match-owner ~var-match)))))
 
 (defn 
   make-grounding-function
@@ -168,12 +168,12 @@
                     :let [value     (retrievalf) 
                           var-value (representation/snippet-var-for-node snippet value)]]
                 (if (not (is-ignored-property? property-keyw))
-                  `(reification/has ~property-keyw ~var-match ~var-value)))
+                  `(ast/has ~property-keyw ~var-match ~var-value)))
           filtered-child-conditions (filter (fn [x] (not (nil? x))) child-conditions)]
       (if 
         (= snippet-ast (:ast snippet)) 
         `(~@filtered-child-conditions) ;because snippet root is already ground to an ast of the right kind
-        `((reification/ast ~snippet-keyw ~var-match)
+        `((ast/ast ~snippet-keyw ~var-match)
            ~@child-conditions)))))
 
 (defn 
@@ -199,8 +199,8 @@
         ;      :let [idx-el (.indexOf lst element)
         ;            var-el (representation/snippet-var-for-node snippet element)]]
         ;  (function-element-condition var-match-raw var-el idx-el))]
-    `((reification/listvalue ~var-match)
-       (reification/value-raw ~var-match ~var-match-raw)
+    `((ast/listvalue ~var-match)
+       (ast/value-raw ~var-match ~var-match-raw)
        ~@size-condition)))
        ;~@element-conditions)))
 
@@ -224,8 +224,8 @@
      (fn [snippet]
        (let [var-match 
              (representation/snippet-var-for-node snippet snippet-ast)]
-       `((reification/primitivevalue ~var-match)
-          (reification/value-raw ~var-match ~exp))))))
+       `((ast/primitivevalue ~var-match)
+          (ast/value-raw ~var-match ~exp))))))
 
 (defn
   cf-nil-exact
@@ -236,7 +236,7 @@
    (fn [snippet]
      (let [var-match 
            (representation/snippet-var-for-node snippet snippet-ast)]
-       `((reification/nullvalue ~var-match)))))
+       `((ast/nullvalue ~var-match)))))
 
 (defn 
   cf-exact
@@ -327,9 +327,9 @@
                     (seq snippet-properties)
                     :let [value     (retrievalf) 
                           var-value (representation/snippet-var-for-node snippet value)]]
-                `(reification/has ~property-keyw ~var-node ~var-value))]
+                `(ast/has ~property-keyw ~var-node ~var-value))]
       `((cl/fresh [~var-node]
-         (reification/ast ~snippet-keyw ~var-node)
+         (ast/ast ~snippet-keyw ~var-node)
            ~@child-conditions
            (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
 
@@ -426,10 +426,10 @@
                 (if (and (not (is-ignored-property? property-keyw))
                          (not (= property-keyw :updaters))
                          (not (= property-keyw :initializers)))
-                  `(reification/has ~property-keyw ~var-match ~var-value)))]
-      `((cl/conde [(reification/ast :ForStatement ~var-match)]
-                  [(reification/ast :WhileStatement ~var-match)]
-                  [(reification/ast :DoStatement ~var-match)])
+                  `(ast/has ~property-keyw ~var-match ~var-value)))]
+      `((cl/conde [(ast/ast :ForStatement ~var-match)]
+                  [(ast/ast :WhileStatement ~var-match)]
+                  [(ast/ast :DoStatement ~var-match)])
          ~@child-conditions))))
 
 (defn

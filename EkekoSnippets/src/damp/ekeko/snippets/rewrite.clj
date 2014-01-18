@@ -12,7 +12,7 @@
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
      [astnode :as astnode]
-     [reification :as reification]])
+     [ast :as ast]])
   (:import 
     [damp.ekeko JavaProjectModel]
     [org.eclipse.jface.text Document]
