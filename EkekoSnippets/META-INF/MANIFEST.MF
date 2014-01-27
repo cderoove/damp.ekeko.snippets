@@ -45,4 +45,5 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs
 Bundle-ClassPath: .,
  lib/json-simple-1.1.1.jar,
- lib/swing2swt.jar
+ lib/swing2swt.jar,
+ lib/antlr-4.1-complete.jar
