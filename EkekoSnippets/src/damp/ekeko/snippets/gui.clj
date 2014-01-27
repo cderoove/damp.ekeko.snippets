@@ -27,13 +27,16 @@
     (to-array [(:ast snippet)])
     nil))
 
+
 (defn
   snippetviewer-children
   [snippet p]
   ;treeview children of given treeview parent
   (cond 
      (astnode/ast? p) 
-     (to-array (astnode/node-propertyvalues p)) 
+     (to-array
+       (remove (fn [x] (astnode/primitivevalue? x))
+               (astnode/node-propertyvalues p)))
      (astnode/lstvalue? p) 
      (to-array (seq (representation/snippet-value-for-node snippet p)))
      :else 
@@ -57,8 +60,9 @@
 (defn
   snippetgroupviewer-children
   [snippetgroup p]
-  (if (= p (:name snippetgroup))
-    (to-array (map (fn [x] (:ast x)) (representation/snippetgroup-snippetlist snippetgroup)))
+  (if 
+    (= p (:name snippetgroup))
+    (to-array (map :ast (representation/snippetgroup-snippetlist snippetgroup)))
     (snippetviewer-children
       (representation/snippetgroup-snippet-for-node snippetgroup p)
       p)))
@@ -159,27 +163,6 @@
 ;; Opening a View
 ;; --------------
 
-(def snippet-viewer-cnt (atom 0))
-
-(defn 
-  open-snippet-viewer
-  [snippet]
-  (let [page (-> (PlatformUI/getWorkbench)
-               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
-               .getActivePage)
-        qvid (damp.ekeko.snippets.gui.viewer.SnippetViewer/ID)
-        uniqueid (str @snippet-viewer-cnt)
-        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! snippet-viewer-cnt inc)
-    (.setViewID viewpart uniqueid)
-    (.setInput (.getViewer viewpart) snippet)
-    viewpart))
-
-
-(defn
-  view-snippet
-  [snippet]
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-viewer snippet))))
 
 (def snippetgroup-viewer-cnt (atom 0))
 
