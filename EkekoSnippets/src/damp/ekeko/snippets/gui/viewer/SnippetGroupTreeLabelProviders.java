@@ -4,7 +4,7 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 
 import clojure.lang.RT;
 import clojure.lang.Symbol;
-import damp.ekeko.snippets.gui.SnippetView;
+import damp.ekeko.snippets.gui.TemplateView;
 
 public class SnippetGroupTreeLabelProviders {
 
@@ -13,9 +13,9 @@ public class SnippetGroupTreeLabelProviders {
 	}		
 	
 	public abstract static class SnippetGroupColumnLabelProvider extends ColumnLabelProvider {
-		protected SnippetView snippetViewer;
+		protected TemplateView snippetViewer;
 		
-		public SnippetGroupColumnLabelProvider(SnippetView s) {
+		public SnippetGroupColumnLabelProvider(TemplateView s) {
 			snippetViewer = s;
 		}
 		
@@ -27,7 +27,7 @@ public class SnippetGroupTreeLabelProviders {
 	
 	public static class NodeColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public NodeColumnLabelProvider(SnippetView s) {
+		public NodeColumnLabelProvider(TemplateView s) {
 			super(s);
 		}
 		
@@ -38,7 +38,7 @@ public class SnippetGroupTreeLabelProviders {
 
 	public static class PropertyColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public PropertyColumnLabelProvider(SnippetView s) {
+		public PropertyColumnLabelProvider(TemplateView s) {
 			super(s);
 		}
 		
@@ -50,7 +50,7 @@ public class SnippetGroupTreeLabelProviders {
 
 	public static class VariableColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public VariableColumnLabelProvider(SnippetView s) {
+		public VariableColumnLabelProvider(TemplateView s) {
 			super(s);
 		}
 		
@@ -61,7 +61,7 @@ public class SnippetGroupTreeLabelProviders {
 
 	public static class FlagColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public FlagColumnLabelProvider(SnippetView s) {
+		public FlagColumnLabelProvider(TemplateView s) {
 			super(s);
 		}
 		

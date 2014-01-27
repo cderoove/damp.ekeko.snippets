@@ -47,7 +47,7 @@ import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
 
 import org.eclipse.swt.graphics.Color;
 
-public class TransformsView extends SnippetView {
+public class TransformsView extends TemplateView {
 
 	public static final String ID = "damp.ekeko.snippets.gui.TransformsView"; //$NON-NLS-1$
 

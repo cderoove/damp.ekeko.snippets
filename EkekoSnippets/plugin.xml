@@ -3,90 +3,84 @@
 <plugin>
    <extension
          point="org.eclipse.ui.views">
-      <view
-            allowMultiple="true"
-            class="damp.ekeko.snippets.gui.viewer.SnippetViewer"
-            id="damp.ekeko.snippets.gui.viewer.SnippetViewer"
-            name="Ekeko Snippet Viewer">
-      </view>
-      <view
-            allowMultiple="true"
-            class="damp.ekeko.snippets.gui.viewer.SnippetTextViewer"
-            id="damp.ekeko.snippets.gui.viewer.SnippetTextViewer"
-            name="Ekeko Snippet Text Viewer">
-      </view>
-      <view
-            allowMultiple="true"
-            class="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
-            id="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
-            name="Ekeko Snippet Group Viewer">
-      </view>
       <category
-            id="EkekoSnippets"
-            name="EkekoSnippets Category">
+            id="damp.ekeko.snippets.views"
+            name="Ekeko/X">
       </category>
       <view
-            category="EkekoSnippets"
-            class="damp.ekeko.snippets.gui.SnippetView"
-            id="damp.ekeko.snippets.gui.SnippetView"
-            name="Ekeko Template">
+            category="damp.ekeko.snippets.views"
+            class="damp.ekeko.snippets.gui.TemplateView"
+            id="damp.ekeko.snippets.gui.TemplateView"
+            name="Ekeko/X Template View">
       </view>
       <view
-            class="damp.ekeko.snippets.gui.ResultCheckView"
-            id="damp.ekeko.snippets.gui.ResultCheckView"
-            name="Ekeko Candidate Subjects Checking">
-      </view>
-      <view
+            category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.GroupView"
             id="damp.ekeko.snippets.gui.GroupView"
-            name="Ekeko Group">
+            name="Ekeko/X Group View">
       </view>
       <view
+            allowMultiple="true"
+            category="damp.ekeko.snippets.views"
+            class="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
+            id="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
+            name="Ekeko/X Group Viewer">
+      </view>
+      <view
+            category="damp.ekeko.snippets.views"
+            class="damp.ekeko.snippets.gui.ResultCheckView"
+            id="damp.ekeko.snippets.gui.ResultCheckView"
+            name="Ekeko/X Subject Inspector View">
+      </view>
+      <view
+            category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.TransformsView"
             id="damp.ekeko.snippets.gui.TransformsView"
-            name="Ekeko Transformation">
+            name="Ekeko/X Transformation">
       </view>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
       <category
-            id="EkekoSnippets.commands.category"
-            name="Sample Category">
+            id="damp.ekeko.snippets.commands"
+            name="Ekeko/X Commands">
       </category>
       <command
-            categoryId="EkekoSnippets.commands.category"
-            id="EkekoSnippets.commands.sampleCommand"
-            name="Ekeko Snippets">
+            category="damp.ekeko.snippets.commands"
+            id="damp.ekeko.snippets.commands.group"
+            name="Ekeko/X Group View">
+      </command>
+      <command
+            category="damp.ekeko.snippets.commands"
+            id="damp.ekeko.snippets.commands.template"
+            name="Ekeko/X Template View">
       </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="damp.ekeko.snippets.gui.MainMenuHandler"
-            commandId="EkekoSnippets.commands.sampleCommand">
+            class="damp.ekeko.snippets.gui.GroupViewCommandHandler"
+            commandId="damp.ekeko.snippets.commands.group">
       </handler>
-   </extension>
-   <extension
-         point="org.eclipse.ui.bindings">
-      <key
-            commandId="EkekoSnippets.commands.sampleCommand"
-            contextId="org.eclipse.ui.contexts.window"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
-            sequence="M1+6">
-      </key>
+      <handler
+            class="damp.ekeko.snippets.gui.TemplateViewCommandHandler"
+            commandId="damp.ekeko.snippets.commands.template">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
       <menuContribution
             locationURI="menu:damp.ekeko.menus.ekekoMenu?after=additions">
          <menu
-               id="EkekoSnippets.menus.sampleMenu"
-               label="EkekoSnippets"
-               mnemonic="M">
+               id="damp.ekeko.snippets.menu"
+               label="Ekeko/X">
             <command
-                  commandId="EkekoSnippets.commands.sampleCommand"
-                  id="EkekoSnippets.menus.sampleCommand"
-                  mnemonic="S">
+                  commandId="damp.ekeko.snippets.commands.template"
+                  label="Template View">
+            </command>
+            <command
+                  commandId="damp.ekeko.snippets.commands.group"
+                  label="Group View">
             </command>
          </menu>
       </menuContribution>
