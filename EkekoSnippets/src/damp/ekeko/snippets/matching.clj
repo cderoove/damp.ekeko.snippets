@@ -199,7 +199,7 @@
         ;      :let [idx-el (.indexOf lst element)
         ;            var-el (representation/snippet-var-for-node snippet element)]]
         ;  (function-element-condition var-match-raw var-el idx-el))]
-    `((ast/listvalue ~var-match)
+    `((ast/value|list ~var-match)
        (ast/value-raw ~var-match ~var-match-raw)
        ~@size-condition)))
        ;~@element-conditions)))
@@ -224,7 +224,7 @@
      (fn [snippet]
        (let [var-match 
              (representation/snippet-var-for-node snippet snippet-ast)]
-       `((ast/primitivevalue ~var-match)
+       `((ast/value|primitive ~var-match)
           (ast/value-raw ~var-match ~exp))))))
 
 (defn
@@ -236,7 +236,7 @@
    (fn [snippet]
      (let [var-match 
            (representation/snippet-var-for-node snippet snippet-ast)]
-       `((ast/nullvalue ~var-match)))))
+       `((ast/value|null ~var-match)))))
 
 (defn 
   cf-exact
