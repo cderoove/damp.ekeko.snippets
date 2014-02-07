@@ -48,7 +48,7 @@
             [(cl/fresh [?itype ?iltype]
                        (aststructure/ast|type-type ?keyword ?type ?itype)
                        (aststructure/ast|type-type ?keyword ?ltype ?iltype)
-                       (structure/type-type|super ?iltype ?itype))]))            
+                       (structure/type-type|super+ ?iltype ?itype))]))            
              
 (defn
   assignment-relaxmatch-variable-declaration
