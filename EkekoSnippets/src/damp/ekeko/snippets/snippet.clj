@@ -45,13 +45,11 @@ damp.ekeko.snippets.snippet
 ;   note: to use the Track, we should call the function track for each node before any modification of ASTRewrite
 ; - track2ast: map from track (in original document) to node 
 ;   {[property, start, length] ast}
-; - flag: :mandatory or :optional
-;   flag is used in the group to generate query for related mandatory snippets
 
 (defrecord 
   Snippet
   [ast ast2var ast2groundf ast2constrainf ast2userfs var2ast var2uservar 
-   userquery document rewrite track2ast ast2track flag])
+   userquery document rewrite track2ast ast2track])
 
 
 (defn 
@@ -269,26 +267,6 @@ damp.ekeko.snippets.snippet
   (:document snippet))
 
 (defn 
-  snippet-is-mandatory?
-  "Returns true if snippet flag = :mandatory."
-  [snippet]
-  (= (:flag snippet) :mandatory))
-
-(defn 
-  snippet-update-flag
-  "Update flag :mandatory or :optional."
-  [snippet flag]
-  (assoc snippet :flag flag))
-
-(defn 
-  snippet-switch-flag
-  "Update flag :mandatory or :optional."
-  [snippet]
-  (if (snippet-is-mandatory? snippet)
-    (snippet-update-flag snippet :optional)
-    (snippet-update-flag snippet :mandatory)))
-
-(defn 
   snippet-rewrite
   "Returns the ASTRewrite from the root of snippet."
   [snippet]
@@ -339,7 +317,7 @@ damp.ekeko.snippets.snippet
         (assoc-in [:ast2groundf value] (list :exact))
         (assoc-in [:ast2constrainf value] (list :exact))
         (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} {} :mandatory))]
+  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -376,7 +354,7 @@ damp.ekeko.snippets.snippet
         (assoc-in [:ast2track value] arrTrack))))
   (let [n (parsing/parse-document doc)
         rw (make-astrewrite n)
-        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} {} :mandatory))]
+        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] 
@@ -485,7 +463,6 @@ damp.ekeko.snippets.snippet
       (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
     (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
     (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
-    (swap! snippet update-in [:flag] (fn [x] (:flag oldsnippet)))
     @snippet))
 
 (defn 

@@ -452,7 +452,7 @@ public class TemplateView extends ViewPart {
 
 	public void removeSnippet() {
 		boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
-				"Delete", "Are you sure you want to delete selected snippets?");
+				"Delete template", "Are you sure you want to delete the selected templates?");
 		if (m) {
 			Object[] nodes = getSelectedSnippets();
 			for (int i=0; i < nodes.length; i++) {

@@ -67,7 +67,11 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		Bundle b = bundleContext.getBundle();
 		String[] filenames= { "damp.ekeko", "damp.ekeko.snippets" };	
 		for(String filename : filenames) {
-			ClojureOSGi.require(b, filename);
+			try {
+				ClojureOSGi.require(b, filename);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

@@ -186,12 +186,6 @@ public class SnippetGroup {
 		}
 	}
 
-	public void updateSnippetFlag(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet != null)		
-			groupHistory = RT.var("damp.ekeko.snippets.operators", "update-snippetflag-in-snippetgrouphistory").invoke(getGroupHistory(), snippet);
-	}
-
 	public String getQuery(Object node) {
 		Object snippet = getSnippet(node);
 		Object query = "";

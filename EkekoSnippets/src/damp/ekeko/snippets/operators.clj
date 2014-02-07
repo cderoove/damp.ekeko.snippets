@@ -506,12 +506,6 @@
   (let [new-snippetlist (remove #{snippet} (snippetgroup/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
-(defn 
-  update-snippetflag
-  "Update snippet flag :mandatory or :optional of the given snippetgroup."
-  [snippetgroup snippet]
-  (let [new-snippet (snippet/snippet-switch-flag snippet)]
-    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn
   update-logic-conditions-to-snippetgroup
@@ -682,13 +676,6 @@
   [snippetgrouphistory snippet newsnippet]
   (let [new-snippetgroup (snippetgroup/snippetgroup-replace-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet newsnippet)]
     (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)))
-
-(defn 
-  update-snippetflag-in-snippetgrouphistory
-  "Update snippet flag in snippetgrouphistory."
-  [snippetgrouphistory snippet]
-  (let [new-snippet (snippet/snippet-switch-flag snippet)]
-    (update-snippet-in-snippetgrouphistory snippetgrouphistory snippet new-snippet)))
 
 
 ;; Operator for Transformation

@@ -128,6 +128,8 @@ damp.ekeko.snippets.snippetgroup
     (snippetgroup-snippet-for-var grp var)
     var))
 
+
+;;TODO: remove all of these "related..."
 (defn
   snippetgroup-related-snippets-basedon-userqueries
   [grp snippet]
@@ -137,7 +139,7 @@ damp.ekeko.snippets.snippetgroup
 (defn
   snippetgroup-related-snippets
   [grp snippet]
-  (let [related-snippets (filter (fn [x] (snippet/snippet-is-mandatory? x)) (snippetgroup-snippetlist grp))]
+  (let [related-snippets (snippetgroup-snippetlist grp)]
     (remove #{snippet} related-snippets)))        
 
 (defn

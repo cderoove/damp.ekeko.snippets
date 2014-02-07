@@ -80,7 +80,6 @@
              ""
              (str (:userquery snippet))))
     (swap! snippetmap assoc-in [:document] (.get (:document snippet)))
-    (swap! snippetmap assoc-in [:flag] (str (:flag snippet)))
     @snippetmap))
 
 (defn
@@ -122,7 +121,6 @@
            (fn [x] (if (empty? userquery)
                      '()
                      (list (symbol (.substring userquery 1 (- (.length userquery) 1)))))))
-    (swap! snippet update-in [:flag] (fn [x] (util/string-to-keyword (:flag snippetmap))))
     @snippet))
 
 
@@ -174,7 +172,6 @@
            (fn [x] (if (empty? userquery)
                      '()
                      (list (symbol (.substring userquery 1 (- (.length userquery) 1)))))))
-    (swap! snippet update-in [:flag] (fn [x] (util/string-to-keyword (.get snippetjson ":flag"))))
     @snippet))
 
 (defn 
