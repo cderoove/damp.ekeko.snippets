@@ -6,7 +6,8 @@
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
              [querying :as querying]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [operators :as operators]
              [matching :as matching]
              [parsing :as parsing]
@@ -61,7 +62,7 @@
         node-var2 (.getExpression (fnext (.statements (.getBody node))))
         var1      '?var1   ;-> should do this, otherwise will become test.damp.ekeko.snippets.runtime/?var1
         var2      '?var2
-        snippet   (representation/jdt-node-as-snippet node)
+        snippet   (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-list-of-logic-variables 
           snippet 
@@ -97,7 +98,7 @@
         node-var2 (.getExpression (fnext (.statements (.getBody node))))
         var1      '?var1   ;-> should do this, otherwise will become test.damp.ekeko.snippets.runtime/?var1
         var2      '?var2
-        snippet   (representation/jdt-node-as-snippet node)
+        snippet   (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-list-of-logic-variables 
           snippet 
@@ -135,7 +136,7 @@
         node1     (method-with-name "myMethod") 
         node-var1 (.getExpression (fnext (.statements (.getBody node1))))
         var1      '?var1   ;-> should do this, otherwise will become test.damp.ekeko.snippets.runtime/?var1
-        snippet1  (representation/jdt-node-as-snippet node1)
+        snippet1  (snippet/jdt-node-as-snippet node1)
         generalized-snippet1
         (operators/introduce-list-of-logic-variables 
           snippet1 
@@ -144,14 +145,14 @@
         ;;snippet2
         node2     (method-with-name "methodB")
         var2      '?var2
-        snippet2  (representation/jdt-node-as-snippet node2)
+        snippet2  (snippet/jdt-node-as-snippet node2)
         generalized-snippet2
         (operators/introduce-logic-variable-of-node-exact
           snippet2 
           (.getName node2)
           var2)
         ;;add snippet1 and snippet2 to group
-        group (representation/make-snippetgroup "group")
+        group (snippetgroup/make-snippetgroup "group")
         added-group1 (operators/add-snippet group generalized-snippet1)
         added-group2 (operators/add-snippet added-group1 generalized-snippet2)
         generalized-snippet

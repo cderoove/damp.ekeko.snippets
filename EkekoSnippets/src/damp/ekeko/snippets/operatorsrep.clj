@@ -7,20 +7,17 @@
   (:use [damp.ekeko.snippets operators])
   (:require [damp.ekeko.snippets 
              [parsing :as parsing]
-             [representation :as representation]]))
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
+             [snippetgrouphistory :as snippetgrouphistory]
+
+             ]))
 
 
 
 ;; Informations for Operator
 ;; -------------------------
 
-; operator-information 
-;    {:operator-id1 [:operator-nodetype operator-function precondition-id
-;                      :operator-type operator-name operator-description]
-;     :operator-id2 ....
-;     ...}
-; :operator-nodetype -> node, property, snippet, and group
-; :operator-type -> generalization, refinement, netral
 
 (declare operator-information)
 (declare operator-arguments)
@@ -183,8 +180,8 @@
    node can be many, but should be in one snippet."
   [snippetgroup op-id node args]
   (let [snippet (if (or (sequential? node) (.isArray (.getClass node)))
-                  (representation/snippetgroup-snippet-for-node snippetgroup (first node))
-                  (representation/snippetgroup-snippet-for-node snippetgroup node))
+                  (snippetgroup/snippetgroup-snippet-for-node snippetgroup (first node))
+                  (snippetgroup/snippetgroup-snippet-for-node snippetgroup node))
         op-func (operator-function op-id)]
     (if (is-operator-argument-with-precondition? op-id) 
       (apply op-func snippetgroup node args)
@@ -198,17 +195,17 @@
         (do
           (println "snippet" op-id (first args))
           (let [newsnippet (apply-operator snippet op-id node args)]
-            (representation/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
+            (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
 
 (defn apply-operator-to-snippetgrouphistory
   "Apply operator to group history and save the applied operator, returns new group history."
   [snippetgrouphistory op-id node args]
   (let [newgroup (apply-operator-to-snippetgroup
-                   (representation/snippetgrouphistory-current snippetgrouphistory) 
+                   (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) 
                    op-id node args)
-        newgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory newgroup)
-        var-node (representation/snippetgrouphistory-var-for-node snippetgrouphistory node)]
-    (representation/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
+        newgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory newgroup)
+        var-node (snippetgrouphistory/snippetgrouphistory-var-for-node snippetgrouphistory node)]
+    (snippetgrouphistory/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
      
 
 ;; Function undo and redo 
@@ -224,52 +221,74 @@
         (undo-operator-rec
           (apply-operator-to-snippetgrouphistory 
             grouphistory
-            (representation/history-operator history)
-            (representation/snippetgrouphistory-node-for-var grouphistory (representation/history-varnode history))
-            (representation/history-args history))
+            (snippetgrouphistory/history-operator history)
+            (snippetgrouphistory/snippetgrouphistory-node-for-var grouphistory (snippetgrouphistory/history-varnode history))
+            (snippetgrouphistory/history-args history))
           (rest op-histories)))))
-  (let [op-histories (drop-last (representation/snippetgrouphistory-history grouphistory))
-        undo-grouphistory (representation/snippetgrouphistory-add-undohistory grouphistory)
-        new-grouphistory (representation/reset-snippetgrouphistory undo-grouphistory)]
+  (let [op-histories (drop-last (snippetgrouphistory/snippetgrouphistory-history grouphistory))
+        undo-grouphistory (snippetgrouphistory/snippetgrouphistory-add-undohistory grouphistory)
+        new-grouphistory (snippetgrouphistory/reset-snippetgrouphistory undo-grouphistory)]
     (undo-operator-rec new-grouphistory op-histories))) 
 
 (defn redo-operator
   [grouphistory]
   "Redo last undo operator in given snippet group history." 
-  (if (empty? (representation/snippetgrouphistory-undohistory grouphistory))
+  (if (empty? (snippetgrouphistory/snippetgrouphistory-undohistory grouphistory))
     grouphistory 
-    (let [redo (representation/snippetgrouphistory-first-undohistory grouphistory)
-          redo-grouphistory (representation/snippetgrouphistory-remove-undohistory grouphistory)]
+    (let [redo (snippetgrouphistory/snippetgrouphistory-first-undohistory grouphistory)
+          redo-grouphistory (snippetgrouphistory/snippetgrouphistory-remove-undohistory grouphistory)]
       (apply-operator-to-snippetgrouphistory 
         redo-grouphistory
-        (representation/history-operator redo)
-        (representation/snippetgrouphistory-node-for-var redo-grouphistory (representation/history-varnode redo))
-        (representation/history-args redo)))))
+        (snippetgrouphistory/history-operator redo)
+        (snippetgrouphistory/snippetgrouphistory-node-for-var redo-grouphistory (snippetgrouphistory/history-varnode redo))
+        (snippetgrouphistory/history-args redo)))))
     
 
 ;; Operator Informations
 ;; -----------------------------
 
+
+; operator-information 
+;    {:operator-id1 [:operator-nodetype operator-function precondition-id
+;                      :operator-type operator-name operator-description]
+;     :operator-id2 ....
+;     ...}
+; :operator-nodetype -> node, property, snippet, and group
+; :operator-type -> generalization, refinement, neutral
+
+
 (def 
   operator-information
-  {:node-deep                                        [:node   
+  {
+   
+   
+   
+   
+   ;; Following have not been checked
+   
+   
+   
+   :node-deep                                        [:node   
                                                       node-deep
                                                       :is-ast?					          
                                                       :generalization 
                                                       "Allow deep path"
                                                       "Operator with matching strategy :deep \nAllows node as child or nested child of its parent."]
+   
    :any-element                                      [:property   
                                                       contains-any-elements
                                                       :none					          
                                                       :generalization 
                                                       "Allow list with any element"
                                                       "Operator with matching strategy  :any\nMatch node with any element."]
+   
    :contains-deep                                    [:property   
                                                       contains-deep
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with child+"
                                                       "Operator with matching strategy :child+\nMatch nodelist which contains all elements of snippet nodelist as its childs or nested childs"]
+   
    :contains-elements                                [:property   
                                                       contains-elements
                                                       :listvalue					          

@@ -6,7 +6,7 @@
   (:use [clojure.core.logic])
   (:use [damp.ekeko logic])
   (:use [damp.ekeko.jdt astnode ast])
-  (:use [damp.ekeko.snippets representation operatorsrep]))
+  (:use [damp.ekeko.snippets snippet snippetgroup operatorsrep]))
 
 ;; Precondition Data
 ;; ----------------------

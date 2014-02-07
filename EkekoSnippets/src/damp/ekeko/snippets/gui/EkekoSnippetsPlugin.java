@@ -70,7 +70,8 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		ClojureOSGi.require(b, "damp.ekeko");  
 		ClojureOSGi.require(b, "damp.ekeko.snippets");
 		ClojureOSGi.require(b, "damp.ekeko.snippets.rewrite");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.representation");
+		ClojureOSGi.require(b, "damp.ekeko.snippets.snippet");
+		ClojureOSGi.require(b, "damp.ekeko.snippets.snippetgroup");
 		ClojureOSGi.require(b, "damp.ekeko.snippets.parsing");
 		ClojureOSGi.require(b, "damp.ekeko.snippets.operators");
 		ClojureOSGi.require(b, "damp.ekeko.snippets.operatorsrep");

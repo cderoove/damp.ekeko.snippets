@@ -8,7 +8,10 @@
              [runtime :as runtime]
              [util :as util]
              [parsing :as parsing]
-             [representation :as representation]])
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
+             [snippetgrouphistory :as snippetgrouphistory]
+             ])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
              [ast :as ast]]))
@@ -54,8 +57,8 @@
   [snippet node]
   (if (instance? org.eclipse.jdt.core.dom.ForStatement node)
     (update-constrainf 
-      (representation/remove-gf-cf-for-node 
-        (representation/remove-gf-cf-for-node 
+      (snippet/remove-gf-cf-for-node 
+        (snippet/remove-gf-cf-for-node 
           snippet 
           (astnode/make-value node (astnode/node-property-descriptor-for-ekeko-keyword node :initializers) (.initializers node)))
         (astnode/make-value node (astnode/node-property-descriptor-for-ekeko-keyword node :updaters) (.updaters node)))
@@ -86,7 +89,7 @@
   contains-any-elements
   "Contains any elements or none in a given nodelist (listval)."
   [snippet node]
-  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)]
+  (let [snippet-with-epsilon (snippet/remove-gf-cf-for-node snippet node)]
     (update-constrainf snippet-with-epsilon node :any)))
 
 (defn
@@ -111,7 +114,7 @@
   replace-node-no-apply-rewrite 
   "Replace a node with new node in snippet."
   [snippet node newnode]
-  (let [rewrite (representation/snippet-rewrite snippet)]
+  (let [rewrite (snippet/snippet-rewrite snippet)]
     (.replace rewrite node newnode (new org.eclipse.text.edits.TextEditGroup "snippet"))
     snippet))
 
@@ -119,7 +122,7 @@
   change-property-node-no-apply-rewrite 
   "Change property of given node in snippet."
   [snippet node value]
-  (let [rewrite (representation/snippet-rewrite snippet)]
+  (let [rewrite (snippet/snippet-rewrite snippet)]
     (.set rewrite (:owner node) (:property node) value)
     snippet))
 
@@ -128,21 +131,21 @@
   "Change property of given node in snippet."
   [snippet node value]
   (change-property-node-no-apply-rewrite snippet node value)
-  (representation/apply-rewrite snippet)) 
+  (snippet/apply-rewrite snippet)) 
 
 (defn 
   replace-node 
   "Replace a node with new node in snippet."
   [snippet node newnode]
   (replace-node-no-apply-rewrite snippet node newnode)
-  (representation/apply-rewrite snippet)) 
+  (snippet/apply-rewrite snippet)) 
 
 (defn 
   remove-node-no-apply-rewrite 
   "Remove a given node from snippet, without apply rewrite."
   [snippet node]
-  (let [list-container (representation/snippet-node-with-member snippet node)
-        rewrite (representation/snippet-rewrite snippet)
+  (let [list-container (snippet/snippet-node-with-member snippet node)
+        rewrite (snippet/snippet-rewrite snippet)
         list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
     (.remove list-rewrite node (new org.eclipse.text.edits.TextEditGroup "snippet"))
     snippet))
@@ -152,7 +155,7 @@
   "Remove a given node from snippet."
   [snippet node]
   (remove-node-no-apply-rewrite snippet node)
-  (representation/apply-rewrite snippet)) 
+  (snippet/apply-rewrite snippet)) 
 
 (defn
   remove-nodes
@@ -165,14 +168,14 @@
         (remove-nodes-rec
           new-snippet
           (rest nodes)))))
-  (representation/apply-rewrite
+  (snippet/apply-rewrite
     (remove-nodes-rec snippet nodes)))
 
 (defn 
   add-node-no-apply-rewrite 
   "Add a given node in given idx inside the lst (listval) in snippet."
   [snippet list-container node idx]
-  (let [rewrite (representation/snippet-rewrite snippet)
+  (let [rewrite (snippet/snippet-rewrite snippet)
         list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
     (.insertAt list-rewrite node idx (new org.eclipse.text.edits.TextEditGroup "snippet"))
     snippet))
@@ -182,7 +185,7 @@
   "Add a given node in given idx inside the lst (listval) in snippet."
   [snippet list-container node idx]
   (add-node-no-apply-rewrite snippet list-container node idx)
-  (representation/apply-rewrite snippet)) 
+  (snippet/apply-rewrite snippet)) 
 
 (defn
   add-nodes 
@@ -193,7 +196,7 @@
       snippet
       (let [newsnippet (add-node-no-apply-rewrite snippet lst (first nodes) idx)]
         (add-nodes-rec newsnippet lst (rest nodes) (+ idx 1)))))
-  (representation/apply-rewrite (add-nodes-rec snippet lst nodes idx))) 
+  (snippet/apply-rewrite (add-nodes-rec snippet lst nodes idx))) 
 
 (defn
   split-variable-declaration-fragments 
@@ -208,15 +211,15 @@
             newsnippet-node (add-node-no-apply-rewrite snippet listcontainer newnode position)
             newsnippet      (contains-elements newsnippet-node (first (astnode/node-propertyvalues newnode)))]
         (split-variable-declaration-fragments-rec newsnippet listcontainer (+ position 1) (rest fragments) modifiers type))))
-  (representation/apply-rewrite 
+  (snippet/apply-rewrite 
     (split-variable-declaration-fragments-rec snippet listcontainer position fragments modifiers type))) 
 
 (defn
   split-variable-declaration-statement 
   "Split variable declaration statement with many fragments into multiple node with one fragment for each statement."
   [snippet statement]
-  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
-        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
+        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
         newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (split-variable-declaration-fragments
       newsnippet 
@@ -231,8 +234,8 @@
   "Allow given variable declaration statement in given snippet, 
    as part of one or more variable declaration statements in target source code."
   [snippet statement]
-  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
-        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
+        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
         newsnippet-list (contains-elements snippet (:value listcontainer))
         newsnippet      (remove-node-no-apply-rewrite newsnippet-list statement)]  
     (split-variable-declaration-fragments
@@ -271,8 +274,8 @@
   relax-typeoftype
   "Allow match given node (= type) as simple type or parameterized type."
   [snippet node]
-  (let [snippet-epsilon (representation/remove-gf-cf-for-node snippet node)
-        snippet-type    (representation/update-cf-for-node snippet-epsilon (.getType node) :exact)]
+  (let [snippet-epsilon (snippet/remove-gf-cf-for-node snippet node)
+        snippet-type    (snippet/update-cf-for-node snippet-epsilon (.getType node) :exact)]
     (update-constrainf snippet-type node :relax-typeoftype)))
 
 (defn
@@ -294,7 +297,7 @@
   "Add user logic conditions to snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(representation/snippet-userqueries snippet) ~@conditions)]
+    (let [new-conditions `(~@(snippet/snippet-userqueries snippet) ~@conditions)]
       (assoc snippet :userquery new-conditions))
     snippet))
 
@@ -303,7 +306,7 @@
   "Remove user logic conditions from snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (representation/snippet-userqueries snippet))]
+    (let [new-conditions (remove (set conditions) (snippet/snippet-userqueries snippet))]
       (assoc snippet :userquery new-conditions))
     snippet))
   
@@ -315,8 +318,8 @@
     (first (first 
              (damp.ekeko/ekeko [?dec] 
                                (runtime/ast-invocation-declaration inv ?dec)))))
-  (let [listcontainer   (representation/snippet-node-with-member snippet statement)
-        position        (.indexOf (representation/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
+        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
         newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (add-nodes newsnippet listcontainer inlined-statements position)))
@@ -325,15 +328,15 @@
   introduce-logic-variable-of-node-exact 
   "Introduce logic variable to a given node, without removing any condition."
   [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))]
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (snippet/snippet-var-for-node snippet node)] (symbol uservar))]
     (update-constrainf snippet-with-uservar node :exact-variable)))
 
 (defn 
   introduce-logic-variable 
   "Introduce logic variable to a given node."
   [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
-        snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (snippet/snippet-var-for-node snippet node)] (symbol uservar))
+        snippet-with-epsilon (snippet/remove-gf-cf-for-node snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :variable)))
 
@@ -347,8 +350,8 @@
   introduce-logic-variable-with-info
   "Introduce logic variable to a given node and add it as result in the query."
   [snippet node uservar]
-  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (representation/snippet-var-for-node snippet node)] (symbol uservar))
-        snippet-with-epsilon (representation/remove-gf-cf-for-node snippet-with-uservar node)
+  (let [snippet-with-uservar (assoc-in snippet [:var2uservar (snippet/snippet-var-for-node snippet node)] (symbol uservar))
+        snippet-with-epsilon (snippet/remove-gf-cf-for-node snippet-with-uservar node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :variable-info)))
 
@@ -426,7 +429,7 @@
   negated-node 
   "Match all kind of node, except the given node."
   [snippet node]
-  (let [snippet-with-epsilon (representation/remove-gf-cf-for-node snippet node)
+  (let [snippet-with-epsilon (snippet/remove-gf-cf-for-node snippet node)
         snippet-with-gf (update-groundf snippet-with-epsilon node :exact)]
     (update-constrainf snippet-with-gf node :negated)))
 
@@ -434,7 +437,7 @@
   match-variable-typequalifiednamestring
    "Match Relation between ASTNode variable with it's type qualified name."
   [snippet node-var string]
-  (let [var-node (representation/snippet-lvar-for-node snippet node-var)
+  (let [var-node (snippet/snippet-lvar-for-node snippet node-var)
         new-snippet-var (update-constrainf-with-args snippet node-var :var-qname (list string))]
     (add-logic-conditions
       new-snippet-var
@@ -444,7 +447,7 @@
   match-type-qualifiednamestring
    "Match Relation between ASTNode type with it's type qualified name."
   [snippet node-var string]
-  (let [var-node (representation/snippet-lvar-for-node snippet node-var)
+  (let [var-node (snippet/snippet-lvar-for-node snippet node-var)
         new-snippet-var (update-constrainf-with-args snippet node-var :type-qname (list string))]
     (add-logic-conditions
       new-snippet-var
@@ -459,7 +462,7 @@
         f-name (first arr-str)
         var-arg (fnext arr-str)
         new-conditions (cons (list f-name var-arg)
-                             (representation/snippet-userfs-for-node snippet node-var))]
+                             (snippet/snippet-userfs-for-node snippet node-var))]
     (update-in snippet [:ast2userfs node-var] (fn [x] new-conditions))))
 
 (defn
@@ -478,37 +481,37 @@
   [snippetgroup node parent]
   (defn change-cf-parent [snippet node]
     (if (= node parent)
-      ;(update-constrainf snippet (representation/snippet-node-with-member snippet node) :epsilon)
+      ;(update-constrainf snippet (snippet/snippet-node-with-member snippet node) :epsilon)
       snippet
       (let [snippet-node (update-constrainf snippet node :epsilon)
-            snippet-nodelist (update-constrainf snippet-node (representation/snippet-node-with-member snippet-node node) :epsilon)]
+            snippet-nodelist (update-constrainf snippet-node (snippet/snippet-node-with-member snippet-node node) :epsilon)]
         (change-cf-parent snippet-nodelist (.getParent node)))))
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node)
-        var-parent (representation/snippet-lvar-for-node snippet parent)
+  (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup node)
+        var-parent (snippet/snippet-lvar-for-node snippet parent)
         new-gf-snippet (update-groundf-with-args (change-cf-parent snippet node) node :deep (list var-parent))
         new-snippet (update-constrainf new-gf-snippet node :exact)]
-    (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
+    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn 
   add-snippet
   "Add snippet to snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippetlist (concat (representation/snippetgroup-snippetlist snippetgroup) (list snippet))]
+  (let [new-snippetlist (concat (snippetgroup/snippetgroup-snippetlist snippetgroup) (list snippet))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
 (defn 
   remove-snippet
   "Remove snippet to snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippetlist (remove #{snippet} (representation/snippetgroup-snippetlist snippetgroup))]
+  (let [new-snippetlist (remove #{snippet} (snippetgroup/snippetgroup-snippetlist snippetgroup))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
 (defn 
   update-snippetflag
   "Update snippet flag :mandatory or :optional of the given snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippet (representation/snippet-switch-flag snippet)]
-    (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
+  (let [new-snippet (snippet/snippet-switch-flag snippet)]
+    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn
   update-logic-conditions-to-snippetgroup
@@ -521,7 +524,7 @@
   "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(representation/snippetgroup-userqueries snippetgroup) ~@conditions)]
+    (let [new-conditions `(~@(snippetgroup/snippetgroup-userqueries snippetgroup) ~@conditions)]
       (assoc snippetgroup :userquery new-conditions))
     snippetgroup))
 
@@ -530,7 +533,7 @@
   "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (representation/snippetgroup-userqueries snippetgroup))]
+    (let [new-conditions (remove (set conditions) (snippetgroup/snippetgroup-userqueries snippetgroup))]
       (assoc snippetgroup :userquery new-conditions))
     snippetgroup))
 
@@ -538,11 +541,11 @@
   internal-user-defined-condition
    "Internal function to add user-defined-condition of given snippetgroup node-var and node-arg."
   [snippetgroup node-var node-arg function-string]
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup node-var)
-        snippet-arg (representation/snippetgroup-snippet-for-node snippetgroup node-arg)
-        var-arg (representation/snippet-lvar-for-node snippet-arg node-arg)
+  (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-arg (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-arg)
+        var-arg (snippet/snippet-lvar-for-node snippet-arg node-arg)
         new-snippet (add-user-defined-condition snippet node-var (str function-string " " var-arg))]
-    (representation/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
+    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
 (defn
   match-invocation-declaration
@@ -622,16 +625,16 @@
   match-variable-typequalifiedname
    "Match Relation between ASTNode variable with it's type qualified name."
   [snippetgroup node-var node-type]
-  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
-        snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
-        var-node (representation/snippet-lvar-for-node snippet-var node-var)
-        var-type (representation/snippet-lvar-for-node snippet-type node-type)
+  (let [snippet-var (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-type (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-type)
+        var-node (snippet/snippet-lvar-for-node snippet-var node-var)
+        var-type (snippet/snippet-lvar-for-node snippet-type node-type)
         new-snippet-var (update-constrainf-with-args snippet-var node-var :var-type (list var-type))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
           `((damp.ekeko.snippets.runtime/ast-variable-typequalifiedname ~var-node ~var-type)))
-        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
+        new-group (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
     new-group))
 
 ;;not used
@@ -639,16 +642,16 @@
   match-type-qualifiedname
    "Match Relation between ASTNode type with it's type qualified name."
   [snippetgroup node-var node-type]
-  (let [snippet-var (representation/snippetgroup-snippet-for-node snippetgroup node-var)
-        snippet-type (representation/snippetgroup-snippet-for-node snippetgroup node-type)
-        var-node (representation/snippet-lvar-for-node snippet-var node-var)
-        var-type (representation/snippet-lvar-for-node snippet-type node-type)
+  (let [snippet-var (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-var)
+        snippet-type (snippetgroup/snippetgroup-snippet-for-node snippetgroup node-type)
+        var-node (snippet/snippet-lvar-for-node snippet-var node-var)
+        var-type (snippet/snippet-lvar-for-node snippet-type node-type)
         new-snippet-var (update-constrainf-with-args snippet-var node-var :type-qname (list var-type))
         new-snippet-var-with-cond
         (add-logic-conditions
           new-snippet-var
           `((damp.ekeko.snippets.runtime/ast-type-qualifiedname ~var-node ~var-type)))
-        new-group (representation/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
+        new-group (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet-var new-snippet-var-with-cond)]
     new-group))
 
 
@@ -659,32 +662,32 @@
   add-snippet-to-snippetgrouphistory
   "Add snippet to snippetgrouphistory."
   [snippetgrouphistory snippet]
-  (let [new-snippetgroup (add-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
-        new-orisnippetgroup (add-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
-        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
-    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
+  (let [new-snippetgroup (add-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet)
+        new-orisnippetgroup (add-snippet (snippetgrouphistory/snippetgrouphistory-original snippetgrouphistory) snippet)
+        new-snippetgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
+    (snippetgrouphistory/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
 
 (defn 
   remove-snippet-from-snippetgrouphistory
   "Remove snippet from snippetgrouphistory."
   [snippetgrouphistory snippet]
-  (let [new-snippetgroup (remove-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet)
-        new-orisnippetgroup (remove-snippet (representation/snippetgrouphistory-original snippetgrouphistory) snippet)
-        new-snippetgrouphistory (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
-    (representation/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
+  (let [new-snippetgroup (remove-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet)
+        new-orisnippetgroup (remove-snippet (snippetgrouphistory/snippetgrouphistory-original snippetgrouphistory) snippet)
+        new-snippetgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
+    (snippetgrouphistory/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
 
 (defn 
   update-snippet-in-snippetgrouphistory
   "Update snippet in snippetgrouphistory."
   [snippetgrouphistory snippet newsnippet]
-  (let [new-snippetgroup (representation/snippetgroup-replace-snippet (representation/snippetgrouphistory-current snippetgrouphistory) snippet newsnippet)]
-    (representation/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)))
+  (let [new-snippetgroup (snippetgroup/snippetgroup-replace-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet newsnippet)]
+    (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)))
 
 (defn 
   update-snippetflag-in-snippetgrouphistory
   "Update snippet flag in snippetgrouphistory."
   [snippetgrouphistory snippet]
-  (let [new-snippet (representation/snippet-switch-flag snippet)]
+  (let [new-snippet (snippet/snippet-switch-flag snippet)]
     (update-snippet-in-snippetgrouphistory snippetgrouphistory snippet new-snippet)))
 
 
@@ -717,7 +720,7 @@
       (let [first-var (first var2uservar)
             new-snippet (introduce-logic-variables-for-node 
                           snippet 
-                          (representation/snippet-node-for-var template-snippet (key first-var))
+                          (snippet/snippet-node-for-var template-snippet (key first-var))
                           (val first-var))]
         (process-introduce-variables-rec new-snippet (dissoc var2uservar (key first-var))))))
   (process-introduce-variables-rec snippet (:var2uservar template-snippet)))
@@ -727,7 +730,7 @@
   "Operator to change name with rule.
    Example: \"add[part-of-name]s\"."
   [snippet node template-snippet template-node string]
-  (let [user-var (representation/snippet-lvar-for-node template-snippet template-node)
+  (let [user-var (snippet/snippet-lvar-for-node template-snippet template-node)
         new-snippet (introduce-logic-variable snippet node user-var)
         rule (util/convert-string-to-rule string (str template-node) user-var)]
     (update-constrainf-with-args new-snippet node :change-name (list rule (str template-node)))))
@@ -736,7 +739,7 @@
   t-internal-user-defined-condition
   [snippet node template-snippet template-node function-string]
   (let [bound-snippet (introduce-logic-variables-for-snippet snippet template-snippet)
-        user-var (representation/snippet-lvar-for-node template-snippet template-node)]
+        user-var (snippet/snippet-lvar-for-node template-snippet template-node)]
     (add-user-defined-condition bound-snippet node (str function-string " " user-var))))
 
 (defn

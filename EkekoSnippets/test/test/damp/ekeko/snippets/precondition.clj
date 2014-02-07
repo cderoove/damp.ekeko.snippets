@@ -6,7 +6,8 @@
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
              [querying :as querying]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [operators :as operators]
              [precondition :as precondition]
              [matching :as matching]
@@ -30,7 +31,7 @@
   ^{:doc "Operator safety : contains-elements"}
   operatorsafety-contains-elements
   (let [root      (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ") 
-        node      (representation/snippet-node-with-value "" (.statements (.getBody root)))] 
+        node      (snippet/snippet-node-with-value "" (.statements (.getBody root)))] 
     (is (true? 
           (precondition/safe-operator-for-node? :contains-elements node)))))
 
@@ -217,7 +218,7 @@
   ^{:doc "Applicable operators for snippet"}
   precondition-applicable-operators-for-snippet
   (let [node    (parsing/parse-string-statement "int x=m();")
-        snippet (representation/jdt-node-as-snippet node)
+        snippet (snippet/jdt-node-as-snippet node)
         results (precondition/applicable-operators-for-snippet snippet)
         results-in-list
         (map (fn [x] (concat (list (key x)) (val x))) results)]

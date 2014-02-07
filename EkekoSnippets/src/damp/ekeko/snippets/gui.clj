@@ -10,7 +10,8 @@
     [org.eclipse.swt.widgets Display])
   (:require [damp.ekeko.snippets 
              [util :as util]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko.gui]))
@@ -38,7 +39,7 @@
        (remove (fn [x] (astnode/primitivevalue? x))
                (astnode/node-propertyvalues p)))
      (astnode/lstvalue? p) 
-     (to-array (seq (representation/snippet-value-for-node snippet p)))
+     (to-array (seq (snippet/snippet-value-for-node snippet p)))
      :else 
      (to-array [])))
 
@@ -62,15 +63,15 @@
   [snippetgroup p]
   (if 
     (= p (:name snippetgroup))
-    (to-array (map :ast (representation/snippetgroup-snippetlist snippetgroup)))
+    (to-array (map :ast (snippetgroup/snippetgroup-snippetlist snippetgroup)))
     (snippetviewer-children
-      (representation/snippetgroup-snippet-for-node snippetgroup p)
+      (snippetgroup/snippetgroup-snippet-for-node snippetgroup p)
       p)))
       
 (defn
   snippetgroupviewer-parent
   [snippetgroup c]
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup c)]
+  (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup c)]
     (if (= c (:ast snippet))
       (:name snippetgroup)
       (snippetviewer-parent snippet c))))
@@ -87,7 +88,7 @@
     (astnode/nilvalue? element)
     "null"
     (astnode/value? element)
-    (str (representation/snippet-value-for-node snippet element))
+    (str (snippet/snippet-value-for-node snippet element))
     :else 
     (str element)))
 
@@ -114,23 +115,23 @@
 (defn
   snippetviewercolumn-variable
   [snippet element]
-  (str (representation/snippet-var-for-node snippet element)))
+  (str (snippet/snippet-var-for-node snippet element)))
 
 (defn
   snippetviewercolumn-grounder
   [snippet element]
-  (str (representation/snippet-grounder-for-node snippet element)))
+  (str (snippet/snippet-grounder-for-node snippet element)))
 
 (defn
   snippetviewercolumn-constrainer
   [snippet element]
-  (str (representation/snippet-constrainer-for-node snippet element)))
+  (str (snippet/snippet-constrainer-for-node snippet element)))
 
 (defn
   snippetgroupviewercolumn-node
   [snippetgroup element]
   (snippetviewercolumn-node
-    (representation/snippetgroup-snippet-for-node snippetgroup element)
+    (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
     element))
 
 (defn
@@ -139,21 +140,21 @@
   (if (instance? java.lang.String element)
     "" 
     (snippetviewercolumn-property
-      (representation/snippetgroup-snippet-for-node snippetgroup element)
+      (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
       element)))
 
 (defn
   snippetgroupviewercolumn-variable
   [snippetgroup element]
   (snippetviewercolumn-variable
-    (representation/snippetgroup-snippet-for-node snippetgroup element)
+    (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
     element))
 
 (defn
   snippetgroupviewercolumn-flag
   [snippetgroup element]
-  (let [snippet (representation/snippetgroup-snippet-for-node snippetgroup element)]
-  (if (representation/snippet-is-mandatory? snippet)
+  (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)]
+  (if (snippet/snippet-is-mandatory? snippet)
     (do
       (if (= (:ast snippet) element) 
         "m"
@@ -224,7 +225,7 @@
 (defn
   print-snippetgroup
   [snippetgroup]
-  (let [str-list (map print-snippet (representation/snippetgroup-snippetlist snippetgroup))]
+  (let [str-list (map print-snippet (snippetgroup/snippetgroup-snippetlist snippetgroup))]
     (reduce str str-list))) 
 
 

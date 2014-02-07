@@ -4,7 +4,8 @@
 	  damp.ekeko.snippets.querying
 	  (:require [clojure.core.logic :as cl]) 
 	  (:require [damp.ekeko.snippets 
-	             [representation :as representation]
+	             [snippet :as snippet]
+               [snippetgroup :as snippetgroup]
 	             [operators :as operators]
 	             [util :as util]
 	             [matching :as matching] 
@@ -23,8 +24,8 @@
 	  (defn 
 	    conditions
 	    [ast-or-list]
-	    (concat (((matching/make-grounding-function (representation/snippet-grounder-for-node snippet ast-or-list)) ast-or-list) snippet)
-	            (((matching/make-constraining-function (representation/snippet-constrainer-for-node snippet ast-or-list)) ast-or-list) snippet)))
+	    (concat (((matching/make-grounding-function (snippet/snippet-grounder-for-node snippet ast-or-list)) ast-or-list) snippet)
+	            (((matching/make-constraining-function (snippet/snippet-constrainer-for-node snippet ast-or-list)) ast-or-list) snippet)))
 	  (let [ast (:ast snippet)
 	        query (atom '())]
 	    (util/walk-jdt-node 
@@ -38,10 +39,10 @@
 	(defn
 	  snippet-query-with-conditions
 	  [snippet ekekolaunchersymbol conditions userconditions]
-	  (let [root-var (representation/snippet-var-for-root snippet)
-	        uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))
-	        uservars-var (into #{} (representation/snippet-uservars-for-variable snippet))
-	        vars (disj (into #{} (representation/snippet-vars snippet)) root-var)]
+	  (let [root-var (snippet/snippet-var-for-root snippet)
+	        uservars-exact (into #{} (snippet/snippet-uservars-for-information snippet))
+	        uservars-var (into #{} (snippet/snippet-uservars-for-variable snippet))
+	        vars (disj (into #{} (snippet/snippet-vars snippet)) root-var)]
 	    `(~ekekolaunchersymbol 
 	       [~root-var ~@uservars-exact]
 	       (cl/fresh [~@vars ~@uservars-var]
@@ -55,7 +56,7 @@
 	  (snippet-query-with-conditions 
 	    snippet ekekolaunchersymbol 
 	    (snippet-conditions snippet) 
-	    (representation/snippet-userqueries snippet)))
+	    (snippet/snippet-userqueries snippet)))
 	 
 	; Converting snippet group to query
 	;------------------------------------
@@ -73,10 +74,10 @@
            (println function " " var-match " " var-arg)
            `(~function ~var-match ~var-arg)))
        userfs))
-	  (representation/flat-map 
+	  (snippetgroup/flat-map 
 	    (fn [ast2userfs] 
 	      (let [ast (key ast2userfs)
-	            var-match (representation/snippet-var-for-node snippet ast)
+	            var-match (snippet/snippet-var-for-node snippet ast)
 	            userfs (val ast2userfs)]
 	        (userfs-to-query var-match userfs)))
 	    (:ast2userfs snippet)))
@@ -86,21 +87,21 @@
 	  [grp]
 	  "Returns all user functions of the given grp.
 	  ((function var-match var-arg) ...)."
-	  (representation/flat-map (fn [s] (snippet-query-for-userfs s)) (:snippetlist grp)))
+	  (snippetgroup/flat-map (fn [s] (snippet-query-for-userfs s)) (:snippetlist grp)))
 	
 	(defn
 	  snippetgroup-conditions
 	  "Returns a list of logic conditions that will retrieve matches for the given snippet group."
 	  [snippetgroup]
-	  (representation/flat-map snippet-conditions (representation/snippetgroup-snippetlist snippetgroup)))
+	  (snippetgroup/flat-map snippet-conditions (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 	
 	(defn
 	  snippetgroup-query-with-conditions
 	  [snippetgroup ekekolaunchersymbol conditions userconditions]
-	  (let [root-vars (representation/snippetgroup-rootvars snippetgroup)
-	        uservars-exact (into #{} (representation/snippetgroup-uservars-for-information snippetgroup))
-	        uservars-var (into #{} (representation/snippetgroup-uservars-for-variable snippetgroup))
-	        vars (into #{} (remove (set root-vars) (representation/snippetgroup-vars snippetgroup)))]
+	  (let [root-vars (snippetgroup/snippetgroup-rootvars snippetgroup)
+	        uservars-exact (into #{} (snippetgroup/snippetgroup-uservars-for-information snippetgroup))
+	        uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
+	        vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
 	    `(~ekekolaunchersymbol 
 	       [~@root-vars ~@uservars-exact]
 	       (cl/fresh [~@vars ~@uservars-var]
@@ -115,8 +116,8 @@
 	    snippetgroup ekekolaunchersymbol 
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
-	      (representation/snippetgroup-snippets-userqueries snippetgroup)
-	      (representation/snippetgroup-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-userqueries snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup))))
 	
 	    
@@ -137,7 +138,7 @@
            `(el/perform (~function ~var-match (rewrite/snippet-rewrite-string ~node-str [~@user-vars])))))
        userfs))
    (let [user-vars (rewrite/snippet-rewrite-uservar-pairs snippet)]
-     (representation/flat-map 
+     (snippetgroup/flat-map 
        (fn [ast2userfs] 
          (let [ast (key ast2userfs)
                userfs (val ast2userfs)
@@ -150,7 +151,7 @@
 	  [grp]
 	  "Returns all user rewrite functions of the given grp.
 	  ((function var-match string) ...)."
-	  (representation/flat-map (fn [s] (snippet-rewrite-query-for-userfs s)) (:snippetlist grp)))
+	  (snippetgroup/flat-map (fn [s] (snippet-rewrite-query-for-userfs s)) (:snippetlist grp)))
 	
 	(defn
 	  snippetgroup-rewrite-query
@@ -160,8 +161,8 @@
 	    snippetgroup ekekolaunchersymbol 
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
-	      (representation/snippetgroup-snippets-userqueries snippetgroup)
-	      (representation/snippetgroup-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-userqueries snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup)
         (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
 	
@@ -174,19 +175,19 @@
 	  snippet-in-group-query-with-conditions
 	  "Query for snippet, depends on relation with other snippets in the group."
 	  [snippet snippetgroup ekekolaunchersymbol]
-	  (let [related-snippets (representation/snippetgroup-related-snippets-basedon-mandatory-and-userqueries snippetgroup snippet)
-	        grp-related-snippets (update-in (representation/make-snippetgroup "") [:snippetlist] (fn [x] related-snippets))
-	        root-var (representation/snippet-var-for-root snippet)
-	        uservars-exact (into #{} (representation/snippet-uservars-for-information snippet))
-	        uservars-exact-grp (into #{} (representation/snippetgroup-uservars-for-information grp-related-snippets))
-	        uservars-var (into #{} (representation/snippet-uservars-for-variable snippet))
-	        uservars-var-grp (into #{} (representation/snippetgroup-uservars-for-variable grp-related-snippets))
-	        vars (into #{} (remove #{root-var} (representation/snippet-vars snippet)))
-	        vars-grp (into #{} (remove #{root-var} (representation/snippetgroup-vars grp-related-snippets)))
+	  (let [related-snippets (snippetgroup/snippetgroup-related-snippets-basedon-mandatory-and-userqueries snippetgroup snippet)
+	        grp-related-snippets (update-in (snippetgroup/make-snippetgroup "") [:snippetlist] (fn [x] related-snippets))
+	        root-var (snippet/snippet-var-for-root snippet)
+	        uservars-exact (into #{} (snippet/snippet-uservars-for-information snippet))
+	        uservars-exact-grp (into #{} (snippetgroup/snippetgroup-uservars-for-information grp-related-snippets))
+	        uservars-var (into #{} (snippet/snippet-uservars-for-variable snippet))
+	        uservars-var-grp (into #{} (snippetgroup/snippetgroup-uservars-for-variable grp-related-snippets))
+	        vars (into #{} (remove #{root-var} (snippet/snippet-vars snippet)))
+	        vars-grp (into #{} (remove #{root-var} (snippetgroup/snippetgroup-vars grp-related-snippets)))
 	        conds (snippet-conditions snippet) 
 	        conds-grp (snippetgroup-conditions grp-related-snippets) 
-	        userconds (representation/snippet-userqueries snippet)
-	        userconds-grp (representation/snippetgroup-snippets-userqueries grp-related-snippets)]
+	        userconds (snippet/snippet-userqueries snippet)
+	        userconds-grp (snippetgroup/snippetgroup-snippets-userqueries grp-related-snippets)]
 	    `(~ekekolaunchersymbol 
 	       [~root-var ~@uservars-exact]
 	       (cl/fresh [~@vars ~@vars-grp ~@uservars-exact-grp ~@uservars-var ~@uservars-var-grp]

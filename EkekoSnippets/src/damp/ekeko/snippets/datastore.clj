@@ -3,7 +3,8 @@
     :author "Coen De Roover, Siltvani"}
     damp.ekeko.snippets.datastore
   (:require [damp.ekeko.snippets 
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [util :as util]
              [parsing :as parsing]]))
 
@@ -54,12 +55,12 @@
         (assoc-in snippetmap [:track2userfs track] (str userfs))
         snippetmap)))
   (defn update-uservar [snippetmap track value]
-    (let [uservar (get-in snippet [:var2uservar (representation/snippet-var-for-node snippet value)])]
+    (let [uservar (get-in snippet [:var2uservar (snippet/snippet-var-for-node snippet value)])]
       (if (not (nil? uservar)) 
         (assoc-in snippetmap [:track2uservar track] (str uservar))
         snippetmap)))
   (defn update-snippetmap [snippetmap value]
-    (let [track (str (representation/snippet-track-for-node snippet value))]
+    (let [track (str (snippet/snippet-track-for-node snippet value))]
       (->
         snippetmap
         (assoc-in [:track2var track]        (str (get-in snippet [:ast2var value])))
@@ -97,19 +98,19 @@
         (assoc-in snippet [:var2uservar var] (symbol uservar))
         snippet)))
   (defn update-snippet [snippet value]
-    (let [strTrack (str (representation/snippet-track-for-node snippet value))
+    (let [strTrack (str (snippet/snippet-track-for-node snippet value))
           var (symbol (get-in snippetmap [:track2var strTrack]))]
       (->
         snippet
         (update-in [:ast2var value]        (fn [x] var))
         (update-in [:ast2groundf value]    (fn [x] (util/string-to-list (get-in snippetmap [:track2groundf strTrack]))))
         (update-in [:ast2constrainf value] (fn [x] (util/string-to-list (get-in snippetmap [:track2constrainf strTrack]))))
-        (util/dissoc-in [:var2ast (representation/snippet-var-for-node snippet value)])      ;new variable replaced by variable in snippetmap
+        (util/dissoc-in [:var2ast (snippet/snippet-var-for-node snippet value)])      ;new variable replaced by variable in snippetmap
         (assoc-in  [:var2ast var] value)
         (update-userfs  value strTrack)
         (update-uservar var strTrack))))
   (let [doc (parsing/parse-string-to-document (:document snippetmap))
-        snippet (atom (representation/document-as-snippet doc))
+        snippet (atom (snippet/document-as-snippet doc))
         userquery (:userquery snippetmap)]
     (util/walk-jdt-node 
       (:ast @snippet)
@@ -148,19 +149,19 @@
         (assoc-in snippet [:var2uservar var] (symbol uservar))
         snippet)))
   (defn update-snippet [snippet value]
-    (let [strTrack (str (representation/snippet-track-for-node snippet value))
+    (let [strTrack (str (snippet/snippet-track-for-node snippet value))
           var (symbol (get-in-json snippetjson [:track2var strTrack]))]
       (->
         snippet
         (update-in [:ast2var value]        (fn [x] var))
         (update-in [:ast2groundf value]    (fn [x] (util/string-to-list (get-in-json snippetjson [:track2groundf strTrack]))))
         (update-in [:ast2constrainf value] (fn [x] (util/string-to-list (get-in-json snippetjson [:track2constrainf strTrack]))))
-        (util/dissoc-in [:var2ast (representation/snippet-var-for-node snippet value)])      ;new variable replaced by variable in snippetjson
+        (util/dissoc-in [:var2ast (snippet/snippet-var-for-node snippet value)])      ;new variable replaced by variable in snippetjson
         (assoc-in  [:var2ast var] value)
         (update-userfs  value strTrack)
         (update-uservar var strTrack))))
   (let [doc (parsing/parse-string-to-document (.get snippetjson ":document"))
-        snippet (atom (representation/document-as-snippet doc))
+        snippet (atom (snippet/document-as-snippet doc))
         rw (:rewrite @snippet)
         userquery (.get snippetjson ":userquery")]
     (util/walk-jdt-node 
@@ -198,7 +199,7 @@
   json-to-snippetgroup
   "Convert jsonobject to snippet group."
   [json]
-  (let [group (representation/make-snippetgroup (.get json ":name"))
+  (let [group (snippetgroup/make-snippetgroup (.get json ":name"))
         userquery (.get json ":userquery")]
     (->
       group

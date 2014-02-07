@@ -6,7 +6,8 @@
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
              [querying :as querying]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [matching :as matching]
              [parsing :as parsing]
              [util :as util]])
@@ -46,7 +47,7 @@
   (let [nodes 
         (map first (damp.ekeko/ekeko [?ast] (fresh [?kind] (reification/ast ?kind ?ast))))
         snippets
-        (map representation/jdt-node-as-snippet nodes)]
+        (map snippet/jdt-node-as-snippet nodes)]
     (doseq [[node snippet] (map vector nodes snippets)]
       (is (some #{node} (map first (snippets/query-by-snippet snippet)))))))
     
@@ -57,7 +58,7 @@
   exactmatch-typedeclaration
   (test/tuples-correspond 
     (snippets/query-by-snippet 
-      (representation/jdt-node-as-snippet
+      (snippet/jdt-node-as-snippet
         (parsing/parse-string-declaration "private class X { public Integer m() { return new Integer(111); } }")))
     "#{(\"private class X {\\n  public Integer m(){\\n    return new Integer(111);\\n  }\\n}\\n\")}"))
 
@@ -68,7 +69,7 @@
   exactmatch-methoddeclaration
   (test/tuples-correspond 
     (snippets/query-by-snippet 
-      (representation/jdt-node-as-snippet
+      (snippet/jdt-node-as-snippet
         (parsing/parse-string-declaration 
           "public void methodA() {
                this.methodM(); 
@@ -81,7 +82,7 @@
 (deftest
   exactmatch-methodinvocation
   (test/tuples-correspond 
-    (snippets/query-by-snippet (representation/jdt-node-as-snippet (parsing/parse-string-expression "x.m()")))
+    (snippets/query-by-snippet (snippet/jdt-node-as-snippet (parsing/parse-string-expression "x.m()")))
     "#{(\"x.m()\")}")) ;string obtained by evaluating (test/tuples-to-stringsetstring (snippets/query-by-snippet .....
      
 ;; Statements
@@ -94,7 +95,7 @@
   exactmatch-ifstatement
   (test/tuples-correspond 
     (snippets/query-by-snippet 
-      (representation/jdt-node-as-snippet
+      (snippet/jdt-node-as-snippet
         (parsing/parse-string-statement "if (getInput() % 2 == 0) return o; else return new MayAliasLeaf();")))
     "#{(\"if (getInput() % 2 == 0) return o;\\n else return new MayAliasLeaf();\\n\")}"))
 

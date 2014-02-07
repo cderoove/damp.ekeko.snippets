@@ -5,7 +5,8 @@
   (:require [damp.ekeko.snippets 
              [gui :as gui]
              [operatorsrep :as operatorsrep]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [util :as util]
              [parsing :as parsing]])
   (:require 
@@ -134,12 +135,12 @@
   get-original-snippets
   "Get original snippets based on var-match in :var2userfs of (:ast rewrite-snippet)."
   [group rewrite-snippet]
-  (let [userfs (representation/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
+  (let [userfs (snippet/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
     (if (nil? userfs)
       '()
       (map 
         (fn [userf]
-          (representation/snippetgroup-snippet-for-var group (symbol (fnext userf))))
+          (snippetgroup/snippetgroup-snippet-for-var group (symbol (fnext userf))))
         userfs))))
 
 (defn 
@@ -150,12 +151,12 @@
 (defn 
   get-original-nodes
   [group rewrite-snippet]
-  (let [userfs (representation/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
+  (let [userfs (snippet/snippet-userfs-for-node rewrite-snippet (:ast rewrite-snippet))]
     (if (nil? userfs)
       '()
       (map 
         (fn [userf]
-          (representation/snippetgroup-node-for-var group (symbol (fnext userf))))
+          (snippetgroup/snippetgroup-node-for-var group (symbol (fnext userf))))
         userfs))))
 
 (defn 
@@ -216,10 +217,10 @@
   (let [user-vars-condition
         (for [[var uservar] (:var2uservar snippet)
               :let [str-uservar (.replace (str uservar) "?" "*")
-                    node (representation/snippet-node-for-var snippet var)
-                    rule (if (= (representation/snippet-constrainer-for-node snippet node)  
+                    node (snippet/snippet-node-for-var snippet var)
+                    rule (if (= (snippet/snippet-constrainer-for-node snippet node)  
                                 :change-name)
-                           (.replace (first (representation/snippet-constrainer-args-for-node snippet node)) "?" "*")
+                           (.replace (first (snippet/snippet-constrainer-args-for-node snippet node)) "?" "*")
                            nil)]]
           (if (nil? rule)
             `[~str-uservar ~uservar]
@@ -234,10 +235,10 @@
     (map 
       (fn [userf] 
         (let [function (first userf)
-              node (representation/snippetgroup-node-for-var group (symbol (fnext userf)))]
+              node (snippetgroup/snippetgroup-node-for-var group (symbol (fnext userf)))]
           (list function node ast)))
       userfs))
-  (representation/flat-map 
+  (snippetgroup/flat-map 
     (fn [ast2userfs] 
       (userfs-mapping (key ast2userfs) (val ast2userfs)))
     (:ast2userfs snippet)))
@@ -246,5 +247,5 @@
   snippetgroup-rewrite-mapping
   [original-group rw-group]
   "Returns rewrite mapping, list of (operation original-node rewritten-node)."
-  (representation/flat-map (fn [s] (snippet-rewrite-mapping original-group s)) (:snippetlist rw-group)))
+  (snippetgroup/flat-map (fn [s] (snippet-rewrite-mapping original-group s)) (:snippetlist rw-group)))
 

@@ -10,7 +10,8 @@
              [snippets :as snippets]])
   (:require [damp.ekeko.snippets 
              [querying :as querying]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [operators :as operators]
              [matching :as matching]
              [parsing :as parsing]
@@ -51,7 +52,7 @@
         (parsing/parse-string-declaration 
           "public int myMethodF(int val) {	r = 0; if (val == 0) {	r = val;	} return r; }")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         resnippet 
         (operators/allow-ifstatement-with-else
           snippet
@@ -60,7 +61,7 @@
         (test/tuples-to-stringsetstring 
           (snippets/query-by-snippet resnippet))
         snippet-nodes
-        (remove  (fn [x] (= (:ast snippet) x)) (representation/snippet-nodes snippet))]
+        (remove  (fn [x] (= (:ast snippet) x)) (snippet/snippet-nodes snippet))]
     (Thread. 
       (fn [] 
         (let [start (java.util.Date.)]

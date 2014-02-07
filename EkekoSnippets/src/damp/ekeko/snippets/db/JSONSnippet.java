@@ -7,30 +7,22 @@ package damp.ekeko.snippets.db;
  * and JSONObject as Snippet
  */
 
-import damp.ekeko.snippets.gui.*;
-import java.io.FileReader;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.PlatformUI;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import clojure.lang.PersistentArrayMap;
-import clojure.lang.PersistentHashMap;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class JSONSnippet {
 
 	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.datastore"));
 	}
@@ -84,7 +76,7 @@ public class JSONSnippet {
  
 	public static Object addSnippetCode(String code) {
 		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
-		Object snippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
+		Object snippet = RT.var("damp.ekeko.snippets.snippet", "document-as-snippet").invoke(document);
 		return snippet;
 	}
 

@@ -6,7 +6,8 @@
   (:use [clojure.core.logic :exclude [is]] :reload)
   (:require [damp.ekeko.snippets 
              [querying :as querying]
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [operators :as operators]
              [matching :as matching]
              [parsing :as parsing]
@@ -39,7 +40,7 @@
                       (reification/ast ?kind ?ast)
                       (reification/child ?property ?ast ?child)))]
     (doseq [[node child] node-child] 
-      (let [snippet (representation/jdt-node-as-snippet node)
+      (let [snippet (snippet/jdt-node-as-snippet node)
             generalized-snippet (operators/introduce-logic-variable snippet child '?childvar)
             solutions (snippets/query-by-snippet generalized-snippet)]
         (is (some #{[node child]} solutions))))))
@@ -50,7 +51,7 @@
   (let [node
         (parsing/parse-string-declaration "public void methodA() { this.methodM(); this.methodC();} ")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet
         (operators/introduce-logic-variable snippet (.getName node) '?m)]
     (test/tuples-correspond 
@@ -67,7 +68,7 @@
   (let [node
         (parsing/parse-string-declaration "private class X {public Integer m() { return new Integer(111); } }")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet
         (operators/introduce-logic-variable snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
     (test/tuples-correspond 
@@ -83,7 +84,7 @@
   (let [node
         (parsing/parse-string-declaration "private class X {public Integer m() { return new Integer(111); } }")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet
         (operators/introduce-logic-variable-of-node-exact snippet (first (.bodyDeclarations node)) '?bodydeclaration)]
     (test/tuples-correspond 
@@ -105,13 +106,13 @@
   (let [node
         (parsing/parse-string-declaration snippet-string)
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
         (generelized-function
           generalized-snippet-with-lvar 
-          (representation/snippet-node-with-value snippet (.statements (.getBody node))))]
+          (snippet/snippet-node-with-value snippet (.statements (.getBody node))))]
     (test/tuples-correspond 
       (snippets/query-by-snippet generalized-snippet)
       match-string)))
@@ -178,7 +179,7 @@
         (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/document-as-snippet doc)
+        (snippet/document-as-snippet doc)
         node 
         (:ast snippet) 
         generalized-snippet-with-lvar
@@ -201,9 +202,9 @@
         (parsing/parse-string-declaration 
           "public void methodA() {this.methodM(); this.methodC();	}")
         snippet 
-        (representation/jdt-node-as-snippet node)
-        var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
-        var-name   (representation/snippet-var-for-node snippet (.getName node))
+        (snippet/jdt-node-as-snippet node)
+        var-id     (snippet/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
+        var-name   (snippet/snippet-var-for-node snippet (.getName node))
         value      "methodA1"
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
@@ -234,7 +235,7 @@
         (parsing/parse-string-to-document 
           "public int rmethodB() {int x = 0, y = 0; int z = x + y; return z; } ")
         snippet 
-        (representation/document-as-snippet doc)
+        (snippet/document-as-snippet doc)
         node 
         (:ast snippet) 
         generalized-snippet-with-lvar
@@ -256,7 +257,7 @@
         (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/document-as-snippet doc)
+        (snippet/document-as-snippet doc)
         node 
         (:ast snippet) 
         generalized-snippet-with-lvar
@@ -283,7 +284,7 @@
         (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/document-as-snippet doc)
+        (snippet/document-as-snippet doc)
         node 
         (:ast snippet) 
         generalized-snippet-with-lvar
@@ -308,7 +309,7 @@
         (parsing/parse-string-declaration 
           "public int rmethodF(int val) {	int r = 0; if (val == 0) {	r = val;	} return r; }")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -340,7 +341,7 @@
   (let [node
         (method-with-name "rmethodI")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -371,7 +372,7 @@
   (let [node
         (class-with-name "Z")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -391,7 +392,7 @@
   (let [node
         (method-with-name "myMethodK")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -414,7 +415,7 @@
   (let [node
         (method-with-name "methodY")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -441,7 +442,7 @@
   (let [node
         (method-with-name "rmethodE")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -472,7 +473,7 @@
         var-val '?v-val
         var-id  '?v-id
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -495,7 +496,7 @@
   (let [node
         (parsing/parse-string-declaration "public void myMethod() {this.methodA();	this.methodB();	this.methodC(); }")
         snippet 
-        (representation/jdt-node-as-snippet node)
+        (snippet/jdt-node-as-snippet node)
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
         generalized-snippet
@@ -520,7 +521,7 @@
         (parsing/parse-string-to-document 
           "public int rmethodC() { int i = 0; int x = 0, y = 0; int z = x + y; return z;	}")
         snippet 
-        (representation/document-as-snippet doc)
+        (snippet/document-as-snippet doc)
         node 
         (:ast snippet) 
         generalized-snippet-with-lvar
@@ -530,7 +531,7 @@
         generalized-snippet
         (operators/add-node
           generalized-snippet-with-lvar 
-          (representation/snippet-node-with-value snippet (.statements (.getBody node)))
+          (snippet/snippet-node-with-value snippet (.statements (.getBody node)))
           new-node
           1)]
     (test/tuples-correspond 
@@ -547,9 +548,9 @@
         (parsing/parse-string-declaration 
           "public void methodA() {this.methodM(); this.methodC();	}")
         snippet 
-        (representation/jdt-node-as-snippet node)
-        var-id     (representation/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
-        var-name   (representation/snippet-var-for-node snippet (.getName node))
+        (snippet/jdt-node-as-snippet node)
+        var-id     (snippet/snippet-var-for-node snippet (first (astnode/node-propertyvalues (.getName node))))
+        var-name   (snippet/snippet-var-for-node snippet (.getName node))
         value      "methodA1"
         generalized-snippet-with-lvar
         (operators/introduce-logic-variable snippet (.getName node) '?m)
@@ -571,17 +572,17 @@
   (let [node (parsing/parse-string-declaration 
                "public void methodX() {methodA1(); methodA2();	}")
         node2 (parsing/parse-string-statement "methodA3();")        
-        snippet (representation/jdt-node-as-snippet node)
-        snippet2 (representation/jdt-node-as-snippet node2)
+        snippet (snippet/jdt-node-as-snippet node)
+        snippet2 (snippet/jdt-node-as-snippet node2)
         generalized-snippet-contains
         (operators/contains-elements snippet (.statements (.getBody node)))
         ;;add snippet1 and snippet2 to group
-        group (representation/make-snippetgroup "group")
+        group (snippetgroup/make-snippetgroup "group")
         added-group1 (operators/add-snippet group generalized-snippet-contains)
         added-group2 (operators/add-snippet added-group1 snippet2)
         ;;add logic conditions (list statement of node1 contains node2) 
-        var-raw (representation/snippet-var-for-node snippet (.statements (.getBody node)))
-        var-stat (representation/snippet-var-for-node snippet2 node2)
+        var-raw (snippet/snippet-var-for-node snippet (.statements (.getBody node)))
+        var-stat (snippet/snippet-var-for-node snippet2 node2)
         generalized-group
         (operators/add-logic-conditions-to-snippetgroup
           added-group2 

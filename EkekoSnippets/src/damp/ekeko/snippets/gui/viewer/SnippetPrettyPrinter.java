@@ -12,11 +12,13 @@ import clojure.lang.Symbol;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
+
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.util"));
 	}
 
-	private final String rep = "damp.ekeko.snippets.representation";
+	private final String rep = "damp.ekeko.snippets.snippet";
 	protected Object snippet;
 	protected Object highlightNode;
 	protected int[] highlightPos;

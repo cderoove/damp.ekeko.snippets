@@ -5,7 +5,7 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
              [parsing :as parsing]
-             [representation :as representation]]))
+             [snippet :as snippet]]))
 
 (defn
  string-as-snippet
@@ -14,7 +14,7 @@
        extracted-string (.snippet extracted)
        extracted-bounds (.bounds extracted) 
        ast (parsing/parse-string-ast extracted-string)
-       snippet (representation/jdt-node-as-snippet ast)]
+       snippet (snippet/jdt-node-as-snippet ast)]
    snippet
    
    ;todo: convert directives to grounding/constraining functions

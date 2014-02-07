@@ -12,13 +12,9 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -69,7 +65,6 @@ public class TemplateView extends ViewPart {
 	private SnippetGroup snippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
 	private Action actRedo;
-	private Table table_1;
 	private Action actTrans;
 
 	public TemplateView() {
@@ -141,7 +136,7 @@ public class TemplateView extends ViewPart {
 		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
 		gd_textSnippet.heightHint = 95;
 		textSnippet.setLayoutData(gd_textSnippet);
-		textSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
+		//textSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
 		
 		ToolBar toolBar_2 = new ToolBar(group_1, SWT.FLAT | SWT.RIGHT);
 		toolBar_2.setOrientation(SWT.RIGHT_TO_LEFT);
@@ -230,13 +225,6 @@ public class TemplateView extends ViewPart {
 			}
 		});		
 		
-		treeSnippet.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseDoubleClick(MouseEvent e) {
-				//viewSnippet();
-			}
-		});
-
 		Group group_3 = new Group(container, SWT.NONE);
 		group_3.setLayout(new GridLayout(1, false));
 		
@@ -440,45 +428,6 @@ public class TemplateView extends ViewPart {
 		this.viewID = secondaryId;
 	}
 	
-	public void setCFStyle(int start, int end) {
-		StyleRange styleRange = new StyleRange();
-	    styleRange.start = start;
-	    styleRange.length = end - start + 1;
-	    styleRange.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_GRAY);
-	    styleRange.fontStyle = SWT.BOLD;
-	    textSnippet.setStyleRange(styleRange);
-	}
-
-	public void clearCFStyle() {
-		StyleRange styleRange = new StyleRange();
-	    styleRange.start = 0;
-	    styleRange.length = textSnippet.getText().length();
-	    styleRange.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
-	    styleRange.fontStyle = SWT.NORMAL;
-	    textSnippet.setStyleRange(styleRange);
-	}
-
-	//-----------------------------------------------
-	//LOGIC PART
-	//all logic part for this View are written below
-	
-	
-	//TODO: fix
-	public void markSnippet() {
-		clearCFStyle();
-		String text = textSnippet.getText();
-		int idx = 0, startIdx = 0, endIdx = 0;	
-		
-		while (idx < text.length() && startIdx > -1) {
-			startIdx = text.indexOf("@[", idx);
-			if (startIdx > 0) {
-				endIdx = text.indexOf(") ", startIdx);
-				setCFStyle(startIdx, endIdx);
-				idx = endIdx;
-			}
-		}
-	}
-	
 	public void renderSnippet() {
 		treeViewerSnippet.setInput(snippetGroup.getGroup());
 		if (treeViewerSnippet.getTree().getSelectionCount() == 0) {
@@ -511,11 +460,6 @@ public class TemplateView extends ViewPart {
 			}
 			renderSnippet();
 		}
-	}
-
-	public void flagSnippet() {
-		snippetGroup.updateSnippetFlag(getSelectedSnippet());
-		renderSnippet();
 	}
 
 	public void viewQuery() {
@@ -576,7 +520,6 @@ public class TemplateView extends ViewPart {
 		textSnippet.setSelectionRange(0, 0);
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
-		markSnippet();
 
 		int x = snippetGroup.getActiveNodePos()[0];
 		int y = snippetGroup.getActiveNodePos()[1];

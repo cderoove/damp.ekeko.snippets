@@ -14,7 +14,9 @@ public class SnippetGroup {
 	
 	static {
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.representation"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
+		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgrouphistory"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operators"));
 		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operatorsrep"));
@@ -25,14 +27,14 @@ public class SnippetGroup {
 	}
 
 	public SnippetGroup(String name) {
-		groupHistory = RT.var("damp.ekeko.snippets.representation", "make-snippetgrouphistory").invoke(name);
+		groupHistory = RT.var("damp.ekeko.snippets.snippetgrouphistory", "make-snippetgrouphistory").invoke(name);
 		activeNodePos = new int[2];
 	}
 	
 	public SnippetGroup(Object group) {
 		//given clojure SnippetGroup
 		System.out.println("inside group construct");
-		groupHistory = RT.var("damp.ekeko.snippets.representation", "make-snippetgrouphistory-from-snippetgroup").invoke(group);
+		groupHistory = RT.var("damp.ekeko.snippets.snippetgrouphistory", "make-snippetgrouphistory-from-snippetgroup").invoke(group);
 		activeNodePos = new int[2];
 	}
 	
@@ -54,11 +56,11 @@ public class SnippetGroup {
 	}
 	
 	public Object getGroup() {
-		return RT.var("damp.ekeko.snippets.representation", "snippetgrouphistory-current").invoke(getGroupHistory());
+		return RT.var("damp.ekeko.snippets.snippetgrouphistory", "snippetgrouphistory-current").invoke(getGroupHistory());
 	}
 	
 	public String getName() {
-		return (String) RT.var("damp.ekeko.snippets.representation", "snippetgroup-name").invoke(getGroup());
+		return (String) RT.var("damp.ekeko.snippets.snippetgroup", "snippetgroup-name").invoke(getGroup());
 	}
 	
 	public int[] getActiveNodePos() {
@@ -66,15 +68,15 @@ public class SnippetGroup {
 	}
 	
 	public Object getSnippet(Object node) {
-		return RT.var("damp.ekeko.snippets.representation", "snippetgroup-snippet-for-node").invoke(getGroup(), node);		
+		return RT.var("damp.ekeko.snippets.snippetgroup", "snippetgroup-snippet-for-node").invoke(getGroup(), node);		
 	}
 	
 	public Object getRoot(Object node) {
-		return RT.var("damp.ekeko.snippets.representation", "snippet-root").invoke(getSnippet(node));
+		return RT.var("damp.ekeko.snippets.snippet", "snippet-root").invoke(getSnippet(node));
 	}
 
 	public Object getRootOfSnippet(Object snippet) {
-		return RT.var("damp.ekeko.snippets.representation", "snippet-root").invoke(snippet);
+		return RT.var("damp.ekeko.snippets.snippet", "snippet-root").invoke(snippet);
 	}
 
 	public Object[] getRootOfSnippets(Object[] snippets) {
@@ -94,7 +96,7 @@ public class SnippetGroup {
 	
 	public String toString(Object node) {
 		if (node == null)
-			return toString();
+			return "";
 		Object snippet = getSnippet(node);
 		if (snippet == null)
 			return toString();
@@ -120,9 +122,9 @@ public class SnippetGroup {
 		Object conds;
 		
 		if (snippet == null)		
-			conds = RT.var("damp.ekeko.snippets.representation", "snippetgroup-userqueries").invoke(getGroup());
+			conds = RT.var("damp.ekeko.snippets.snippetgroup", "snippetgroup-userqueries").invoke(getGroup());
 		else
-			conds = RT.var("damp.ekeko.snippets.representation", "snippet-userqueries").invoke(snippet);
+			conds = RT.var("damp.ekeko.snippets.snippet", "snippet-userqueries").invoke(snippet);
 		
 		String strConds = conds.toString().replace("\n", "");
 		if (strConds.contains("EmptyList"))
@@ -132,7 +134,7 @@ public class SnippetGroup {
 	
 	public Object addSnippetCode(String code) {
 		Object document = RT.var("damp.ekeko.snippets.parsing", "parse-string-to-document").invoke(code);
-		Object snippet = RT.var("damp.ekeko.snippets.representation", "document-as-snippet").invoke(document);
+		Object snippet = RT.var("damp.ekeko.snippets.snippet", "document-as-snippet").invoke(document);
 		groupHistory = RT.var("damp.ekeko.snippets.operators", "add-snippet-to-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 		return snippet;
 	}
@@ -173,7 +175,7 @@ public class SnippetGroup {
 			return node;
 		} else {
 			Object snippet = getSnippet(node);		
-			return RT.var("damp.ekeko.snippets.representation", "snippet-value-for-node").invoke(snippet, node);		
+			return RT.var("damp.ekeko.snippets.snippet", "snippet-value-for-node").invoke(snippet, node);		
 		}
 	}
 
@@ -235,7 +237,7 @@ public class SnippetGroup {
 
 	public SnippetGroup newState() {
 		SnippetGroup newState = new SnippetGroup("Group");
-		newState.setGroupHistory(RT.var("damp.ekeko.snippets.representation","snippetgrouphistory-new-state").invoke(getGroupHistory())); 		
+		newState.setGroupHistory(RT.var("damp.ekeko.snippets.snippetgroup","snippetgrouphistory-new-state").invoke(getGroupHistory())); 		
 		return newState;
 	}
 	

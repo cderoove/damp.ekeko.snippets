@@ -4,7 +4,8 @@
   (:require [damp.ekeko 
              [snippets :as snippets]])
   (:require [damp.ekeko.snippets 
-             [representation :as representation]
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
              [operatorsrep :as operatorsrep]
              [operators :as operators]
              [precondition :as precondition]])
@@ -125,7 +126,7 @@
 ;time-consuming when execute the query
 
 (defn dfs-snippet [group goal-positive goal-negative] 
-  (let [group-nodes (representation/snippetgroup-nodes group)]
+  (let [group-nodes (snippetgroup/snippetgroup-nodes group)]
     (dfs 
       group 
       goal-positive
@@ -162,7 +163,7 @@
         (if (empty? result)
           (apply-operators group (rest operators) nodes)
           result))))
-  (let [group-nodes (representation/snippetgroup-nodes group)
+  (let [group-nodes (snippetgroup/snippetgroup-nodes group)
         result-check (check-result group goal-positive goal-negative)
         operators (cond 
                     (= result-check :refinement) (operatorsrep/searchspace-refinement-operator-ids)
@@ -180,7 +181,7 @@
          (snippets/query-by-snippet-in-group new-snippet (operators/remove-snippet group snippet)))
        (test/tuples-to-stringsetstring goal)))
   (let [snippet-nodes
-        (remove  (fn [x] (= (:ast snippet) x)) (representation/snippet-nodes snippet))]
+        (remove  (fn [x] (= (:ast snippet) x)) (snippet/snippet-nodes snippet))]
     (dfs 
       snippet 
       goal 
@@ -220,6 +221,6 @@
           (apply-operators snippet (rest operators) nodes)
           result))))
   (let [snippet-nodes
-        (remove  (fn [x] (= (:ast snippet) x)) (representation/snippet-nodes snippet))]
+        (remove  (fn [x] (= (:ast snippet) x)) (snippet/snippet-nodes snippet))]
     (apply-operators snippet (operatorsrep/searchspace-operator-ids) snippet-nodes)))
 )
