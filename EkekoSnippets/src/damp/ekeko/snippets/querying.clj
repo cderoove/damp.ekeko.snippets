@@ -117,7 +117,7 @@
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
 	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-	      (snippetgroup/snippetgroup-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-userquery snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup))))
 	
 	    
@@ -162,7 +162,7 @@
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
 	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-	      (snippetgroup/snippetgroup-userqueries snippetgroup)
+	      (snippetgroup/snippetgroup-userquery snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup)
         (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
 	

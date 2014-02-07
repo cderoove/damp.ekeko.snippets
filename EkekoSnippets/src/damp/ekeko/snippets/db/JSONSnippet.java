@@ -16,16 +16,8 @@ import org.json.simple.JSONObject;
 
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.RT;
-import clojure.lang.Symbol;
 
 public class JSONSnippet {
-
-	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.datastore"));
-	}
 
 	public JSONSnippet() {
 		// TODO Auto-generated constructor stub

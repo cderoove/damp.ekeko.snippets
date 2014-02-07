@@ -35,7 +35,7 @@ damp.ekeko.snippets.snippetgroup
   (:snippetlist snippetgroup))
 
 (defn 
-  snippetgroup-userqueries
+  snippetgroup-userquery
   "Returns the logic conditions defined by users of the given snippet group."
   [snippetgroup]
   (let [query (:userquery snippetgroup)]

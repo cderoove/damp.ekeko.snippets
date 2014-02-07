@@ -5,17 +5,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import clojure.lang.RT;
-import clojure.lang.Symbol;
 
 public class Groups {
 	private HashMap<String, SnippetGroup> groups;
 	private HashMap<String, RewrittenSnippetGroup> rewrittenGroups;
 	
-	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.rewrite"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.datastore"));
-	}
-
 	public Groups() {
 		groups = new HashMap<String, SnippetGroup>(); 
 		rewrittenGroups = new HashMap<String, RewrittenSnippetGroup>(); 

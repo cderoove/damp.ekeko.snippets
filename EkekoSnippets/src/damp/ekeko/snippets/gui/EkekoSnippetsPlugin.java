@@ -62,26 +62,12 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(PLUGIN_ID, path);
 	}
-
+	
 	public void startClojureCode(BundleContext bundleContext) throws Exception {
 		Bundle b = bundleContext.getBundle();
-		ClojureOSGi.require(b, "clojure.test");  
-		//ClojureOSGi.require(damp.ekeko.Activator.getDefault().getBundle(), "damp.ekeko");
-		ClojureOSGi.require(b, "damp.ekeko");  
-		ClojureOSGi.require(b, "damp.ekeko.snippets");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.rewrite");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.snippet");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.snippetgroup");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.parsing");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.operators");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.operatorsrep");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.precondition");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.querying");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.gui");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.runtime");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.rewrite");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.searchspace");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.public");
-		ClojureOSGi.require(b, "damp.ekeko.snippets.datastore");
+		String[] filenames= { "damp.ekeko", "damp.ekeko.snippets" };	
+		for(String filename : filenames) {
+			ClojureOSGi.require(b, filename);
+		}
 	}
 }

@@ -524,7 +524,7 @@
   "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(snippetgroup/snippetgroup-userqueries snippetgroup) ~@conditions)]
+    (let [new-conditions `(~@(snippetgroup/snippetgroup-userquery snippetgroup) ~@conditions)]
       (assoc snippetgroup :userquery new-conditions))
     snippetgroup))
 
@@ -533,7 +533,7 @@
   "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
   [snippetgroup conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (snippetgroup/snippetgroup-userqueries snippetgroup))]
+    (let [new-conditions (remove (set conditions) (snippetgroup/snippetgroup-userquery snippetgroup))]
       (assoc snippetgroup :userquery new-conditions))
     snippetgroup))
 

@@ -8,15 +8,8 @@ import org.eclipse.jdt.internal.core.dom.NaiveASTFlattener;
 
 import clojure.lang.Keyword;
 import clojure.lang.RT;
-import clojure.lang.Symbol;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
-	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
-
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.util"));
-	}
 
 	private final String rep = "damp.ekeko.snippets.snippet";
 	protected Object snippet;

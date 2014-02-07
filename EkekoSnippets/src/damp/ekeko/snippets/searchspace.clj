@@ -1,11 +1,10 @@
 (ns damp.ekeko.snippets.searchspace
   (:refer-clojure :exclude [== type])
   (:require [clojure.core.logic :as cl]) 
-  (:require [damp.ekeko 
-             [snippets :as snippets]])
-  (:require [damp.ekeko.snippets 
+  (:require [damp.ekeko.snippets
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
+             [querying :as querying]
              [operatorsrep :as operatorsrep]
              [operators :as operators]
              [precondition :as precondition]])
@@ -98,17 +97,18 @@
   ;return  :generalization, if result contains no negative examples but not contains all positive examples (generalize)
   ;return  :any, if result contains negative examples and not contains all positive examples
   [new-group goal-positive goal-negative]
-  (let [result (snippets/query-by-snippetgroup new-group)]
+  (let [result 
+        (eval (querying/snippetgroup-query new-group 'damp.ekeko/ekeko))]
     (cond 
       (= (test/tuples-to-stringsetstring result)
          (test/tuples-to-stringsetstring goal-positive))
       :succeed
-      (test/tuples-aresubset goal-positive result)
-      :refinement
+    (test/tuples-aresubset goal-positive result)
+    :refinement
       (test/tuples-aresubset result goal-positive)
       :generalization
-      :else
-      :any)))
+    :else
+    :any)))
 
 (defn check-operator
   [op-id node result-check]

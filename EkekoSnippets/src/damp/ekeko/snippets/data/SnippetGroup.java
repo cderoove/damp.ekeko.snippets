@@ -12,20 +12,6 @@ public class SnippetGroup {
 	private Object groupHistory;
 	private int[] activeNodePos;
 	
-	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippet"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgroup"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.snippetgrouphistory"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.parsing"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operators"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.operatorsrep"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.querying"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.rewrite"));
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.searchspace"));
-	}
-
 	public SnippetGroup(String name) {
 		groupHistory = RT.var("damp.ekeko.snippets.snippetgrouphistory", "make-snippetgrouphistory").invoke(name);
 		activeNodePos = new int[2];
@@ -122,7 +108,7 @@ public class SnippetGroup {
 		Object conds;
 		
 		if (snippet == null)		
-			conds = RT.var("damp.ekeko.snippets.snippetgroup", "snippetgroup-userqueries").invoke(getGroup());
+			conds = RT.var("damp.ekeko.snippets.snippetgroup", "snippetgroup-userquery").invoke(getGroup());
 		else
 			conds = RT.var("damp.ekeko.snippets.snippet", "snippet-userqueries").invoke(snippet);
 		

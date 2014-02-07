@@ -3,18 +3,14 @@ package damp.ekeko.snippets.gui.viewer;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
+
 import clojure.lang.RT;
-import clojure.lang.Symbol;
 
 public class SnippetTreeContentProvider implements ITreeContentProvider {
 
 	private Object snippet;
 	private TreeViewer viewer;
 	
-	static {
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
-	}
-
 	public SnippetTreeContentProvider() {
 	}
 	

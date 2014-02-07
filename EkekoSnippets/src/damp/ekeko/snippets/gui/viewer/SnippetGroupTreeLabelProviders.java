@@ -3,14 +3,9 @@ package damp.ekeko.snippets.gui.viewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 
 import clojure.lang.RT;
-import clojure.lang.Symbol;
 import damp.ekeko.snippets.gui.TemplateView;
 
 public class SnippetGroupTreeLabelProviders {
-
-	static {	
-		RT.var("clojure.core", "require").invoke(Symbol.intern("damp.ekeko.snippets.gui"));
-	}		
 	
 	public abstract static class SnippetGroupColumnLabelProvider extends ColumnLabelProvider {
 		protected TemplateView snippetViewer;
