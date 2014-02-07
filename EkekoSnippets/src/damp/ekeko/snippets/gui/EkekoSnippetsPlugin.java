@@ -10,18 +10,18 @@ import ccw.util.osgi.ClojureOSGi;
 /**
  * The activator class controls the plug-in life cycle
  */
-public class Activator extends AbstractUIPlugin {
+public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "damp.ekeko.snippets.gui"; //$NON-NLS-1$
 
 	// The shared instance
-	private static Activator plugin;
+	private static EkekoSnippetsPlugin plugin;
 	
 	/**
 	 * The constructor
 	 */
-	public Activator() {
+	public EkekoSnippetsPlugin() {
 	}
 
 	/*
@@ -48,7 +48,7 @@ public class Activator extends AbstractUIPlugin {
 	 *
 	 * @return the shared instance
 	 */
-	public static Activator getDefault() {
+	public static EkekoSnippetsPlugin getDefault() {
 		return plugin;
 	}
 

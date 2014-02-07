@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: damp.ekeko.snippets.plugin
 Bundle-SymbolicName: EkekoSnippets;singleton:=true
 Bundle-Version: 1.0.4
-Bundle-Activator: damp.ekeko.snippets.gui.Activator
+Bundle-Activator: damp.ekeko.snippets.gui.EkekoSnippetsPlugin
 Export-Package: damp.ekeko,
  damp.ekeko.snippets,
  damp.ekeko.snippets.data;uses:="org.eclipse.swt.widgets",
