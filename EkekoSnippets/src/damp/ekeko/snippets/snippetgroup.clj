@@ -128,30 +128,6 @@ damp.ekeko.snippets.snippetgroup
     (snippetgroup-snippet-for-var grp var)
     var))
 
-
-;;TODO: remove all of these "related..."
-(defn
-  snippetgroup-related-snippets-basedon-userqueries
-  [grp snippet]
-  (let [related-snippets (map (fn [x] (snippetgroup-snippet-for-var grp x)) (snippet/snippet-userqueries-vars snippet))]
-    (filter (fn [x] (and (not (nil? x)) (not (= x snippet)))) related-snippets)))        
-
-(defn
-  snippetgroup-related-snippets
-  [grp snippet]
-  (let [related-snippets (snippetgroup-snippetlist grp)]
-    (remove #{snippet} related-snippets)))        
-
-(defn
-  snippetgroup-related-snippets-basedon-mandatory-and-userqueries
-  [grp snippet]
-  (let [query-related-snippets (snippetgroup-related-snippets-basedon-userqueries grp snippet)
-        mandatory-related-snippets 
-        (filter
-          (fn [s] (.contains (snippetgroup-related-snippets-basedon-userqueries grp s) snippet))
-          (snippetgroup-related-snippets grp snippet))]
-    (distinct (concat query-related-snippets mandatory-related-snippets))))        
-
 (defn
   snippetgroup-userfs
   [grp]

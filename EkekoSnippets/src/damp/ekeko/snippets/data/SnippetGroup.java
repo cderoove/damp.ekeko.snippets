@@ -193,7 +193,6 @@ public class SnippetGroup {
 			query = RT.var("damp.ekeko.snippets.querying","snippetgroup-query").invoke(getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
 		else 
 			query = RT.var("damp.ekeko.snippets.querying","snippet-query").invoke(snippet, Symbol.intern("damp.ekeko/ekeko*"));
-			//query = RT.var("damp.ekeko.snippets.querying","snippet-in-group-query").invoke(snippet, getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
 		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 	}
 	

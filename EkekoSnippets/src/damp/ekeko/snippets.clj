@@ -57,36 +57,6 @@
   [snippetgroup snippetgrouprewrite]
   (print (eval (querying/snippetgroup-rewrite-query snippetgroup snippetgrouprewrite 'damp.ekeko/ekeko))))
 
-(defn
-  query-by-snippet-in-group*
-  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition. Opens Eclipse view on results."
-  [snippet snippetgroup]
-  (eval (querying/snippet-in-group-query snippet snippetgroup 'damp.ekeko/ekeko*)))
-
-(defn
-  query-by-snippet-in-group
-  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition. Opens Eclipse view on results."
-  [snippet snippetgroup]
-  (distinct (eval (querying/snippet-in-group-query snippet snippetgroup 'damp.ekeko/ekeko))))
-
-(defn 
-  query-by-snippet-incrementally*
-  [snippet]
-  (loop [conditions (querying/snippet-conditions snippet)]
-    (when (seq conditions)
-      (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko* conditions))
-      (recur (butlast conditions)))))
-
-(defn 
-  query-by-snippet-for-empty-result*
-  [snippet]
-  (let [conditions (querying/snippet-conditions snippet)]
-    (loop [conditions conditions
-           old-conditions conditions]
-      (when (seq conditions)
-        (if (empty? (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko conditions)))
-          (recur (butlast conditions) conditions)
-          (eval (querying/snippet-query-with-conditions snippet 'damp.ekeko/ekeko* old-conditions)))))))
 
 ;;for plugin purpose, result with header
 (defn
@@ -109,15 +79,6 @@
       (snippet/snippet-uservars-for-information snippet)) 
     (query-by-snippet snippet)))
 
-(defn
-  query-by-snippet-in-group-with-header
-  "Queries the Ekeko projects for matches for the given snippet depending on it's group condition."
-  [snippet snippetgroup]
-  (cons 
-    (cons 
-      (snippet/snippet-var-for-root snippet)
-      (snippet/snippet-uservars-for-information snippet)) 
-    (query-by-snippet-in-group snippet snippetgroup)))
 
 ;;OTHER FUNCTIONS' NAME
 ;;---------------------------
