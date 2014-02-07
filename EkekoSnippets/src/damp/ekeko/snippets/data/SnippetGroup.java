@@ -88,7 +88,7 @@ public class SnippetGroup {
 		activeNodePos[0] = 0;
 		activeNodePos[1] = 0;
 		String result = (String) RT.var("damp.ekeko.snippets.gui", "print-snippetgroup").invoke(getGroup());
-		System.out.println(result);
+		//System.out.println(result);
 		return result;
 	}
 	
@@ -100,7 +100,7 @@ public class SnippetGroup {
 			return toString();
 		Object[] code = getArray(RT.var("damp.ekeko.snippets.gui", "print-snippet-with-highlight").invoke(snippet, node));
 		activeNodePos = (int[]) code[1];
-		System.out.println(code[0]);
+		//System.out.println(code[0]);
 		return code[0].toString();
 	}
 	
@@ -111,7 +111,7 @@ public class SnippetGroup {
 		if (snippet == null)
 			return toString();
 		String result = (String) RT.var("damp.ekeko.snippets.gui", "print-plain-node").invoke(snippet, node);
-		System.out.println(result);
+		//System.out.println(result);
 		return result;
 	}
 	
@@ -196,12 +196,6 @@ public class SnippetGroup {
 		if (snippet != null)	{
 			groupHistory = RT.var("damp.ekeko.snippets.operators", "remove-snippet-from-snippetgrouphistory").invoke(getGroupHistory(), snippet);
 		}
-	}
-
-	public void viewSnippet(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet != null)		
-			RT.var("damp.ekeko.snippets.gui","view-snippet").invoke(snippet);		
 	}
 
 	public void updateSnippetFlag(Object node) {

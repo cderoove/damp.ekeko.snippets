@@ -189,27 +189,7 @@ public class TemplateView extends ViewPart {
 		});
 		tltmAdd.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/add_obj.gif"));
 		tltmAdd.setToolTipText("Add Snippet");
-		
-		ToolItem tltmView = new ToolItem(toolBar, SWT.NONE);
-		tltmView.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				viewSnippet();
-			}
-		});
-		tltmView.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/keygroups_obj.gif"));
-		tltmView.setToolTipText("View Snippet");
-		/*		
-		ToolItem tltmFlag = new ToolItem(toolBar, SWT.NONE);
-		tltmFlag.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				flagSnippet();
-			}
-		});
-		tltmFlag.setImage(ResourceManager.getPluginImage("EkekoSnippets", "icons/mandatory.gif"));
-		tltmFlag.setToolTipText("Update Snippet Status");
-		*/
+				
 		treeViewerSnippet = new TreeViewer(group_2, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		treeViewerSnippet.setAutoExpandLevel(1);
 		Tree treeSnippet = treeViewerSnippet.getTree();
@@ -253,7 +233,7 @@ public class TemplateView extends ViewPart {
 		treeSnippet.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
-				viewSnippet();
+				//viewSnippet();
 			}
 		});
 
@@ -482,13 +462,15 @@ public class TemplateView extends ViewPart {
 	//LOGIC PART
 	//all logic part for this View are written below
 	
+	
+	//TODO: fix
 	public void markSnippet() {
 		clearCFStyle();
 		String text = textSnippet.getText();
 		int idx = 0, startIdx = 0, endIdx = 0;	
 		
 		while (idx < text.length() && startIdx > -1) {
-			startIdx = text.indexOf('@', idx);
+			startIdx = text.indexOf("@[", idx);
 			if (startIdx > 0) {
 				endIdx = text.indexOf(") ", startIdx);
 				setCFStyle(startIdx, endIdx);
@@ -515,7 +497,8 @@ public class TemplateView extends ViewPart {
 	}
 	
 	public void viewSnippet() {
-		snippetGroup.viewSnippet(getSelectedSnippet());
+		//removed plain snippet viewer
+		//snippetGroup.viewSnippet(getSelectedSnippet());
 	}
 
 	public void removeSnippet() {
