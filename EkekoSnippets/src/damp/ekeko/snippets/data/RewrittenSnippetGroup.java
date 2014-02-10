@@ -8,7 +8,7 @@ import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
-public class RewrittenSnippetGroup extends SnippetGroup{
+public class RewrittenSnippetGroup extends SnippetGroupHistory{
 	
 	public RewrittenSnippetGroup(String name) {
 		super(name);
@@ -24,11 +24,11 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 	 * REWRITE SNIPPET PART
 	 */
 	
-	public Object getOriginalSnippet(SnippetGroup sGroup, Object rwSnippet) {
+	public Object getOriginalSnippet(SnippetGroupHistory sGroup, Object rwSnippet) {
 		return RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(sGroup.getGroup(), rwSnippet);
 	}
 
-	public void applyOperator(Object operator, SnippetGroup sGroup, Object sNode, Object rwNode, String[] args) {
+	public void applyOperator(Object operator, SnippetGroupHistory sGroup, Object sNode, Object rwNode, String[] args) {
 		Object snippet = sGroup.getSnippet(sNode);
 		Object oldRWSnippet = getSnippet(rwNode);
 		Object rwSnippet = null;
@@ -52,18 +52,18 @@ public class RewrittenSnippetGroup extends SnippetGroup{
 		setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
 	}
 
-	public String getTransformationQuery(SnippetGroup sGroup) {
+	public String getTransformationQuery(SnippetGroupHistory sGroup) {
 		Object query = RT.var("damp.ekeko.snippets.querying","snippetgroup-rewrite-query").invoke(sGroup.getGroup(), getGroup(), Symbol.intern("damp.ekeko/ekeko")); 		
 		if (query != null)
 			return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 		return "";
 	}
 
-	public void doTransformation(SnippetGroup sGroup) {
+	public void doTransformation(SnippetGroupHistory sGroup) {
 		RT.var("damp.ekeko.snippets","query-rewrite-by-snippetgroup").invoke(sGroup.getGroup(), getGroup()); 		
 	}
 
-	public void setTableRW(Table table, SnippetGroup sGroup) {
+	public void setTableRW(Table table, SnippetGroupHistory sGroup) {
 		table.removeAll();
 		Object[] mapping = getArray(RT.var("damp.ekeko.snippets.rewrite","snippetgroup-rewrite-mapping").invoke(sGroup.getGroup(), getGroup()));
 

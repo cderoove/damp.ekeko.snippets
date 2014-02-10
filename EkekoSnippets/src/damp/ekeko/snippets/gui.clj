@@ -55,15 +55,15 @@
   ;roots of treeview
   (if 
     (= input snippetgroup)
-    (to-array [(:name snippetgroup)])
+    (to-array (snippetgroup/snippetgroup-snippetlist snippetgroup))
     nil))
 
 (defn
   snippetgroupviewer-children
   [snippetgroup p]
   (if 
-    (= p (:name snippetgroup))
-    (to-array (map :ast (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+    (instance? damp.ekeko.snippets.snippet.Snippet p)
+    (to-array [(:ast p)])
     (snippetviewer-children
       (snippetgroup/snippetgroup-snippet-for-node snippetgroup p)
       p)))
@@ -71,9 +71,10 @@
 (defn
   snippetgroupviewer-parent
   [snippetgroup c]
-  (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup c)]
-    (if (= c (:ast snippet))
-      (:name snippetgroup)
+  (if 
+    (instance? damp.ekeko.snippets.snippet.Snippet c)
+    nil
+    (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup c)]
       (snippetviewer-parent snippet c))))
  
 
@@ -137,7 +138,8 @@
 (defn
   snippetgroupviewercolumn-property
   [snippetgroup element]
-  (if (instance? java.lang.String element)
+  (if 
+    (instance? damp.ekeko.snippets.snippet.Snippet element)
     "" 
     (snippetviewercolumn-property
       (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)

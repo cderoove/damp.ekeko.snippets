@@ -40,7 +40,7 @@ import org.eclipse.jface.window.Window;
 
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.RewrittenSnippetGroup;
-import damp.ekeko.snippets.data.SnippetGroup;
+import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
@@ -63,14 +63,14 @@ public class TransformsView extends TemplateView {
 	private Table tableRW;
 
 	private Groups groups;
-	private SnippetGroup snippetGroup;
+	private SnippetGroupHistory snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
 	private SnippetGroupTreeContentProvider contentProvider;
 
 	public TransformsView() {
 	}
 
-	public void setRewrittenGroup(Groups groups, SnippetGroup group) {
+	public void setRewrittenGroup(Groups groups, SnippetGroupHistory group) {
 		this.groups = groups;
 		snippetGroup = group;
 		rwSnippetGroup = groups.getRewrittenGroup(snippetGroup);
@@ -523,11 +523,11 @@ public class TransformsView extends TemplateView {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
 
 		if (selectedRWNode != null) {
-			String	nodeInfo = "Rewritten Node\n " + SnippetGroup.getTypeValue(selectedRWNode) + 
+			String	nodeInfo = "Rewritten Node\n " + SnippetGroupHistory.getTypeValue(selectedRWNode) + 
 					"\n" + selectedRWNode.toString().replace(", :",  "\n:") ;
 
 			if (SnippetOperator.isTransformOperator(selectedOperator)) {
-				nodeInfo = "Original Node \n" + SnippetGroup.getTypeValue(selectedNode) + 
+				nodeInfo = "Original Node \n" + SnippetGroupHistory.getTypeValue(selectedNode) + 
 						"\n" + selectedNode.toString().replace(", :",  "\n:") + "\n \n" + nodeInfo;
 			}
 			

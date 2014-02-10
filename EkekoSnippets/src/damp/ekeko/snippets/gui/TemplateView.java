@@ -6,6 +6,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -40,7 +41,7 @@ import org.eclipse.wb.swt.ResourceManager;
 
 import clojure.lang.Keyword;
 import damp.ekeko.snippets.data.Groups;
-import damp.ekeko.snippets.data.SnippetGroup;
+import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
 import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
@@ -61,19 +62,21 @@ public class TemplateView extends ViewPart {
 	private TableDecorator tableOpArgsDecorator;
 	private Table tableNode;
 	
+	//TODO: clen up confusion between both
 	private Groups groups;
-	private SnippetGroup snippetGroup;
+	private SnippetGroupHistory snippetGroupHistory;
+	
 	private SnippetGroupTreeContentProvider contentProvider;
 	private Action actRedo;
 	private Action actTrans;
 
 	public TemplateView() {
-		snippetGroup = new SnippetGroup("Anonymous Group");
+		snippetGroupHistory = new SnippetGroupHistory("Template Group");
 	}
 	
-	public void setGroup(Groups groups, SnippetGroup group) {
+	public void setGroup(Groups groups, SnippetGroupHistory group) {
 		this.groups = groups;
-		snippetGroup = group;
+		snippetGroupHistory = group;
 		renderSnippet();
 	}
 
@@ -391,9 +394,23 @@ public class TemplateView extends ViewPart {
         return treeOperator.getSelection()[0].getData();
 	}
 	
-	public Object getSelectedSnippet() {
-		return treeViewerSnippet.getTree().getSelection()[0].getData();
+	
+	
+	
+	public Object getSelectedSnippet() {	
+		///TODO: get root element for current node
+		//inspect callers for whether they operate on node or snippet
+		//TODO: inspect existing getSelectedNode();
+		return getSelectedSnippetNode();
+		
 	}
+	
+	public Object getSelectedSnippetNode() {
+		IStructuredSelection selection = (IStructuredSelection) treeViewerSnippet.getSelection();
+		return selection.getFirstElement();
+	}
+	
+	
 	
 	public Object[] getSelectedSnippets() {
 		TreeItem[] selectedItems = treeViewerSnippet.getTree().getSelection();
@@ -428,19 +445,28 @@ public class TemplateView extends ViewPart {
 		this.viewID = secondaryId;
 	}
 	
+	
+	private void updateGroupTree() {
+		treeViewerSnippet.setInput(snippetGroupHistory.getGroup());
+
+	}
+	
 	public void renderSnippet() {
-		treeViewerSnippet.setInput(snippetGroup.getGroup());
+		updateGroupTree();
+		//TODO: dit moet blijkbaar wel gecalled worden
+		/*
 		if (treeViewerSnippet.getTree().getSelectionCount() == 0) {
 			TreeItem root = treeViewerSnippet.getTree().getItem(0);
 			treeViewerSnippet.getTree().setSelection(root);
 		}
-		onSnippetSelection();
-	}
+		*/
+		updateTextFields();
+}
 	
 	public void addSnippet() {
 		String code = getSelectedTextFromActiveEditor();
 		if (code != null && !code.isEmpty()) {
-			snippetGroup.addSnippetCode(code);
+			snippetGroupHistory.addSnippetCode(code);
 			renderSnippet();
 		}
 	}
@@ -451,19 +477,15 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		boolean m = MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), 
-				"Delete template", "Are you sure you want to delete the selected templates?");
-		if (m) {
-			Object[] nodes = getSelectedSnippets();
-			for (int i=0; i < nodes.length; i++) {
-				snippetGroup.removeSnippet(nodes[i]);
-			}
-			renderSnippet();
-		}
+		if(!MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), "Delete templates", "Are you sure you want to delete the selected templates?")) 
+			return;
+		for(Object selected : getSelectedSnippets()) 
+				snippetGroupHistory.removeSnippet(selected);
+		renderSnippet();
 	}
 
 	public void viewQuery() {
-		String query = snippetGroup.getQuery(getSelectedSnippet());
+		String query = snippetGroupHistory.getQuery(getSelectedSnippet());
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
@@ -472,7 +494,7 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void runQuery() {
-		snippetGroup.runQuery(getSelectedSnippet());
+		snippetGroupHistory.runQuery(getSelectedSnippet());
 	}
 	
 	class QueryResultThread extends Thread {
@@ -484,14 +506,14 @@ public class TemplateView extends ViewPart {
 		
         public void run() {
         	//result check view only for group
-			final Object[] result = snippetGroup.getQueryResult("Group");
+			final Object[] result = snippetGroupHistory.getQueryResult("Group");
 			
     		Display.getDefault().syncExec(new Runnable() {    			
     		    public void run() {
     				try {
     					ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
     					view.setResult(result);
-    					view.setGroup(snippetGroup);
+    					view.setGroup(snippetGroupHistory);
     					//view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
     					view.setSnippet(null);
     					view.putData();
@@ -502,27 +524,31 @@ public class TemplateView extends ViewPart {
     		});
         }
     }	
-	
-	QueryResultThread qsThread; 
-	
+		
 	public void checkResult() {
-		qsThread = new QueryResultThread(getSelectedSnippet());
+		QueryResultThread qsThread = new QueryResultThread(getSelectedSnippet());
 		qsThread.start();
 	}
 
 	public void addLogicCondition() {
 		String[] inputs = {textCondition.getText()};
-		inputs = applyOperator(snippetGroup.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
+		inputs = applyOperator(snippetGroupHistory.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
 		textCondition.setText(inputs[0]);
 	}
 
-	public void onSnippetSelection() {
-		textSnippet.setSelectionRange(0, 0);
-		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
-		textCondition.setText(snippetGroup.getLogicConditions(getSelectedSnippet()));
+	private void updateTextFields() {
+		textSnippet.setText(snippetGroupHistory.toString(getSelectedSnippet()));
+		textCondition.setText(snippetGroupHistory.getLogicConditions(getSelectedSnippet()));
 
-		int x = snippetGroup.getActiveNodePos()[0];
-		int y = snippetGroup.getActiveNodePos()[1];
+	}
+	
+	
+	public void onSnippetSelection() {
+		updateTextFields();
+		textSnippet.setSelectionRange(0, 0);
+
+		int x = snippetGroupHistory.getActiveNodePos()[0];
+		int y = snippetGroupHistory.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
 		SnippetOperator.setInput(treeOperator, getSelectedSnippet());
@@ -534,7 +560,7 @@ public class TemplateView extends ViewPart {
 	
 	public void onOperatorSelection() {
 		tableOpArgsDecorator.removeAllEditors();
-		SnippetOperator.setInputArguments(tableOpArgs, tableNode, snippetGroup.getGroup(), getSelectedOperator());
+		SnippetOperator.setInputArguments(tableOpArgs, tableNode, snippetGroupHistory.getGroup(), getSelectedOperator());
 		tableOpArgsDecorator.setTextEditor(1);
 		tableOpArgsDecorator.setButtonEditor(1);
 		textOpInfo.setText(SnippetOperator.getDescription(getSelectedOperator()));
@@ -552,7 +578,7 @@ public class TemplateView extends ViewPart {
 		String[] args = SnippetOperator.getArguments(selectedOperator);
 		String nodeInfo = "Group";
 		if (selectedNode != null)
-			nodeInfo = "Node " + SnippetGroup.getTypeValue(selectedNode) + 
+			nodeInfo = "Node " + SnippetGroupHistory.getTypeValue(selectedNode) + 
 				"\n" + selectedNode.toString().replace(", :",  "\n:") ;
 
 		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
@@ -561,7 +587,7 @@ public class TemplateView extends ViewPart {
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			snippetGroup.applyOperator(selectedOperator, selectedNode, dlg.getInputs(), getSelectedNode());
+			snippetGroupHistory.applyOperator(selectedOperator, selectedNode, dlg.getInputs(), getSelectedNode());
 			renderSnippet();
 		}
 
@@ -577,7 +603,7 @@ public class TemplateView extends ViewPart {
 		dlg.create();
 		
 		if (dlg.open() == Window.OK) {
-			snippetGroup.applyOperatorToNodes(selectedOperator, selectedNodes, dlg.getInputs(), getSelectedNode());
+			snippetGroupHistory.applyOperatorToNodes(selectedOperator, selectedNodes, dlg.getInputs(), getSelectedNode());
 			renderSnippet();
 		}
 
@@ -585,19 +611,19 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void undo() {
-		snippetGroup.undoOperator();
+		snippetGroupHistory.undoOperator();
 		renderSnippet();
 	}
 
 	public void redo() {
-		snippetGroup.redoOperator();
+		snippetGroupHistory.redoOperator();
 		renderSnippet();
 	}
 
 	public void transformation() {
 		try {
 			TransformsView view = (TransformsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.TransformsView");
-			view.setRewrittenGroup(groups, snippetGroup);
+			view.setRewrittenGroup(groups, snippetGroupHistory);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
