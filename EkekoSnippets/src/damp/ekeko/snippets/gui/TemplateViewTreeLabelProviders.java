@@ -29,6 +29,18 @@ public class TemplateViewTreeLabelProviders {
 			return (String) RT.var("damp.ekeko.snippets.gui", "templateviewtreelabelprovider-node").invoke(getGroup(), element);
 		}
 	}
+	
+	public static class KindColumnLabelProvider extends SnippetGroupColumnLabelProvider {
+
+		public KindColumnLabelProvider(TemplateView s) {
+			super(s);
+		}
+		
+		public String getText(Object element) {
+			return (String) RT.var("damp.ekeko.snippets.gui", "templateviewtreelabelprovider-kind").invoke(getGroup(), element);
+		}
+	}
+
 
 	public static class PropertyColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 

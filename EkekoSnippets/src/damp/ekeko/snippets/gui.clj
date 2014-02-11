@@ -26,7 +26,9 @@
   ;treeview children of given treeview parent
   (to-array
     (cond 
-      (astnode/ast? val) (util/filtered-node-propertyvalues val)
+      (astnode/ast? val) 
+      ;do not show primitive values in treeview
+      (remove (fn [x] (astnode/primitivevalue? x)) (util/filtered-node-propertyvalues val))
       (astnode/lstvalue? val) (:value val)
       :else [])))
 
@@ -61,11 +63,27 @@
     :else 
     (str element)))
 
+(defn
+  templateviewtreelabelprovider-kind
+  [snippet element]
+  (if
+    (astnode/ast? element)
+    (.getSimpleName (class element))
+    ""))
 
 (defn
   templateviewtreelabelprovider-property
   [snippet element]
-  (astnode/property-descriptor-id (astnode/owner-property element)))
+  (let [property (astnode/owner-property element)
+        id (astnode/property-descriptor-id property)]
+    (if 
+      (astnode/property-descriptor-list? property)
+      (if 
+        (astnode/lstvalue? element)
+        (str "list " id)
+        (str "element of " id))
+      id)))
+  
 
 ;; Opening  TemplateView programmatically
 ;; --------------------------------------

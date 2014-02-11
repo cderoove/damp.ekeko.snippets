@@ -198,21 +198,22 @@ public class TemplateView extends ViewPart {
 		TreeViewerColumn snippetNodeCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnNode = snippetNodeCol.getColumn();
 		trclmnNode.setWidth(150);
-		trclmnNode.setText("Snippet");
-		/*
-		TreeViewerColumn snippetNodeFlag = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
-		TreeColumn trclmnFlag = snippetNodeFlag.getColumn();
-		trclmnFlag.setWidth(20);
-		trclmnFlag.setText("");
-		*/
+		trclmnNode.setText("Node");
+		
 		TreeViewerColumn snippetPropCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
-		trclmnProperty.setText("Property");
+		trclmnProperty.setText("Value of property in parent");
+		
+		TreeViewerColumn snippetKindCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
+		TreeColumn snippetKindColCol = snippetKindCol.getColumn();
+		snippetKindColCol.setWidth(150);
+		snippetKindColCol.setText("Node kind");
 		
 		contentProvider = new TemplateViewTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
 		snippetNodeCol.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetKindCol.setLabelProvider(new TemplateViewTreeLabelProviders.KindColumnLabelProvider(this));
 		snippetPropCol.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeSnippet.addListener(SWT.Selection, new Listener() {
