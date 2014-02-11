@@ -1,4 +1,4 @@
-package damp.ekeko.snippets.gui;
+package damp.ekeko.snippets;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;

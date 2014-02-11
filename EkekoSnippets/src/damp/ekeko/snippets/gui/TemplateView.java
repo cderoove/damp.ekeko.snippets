@@ -43,8 +43,6 @@ import clojure.lang.Keyword;
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
-import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
-import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
 
 public class TemplateView extends ViewPart {
 
@@ -62,11 +60,11 @@ public class TemplateView extends ViewPart {
 	private TableDecorator tableOpArgsDecorator;
 	private Table tableNode;
 	
-	//TODO: clen up confusion between both
+	//TODO: clean up confusion between both
 	private Groups groups;
 	private SnippetGroupHistory snippetGroupHistory;
 	
-	private SnippetGroupTreeContentProvider contentProvider;
+	private TemplateViewTreeContentProvider contentProvider;
 	private Action actRedo;
 	private Action actTrans;
 
@@ -209,18 +207,11 @@ public class TemplateView extends ViewPart {
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
 		trclmnProperty.setText("Property");
-
-		TreeViewerColumn snippetVarCol = new TreeViewerColumn(treeViewerSnippet, SWT.NONE);
-		TreeColumn trclmnLogicVariable = snippetVarCol.getColumn();
-		trclmnLogicVariable.setWidth(150);
-		trclmnLogicVariable.setText("Logic Variable");
 		
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new TemplateViewTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
-		snippetNodeCol.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));		
-		//snippetNodeFlag.setLabelProvider(new SnippetGroupTreeLabelProviders.FlagColumnLabelProvider(this));		
-		snippetPropCol.setLabelProvider(new SnippetGroupTreeLabelProviders.PropertyColumnLabelProvider(this));
-		snippetVarCol.setLabelProvider(new SnippetGroupTreeLabelProviders.VariableColumnLabelProvider(this));
+		snippetNodeCol.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetPropCol.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeSnippet.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -394,22 +385,18 @@ public class TemplateView extends ViewPart {
         return treeOperator.getSelection()[0].getData();
 	}
 	
-	
-	
-	
-	public Object getSelectedSnippet() {	
-		///TODO: get root element for current node
-		//inspect callers for whether they operate on node or snippet
-		//TODO: inspect existing getSelectedNode();
-		return getSelectedSnippetNode();
-		
+
+	//returns a Snippet instance
+	public Object getSelectedSnippet() {
+		Object selectedSnippetNode = getSelectedSnippetNode();
+		return snippetGroupHistory.getSnippet(selectedSnippetNode);
 	}
 	
+	//returns an AST node or wrapper within a Snippet
 	public Object getSelectedSnippetNode() {
 		IStructuredSelection selection = (IStructuredSelection) treeViewerSnippet.getSelection();
 		return selection.getFirstElement();
 	}
-	
 	
 	
 	public Object[] getSelectedSnippets() {
@@ -437,7 +424,7 @@ public class TemplateView extends ViewPart {
         return null;
 	}
 	
-	public SnippetGroupTreeContentProvider getContentProvider() {
+	public TemplateViewTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 
@@ -446,10 +433,15 @@ public class TemplateView extends ViewPart {
 	}
 	
 	
-	private void updateGroupTree() {
-		treeViewerSnippet.setInput(snippetGroupHistory.getGroup());
-
+	private Object getSnippetGroup() {
+		return snippetGroupHistory.getGroup();
 	}
+	
+	private void updateGroupTree() {
+		treeViewerSnippet.setInput(getSnippetGroup());
+	}
+
+	
 	
 	public void renderSnippet() {
 		updateGroupTree();
@@ -537,8 +529,10 @@ public class TemplateView extends ViewPart {
 	}
 
 	private void updateTextFields() {
-		textSnippet.setText(snippetGroupHistory.toString(getSelectedSnippet()));
-		textCondition.setText(snippetGroupHistory.getLogicConditions(getSelectedSnippet()));
+		//shows text for and condition associated with currently selected snippet
+		Object selectedSnippet = getSelectedSnippet();
+		textSnippet.setText(snippetGroupHistory.toString(selectedSnippet));
+		textCondition.setText(snippetGroupHistory.getLogicConditions(selectedSnippet));
 
 	}
 	
@@ -547,11 +541,15 @@ public class TemplateView extends ViewPart {
 		updateTextFields();
 		textSnippet.setSelectionRange(0, 0);
 
+		//TODO: take length of meta-variables into account
+		
 		int x = snippetGroupHistory.getActiveNodePos()[0];
 		int y = snippetGroupHistory.getActiveNodePos()[1];
+		
+		
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
-		SnippetOperator.setInput(treeOperator, getSelectedSnippet());
+		SnippetOperator.setInput(treeOperator, getSelectedSnippetNode());
 
 		tableOpArgs.removeAll();
 		tableOpArgsDecorator.removeAllEditors();
@@ -571,7 +569,7 @@ public class TemplateView extends ViewPart {
 		if (nodes.length > 1) 
 			applyOperatorToNodes(nodes, getSelectedOperator(), getInputs(tableOpArgs, 1));
 		else
-			applyOperator(getSelectedSnippet(), getSelectedOperator(), getInputs(tableOpArgs, 1));
+			applyOperator(getSelectedSnippetNode(), getSelectedOperator(), getInputs(tableOpArgs, 1));
 	}
 	
 	public String[] applyOperator(Object selectedNode, Object selectedOperator, String[] inputs) {

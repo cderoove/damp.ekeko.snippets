@@ -42,8 +42,6 @@ import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.RewrittenSnippetGroup;
 import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
-import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeContentProvider;
-import damp.ekeko.snippets.gui.viewer.SnippetGroupTreeLabelProviders;
 
 import org.eclipse.swt.graphics.Color;
 
@@ -65,7 +63,7 @@ public class TransformsView extends TemplateView {
 	private Groups groups;
 	private SnippetGroupHistory snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
-	private SnippetGroupTreeContentProvider contentProvider;
+	private TemplateViewTreeContentProvider contentProvider;
 
 	public TransformsView() {
 	}
@@ -134,10 +132,10 @@ public class TransformsView extends TemplateView {
 		trclmnProperty2.setWidth(150);
 		trclmnProperty2.setText("Property");
 
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new TemplateViewTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
-		snippetNodeCol2.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetPropCol2.setLabelProvider(new SnippetGroupTreeLabelProviders.PropertyColumnLabelProvider(this));
+		snippetNodeCol2.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetPropCol2.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeSnippet.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -207,10 +205,10 @@ public class TransformsView extends TemplateView {
 		trclmnProperty.setWidth(150);
 		trclmnProperty.setText("Property");
 
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new TemplateViewTreeContentProvider();
 		treeViewerRWSnippet.setContentProvider(getContentProvider());
-		snippetNodeCol.setLabelProvider(new SnippetGroupTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetPropCol.setLabelProvider(new SnippetGroupTreeLabelProviders.PropertyColumnLabelProvider(this));
+		snippetNodeCol.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetPropCol.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeTemplate.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -290,7 +288,7 @@ public class TransformsView extends TemplateView {
 		tcl_composite.setColumnData(tblclmnRewrittenCode, new ColumnPixelData(330, true, true));
 		tblclmnRewrittenCode.setText("Rewritten Code");
 
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new TemplateViewTreeContentProvider();
 
 		createActions();
 		initializeToolBar();
@@ -402,7 +400,7 @@ public class TransformsView extends TemplateView {
 		return selection;
 	}
 
-	public SnippetGroupTreeContentProvider getContentProvider() {
+	public TemplateViewTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 

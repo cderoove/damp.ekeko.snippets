@@ -323,6 +323,7 @@ damp.ekeko.snippets.snippet
       (fn [astval] (swap! snippet assoc-snippet-value astval))
       (fn [lstval] 
         (swap! snippet assoc-snippet-value lstval)
+        ;;TODO: should not be necessary, also not doing this for null-valued and primitive-valued properties
         (let [rawlst (:value lstval)
               rawlstvar (util/gen-readable-lvar-for-value rawlst)]
           (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))

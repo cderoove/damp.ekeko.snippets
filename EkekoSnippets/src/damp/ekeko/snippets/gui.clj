@@ -16,74 +16,42 @@
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko.gui]))
 
-; View elements
-; -------------
-
-(defn
-  snippetviewer-elements
-  [snippet input]
-  ;roots of treeview
-  (if 
-    (= input snippet)
-    (to-array [(:ast snippet)])
-    nil))
+; Callbacks for TemplateViewTreeContentProvider
+; ---------------------------------------------
 
 
 (defn
-  snippetviewer-children
-  [snippet p]
+  templateviewtreecontentprovider-children
+  [snippet val]
   ;treeview children of given treeview parent
-  (cond 
-     (astnode/ast? p) 
-     (to-array
-       (remove (fn [x] (astnode/primitivevalue? x))
-               (astnode/node-propertyvalues p)))
-     (astnode/lstvalue? p) 
-     (to-array (seq (snippet/snippet-value-for-node snippet p)))
-     :else 
-     (to-array [])))
+  (to-array
+    (cond 
+      (astnode/ast? val) (util/filtered-node-propertyvalues val)
+      (astnode/lstvalue? val) (:value val)
+      :else [])))
 
 (defn
-  snippetviewer-parent
+  templateviewtreecontentprovider-parent
   [snippet c]
   ;treeview parent of given treeview child
   (astnode/owner c))
 
 (defn
-  snippetgroupviewer-elements
+  templateviewtreecontentprovider-elements
   [snippetgroup input]
   ;roots of treeview
   (if 
     (= input snippetgroup)
-    (to-array (snippetgroup/snippetgroup-snippetlist snippetgroup))
+    (to-array (map snippet/snippet-root (snippetgroup/snippetgroup-snippetlist snippetgroup)))
     nil))
 
-(defn
-  snippetgroupviewer-children
-  [snippetgroup p]
-  (if 
-    (instance? damp.ekeko.snippets.snippet.Snippet p)
-    (to-array [(:ast p)])
-    (snippetviewer-children
-      (snippetgroup/snippetgroup-snippet-for-node snippetgroup p)
-      p)))
-      
-(defn
-  snippetgroupviewer-parent
-  [snippetgroup c]
-  (if 
-    (instance? damp.ekeko.snippets.snippet.Snippet c)
-    nil
-    (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup c)]
-      (snippetviewer-parent snippet c))))
- 
 
 
-;; View Columns
-;; ------------
+;; TemplateViewTreeLabelProvider
+;; -----------------------------
 
 (defn
-  snippetviewercolumn-node
+  templateviewtreelabelprovider-node
   [snippet element]
   (cond 
     (astnode/nilvalue? element)
@@ -95,89 +63,34 @@
 
 
 (defn
-  snippetviewercolumn-kind
+  templateviewtreelabelprovider-property
   [snippet element]
-  (cond 
-    (astnode/nilvalue? element)
-    "null"
-    (astnode/value? element)
-    (util/class-simplename (class  (:value element)))
-    :else 
-    (util/class-simplename (class element))))
+  (astnode/property-descriptor-id (astnode/owner-property element)))
 
-(defn
-  snippetviewercolumn-property
-  [snippet element]
-  (if (instance? CompilationUnit element)
-    "CompilationUnit"
-    (astnode/property-descriptor-id (astnode/owner-property element))))
+;; Opening  TemplateView programmatically
+;; --------------------------------------
 
-
-(defn
-  snippetviewercolumn-variable
-  [snippet element]
-  (str (snippet/snippet-var-for-node snippet element)))
-
-(defn
-  snippetviewercolumn-grounder
-  [snippet element]
-  (str (snippet/snippet-grounder-for-node snippet element)))
-
-(defn
-  snippetviewercolumn-constrainer
-  [snippet element]
-  (str (snippet/snippet-constrainer-for-node snippet element)))
-
-(defn
-  snippetgroupviewercolumn-node
-  [snippetgroup element]
-  (snippetviewercolumn-node
-    (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
-    element))
-
-(defn
-  snippetgroupviewercolumn-property
-  [snippetgroup element]
-  (if 
-    (instance? damp.ekeko.snippets.snippet.Snippet element)
-    "" 
-    (snippetviewercolumn-property
-      (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
-      element)))
-
-(defn
-  snippetgroupviewercolumn-variable
-  [snippetgroup element]
-  (snippetviewercolumn-variable
-    (snippetgroup/snippetgroup-snippet-for-node snippetgroup element)
-    element))
-
-
-;; Opening a View
-;; --------------
-
-
-(def snippetgroup-viewer-cnt (atom 0))
+(def templateview-cnt (atom 0))
 
 (defn 
-  open-snippetgroup-viewer
+  open-templateview
   [snippetgroup]
   (let [page (-> (PlatformUI/getWorkbench)
                .getActiveWorkbenchWindow ;nil if called from non-ui thread 
                .getActivePage)
-        qvid (damp.ekeko.snippets.gui.viewer.SnippetGroupViewer/ID)
-        uniqueid (str @snippetgroup-viewer-cnt)
+        qvid (damp.ekeko.snippets.gui.TemplateView/ID)
+        uniqueid (str @templateview-cnt)
         viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! snippetgroup-viewer-cnt inc)
+    (swap! templateview-cnt inc)
     (.setViewID viewpart uniqueid)
     (.setInput (.getViewer viewpart) snippetgroup)
     viewpart))
 
 
 (defn
-  view-snippetgroup
+  view-template
   [snippetgroup]
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippetgroup-viewer snippetgroup))))
+  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
 
 
 
@@ -246,29 +159,6 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-text-viewer snippet))))
 
 
-;; Opening a View - Snippet Group Plugin
-;; -------------------------------------
-    
-(def plugin-viewer-cnt (atom 0))
-
-(defn 
-  open-plugin-viewer
-  []
-  (let [page (-> (PlatformUI/getWorkbench)
-               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
-               .getActivePage)
-        qvid (damp.ekeko.snippets.gui.GroupView/ID)
-        uniqueid (str @plugin-viewer-cnt)
-        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! plugin-viewer-cnt inc)
-    (.setViewID viewpart uniqueid)
-    viewpart))
-
-
-(defn
-  view-plugin
-  []
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-plugin-viewer))))
 
 ;;OTHER FUNCTIONS' NAME
 ;;---------------------------

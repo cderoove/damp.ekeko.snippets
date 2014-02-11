@@ -84,15 +84,16 @@ damp.ekeko.snippets.snippetgroup
   [snippetgroup]
   (flat-map snippet/snippet-uservars-for-variable (snippetgroup-snippetlist snippetgroup)))
 
-(defn snippetgroup-snippet-for-node
+(defn 
+  snippetgroup-snippet-for-node
   [group node]
-  (defn find-snippet [listsnippet node]
-    (cond 
-      (= node nil) nil
-      (empty? listsnippet) nil
-      (contains? (:ast2var (first listsnippet)) node) (first listsnippet)
-      :else (find-snippet (rest listsnippet) node)))
-  (find-snippet (snippetgroup-snippetlist group) node))
+  (some 
+    (fn [snippet]
+      (when 
+        (contains? (:ast2var snippet) node)
+        snippet))
+    (snippetgroup-snippetlist group)))
+ 
 
 (defn snippetgroup-snippet-for-var
   [group var]

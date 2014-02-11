@@ -8,6 +8,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 
+import damp.ekeko.snippets.gui.TemplateViewTreeContentProvider;
+
 public class SnippetGroupViewer extends ViewPart {
 
 	public static final String ID = "damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"; //$NON-NLS-1$
@@ -20,7 +22,7 @@ public class SnippetGroupViewer extends ViewPart {
 	
 	private String viewID;
 	
-	private SnippetGroupTreeContentProvider contentProvider;
+	private TemplateViewTreeContentProvider contentProvider;
 	
 
 	@Override
@@ -29,7 +31,7 @@ public class SnippetGroupViewer extends ViewPart {
 		viewer.getTree().setHeaderVisible(true);
 		viewer.getTree().setLinesVisible(true);
 		
-		contentProvider = new SnippetGroupTreeContentProvider();
+		contentProvider = new TemplateViewTreeContentProvider();
 		viewer.setContentProvider(getContentProvider());
 
 		
@@ -83,7 +85,7 @@ public class SnippetGroupViewer extends ViewPart {
 		this.viewID = secondaryId;
 	}
 
-	public SnippetGroupTreeContentProvider getContentProvider() {
+	public TemplateViewTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 

@@ -1,4 +1,4 @@
-package damp.ekeko.snippets.gui.viewer;
+package damp.ekeko.snippets.gui;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -6,12 +6,16 @@ import org.eclipse.jface.viewers.Viewer;
 
 import clojure.lang.RT;
 
-public class SnippetTreeContentProvider implements ITreeContentProvider {
+public class TemplateViewTreeContentProvider implements ITreeContentProvider {
 
-	private Object snippet;
+	private Object group;
 	private TreeViewer viewer;
 	
-	public SnippetTreeContentProvider() {
+	
+	private static String ns_gui = "damp.ekeko.snippets.gui";
+	
+	
+	public TemplateViewTreeContentProvider() {
 	}
 	
 	@Override
@@ -22,29 +26,28 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		this.viewer = (TreeViewer) viewer;
-		snippet = newInput;
+		group = newInput;
 	}
 
 	@Override
 	public Object[] getElements(Object inputElement) {
 		if (inputElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-elements").invoke(getSnippet(), inputElement);
+		return (Object[]) RT.var(ns_gui, "templateviewtreecontentprovider-elements").invoke(getGroup(), inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement == null)
 			return null;
-		return (Object[]) RT.var("damp.ekeko.snippets.gui", "snippetviewer-children").invoke(getSnippet(), parentElement);
+		return (Object[]) RT.var(ns_gui, "templateviewtreecontentprovider-children").invoke(getGroup(), parentElement);
 	}
 
 	@Override
 	public Object getParent(Object element) {
 		if (element == null)
 			return null;
-
-		return RT.var("damp.ekeko.snippets.gui", "snippetviewer-parent").invoke(getSnippet(), element);
+		return RT.var(ns_gui, "templateviewtreecontentprovider-parent").invoke(getGroup(), element);
 	}
 
 	@Override
@@ -55,8 +58,8 @@ public class SnippetTreeContentProvider implements ITreeContentProvider {
 
 	}
 
-	public Object getSnippet() {
-		return snippet;
+	public Object getGroup() {
+		return group;
 	}
 
 
