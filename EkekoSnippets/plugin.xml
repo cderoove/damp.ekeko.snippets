@@ -20,13 +20,6 @@
             name="Ekeko/X Group View">
       </view>
       <view
-            allowMultiple="true"
-            category="damp.ekeko.snippets.views"
-            class="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
-            id="damp.ekeko.snippets.gui.viewer.SnippetGroupViewer"
-            name="Ekeko/X Group Viewer">
-      </view>
-      <view
             category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.ResultCheckView"
             id="damp.ekeko.snippets.gui.ResultCheckView"
