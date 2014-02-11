@@ -73,8 +73,8 @@ public class SnippetGroupHistory {
 		return RT.var(ns_snippet, "snippet-root").invoke(getSnippet(node));
 	}
 
-	public Object getRootOfSnippet(Object snippet) {
-		return RT.var(ns_snippet, "snippet-root").invoke(snippet);
+	public static ASTNode getRootOfSnippet(Object snippet) {
+		return (ASTNode) RT.var(ns_snippet, "snippet-root").invoke(snippet);
 	}
 
 	public Object[] getRootOfSnippets(Object[] snippets) {
@@ -92,6 +92,8 @@ public class SnippetGroupHistory {
 		return result;
 	}
 	
+	
+	//TODO: can be eliminated
 	public String toString(Object node) {
 		if (node == null)
 			return toString();

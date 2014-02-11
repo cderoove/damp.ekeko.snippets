@@ -94,8 +94,8 @@
 
 
 
-;; Print Snippet
-;;--------------
+;; Pretty printing
+;;----------------
 
 (defn
   print-plain-node
@@ -132,32 +132,6 @@
   [snippetgroup]
   (let [str-list (map print-snippet (snippetgroup/snippetgroup-snippetlist snippetgroup))]
     (reduce str str-list))) 
-
-
-;; Opening a View - Snippet Text
-;; -----------------------------
-
-(def snippet-text-viewer-cnt (atom 0))
-
-(defn 
-  open-snippet-text-viewer
-  [snippet]
-  (let [page (-> (PlatformUI/getWorkbench)
-               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
-               .getActivePage)
-        qvid (damp.ekeko.snippets.gui.viewer.SnippetTextViewer/ID)
-        uniqueid (str @snippet-text-viewer-cnt)
-        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! snippet-text-viewer-cnt inc)
-    (.setViewID viewpart uniqueid)
-    (.setInput viewpart snippet (:ast snippet))
-    viewpart))
-
-(defn
-  view-snippet-text
-  [snippet]
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-snippet-text-viewer snippet))))
-
 
 
 ;;OTHER FUNCTIONS' NAME

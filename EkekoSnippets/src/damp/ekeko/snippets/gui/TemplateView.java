@@ -13,6 +13,7 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -43,6 +44,7 @@ import clojure.lang.Keyword;
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter;
 
 public class TemplateView extends ViewPart {
 
@@ -529,26 +531,26 @@ public class TemplateView extends ViewPart {
 	}
 
 	private void updateTextFields() {
-		//shows text for and condition associated with currently selected snippet
 		Object selectedSnippet = getSelectedSnippet();
-		textSnippet.setText(snippetGroupHistory.toString(selectedSnippet));
+		if(selectedSnippet == null) {
+			textCondition.setText("");
+			textSnippet.setText("");
+			return;
+		}			
+		//shows text for and condition associated with currently selected snippet
 		textCondition.setText(snippetGroupHistory.getLogicConditions(selectedSnippet));
-
+		Object selectedSnippetNode = getSelectedSnippetNode();
+		SnippetPrettyPrinter prettyprinter = new SnippetPrettyPrinter();
+		prettyprinter.setHighlightNode(selectedSnippetNode);
+		textSnippet.setText(prettyprinter.prettyPrint(selectedSnippet));
+		for(StyleRange range : prettyprinter.getStyleRanges())
+			textSnippet.setStyleRange(range);
 	}
 	
 	
 	public void onSnippetSelection() {
 		updateTextFields();
-		textSnippet.setSelectionRange(0, 0);
-
-		//TODO: take length of meta-variables into account
-		
-		int x = snippetGroupHistory.getActiveNodePos()[0];
-		int y = snippetGroupHistory.getActiveNodePos()[1];
-		
-		
-		if (x < 0) {x = 0; y = 0;}
-		textSnippet.setSelectionRange(x, y-x);
+	
 		SnippetOperator.setInput(treeOperator, getSelectedSnippetNode());
 
 		tableOpArgs.removeAll();

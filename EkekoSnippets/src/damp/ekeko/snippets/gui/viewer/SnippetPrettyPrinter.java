@@ -1,23 +1,31 @@
 package damp.ekeko.snippets.gui.viewer;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.internal.core.dom.NaiveASTFlattener;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.widgets.Display;
 
 import clojure.lang.Keyword;
 import clojure.lang.RT;
+import damp.ekeko.snippets.data.SnippetGroupHistory;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	private final String rep = "damp.ekeko.snippets.snippet";
 	protected Object snippet;
 	protected Object highlightNode;
-	protected int[] highlightPos;
+	protected LinkedList<StyleRange> styleRanges;
+	protected Stack<StyleRange> currentHighlight;
 	
 	public SnippetPrettyPrinter () {
-		highlightPos = new int[2];
+		styleRanges = new LinkedList<StyleRange>();
+		currentHighlight = new Stack<StyleRange>();
 	}
 	
 	public static Object[] getArray(Object clojureList) {
@@ -28,42 +36,35 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		this.snippet = snippet;
 	}
 	
-	public Object getSnippet() {
-		return snippet;
-	}
-
 	public void setHighlightNode(Object node) {
 		this.highlightNode = node;
 	}
 	
-	public Object getHighlightNode() {
-		return highlightNode;
+	public StyleRange[] getStyleRanges() {
+		return styleRanges.toArray(new StyleRange[0]);
 	}
 	
-	public int[] getHighlightPos() {
-		return highlightPos;
-	}
-
 	public Object getVar(Object node) {
-		return RT.var(rep, "snippet-var-for-node").invoke(getSnippet(), node);
+		return RT.var(rep, "snippet-var-for-node").invoke(snippet, node);
 	}
 	
 	public Object getUserVar(Object node) {
-		return RT.var(rep, "snippet-uservar-for-node").invoke(getSnippet(), node);
+		return RT.var(rep, "snippet-uservar-for-node").invoke(snippet, node);
 	}
 
 	public Object getGroundF(Object node) {
-		return RT.var(rep, "snippet-grounder-for-node").invoke(getSnippet(), node);
+		return RT.var(rep, "snippet-grounder-for-node").invoke(snippet, node);
 	}
 
 	public Object getConstrainF(Object node) {
-		return RT.var(rep, "snippet-constrainer-for-node").invoke(getSnippet(), node);
+		return RT.var(rep, "snippet-constrainer-for-node").invoke(snippet, node);
 	}
 
 	public Object[] getUserFS(Object node) {
-		return getArray(RT.var(rep, "snippet-userfs-for-node").invoke(getSnippet(), node));
+		return getArray(RT.var(rep, "snippet-userfs-for-node").invoke(snippet, node));
 	}
 
+	//TODO: figure out why these are hard-coded
 	public boolean hasDefaultGroundf(Object node) {
 		Object groundf = getGroundF(node);
 		if (groundf == Keyword.intern("minimalistic") ||
@@ -74,6 +75,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return false;
 	}
 
+	//TODO: figure out why these are hard-coded
 	public boolean hasDefaultConstrainf(Object node) {
 		Object constrainf = getConstrainF(node);
 		if (constrainf == Keyword.intern("exact") ||
@@ -92,12 +94,12 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public String getGroundFString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-grounder-with-args-for-node").invoke(getSnippet(), node)); 
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-grounder-with-args-for-node").invoke(snippet, node)); 
 		return getFunctionString(functionArgs);
 	}
 
 	public String getConstrainFString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node)); 
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(snippet, node)); 
 		Object constrainf = getConstrainF(node);
 
 		if (constrainf == Keyword.intern("change-name")) 
@@ -119,10 +121,10 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public String getUserVarString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(getSnippet(), node)); 
+		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(snippet, node)); 
 		Object constrainf = getConstrainF(node);
 		Object uservar = getUserVar(node);
-		
+		//TODO: figure out why these are hard-coded
 		if ((uservar != null) && 
 				(constrainf != Keyword.intern("exact-variable")) &&
 				(constrainf != Keyword.intern("variable")) &&
@@ -158,17 +160,31 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	 	return "(= " + uservar + ")";
 	}
 
+	public static StyleRange styleRangeForVariable(int start, int length) {
+		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_BLUE), null);
+	}
+
+	public static StyleRange styleRangeForMeta(int start, int length) {
+		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_RED), null);
+	}
+	public static StyleRange styleRangeForHighlight(int start) {
+		return new StyleRange(start, 0, null, Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+	}
+
 	public boolean preVisit2(ASTNode node) {
 		preVisit(node);
 
 		Object uservar = getUserVar(node);
+		//TODO: figure out why these are hard-coded
 		if (uservar != null) {
 			Object constrainf = getConstrainF(node);
 			if (constrainf == Keyword.intern("variable") ||
 				constrainf == Keyword.intern("variable-info") || 	
 				constrainf == Keyword.intern("change-name")) { 	
-				this.buffer.append(uservar);
-				return false;
+					int start = getCurrentCharacterIndex();
+					buffer.append(uservar);
+					styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));
+					return false;
 			} else {
 				return true;
 			}
@@ -180,8 +196,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//if node is first member of NodeList, then preVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
-			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
+			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(snippet, node); 
+			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(snippet, nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
 				preVisitNodeList(nodeListWrapper);
 		}
@@ -196,8 +212,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//if node is last member of NodeList, then postVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(getSnippet(), node); 
-			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(getSnippet(), nodeListWrapper);
+			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(snippet, node); 
+			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(snippet, nodeListWrapper);
 			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
 				postVisitNodeList(nodeListWrapper);
 		}
@@ -219,8 +235,16 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		//print bracket
 		if (!hasDefaultGroundf(node) || 
 				!hasDefaultConstrainf(node) || 
-				hasUserf(node))
-			this.buffer.append("&open");
+				hasUserf(node)) {
+			int start = getCurrentCharacterIndex();
+			this.buffer.append("[");
+			styleRanges.add(styleRangeForMeta(start, 1));
+		}
+
+	}
+	
+	private int getCurrentCharacterIndex() {
+		return this.buffer.length();
 	}
 	
 	public void printClosingNode(Object node) {
@@ -239,62 +263,46 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (!fString.isEmpty()) { 
 			fString = fString.substring(0,fString.length()-1);
 			if (fString.contains(",")) //many functions
-				fString = "@(" + fString + ")";
+				fString = "@[" + fString + "]";
 			else //only one
 				fString = "@" + fString;
-			addBufferBeforeEOL("&close" + fString + " ");
+			
+			int start = getCurrentCharacterIndex();
+			this.buffer.append("]");
+			styleRanges.add(styleRangeForMeta(start, 1));
+
+			//addBufferBeforeEOL("&close" + fString + " ");
 		}
 	}
 
 	public void printOpeningHighlight(Object node) {
-		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(node))
-			this.buffer.append("&coloropen");
+		if(node == null)
+			return;
+		if (node.equals(highlightNode))	
+			currentHighlight.push(styleRangeForHighlight(getCurrentCharacterIndex()));
 	}
 	
 	public void printClosingHighlight(Object node) {
-		//color highlightNode
-		if (highlightNode != null && highlightNode.equals(node))
-			this.buffer.append("&colorclose");
+		if(node == null)
+			return;
+		if (node.equals(highlightNode)) {
+				StyleRange style = currentHighlight.pop();
+				style.length = getCurrentCharacterIndex() -style.start;
+				styleRanges.add(style);
+		}
 	}
+			
 
 	public String getPlainResult(){
-		return super.getResult();
+		return getResult();
 	}
 	
-	public String getResult(){
-		String result = super.getResult();
-		
-		//delete first "&open"
-		result = result.replaceFirst("&open", "");
-		
-		//replace "&open  " with "  &open"
-		while (result.indexOf("&open ") > -1) {
-			result = result.replaceAll("&open ", " &open");
-		}
-		
-		result = result.replaceAll("&open", "[");
-		result = result.replaceAll("&close", "]");
-		
-		//get highlightNode position
-		highlightPos[0] = result.indexOf("&coloropen");
-		result = result.replaceAll("&coloropen", "");
-		highlightPos[1] = result.indexOf("&colorclose");
-		result = result.replaceAll("&colorclose", "");
-		
-		//delete ]@(,) in the last part
-		result = result.substring(0, result.length()-7);
-		
-		return result + " \n\n";
+	
+	public String prettyPrint(Object snippet) {
+		setSnippet(snippet);
+		ASTNode root = SnippetGroupHistory.getRootOfSnippet(snippet); 
+		root.accept(this);
+		return getResult();
 	}
-
-	public void addBufferBeforeEOL(String str) {
-		//add buffer before end of line
-		int len = this.buffer.length();
-		if (this.buffer.substring(len-1).equals("\n")) {
-			this.buffer.delete(len-1, len);
-			this.buffer.append(str + "\n");
-		} else 
-			this.buffer.append(str);
-	}
+	
 }
