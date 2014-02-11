@@ -13,6 +13,9 @@ import org.eclipse.swt.widgets.Display;
 
 import clojure.lang.Keyword;
 import clojure.lang.RT;
+
+import com.google.common.base.Joiner;
+
 import damp.ekeko.snippets.data.SnippetGroupHistory;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
@@ -22,12 +25,12 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	protected Object highlightNode;
 	protected LinkedList<StyleRange> styleRanges;
 	protected Stack<StyleRange> currentHighlight;
-	
+
 	public SnippetPrettyPrinter () {
 		styleRanges = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
 	}
-	
+
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
@@ -35,19 +38,19 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	public void setSnippet(Object snippet) {
 		this.snippet = snippet;
 	}
-	
+
 	public void setHighlightNode(Object node) {
 		this.highlightNode = node;
 	}
-	
+
 	public StyleRange[] getStyleRanges() {
 		return styleRanges.toArray(new StyleRange[0]);
 	}
-	
+
 	public Object getVar(Object node) {
 		return RT.var(rep, "snippet-var-for-node").invoke(snippet, node);
 	}
-	
+
 	public Object getUserVar(Object node) {
 		return RT.var(rep, "snippet-uservar-for-node").invoke(snippet, node);
 	}
@@ -67,6 +70,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	//TODO: figure out why these are hard-coded
 	public boolean hasDefaultGroundf(Object node) {
 		Object groundf = getGroundF(node);
+		if(groundf == null) return true;
 		if (groundf == Keyword.intern("minimalistic") ||
 				groundf == Keyword.intern("exact") ||
 				groundf == Keyword.intern("child+") ||
@@ -78,6 +82,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	//TODO: figure out why these are hard-coded
 	public boolean hasDefaultConstrainf(Object node) {
 		Object constrainf = getConstrainF(node);
+		if(constrainf == null) return true;
 		if (constrainf == Keyword.intern("exact") ||
 				constrainf == Keyword.intern("variable") || 
 				constrainf == Keyword.intern("variable-info") || 
@@ -104,10 +109,10 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 		if (constrainf == Keyword.intern("change-name")) 
 			return getFunctionStringForChangeName(functionArgs);
-		
+
 		if (getConstrainF(node) == Keyword.intern("exact-variable")) 
 			return getFunctionStringForExactVariable(getUserVar(node));
-		
+
 		return getFunctionString(functionArgs);
 	}
 
@@ -130,7 +135,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 				(constrainf != Keyword.intern("variable")) &&
 				(constrainf != Keyword.intern("variable-info")))  	
 			return getFunctionStringForExactVariable(uservar);
-		
+
 		return "";
 	}
 
@@ -140,24 +145,24 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			return "";
 		else {
 			String function = functionList[0].toString();
-		 	String functionArgs = "";
-		 	for (int i=1; i<functionList.length; i++) {
-		 		functionArgs += " " + functionList[i].toString();
-		 	}
-	 		return "(" + function.replace(":", "") + functionArgs + ")";
+			String functionArgs = "";
+			for (int i=1; i<functionList.length; i++) {
+				functionArgs += " " + functionList[i].toString();
+			}
+			return "(" + function.replace(":", "") + functionArgs + ")";
 		}
 	}
-	
+
 	public String getFunctionStringForChangeName(Object[] functionList) {
 		String function = functionList[0].toString();
-	 	String rule = functionList[1].toString(); 
-	 	String nodeStr = functionList[2].toString(); 
-	 	String functionArg = (String) RT.var("damp.ekeko.snippets.util", "convert-rule-to-string").invoke(rule, nodeStr);
-	 	return "(" + function.replace(":", "") + " " + functionArg + ")";
+		String rule = functionList[1].toString(); 
+		String nodeStr = functionList[2].toString(); 
+		String functionArg = (String) RT.var("damp.ekeko.snippets.util", "convert-rule-to-string").invoke(rule, nodeStr);
+		return "(" + function.replace(":", "") + " " + functionArg + ")";
 	}
 
 	public String getFunctionStringForExactVariable(Object uservar) {
-	 	return "(= " + uservar + ")";
+		return "(= " + uservar + ")";
 	}
 
 	public static StyleRange styleRangeForVariable(int start, int length) {
@@ -171,6 +176,13 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return new StyleRange(start, 0, null, Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
 	}
 
+	public static StyleRange styleRangeForDirectives(int start, int length) {
+		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_GRAY), null);
+	}
+
+
+
+	@Override
 	public boolean preVisit2(ASTNode node) {
 		preVisit(node);
 
@@ -179,12 +191,12 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (uservar != null) {
 			Object constrainf = getConstrainF(node);
 			if (constrainf == Keyword.intern("variable") ||
-				constrainf == Keyword.intern("variable-info") || 	
-				constrainf == Keyword.intern("change-name")) { 	
-					int start = getCurrentCharacterIndex();
-					buffer.append(uservar);
-					styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));
-					return false;
+					constrainf == Keyword.intern("variable-info") || 	
+					constrainf == Keyword.intern("change-name")) { 	
+				int start = getCurrentCharacterIndex();
+				buffer.append(uservar);
+				styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));
+				return false;
 			} else {
 				return true;
 			}
@@ -192,6 +204,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return true;
 	}
 
+	@Override
 	public void preVisit(ASTNode node) {	
 		//if node is first member of NodeList, then preVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
@@ -201,7 +214,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
 				preVisitNodeList(nodeListWrapper);
 		}
-		
+
 		printOpeningNode(node);
 		printOpeningHighlight(node);
 	}
@@ -209,7 +222,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	public void postVisit(ASTNode node) {
 		printClosingHighlight(node);
 		printClosingNode(node);
-		
+
 		//if node is last member of NodeList, then postVisitNodeList
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
@@ -218,14 +231,14 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
 				postVisitNodeList(nodeListWrapper);
 		}
-		
+
 	}
-	
+
 	public void preVisitNodeList(Object nodeListWrapper) {
 		printOpeningNode(nodeListWrapper);
 		printOpeningHighlight(nodeListWrapper);
 	}
-	
+
 	public void postVisitNodeList(Object nodeListWrapper) {
 		printClosingHighlight(nodeListWrapper);
 		printClosingNode(nodeListWrapper);
@@ -242,37 +255,40 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		}
 
 	}
-	
+
 	private int getCurrentCharacterIndex() {
 		return this.buffer.length();
 	}
-	
+
 	public void printClosingNode(Object node) {
 		String fString = "";
-
 		//print bracket, followed by groundf, constrainf, and userfs
+		List<String> directives = new LinkedList<String>();
 		if (!hasDefaultGroundf(node))
-			fString = getGroundFString(node) + ",";
+			directives.add(getGroundFString(node));
 		if (!hasDefaultConstrainf(node))
-			fString += getConstrainFString(node) + ",";
+			directives.add(getConstrainFString(node));
 		if (hasUserf(node))
-			fString += getUserFSString(node) + ",";
-		if (!getUserVarString(node).isEmpty())
-			fString += getUserVarString(node) + ",";
-		
-		if (!fString.isEmpty()) { 
-			fString = fString.substring(0,fString.length()-1);
-			if (fString.contains(",")) //many functions
-				fString = "@[" + fString + "]";
-			else //only one
-				fString = "@" + fString;
-			
+			directives.add(getUserFSString(node));
+		String userVarString = getUserVarString(node);
+		if (!userVarString.isEmpty())
+			directives.add(userVarString);
+
+		if (!directives.isEmpty()) { 
 			int start = getCurrentCharacterIndex();
 			this.buffer.append("]");
-			styleRanges.add(styleRangeForMeta(start, 1));
-
-			//addBufferBeforeEOL("&close" + fString + " ");
+			styleRanges.add(styleRangeForMeta(start, 1));	
+			start = getCurrentCharacterIndex();
+			this.buffer.append("@[");
+			styleRanges.add(styleRangeForMeta(start, 2));
+			start = getCurrentCharacterIndex();
+			this.buffer.append(Joiner.on(',').join(directives));
+			styleRanges.add(styleRangeForDirectives(start, getCurrentCharacterIndex() - start));
+			start = getCurrentCharacterIndex();
+			this.buffer.append("]");
+			styleRanges.add(styleRangeForMeta(start, 1));	
 		}
+
 	}
 
 	public void printOpeningHighlight(Object node) {
@@ -281,28 +297,27 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		if (node.equals(highlightNode))	
 			currentHighlight.push(styleRangeForHighlight(getCurrentCharacterIndex()));
 	}
-	
+
 	public void printClosingHighlight(Object node) {
 		if(node == null)
 			return;
 		if (node.equals(highlightNode)) {
-				StyleRange style = currentHighlight.pop();
-				style.length = getCurrentCharacterIndex() -style.start;
-				styleRanges.add(style);
+			StyleRange style = currentHighlight.pop();
+			style.length = getCurrentCharacterIndex() -style.start;
+			styleRanges.add(style);
 		}
 	}
-			
 
 	public String getPlainResult(){
 		return getResult();
 	}
-	
-	
+
+
 	public String prettyPrint(Object snippet) {
 		setSnippet(snippet);
 		ASTNode root = SnippetGroupHistory.getRootOfSnippet(snippet); 
 		root.accept(this);
 		return getResult();
 	}
-	
+
 }

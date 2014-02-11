@@ -46,6 +46,7 @@ damp.ekeko.snippets.snippet
 ; - track2ast: map from track (in original document) to node 
 ;   {[property, start, length] ast}
 
+
 (defrecord 
   Snippet
   [ast ast2var ast2groundf ast2constrainf ast2userfs var2ast var2uservar 
@@ -195,6 +196,25 @@ damp.ekeko.snippets.snippet
   (keys (:ast2var snippet)))
 
 (defn
+  snippet-node-owner
+  "Returns representation in snippet for owner of given node."
+  [snippet node]
+  (let [owner (astnode/owner node)]
+    ;finds value equal to, but not identitical to owner .. should not make a difference in practice (see note in make-value, and see jdt-node-as-snippet)
+    (some #{owner} (snippet-nodes snippet)))) 
+
+
+(defn
+  snippet-node-children
+  "Returns representations in snippet for children of given node."
+  [snippet node]
+  ;;finds all values in snippet whose owner is equal to the given node.
+  (filter
+    (fn [value] 
+      (= (astnode/owner value) node))
+    (snippet-nodes snippet)))
+
+(defn
   snippet-userfs
   "Returns all ast to user functions of the given snippet."
   [snippet]
@@ -324,9 +344,11 @@ damp.ekeko.snippets.snippet
       (fn [lstval] 
         (swap! snippet assoc-snippet-value lstval)
         ;;TODO: should not be necessary, also not doing this for null-valued and primitive-valued properties
-        (let [rawlst (:value lstval)
-              rawlstvar (util/gen-readable-lvar-for-value rawlst)]
-          (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
+        ;;(let [rawlst (:value lstval)
+        ;;     rawlstvar (util/gen-readable-lvar-for-value rawlst)]
+        ;;  (swap! snippet assoc-in [:ast2var rawlst] rawlstvar))
+        
+        )
       (fn [primval]  (swap! snippet assoc-snippet-value primval))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
@@ -361,10 +383,11 @@ damp.ekeko.snippets.snippet
       (fn [astval] 
         (swap! snippet assoc-snippet-value astval (.track rw astval)))
       (fn [lstval] 
-        (let [rawlst (:value lstval)
-              rawlstvar (util/gen-readable-lvar-for-value rawlst)]
-          (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval)))
-          (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
+        (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval))))
+
+       ; (let [rawlst (:value lstval)
+       ;       rawlstvar (util/gen-readable-lvar-for-value rawlst)]
+        ;  (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
       (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
     @snippet))

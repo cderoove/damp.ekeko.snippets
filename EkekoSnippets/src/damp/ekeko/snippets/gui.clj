@@ -19,35 +19,38 @@
 ; Callbacks for TemplateViewTreeContentProvider
 ; ---------------------------------------------
 
+;;the following explicitly avoid creating new values that are not yet in the snippet datastructure
 
+
+;(remove (fn [x] (astnode/primitivevalue? x))
 (defn
   templateviewtreecontentprovider-children
-  [snippet val]
+  [snippetgroup val]
   ;treeview children of given treeview parent
-  (to-array
-    (cond 
-      (astnode/ast? val) 
-      ;do not show primitive values in treeview
-      (remove (fn [x] (astnode/primitivevalue? x)) (util/filtered-node-propertyvalues val))
-      (astnode/lstvalue? val) (:value val)
-      :else [])))
-
+  (to-array 
+    (mapcat 
+      (fn [snippet] 
+        (snippet/snippet-node-children snippet val))
+      (snippetgroup/snippetgroup-snippetlist snippetgroup))))
+    
+ 
 (defn
   templateviewtreecontentprovider-parent
-  [snippet c]
+  [snippetgroup c]
   ;treeview parent of given treeview child
-  (astnode/owner c))
-
+  (some 
+    (fn [snippet] 
+      (snippet/snippet-node-owner snippet c))
+    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+    
 (defn
   templateviewtreecontentprovider-elements
   [snippetgroup input]
   ;roots of treeview
-  (if 
+  (when 
     (= input snippetgroup)
-    (to-array (map snippet/snippet-root (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-    nil))
-
-
+    (to-array (map snippet/snippet-root (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
+  
 
 ;; TemplateViewTreeLabelProvider
 ;; -----------------------------
