@@ -204,42 +204,56 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return true;
 	}
 
-	@Override
-	public void preVisit(ASTNode node) {	
-		//if node is first member of NodeList, then preVisitNodeList
+	
+	static boolean isFirstElementOfList(ASTNode node) {
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(snippet, node); 
-			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(snippet, nodeListWrapper);
-			if (nodeList.size() > 0 && nodeList.get(0).equals(node))
-				preVisitNodeList(nodeListWrapper);
+			ASTNode parent = node.getParent();
+			List nodeList = (List) parent.getStructuralProperty(property);
+			if (nodeList.get(0).equals(node))	
+				return true;	
 		}
+		return false;
+	}
+	
+	static boolean isLastElementOfList(ASTNode node) {
+		StructuralPropertyDescriptor property = node.getLocationInParent();
+		if (property != null && property.isChildListProperty()) {
+			ASTNode parent = node.getParent();
+			List nodeList = (List) parent.getStructuralProperty(property);
+			if(nodeList.get(nodeList.size()-1).equals(node))
+				return true;
+		}
+		return false;
+	}
 
+	
+	@Override
+	public void preVisit(ASTNode node) {	
+		if(isFirstElementOfList(node)) {
+			Object nodeListWrapper = RT.var(rep, "snippet-list-containing").invoke(snippet, node); 
+			preVisitNodeListWrapper(nodeListWrapper);
+		} 
 		printOpeningNode(node);
 		printOpeningHighlight(node);
 	}
 
 	public void postVisit(ASTNode node) {
+		if(isLastElementOfList(node)) {
+			Object nodeListWrapper = RT.var(rep, "snippet-list-containing").invoke(snippet, node); 
+			postVisitNodeListWrapper(nodeListWrapper);
+		}
 		printClosingHighlight(node);
 		printClosingNode(node);
+	}	
 
-		//if node is last member of NodeList, then postVisitNodeList
-		StructuralPropertyDescriptor property = node.getLocationInParent();
-		if (property != null && property.isChildListProperty()) {
-			Object nodeListWrapper = RT.var(rep, "snippet-node-with-member").invoke(snippet, node); 
-			List nodeList = (List) RT.var(rep, "snippet-value-for-node").invoke(snippet, nodeListWrapper);
-			if (nodeList.size() > 0 && nodeList.get(nodeList.size()-1).equals(node))
-				postVisitNodeList(nodeListWrapper);
-		}
-
-	}
-
-	public void preVisitNodeList(Object nodeListWrapper) {
+	public void preVisitNodeListWrapper(Object nodeListWrapper) {
+		//TODO: check whether logic variable has been associated with list itself
 		printOpeningNode(nodeListWrapper);
 		printOpeningHighlight(nodeListWrapper);
 	}
 
-	public void postVisitNodeList(Object nodeListWrapper) {
+	public void postVisitNodeListWrapper(Object nodeListWrapper) {
 		printClosingHighlight(nodeListWrapper);
 		printClosingNode(nodeListWrapper);
 	}

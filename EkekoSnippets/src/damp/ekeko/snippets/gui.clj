@@ -62,7 +62,7 @@
     (astnode/nilvalue? element)
     "null"
     (astnode/value? element)
-    (str (snippet/snippet-value-for-node snippet element))
+    (str (:value element))
     :else 
     (str element)))
 

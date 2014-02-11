@@ -55,39 +55,51 @@
       (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
             var-match (snippet/snippet-var-for-node snippet snippet-ast)] 
         `((ast/ast ~snippet-ast-keyw ~var-match)))
-      (let [list-owner      (snippet/snippet-node-with-member snippet snippet-ast)
-            list-raw        (snippet/snippet-value-for-node snippet list-owner)
+      (let [
+            list-owner      (snippet/snippet-list-containing snippet snippet-ast)
             cf-list-owner   (snippet/snippet-constrainer-for-node snippet list-owner)
-            var-match-raw   (snippet/snippet-var-for-node snippet list-raw)
+            list-match       (snippet/snippet-var-for-node snippet list-owner)
+            list-raw         (:value list-owner)
+            list-match-raw   (util/gen-readable-lvar-for-value list-raw)
+            
             var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
-            index-match     (.indexOf list-raw snippet-ast)]
-        (if (not (nil? cf-list-owner))
-          (cond
-            (= cf-list-owner :exact)
-            `((el/equals ~var-match (.get ~var-match-raw ~index-match)))
-            (or (= cf-list-owner :contains) (= cf-list-owner :contains-eq-size))
-            `((el/contains ~var-match-raw ~var-match))
-            (= cf-list-owner :contains-eq-order)
-            (if (> index-match 0)
-              (let [prev-member    (.get list-raw (- index-match 1))
-                    var-match-prev (snippet/snippet-var-for-node snippet prev-member)]
-                `((el/contains ~var-match-raw ~var-match)
-                   (el/succeeds (> (.indexOf ~var-match-raw ~var-match) (.indexOf ~var-match-raw ~var-match-prev)))))
-              `((el/contains ~var-match-raw ~var-match)))
-            (= cf-list-owner :contains-repetition)
-            (if (> index-match 0)
-              (let [element-conditions 
-                    (for [n  (take index-match (iterate inc 0))]
-                      (let [nth-member    (.get list-raw n)
-                            var-match-nth (snippet/snippet-var-for-node snippet nth-member)]
-                        `(el/fails (el/equals ~var-match ~var-match-nth))))]
-                (println element-conditions)
-                `((el/contains ~var-match-raw ~var-match)
-                   ~@element-conditions))
-              `((el/contains ~var-match-raw ~var-match)))
-            :default
-            '()))))))
-  
+            
+            index-match     (.indexOf list-raw snippet-ast)
+            conditions 
+            (cond
+	             (= cf-list-owner :exact)
+	             `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
+              
+	             (or (= cf-list-owner :contains) 
+	                 (= cf-list-owner :contains-eq-size))
+	             `((el/contains ~list-match-raw ~var-match))
+              
+	             (= cf-list-owner :contains-eq-order)
+	             (if (> index-match 0)
+	               (let [prev-member    (.get list-raw (- index-match 1))
+	                     var-match-prev (snippet/snippet-var-for-node snippet prev-member)]
+	                 `((el/contains ~list-match-raw ~var-match)
+	                    (el/succeeds (> (.indexOf ~list-match-raw ~var-match) (.indexOf ~list-match-raw ~var-match-prev)))))
+	               `((el/contains ~list-match-raw ~var-match)))
+              
+	             (= cf-list-owner :contains-repetition)
+              (if (> index-match 0)
+	               (let [element-conditions 
+	                     (for [n  (take index-match (iterate inc 0))]
+	                       (let [nth-member    (.get list-raw n)
+	                             var-match-nth (snippet/snippet-var-for-node snippet nth-member)]
+	                         `(el/fails (el/equals ~var-match ~var-match-nth))))]
+	                 (println element-conditions)
+	                 `((el/contains ~list-match-raw ~var-match)
+                     ~@element-conditions))
+	               `((el/contains ~list-match-raw ~var-match)))
+              
+              :default
+              '())]
+        `((cl/fresh [~list-match-raw] 
+                    (ast/value-raw ~list-match ~list-match-raw)
+                    ~@conditions))))))
+    
 (defn 
   gf-node-exact
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
@@ -107,7 +119,7 @@
   (cond
     (and (instance? org.eclipse.jdt.core.dom.ASTNode snippet-val)  
          (not (instance? org.eclipse.jdt.core.dom.CompilationUnit snippet-val))  
-         (.isChildListProperty (.getLocationInParent snippet-val))) ;check if its a member of a list
+         (astnode/property-descriptor-list? (astnode/owner-property snippet-val))) ;check if its a member of a list
     (gf-member-exact snippet-val)
     :default
     (gf-minimalistic snippet-val)))
@@ -146,6 +158,7 @@
 ;; Constraining Functions
 ;; ----------------------
 
+;;TODO: not in sync with node-filtered-ekeko-properties (or something like that)
 (defn 
   is-ignored-property?
   [property-keyw]
@@ -187,10 +200,10 @@
            (equals snippet-list-size (.size ?newly-generated-var)) {If type = :samesize}
            (element-conditions)"
   [snippet snippet-val type] ; function-element-condition]
-  (let [lst (snippet/snippet-value-for-node snippet snippet-val)
+  (let [lst (:value snippet-val)
         snippet-list-size (.size lst)
         var-match (snippet/snippet-var-for-node snippet snippet-val)
-        var-match-raw (snippet/snippet-var-for-node snippet lst)
+        var-match-raw (util/gen-readable-lvar-for-value lst) ;freshly generated, not included in snippet datastructure ..
         size-condition
         (if (= type :samesize)
           `((el/equals ~snippet-list-size (.size ~var-match-raw)))
@@ -201,8 +214,9 @@
         ;            var-el (snippet/snippet-var-for-node snippet element)]]
         ;  (function-element-condition var-match-raw var-el idx-el))]
     `((ast/value|list ~var-match)
-       (ast/value-raw ~var-match ~var-match-raw)
-       ~@size-condition)))
+      (cl/fresh [~var-match-raw] 
+         (ast/value-raw ~var-match ~var-match-raw)
+         ~@size-condition))))
        ;~@element-conditions)))
 
 (defn

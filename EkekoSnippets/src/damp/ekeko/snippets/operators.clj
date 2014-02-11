@@ -144,7 +144,7 @@
   remove-node-no-apply-rewrite 
   "Remove a given node from snippet, without apply rewrite."
   [snippet node]
-  (let [list-container (snippet/snippet-node-with-member snippet node)
+  (let [list-container (snippet/snippet-list-containing snippet node)
         rewrite (snippet/snippet-rewrite snippet)
         list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
     (.remove list-rewrite node (new org.eclipse.text.edits.TextEditGroup "snippet"))
@@ -218,8 +218,8 @@
   split-variable-declaration-statement 
   "Split variable declaration statement with many fragments into multiple node with one fragment for each statement."
   [snippet statement]
-  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
-        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-list-containing snippet statement)
+        position        (.indexOf (:value listcontainer) statement)
         newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (split-variable-declaration-fragments
       newsnippet 
@@ -234,8 +234,8 @@
   "Allow given variable declaration statement in given snippet, 
    as part of one or more variable declaration statements in target source code."
   [snippet statement]
-  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
-        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-list-containing snippet statement)
+        position        (.indexOf (:value listcontainer) statement)
         newsnippet-list (contains-elements snippet (:value listcontainer))
         newsnippet      (remove-node-no-apply-rewrite newsnippet-list statement)]  
     (split-variable-declaration-fragments
@@ -318,8 +318,8 @@
     (first (first 
              (damp.ekeko/ekeko [?dec] 
                                (runtime/ast-invocation-declaration inv ?dec)))))
-  (let [listcontainer   (snippet/snippet-node-with-member snippet statement)
-        position        (.indexOf (snippet/snippet-value-for-node snippet listcontainer) statement)
+  (let [listcontainer   (snippet/snippet-list-containing snippet statement)
+        position        (.indexOf (:value listcontainer) statement)
         inlined-statements (.statements (.getBody (declaration-of-invocation (.getExpression statement))))
         newsnippet      (remove-node-no-apply-rewrite snippet statement)]  
     (add-nodes newsnippet listcontainer inlined-statements position)))
@@ -484,7 +484,7 @@
       ;(update-constrainf snippet (snippet/snippet-node-with-member snippet node) :epsilon)
       snippet
       (let [snippet-node (update-constrainf snippet node :epsilon)
-            snippet-nodelist (update-constrainf snippet-node (snippet/snippet-node-with-member snippet-node node) :epsilon)]
+            snippet-nodelist (update-constrainf snippet-node (snippet/snippet-list-containing snippet-node node) :epsilon)]
         (change-cf-parent snippet-nodelist (.getParent node)))))
   (let [snippet (snippetgroup/snippetgroup-snippet-for-node snippetgroup node)
         var-parent (snippet/snippet-lvar-for-node snippet parent)

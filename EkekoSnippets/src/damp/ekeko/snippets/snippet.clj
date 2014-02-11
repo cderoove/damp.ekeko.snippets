@@ -168,32 +168,32 @@ damp.ekeko.snippets.snippet
       node)))
 
 (defn 
-  snippet-node-with-member
-  "Returns node (= wrapper of NodeList) which it's :value (= NodeList) has member mbr."
-  [snippet mbr]
-  (let [parent (.getParent mbr)
-        property (.getLocationInParent mbr)
-        value (.getStructuralProperty parent property)]    
-    (astnode/make-value parent property value)))
+  snippet-nodes
+  "Returns all AST nodes of the given snippet."
+  [snippet]
+  (keys (:ast2var snippet)))
 
+
+(defn 
+  snippet-list-containing
+  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr. Should only be used by pretty printer."
+  [snippet mbr]
+  (let [ownerproperty (astnode/owner-property mbr)]
+    (some (fn [value] 
+            (when 
+              (and 
+                (astnode/lstvalue? value)
+                (= ownerproperty (astnode/owner-property value)))
+              value)) 
+          (snippet-nodes snippet))))
+    
 (defn 
   snippet-node-with-value
   "Returns node (= wrapper of NodeList) which has :value = value.
   value at least should have one member."
   [snippet value]
-  (snippet-node-with-member snippet (first value)))
+  (snippet-list-containing snippet (first value)))
 
-(defn
-  snippet-value-for-node
-  "Return :value of the given node (= wrapper of NodeList)."
-  [snippet node]
-  (:value node))
-
-(defn 
-  snippet-nodes
-  "Returns all AST nodes of the given snippet."
-  [snippet]
-  (keys (:ast2var snippet)))
 
 (defn
   snippet-node-owner
@@ -202,7 +202,6 @@ damp.ekeko.snippets.snippet
   (let [owner (astnode/owner node)]
     ;finds value equal to, but not identitical to owner .. should not make a difference in practice (see note in make-value, and see jdt-node-as-snippet)
     (some #{owner} (snippet-nodes snippet)))) 
-
 
 (defn
   snippet-node-children
