@@ -207,6 +207,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public void postVisit(ASTNode node) {
+		printClosingHighlight(node);
 		printClosingNode(node);
 		
 		//if node is last member of NodeList, then postVisitNodeList
@@ -218,7 +219,6 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 				postVisitNodeList(nodeListWrapper);
 		}
 		
-		printClosingHighlight(node);
 	}
 	
 	public void preVisitNodeList(Object nodeListWrapper) {
@@ -227,8 +227,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 	
 	public void postVisitNodeList(Object nodeListWrapper) {
-		printClosingNode(nodeListWrapper);
 		printClosingHighlight(nodeListWrapper);
+		printClosingNode(nodeListWrapper);
 	}
 
 	public void printOpeningNode(Object node) {
