@@ -171,5 +171,12 @@
                     :else (operatorsrep/searchspace-operator-ids))]
     (apply-operators group operators group-nodes)))
 
+(defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SEARCH) iterate-snippet))
+
+(register-callbacks)
+
 
 

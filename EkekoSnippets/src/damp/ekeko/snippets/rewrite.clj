@@ -238,7 +238,7 @@
               node (snippetgroup/snippetgroup-node-for-var group (symbol (fnext userf)))]
           (list function node ast)))
       userfs))
-  (snippetgroup/flat-map 
+  (mapcat 
     (fn [ast2userfs] 
       (userfs-mapping (key ast2userfs) (val ast2userfs)))
     (:ast2userfs snippet)))
@@ -247,5 +247,5 @@
   snippetgroup-rewrite-mapping
   [original-group rw-group]
   "Returns rewrite mapping, list of (operation original-node rewritten-node)."
-  (snippetgroup/flat-map (fn [s] (snippet-rewrite-mapping original-group s)) (:snippetlist rw-group)))
+  (mapcat (fn [s] (snippet-rewrite-mapping original-group s)) (:snippetlist rw-group)))
 

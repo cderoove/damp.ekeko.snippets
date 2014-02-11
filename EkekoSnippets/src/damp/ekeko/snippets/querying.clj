@@ -74,7 +74,7 @@
            (println function " " var-match " " var-arg)
            `(~function ~var-match ~var-arg)))
        userfs))
-	  (snippetgroup/flat-map 
+	  (mapcat 
 	    (fn [ast2userfs] 
 	      (let [ast (key ast2userfs)
 	            var-match (snippet/snippet-var-for-node snippet ast)
@@ -87,13 +87,13 @@
 	  [grp]
 	  "Returns all user functions of the given grp.
 	  ((function var-match var-arg) ...)."
-	  (snippetgroup/flat-map snippet-query-for-userfs (:snippetlist grp)))
+	  (mapcat snippet-query-for-userfs (:snippetlist grp)))
 	
 	(defn
 	  snippetgroup-conditions
 	  "Returns a list of logic conditions that will retrieve matches for the given snippet group."
 	  [snippetgroup]
-	  (snippetgroup/flat-map snippet-conditions (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+	  (mapcat snippet-conditions (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 	
 	(defn
 	  snippetgroup-query-with-conditions
@@ -138,7 +138,7 @@
            `(el/perform (~function ~var-match (rewrite/snippet-rewrite-string ~node-str [~@user-vars])))))
        userfs))
    (let [user-vars (rewrite/snippet-rewrite-uservar-pairs snippet)]
-     (snippetgroup/flat-map 
+     (mapcat 
        (fn [ast2userfs] 
          (let [ast (key ast2userfs)
                userfs (val ast2userfs)
@@ -151,7 +151,7 @@
 	  [grp]
 	  "Returns all user rewrite functions of the given grp.
 	  ((function var-match string) ...)."
-	  (snippetgroup/flat-map (fn [s] (snippet-rewrite-query-for-userfs s)) (:snippetlist grp)))
+	  (mapcat (fn [s] (snippet-rewrite-query-for-userfs s)) (:snippetlist grp)))
 	
 	(defn
 	  snippetgroup-rewrite-query
@@ -165,4 +165,14 @@
 	      (snippetgroup/snippetgroup-userquery snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup)
         (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
+ 
+ 
+ (defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_QUERY) snippetgroup-query)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_QUERY) snippet-query))
+
+(register-callbacks)
+
 			

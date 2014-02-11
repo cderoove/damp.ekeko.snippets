@@ -1,31 +1,23 @@
 package damp.ekeko.snippets.gui;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 
-import clojure.lang.RT;
+import clojure.lang.IFn;
 
 public class TemplateViewTreeContentProvider implements ITreeContentProvider {
 
 	private Object group;
-	private TreeViewer viewer;
 	
-	
-	private static String ns_gui = "damp.ekeko.snippets.gui";
-	
+	public static IFn FN_ELEMENTS;
+	public static IFn FN_CHILDREN;
+	public static IFn FN_PARENT;
 	
 	public TemplateViewTreeContentProvider() {
 	}
 	
 	@Override
-	public void dispose() {
-
-	}
-
-	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		this.viewer = (TreeViewer) viewer;
 		group = newInput;
 	}
 
@@ -33,21 +25,21 @@ public class TemplateViewTreeContentProvider implements ITreeContentProvider {
 	public Object[] getElements(Object inputElement) {
 		if (inputElement == null)
 			return null;
-		return (Object[]) RT.var(ns_gui, "templateviewtreecontentprovider-elements").invoke(getGroup(), inputElement);
+		return (Object[]) FN_ELEMENTS.invoke(group, inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement == null)
 			return null;
-		return (Object[]) RT.var(ns_gui, "templateviewtreecontentprovider-children").invoke(getGroup(), parentElement);
+		return (Object[]) FN_CHILDREN.invoke(group, parentElement);
 	}
 
 	@Override
 	public Object getParent(Object element) {
 		if (element == null)
 			return null;
-		return RT.var(ns_gui, "templateviewtreecontentprovider-parent").invoke(getGroup(), element);
+		return FN_PARENT.invoke(group, element);
 	}
 
 	@Override
@@ -60,6 +52,11 @@ public class TemplateViewTreeContentProvider implements ITreeContentProvider {
 
 	public Object getGroup() {
 		return group;
+	}
+
+	@Override
+	public void dispose() {
+		
 	}
 
 

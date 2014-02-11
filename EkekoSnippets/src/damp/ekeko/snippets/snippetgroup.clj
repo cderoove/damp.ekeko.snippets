@@ -17,9 +17,6 @@ damp.ekeko.snippets.snippetgroup
 
 ; Datatype representing a group (list) of Snippet(s) and additional logic condition
 
-
-(declare flat-map)
-
 (defrecord SnippetGroup [name snippetlist userquery])
 
 (defn 
@@ -47,13 +44,13 @@ damp.ekeko.snippets.snippetgroup
   snippetgroup-snippets-userqueries
   "Returns the logic conditions defined by users of the snippets in the snippet group."
   [snippetgroup]
-  (flat-map snippet/snippet-userqueries (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-userqueries (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-nodes
   "Returns all nodes from the given snippet group."
   [snippetgroup]
-  (flat-map snippet/snippet-nodes (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-nodes (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-rootvars
@@ -66,23 +63,23 @@ damp.ekeko.snippets.snippetgroup
   snippetgroup-vars
   "Returns all logic variables from the given snippet group."
   [snippetgroup]
-  (flat-map snippet/snippet-vars (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-vars (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-uservars
   "Returns all user logic variables from the given snippet group."
   [snippetgroup]
-  (flat-map snippet/snippet-uservars (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-uservars (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-uservars-for-information
   [snippetgroup]
-  (flat-map snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-uservars-for-variable
   [snippetgroup]
-  (flat-map snippet/snippet-uservars-for-variable (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-uservars-for-variable (snippetgroup-snippetlist snippetgroup)))
 
 (defn 
   snippetgroup-snippet-for-node
@@ -133,17 +130,8 @@ damp.ekeko.snippets.snippetgroup
   snippetgroup-userfs
   [grp]
   "Returns all ast to user functions of the given grp."
-  (flat-map snippet/snippet-userfs (:snippetlist grp)))
+  (mapcat snippet/snippet-userfs (:snippetlist grp)))
 
-(defn flat-map
-  "Returns list of results (= f(each-element)) in the form of flat list.
-   Function f here return a list.
-   flat-map similar with function map, but instead of return nested list, flat-map returns unnested list."
-  [f lst]
-  (if (empty? lst)
-    '()
-    (concat (f (first lst))
-            (flat-map f (rest lst)))))
 
 (defn
   snippetgroup-new-state
@@ -170,3 +158,14 @@ damp.ekeko.snippets.snippetgroup
 (def document-as-template snippet/document-as-snippet)
 (def template-root snippet/snippet-root)
 (def make-templategroup make-snippetgroup)
+
+(defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_NAME) snippetgroup-name)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_USERQUERY) snippetgroup-userquery)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUPHISTORY_NEWSTATE) snippetgroup-new-state)
+  )
+
+(register-callbacks)

@@ -160,3 +160,30 @@
 
 (defn print-template [s] (print (print-snippet s)))
 (defn print-rewrite-sequence [s] (print (print-snippet s)))
+
+
+(defn
+  configure-callbacks
+  []
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_ELEMENTS) templateviewtreecontentprovider-elements)
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_CHILDREN) templateviewtreecontentprovider-children)
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_PARENT) templateviewtreecontentprovider-parent)
+  
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_NODE) templateviewtreelabelprovider-node)
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_KIND) templateviewtreelabelprovider-kind)
+  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_PROPERTY) templateviewtreelabelprovider-property)
+  
+  ;;TODO: eliminate
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETGROUP) print-snippetgroup)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_PLAINNODE) print-plain-node)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETHIGHLIGHT) print-snippet-with-highlight)
+  
+  )
+
+
+(configure-callbacks)
+
+
+  
+  
+  

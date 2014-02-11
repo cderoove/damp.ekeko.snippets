@@ -175,3 +175,15 @@
   parse-strings-to-nodes
   [arr-string]
   (map parse-string-ast (filter (fn [x] (not (nil? x))) arr-string)))
+
+(defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PARSE_TO_DOC) parse-string-to-document)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PARSE_TO_NODES) parse-string-to-document)
+  
+  )
+
+(register-callbacks)
+
+

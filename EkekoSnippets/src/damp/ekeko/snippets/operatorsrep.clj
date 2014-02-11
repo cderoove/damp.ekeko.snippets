@@ -4,8 +4,8 @@
    damp.ekeko.snippets.operatorsrep
   (:refer-clojure :exclude [== type])
   (:use [clojure.core.logic])
-  (:use [damp.ekeko.snippets operators])
   (:require [damp.ekeko.snippets 
+             [operators :as operators]
              [parsing :as parsing]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -165,7 +165,7 @@
       (= op-id :replace-node)
       (op-func snippet node (parsing/parse-string-ast (first args)))
       (= op-id :update-logic-conditions)
-      (apply update-logic-conditions snippet args)
+      (apply operators/update-logic-conditions snippet args)
       (= op-id :introduce-logic-variables-for-snippet)
       (do
         (println "snippet" op-id (first args))
@@ -187,9 +187,9 @@
       (apply op-func snippetgroup node args)
       (cond 
         (nil? snippet)
-        (apply update-logic-conditions-to-snippetgroup snippetgroup args)
+        (apply operators/update-logic-conditions-to-snippetgroup snippetgroup args)
         (= op-id :introduce-logic-variables-to-group)
-        (apply introduce-logic-variables-to-group snippetgroup node args)
+        (apply operators/introduce-logic-variables-to-group snippetgroup node args)
         :else
         ;;apply operator to snippet
         (do
@@ -269,280 +269,280 @@
    
    
    :node-deep                                        [:node   
-                                                      node-deep
+                                                      operators/node-deep
                                                       :is-ast?					          
                                                       :generalization 
                                                       "Allow deep path"
                                                       "Operator with matching strategy :deep \nAllows node as child or nested child of its parent."]
    
    :any-element                                      [:property   
-                                                      contains-any-elements
+                                                      operators/contains-any-elements
                                                       :none					          
                                                       :generalization 
                                                       "Allow list with any element"
                                                       "Operator with matching strategy  :any\nMatch node with any element."]
    
    :contains-deep                                    [:property   
-                                                      contains-deep
+                                                      operators/contains-deep
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with child+"
                                                       "Operator with matching strategy :child+\nMatch nodelist which contains all elements of snippet nodelist as its childs or nested childs"]
    
    :contains-elements                                [:property   
-                                                      contains-elements
+                                                      operators/contains-elements
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with minimum elements"
                                                       "Operator with matching strategy :contains\nMatch nodelist which contains all elements of snippet nodelist"]
    :contains-elements-with-same-size                 [:property       
-                                                      contains-elements-with-same-size                  
+                                                      operators/contains-elements-with-same-size                  
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with any element order"
                                                       "Operator with matching strategy :contains-eq-size\nMatch nodelist which contains all elements and has same size with snippet nodelist"]
    :contains-elements-with-relative-order            [:property
-                                                      contains-elements-with-relative-order     
+                                                      operators/contains-elements-with-relative-order     
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with minimum elements but same order"
                                                       "Operator with matching strategy :contains-eq-order\nMatch nodelist which contains all elements in same order with snippet nodelist"]
    :contains-elements-with-repetition                [:property 
-                                                      contains-elements-with-repetition    
+                                                      operators/contains-elements-with-repetition    
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with minimum repetitive elements"
                                                       "Operator with matching strategy :contains-repetition\nMatch nodelist which contains all elements (possible has repetitive elements) with snippet nodelist"]
    :contains-variable-declaration-statement          [:node  
-                                                      contains-variable-declaration-statement     
+                                                      operators/contains-variable-declaration-statement     
                                                       :is-variabledeclarationstatement?
                                                       :generalization 
                                                       "Allow relax variable declaration statement"
                                                       "Operator with matching strategy :relax-var-dec\nMatch statements which covers all variable declaration fragments in single statement in snippet"]
    :allow-ifstatement-with-else                      [:node   
-                                                      allow-ifstatement-with-else  
+                                                      operators/allow-ifstatement-with-else  
                                                       :is-ifstatement?  
                                                       :generalization 
                                                       "Allow relax branch"
                                                       "Operator with matching strategy :relax-branch\nMatch ifstatement node with or without else"]
    :allow-subtype                                    [:node
-                                                      allow-subtype     
+                                                      operators/allow-subtype     
                                                       :is-type?	
                                                       :generalization 
                                                       "Allow relax type"
                                                       "Operator with matching strategy :relax-type\nMatch node with same type or subtype of snippet node"]
    :relax-typeoftype                                 [:node
-                                                      relax-typeoftype     
+                                                      operators/relax-typeoftype     
                                                       :is-type?	
                                                       :generalization 
                                                       "Allow relax type of type"
                                                       "Operator with matching strategy :relax-typeoftype\nMatch node (=type) to simple type or parameterized type"]
    :allow-variable-declaration-with-initializer      [:node     
-                                                      allow-variable-declaration-with-initializer 
+                                                      operators/allow-variable-declaration-with-initializer 
                                                       :is-assignmentstatement?    
                                                       :generalization 
                                                       "Allow relax assignment"
                                                       "Operator with matching strategy :relax-assign\nMatch variable declaration node with same initializer with assignment node in snippet"]
    :allow-relax-loop                                 [:node
-                                                      allow-relax-loop
+                                                      operators/allow-relax-loop
                                                       :is-loop?	
                                                       :generalization 
                                                       "Allow relax loop"
                                                       "Operator with matching strategy :relax-loop\nAllow loop node as for, while or do statement."]
    :introduce-logic-variable                         [:node  
-                                                      introduce-logic-variable  
+                                                      operators/introduce-logic-variable  
                                                       :none                 
                                                       :generalization 
                                                       "Introduce logic variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-by-random-var           [:node  
-                                                      introduce-logic-variable-by-random-var  
+                                                      operators/introduce-logic-variable-by-random-var  
                                                       :is-simplename?                 
                                                       :generalization 
                                                       "Introduce logic variable by random variable"
                                                       "Operator to introduce new logic variable and remove all it's property values"]
    :introduce-logic-variable-with-info               [:node  
-                                                      introduce-logic-variable-with-info  
+                                                      operators/introduce-logic-variable-with-info  
                                                       :none                 
                                                       :generalization 
                                                       "Introduce logic variable with information"
                                                       "Operator to introduce new logic variable and remove all it's property values and add it as result in the query"]
    :introduce-logic-variable-of-node-exact           [:node   
-                                                      introduce-logic-variable-of-node-exact  
+                                                      operators/introduce-logic-variable-of-node-exact  
                                                       :none      
                                                       :netral 
                                                       "Bind logic variable"
                                                       "Operator to introduce new logic variable without removing any it's property values"]
    :introduce-logic-variables                        [:node 
-                                                      introduce-logic-variables  
+                                                      operators/introduce-logic-variables  
                                                       :is-simplename?					
                                                       :generalization 
                                                       "Introduce logic variables"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node"]
    :introduce-logic-variables-to-group               [:node 
-                                                      introduce-logic-variables-to-group  
+                                                      operators/introduce-logic-variables-to-group  
                                                       :is-simplename?					
                                                       :generalization 
                                                       "Introduce logic variables to group"
                                                       "Operator to introduce new logic variables to all nodes in group with same binding with given snippet node"]
    :introduce-logic-variables-with-condition         [:node     
-                                                      introduce-logic-variables-with-condition 
+                                                     operators/introduce-logic-variables-with-condition 
                                                       :is-simplename?       	
                                                       :generalization 
                                                       "Introduce logic variables with condition"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node, with additional user logic condition on it"]
    :split-variable-declaration-statement             [:node 
-                                                      split-variable-declaration-statement        
+                                                      operators/split-variable-declaration-statement        
                                                       :is-variabledeclarationstatement?
                                                       :refinement 
                                                       "Split variable declaration statement"
                                                       "Operator to split variable declaration fragments into one fragment for each statement"] 
    :inline-method-invocation                         [:node  
-                                                      inline-method-invocation          
+                                                      operators/inline-method-invocation          
                                                       :is-methodinvocationstatement? 
                                                       :refinement 
                                                       "Inline method invocation"
                                                       "Operator to replace method invocation with all statements in it's method declaration body"]
    :negated-node                                     [:node   
-                                                      negated-node        
+                                                      operators/negated-node        
                                                       :is-simplename?      
                                                       :refinement 
                                                       "Match negated node"
                                                       "Operator with matching strategy :negated\nMatch all node except given snippet node"]
    :add-node                                         [:property   
-                                                      add-node                                          
+                                                      operators/add-node                                          
                                                       :listvalue					          
                                                       :refinement 
                                                       "Add new node"
                                                       "Operator to add new node"]
    :remove-node                                      [:node       
-                                                      remove-node                                       
+                                                      operators/remove-node                                       
                                                       :is-listmember?   
                                                       :generalization 
                                                       "Remove node"
                                                       "Operator to remove node"]
    :remove-nodes                                     [:node       
-                                                      remove-nodes                                       
+                                                      operators/remove-nodes                                       
                                                       :is-listmember?   
                                                       :none 
                                                       "Remove nodes"
                                                       "Operator to remove nodes"]
    :replace-node                                     [:node       
-                                                      replace-node                                       
+                                                      operators/replace-node                                       
                                                       :is-ast?   
                                                       :refinement 
                                                       "Replace node"
                                                       "Operator to replace node with new node"]
    :change-property-node                             [:property       
-                                                      change-property-node                                       
+                                                      operators/change-property-node                                       
                                                       :primitive-or-null-value   
                                                       :refinement 
                                                       "Change property node"
                                                       "Operator to change value of property node"]
    :match-invocation-declaration                     [:node  
-                                                      match-invocation-declaration          
+                                                      operators/match-invocation-declaration          
                                                       :is-methodinvocationexpression? 
                                                       :refinement 
                                                       "Refer to method declaration"
                                                       "Operator with matching strategy :method-dec\nMatch method invocation node which has same reference to given method declaration"]
    :match-variable-declaration                       [:node  
-                                                      match-variable-declaration          
+                                                      operators/match-variable-declaration          
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Refer to variable declaration"
                                                       "Operator with matching strategy :var-dec\nMatch variable node which has same reference to given variable declaration"]
    :match-variable-samebinding                       [:node  
-                                                      match-variable-samebinding    
+                                                      operators/match-variable-samebinding    
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Bind to variable"
                                                       "Operator with matching strategy :var-binding\nMatch variable node which has same binding with given snippet node"]
    :match-variable-type                             [:node  
-                                                      match-variable-type    
+                                                      operators/match-variable-type    
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Match variable type"
                                                       "Operator with matching strategy :var-type\nMatch type of variable node to the given type"]
    :match-variable-typequalifiedname                 [:node  
-                                                      match-variable-typequalifiedname
+                                                      operators/match-variable-typequalifiedname
                                                       :is-simplename? 
                                                       :none 
                                                       "Match var-type qualified name"
                                                       "Operator with matching strategy :var-type\nMatch variable with its type qualified name"]
    :match-variable-typequalifiednamestring           [:node  
-                                                      match-variable-typequalifiednamestring
+                                                      operators/match-variable-typequalifiednamestring
                                                       :is-simplename? 
                                                       :refinement 
                                                       "Match variable type with qualified name"
                                                       "Operator with matching strategy :var-qname\nMatch variable with its type qualified name"]
    :match-type-qualifiedname                         [:node  
-                                                      match-type-qualifiedname
+                                                      operators/match-type-qualifiedname
                                                       :is-type? 
                                                       :none 
                                                       "Match type qualified name"
                                                       "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
    :match-type-qualifiednamestring                   [:node  
-                                                      match-type-qualifiednamestring
+                                                      operators/match-type-qualifiednamestring
                                                       :is-type? 
                                                       :refinement 
                                                       "Match type with qualified name"
                                                       "Operator with matching strategy :type-qname\nMatch type with its qualified name"]
    :bind-variables                                   [:node 
-                                                      bind-variables  
+                                                      operators/bind-variables  
                                                       :is-simplename?					
                                                       :generalization 
                                                       "Bind variables"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node and bind those variables"]
    :refer-variables-to-variable-declaration          [:node 
-                                                      refer-variables-to-variable-declaration
+                                                      operators/refer-variables-to-variable-declaration
                                                       :is-variabledeclaration?					
                                                       :generalization 
                                                       "Refer variables to variable declarations"
                                                       "Operator to introduce new logic variables to all nodes with same binding with given snippet node and refer those variables to its declaration"]
    :add-user-defined-condition                       [:none       
-                                                      add-user-defined-condition                                       
+                                                      operators/add-user-defined-condition                                       
                                                       :none   
                                                       :other 
                                                       "Add user-defined condition"
                                                       "Operator to add user-defined condition."]
    :remove-user-defined-condition                    [:none       
-                                                      remove-user-defined-condition                                       
+                                                      operators/remove-user-defined-condition                                       
                                                       :none   
                                                       :other 
                                                       "Remove user-defined condition"
                                                       "Operator to remove user-defined condition."]
    :introduce-logic-variables-for-snippet            [:node     
-                                                      introduce-logic-variables-for-snippet 
+                                                      operators/introduce-logic-variables-for-snippet 
                                                       :is-ast?       	
                                                       :none 
                                                       "Introduce logic variables for snippet"
                                                       "Operator to introduce new logic variables to all nodes based on logic variables in the template snippet"]
    :change-name                                      [:node       
-                                                      change-name                                       
+                                                      operators/change-name                                       
                                                       :is-simplename?   
                                                       :transform 
                                                       "Change name with rule"
                                                       "Operator to change name with rule.\n Example: \"prefix[part-of-name]suffix\" -> \"add[Name]s\""]
    :t-add-node-after                                 [:node       
-                                                      t-add-node-after                                       
+                                                      operators/t-add-node-after                                       
                                                       :is-ast?   
                                                       :transform 
                                                       "Add node after"
                                                       "Operator to add node after selected original node."]
    :t-add-node-before                                [:node       
-                                                      t-add-node-before                                       
+                                                      operators/t-add-node-before                                       
                                                       :is-ast?   
                                                       :transform 
                                                       "Add node before"
                                                       "Operator to add node before selected original node."]
    :t-add-member-node                                [:node       
-                                                      t-add-member-node                                       
+                                                      operators/t-add-member-node                                       
                                                       :is-ast?   
                                                       :transform 
                                                       "Add node as member"
                                                       "Operator to add node as member of selected original node."]
    :t-replace-node                                   [:node       
-                                                      t-replace-node
+                                                      operators/t-replace-node
                                                       :is-ast?   
                                                       :transform 
                                                       "Replace node"
@@ -605,11 +605,11 @@
 
 (def 
   searchspace-operators
-  {:allow-relax-loop                                  allow-relax-loop
-   :allow-ifstatement-with-else                       allow-ifstatement-with-else  
-   :allow-subtype                                     allow-subtype
-   :relax-typeoftype                                  relax-typeoftype
-   :negated-node                                      negated-node
+  {:allow-relax-loop                                  operators/allow-relax-loop
+   :allow-ifstatement-with-else                       operators/allow-ifstatement-with-else  
+   :allow-subtype                                     operators/allow-subtype
+   :relax-typeoftype                                  operators/relax-typeoftype
+   :negated-node                                      operators/negated-node
 	})
 
 (defn searchspace-operator-ids [] (keys searchspace-operators))
@@ -617,3 +617,15 @@
   (keys (filter (fn [x] (= (operator-type (first x)) :refinement)) searchspace-operators)))
 (defn searchspace-generalization-operator-ids [] 
   (keys (filter (fn [x] (= (operator-type (first x)) :generalization)) searchspace-operators)))
+
+
+(defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_APPLY_TO_SNIPPETGROUPHISTORY) apply-operator-to-snippetgrouphistory)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_UNDO) undo-operator)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REDO) redo-operator)
+  )
+
+(register-callbacks)
+

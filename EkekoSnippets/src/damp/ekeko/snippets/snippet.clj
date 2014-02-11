@@ -504,7 +504,22 @@ damp.ekeko.snippets.snippet
   (let [document (snippet-document snippet)]
     (let [new-document (parsing/parse-string-to-document (.get document))
           newsnippet (document-as-snippet new-document)]
-      (copy-snippet snippet newsnippet)))) 
+      (copy-snippet snippet newsnippet))))
+
+
+(defn
+  register-callbacks
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_ROOT) snippet-root)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_USERQUERIES) snippet-userqueries)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
+
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)
+
+
+  )
+
+(register-callbacks)
 
 
 

@@ -3,10 +3,15 @@
     :author "Coen De Roover, Siltvani"}
    damp.ekeko.snippets.precondition
   (:refer-clojure :exclude [== type])
-  (:use [clojure.core.logic])
-  (:use [damp.ekeko logic])
-  (:use [damp.ekeko.jdt astnode ast])
-  (:use [damp.ekeko.snippets snippet snippetgroup operatorsrep]))
+  (:require [clojure.core.logic :as cl])
+  (:require [damp.ekeko [logic :as el]])
+  (:require [damp.ekeko.jdt 
+             [astnode :as astnode]
+             [ast :as ast]])
+  (:require [damp.ekeko.snippets 
+             [snippet :as snippet]
+             [snippetgroup :as snippetgroup]
+             [operatorsrep :as rep]]))
 
 ;; Precondition Data
 ;; ----------------------
@@ -33,12 +38,12 @@
   safe-operator-for-node?
   "Returns true if precondition of given operator is fulfilled by the node."
   [operator-id node]
-  (let [pre-func (precondition-function (precondition-id operator-id))
-        op-type  (precondition-type (precondition-id operator-id))]
+  (let [pre-func (precondition-function (rep/precondition-id operator-id))
+        op-type  (precondition-type (rep/precondition-id operator-id))]
     (if (contains? (set '(:node :property)) op-type) 
       (not (empty?
              (damp.ekeko/ekeko [?node] 
-                               (equals node ?node)
+                               (el/equals node ?node)
                                (pre-func ?node))))
       true)))
 
@@ -52,21 +57,21 @@
     (case op-type 
         ;check astnode : the root itself and all childs
         :node     (concat (damp.ekeko/ekeko [?node] 
-                                            (equals root ?node)
+                                            (el/equals root ?node)
                                             (pre-func ?node))
                           (damp.ekeko/ekeko [?node] 
-                                            (child+ root ?node)
+                                            (ast/child+ root ?node)
                                             (pre-func ?node)))
         ;check property value-raw of the root and all childs
         :property (concat (damp.ekeko/ekeko [?property] 
-                                            (fresh [?node ?keyword] 
-                                                   (equals root ?node)
-                                                   (has ?keyword ?node ?property)
+                                            (cl/fresh [?node ?keyword] 
+                                                   (el/equals root ?node)
+                                                   (ast/has ?keyword ?node ?property)
                                                    (pre-func ?property)))
                           (damp.ekeko/ekeko [?property] 
-                                            (fresh [?node ?keyword] 
-                                                   (child+ root ?node)
-                                                   (has ?keyword ?node ?property)
+                                            (cl/fresh [?node ?keyword] 
+                                                   (ast/child+ root ?node)
+                                                   (ast/has ?keyword ?node ?property)
                                                    (pre-func ?property))))
         ;others, return empty list
         '()))) 
@@ -81,27 +86,27 @@
     (case op-type 
         ;check astnode : the member of root and member of all childs
         :node     (concat (damp.ekeko/ekeko [?node] 
-                                            (contains list ?node)
+                                            (el/contains list ?node)
                                             (pre-func ?node))
                           (damp.ekeko/ekeko [?node] 
-                                            (fresh [?member] 
-                                                   (contains list ?member)
-                                                   (child+ ?member ?node)
+                                            (cl/fresh [?member] 
+                                                   (el/contains list ?member)
+                                                   (ast/child+ ?member ?node)
                                                    (pre-func ?node))))
         ;check property value-raw of root it self, of property members and of property all childs
         :property (concat (damp.ekeko/ekeko [?property] 
-                                            (equals ast ?property)
+                                            (el/equals ast ?property)
                                             (pre-func ?property))
                           (damp.ekeko/ekeko [?property] 
-                                            (fresh [?node ?keyword] 
-                                                   (contains list ?node)
-                                                   (has ?keyword ?node ?property)
+                                            (cl/fresh [?node ?keyword] 
+                                                   (el/contains list ?node)
+                                                   (ast/has ?keyword ?node ?property)
                                                    (pre-func ?property)))
                           (damp.ekeko/ekeko [?property] 
-                                            (fresh [?node ?keyword ?member] 
-                                                   (contains list ?member)
-                                                   (child+ ?member ?node)
-                                                   (has ?keyword ?node ?property)
+                                            (cl/fresh [?node ?keyword ?member] 
+                                                   (el/contains list ?member)
+                                                   (ast/child+ ?member ?node)
+                                                   (ast/has ?keyword ?node ?property)
                                                    (pre-func ?property))))
         ;others, return empty list
         '()))) 
@@ -111,8 +116,8 @@
   "Returns list of possible nodes from given precondition."
   [ast precondition-id]
   (cond 
-    (ast? ast) (node-possible-nodes ast precondition-id)
-    (lstvalue? ast) (nodelist-possible-nodes ast precondition-id) 
+    (astnode/ast? ast) (node-possible-nodes ast precondition-id)
+    (astnode/lstvalue? ast) (nodelist-possible-nodes ast precondition-id) 
     :else nil))
 
 (defn 
@@ -123,29 +128,29 @@
 (defn 
   possible-nodes-in-group
   [snippetgroup pre-id]
-  (flat-map (fn [x] (possible-nodes-in-list (:ast x) pre-id)) (snippetgroup-snippetlist snippetgroup)))
+  (mapcat (fn [x] (possible-nodes-in-list (:ast x) pre-id)) (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
 (defn 
   possible-nodes-for-operator
   "Returns list of possible nodes to be applied on to given operator."
   [ast operator-id]
-  (possible-nodes-in-list ast (precondition-id operator-id)))
+  (possible-nodes-in-list ast (rep/precondition-id operator-id)))
 
 (defn 
   possible-nodes-for-operator-argument
   "Returns list of possible nodes as argument of given operator."
   [ast operator-id]
-  (possible-nodes-in-list ast (argument-precondition-id operator-id)))
+  (possible-nodes-in-list ast (rep/argument-precondition-id operator-id)))
 
 (defn 
   possible-nodes-for-operator-in-group
   [snippetgroup op-id]
-  (possible-nodes-in-group snippetgroup (precondition-id operator-id)))
+  (possible-nodes-in-group snippetgroup (rep/precondition-id op-id)))
 
 (defn 
   possible-nodes-for-operator-argument-in-group
   [snippetgroup op-id]
-  (possible-nodes-in-group snippetgroup (argument-precondition-id op-id)))
+  (possible-nodes-in-group snippetgroup (rep/argument-precondition-id op-id)))
 
 (defn
   applicable-operators-for-node
@@ -162,7 +167,7 @@
         (if (empty? list-of-nodes)
           (process-node (rest operators) app-operators)
           (process-node (rest operators) (assoc app-operators op-id list-of-nodes))))))
-  (process-node (operator-ids) {}))
+  (process-node (rep/operator-ids) {}))
 
 (defn
   applicable-operators-for-snippet
@@ -186,19 +191,19 @@
   applicable-operators-for-a-node
   "Returns list of applicable operator-id from given node."
   [node]
-  (applicable-operators-for-a-node-with-operators node (operator-ids)))
+  (applicable-operators-for-a-node-with-operators node (rep/operator-ids)))
 
 (defn
   applicable-operators-with-type
   "Returns list of applicable operator-id from given operator-type and node."
   [op-type node]
-  (applicable-operators-for-a-node-with-operators node (operator-ids-with-type op-type)))
+  (applicable-operators-for-a-node-with-operators node (rep/operator-ids-with-type op-type)))
 
 (defn
   applicable-operators-for-transformation
   "Returns list of applicable operator-id from given node."
   [node]
-  (applicable-operators-for-a-node-with-operators node (operator-ids-for-transformation)))
+  (applicable-operators-for-a-node-with-operators node (rep/operator-ids-for-transformation)))
 
 ;; Macro 
 ;; -------
@@ -221,121 +226,125 @@
   listvalueraw
   "Relation of all list value-raw."
   [?raw]
-  (all 
-    (succeeds (lstvalueraw? ?raw))))
+  (cl/all 
+    (el/succeeds (lstvalueraw? ?raw))))
 
 (defn
   primitive-or-null-value
   "Relation of all value of ASTNode, but not listvalue."
   [?val]
-  (conde [(value|primitive ?val)]
-         [(value|null ?val)]))
+  (cl/conde [(ast/value|primitive ?val)]
+            [(ast/value|null ?val)]))
 
 (defn
   is-ast?
   "Relation of all list ASTNode instances."
   [?node]
-  (all 
-    (succeeds (ast? ?node))))
+  (cl/all 
+    (el/succeeds (astnode/ast? ?node))))
 
 (defn
   is-type?
   "Relation of all list ASTNode instances (any subclass of Type)
    e.g :SimpleType, :PrimitiveType, etc."
   [?node]
-  (all
-    (succeeds (type? ?node))))
+  (cl/all
+    (el/succeeds (type? ?node))))
 
 (defn
   is-listmember?
   "Relation of all list ASTNode instances which is member of Nodelist."
   [?node]
-  (fresh [?key] 
-    (!= :CompilationUnit ?key)
-    (ast ?key ?node)
-    (succeeds (property-descriptor-list? (.getLocationInParent ?node)))))
+  (cl/fresh [?key] 
+    (cl/!= :CompilationUnit ?key)
+    (ast/ast ?key ?node)
+    (el/succeeds (astnode/property-descriptor-list? (.getLocationInParent ?node)))))
 
 (defn
   is-variabledeclarationstatement?
   "Relation of all list ASTNode instances type :VariableDeclarationStatement."
   [?node]
-  (all 
-    (ast :VariableDeclarationStatement ?node)))
+  (cl/all 
+    (ast/ast :VariableDeclarationStatement ?node)))
 
 (defn
   is-ifstatement?
   "Relation of all list ASTNode instances type :IfStatement."
   [?node]
-  (all
-    (ast :IfStatement ?node)))
+  (cl/all
+    (ast/ast :IfStatement ?node)))
 
 (defn
   is-assignmentstatement?
   "Relation of all list ASTNode instances type :ExpressionStatement with expression :Assignment."
   [?node]
-  (fresh [?exp] 
-    (ast :ExpressionStatement ?node)
-    (has :expression ?node ?exp)
-    (ast :Assignment ?exp)))
+  (cl/fresh [?exp] 
+    (ast/ast :ExpressionStatement ?node)
+    (ast/has :expression ?node ?exp)
+    (ast/ast :Assignment ?exp)))
 
 (defn
   is-methodinvocationstatement?
   "Relation of all list ASTNode instances type :ExpressionStatement with expression :MethodInvocation."
   [?node]
-  (fresh [?exp] 
-    (ast :ExpressionStatement ?node)
-    (has :expression ?node ?exp)
-    (ast :MethodInvocation ?exp)))
+  (cl/fresh [?exp] 
+    (ast/ast :ExpressionStatement ?node)
+    (ast/has :expression ?node ?exp)
+    (ast/ast :MethodInvocation ?exp)))
 
 (defn
   is-methodinvocationexpression?
   "Relation of all list ASTNode instances type :MethodInvocation."
   [?node]
-  (ast :MethodInvocation ?node))
+  (cl/all
+    (ast/ast :MethodInvocation ?node)))
 
 (defn
   is-methoddeclaration?
   "Relation of all list ASTNode instances type :MethodDeclaration."
   [?node]
-  (ast :MethodDeclaration ?node))
+  (cl/all
+    (ast/ast :MethodDeclaration ?node)))
 
 (defn
   is-simplename?
   "Relation of all list ASTNode instances type :SimpleName."
   [?node]
-  (ast :SimpleName ?node))
+  (cl/all
+    (ast/ast :SimpleName ?node)))
 
 (defn
   is-variabledeclarationfragment?
   "Relation of all list ASTNode instances type :VariableDeclarationFragment."
   [?node]
-  (ast :VariableDeclarationFragment ?node))
+  (cl/all
+    (ast/ast :VariableDeclarationFragment ?node)))
 
 (defn
   is-importlibrary?
   "Relation of all list ASTNode instances type :QualifiedName in :ImportDeclaration."
   [?node]
-  (fresh [?import]
-         (ast :QualifiedName ?node)
-         (equals ?import (.getParent ?node))
-         (ast :ImportDeclaration ?import)))
+  (cl/fresh [?import]
+         (ast/ast :QualifiedName ?node)
+         (el/equals ?import (.getParent ?node))
+         (ast/ast :ImportDeclaration ?import)))
 
 (defn
   is-variabledeclaration?
   "Relation of all list ASTNode instances type :SimpleName as child of :VariableDeclarationFragment."
   [?node]
-  (fresh [?fragment]
-         (ast :SimpleName ?node)
-         (equals ?fragment (.getParent ?node))
-         (ast :VariableDeclarationFragment ?fragment)))
+  (cl/fresh [?fragment]
+         (ast/ast :SimpleName ?node)
+         (el/equals ?fragment (.getParent ?node))
+         (ast/ast :VariableDeclarationFragment ?fragment)))
 
 (defn
   is-loop?
   "Relation of loop kind of statement."
   [?node]
-  (conde [(ast :ForStatement ?node)]
-         [(ast :WhileStatement ?node)]
-         [(ast :DoStatement ?node)]))
+  (cl/conde [(ast/ast :ForStatement ?node)]
+            [(ast/ast :WhileStatement ?node)]
+            [(ast/ast :DoStatement ?node)]))
 
 (defn 
   epsilon
@@ -348,7 +357,7 @@
 
 (def 
   operator-precondition
-  {:listvalue                            [:property value|list]					          
+  {:listvalue                            [:property ast/value|list]					          
    :primitive-or-null-value              [:property primitive-or-null-value]					          
    :is-variabledeclarationstatement?     [:node is-variabledeclarationstatement?]
    :is-ifstatement?                      [:node is-ifstatement?]  

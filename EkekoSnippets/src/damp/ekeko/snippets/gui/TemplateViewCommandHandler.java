@@ -14,7 +14,7 @@ public class TemplateViewCommandHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
 		try {
-			window.getActivePage().showView("damp.ekeko.snippets.gui.TemplateView");
+			window.getActivePage().showView(TemplateView.ID);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

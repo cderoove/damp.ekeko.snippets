@@ -2,9 +2,14 @@ package damp.ekeko.snippets.gui;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 
-import clojure.lang.RT;
+import clojure.lang.IFn;
 
 public class TemplateViewTreeLabelProviders {
+	
+	public static IFn FN_LABELPROVIDER_NODE;
+	public static IFn FN_LABELPROVIDER_KIND;
+	public static IFn FN_LABELPROVIDER_PROPERTY;
+	
 	
 	public abstract static class SnippetGroupColumnLabelProvider extends ColumnLabelProvider {
 		protected TemplateView snippetViewer;
@@ -20,13 +25,13 @@ public class TemplateViewTreeLabelProviders {
 	}
 	
 	public static class NodeColumnLabelProvider extends SnippetGroupColumnLabelProvider {
-
+		
 		public NodeColumnLabelProvider(TemplateView s) {
 			super(s);
 		}
 		
 		public String getText(Object element) {
-			return (String) RT.var("damp.ekeko.snippets.gui", "templateviewtreelabelprovider-node").invoke(getGroup(), element);
+			return (String) FN_LABELPROVIDER_NODE.invoke(getGroup(), element);
 		}
 	}
 	
@@ -37,7 +42,7 @@ public class TemplateViewTreeLabelProviders {
 		}
 		
 		public String getText(Object element) {
-			return (String) RT.var("damp.ekeko.snippets.gui", "templateviewtreelabelprovider-kind").invoke(getGroup(), element);
+			return (String) FN_LABELPROVIDER_KIND.invoke(getGroup(), element);
 		}
 	}
 
@@ -49,7 +54,7 @@ public class TemplateViewTreeLabelProviders {
 		}
 		
 		public String getText(Object element) {
-			return (String) RT.var("damp.ekeko.snippets.gui", "templateviewtreelabelprovider-property").invoke(getGroup(), element);
+			return (String) FN_LABELPROVIDER_PROPERTY.invoke(getGroup(), element);
 		}
 	}
 

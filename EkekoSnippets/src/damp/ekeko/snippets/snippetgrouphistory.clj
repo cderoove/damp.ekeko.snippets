@@ -156,3 +156,13 @@
   (let [firstundo (snippetgrouphistory-first-undohistory grouphistory)
         newundo (rest (snippetgrouphistory-undohistory grouphistory))]
     (update-in grouphistory [:operators-undohistory] (fn [x] newundo))))
+
+
+(defn
+  configure-callbacks
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_MAKE_SNIPPETGROUPHISTORY) make-snippetgrouphistory)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_MAKE_SNIPPETGROUPHISTORY_FROM_SNIPPETGROUP) make-snippetgrouphistory-from-snippetgroup)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUPHISTORY_CURRENT) snippetgrouphistory-current))
+
+(configure-callbacks)

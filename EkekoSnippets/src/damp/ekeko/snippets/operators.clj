@@ -760,3 +760,15 @@
 (def add-template add-snippet)
 (def remove-template remove-snippet)
 (def add-rewrite-sequence add-snippet)
+
+(defn
+  register-callbacks 
+  []
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_ADD_SNIPPET_TO_SNIPPETGROUPHISTORY) add-snippet-to-snippetgrouphistory)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUPHISTORY) remove-snippet-from-snippetgrouphistory)
+
+  )
+
+(register-callbacks)
+
+
