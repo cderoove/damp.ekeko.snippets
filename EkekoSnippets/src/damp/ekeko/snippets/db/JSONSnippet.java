@@ -18,26 +18,7 @@ import clojure.lang.PersistentArrayMap;
 import clojure.lang.RT;
 
 public class JSONSnippet {
-
-	public JSONSnippet() {
-		// TODO Auto-generated constructor stub
-	}
 	 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
-		/*
-		Object snippet = addSnippetCode("int i = 0;");
-		JSONObject snippetjson = (JSONObject)RT.var("damp.ekeko.snippets.datastore", "snippet-to-snippetjson").invoke(snippet);
-		JSONFile.write("c:\\test.json", snippetjson);		 
-		System.out.println("new : " + snippetjson.toJSONString());
-
-		JSONObject jsonObject = JSONFile.read("c:\\test.json");
-		Object newSnippet = RT.var("damp.ekeko.snippets.datastore", "snippetjson-to-snippet").invoke(jsonObject);
-		System.out.println("new : " + newSnippet.toString());
-		*/
-		
-	}
 	 
 	public static JSONObject mapToJson(PersistentArrayMap clojureSnippetMap) {
 		HashMap snippetMap = new HashMap();

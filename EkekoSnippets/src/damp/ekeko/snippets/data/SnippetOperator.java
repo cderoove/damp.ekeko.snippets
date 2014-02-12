@@ -6,10 +6,23 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import clojure.lang.IFn;
 import clojure.lang.RT;
 
 public class SnippetOperator {
 
+	
+	public static IFn FN_OPERATOR_TYPES;
+	public static IFn FN_OPERATORTYPE_NAME;
+	public static IFn FN_OPERATOR_NAME;
+	public static IFn FN_OPERATOR_ARGUMENTS;
+	public static IFn FN_OPERATOR_ARGUMENT_WITH_PRECONDITION;
+	public static IFn FN_OPERATOR_DESCRIPTION;
+	public static IFn FN_OPERATOR_ISTRANSFORM;
+	public static IFn FN_APPLICABLE_OPERATORS_WITH_TYPE;
+	public static IFn FN_APPLICABLE_OPERATORS_FOR_TRANSFORMATION;
+	public static IFn FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP;
+	
 	public SnippetOperator() {
 	}
 
@@ -24,16 +37,16 @@ public class SnippetOperator {
 		root.setText("Operator");
 		root.setData("");
 		
-		Object[] types = getArray(RT.var("damp.ekeko.snippets.operatorsrep", "operator-types").invoke());
+		Object[] types = getArray(FN_OPERATOR_TYPES.invoke());
 		for (int i = 0; i < types.length; i++) {
 			TreeItem itemType = new TreeItem(root, 0);
-			itemType.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operatortype-name").invoke(types[i]));
+			itemType.setText((String) FN_OPERATORTYPE_NAME.invoke(types[i]));
 			itemType.setData(types[i]);
 			
-			Object[] operators = getArray(RT.var("damp.ekeko.snippets.precondition", "applicable-operators-with-type").invoke(types[i], selectedNode));
+			Object[] operators = getArray(FN_APPLICABLE_OPERATORS_WITH_TYPE.invoke(types[i], selectedNode));
 			for (int j = 0; j < operators.length; j++) {
 				TreeItem itemOp = new TreeItem(itemType, 0);
-				itemOp.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-name").invoke(operators[j]));
+				itemOp.setText((String) FN_OPERATOR_NAME.invoke(operators[j]));
 				itemOp.setData(operators[j]);
 			}			
 			itemType.setExpanded(true);
@@ -48,10 +61,10 @@ public class SnippetOperator {
 		root.setText("Action");
 		root.setData("");
 		
-		Object[] operators = getArray(RT.var("damp.ekeko.snippets.precondition", "applicable-operators-for-transformation").invoke(selectedNode));
+		Object[] operators = getArray(FN_APPLICABLE_OPERATORS_FOR_TRANSFORMATION.invoke(selectedNode));
 		for (int j = 0; j < operators.length; j++) {
 			TreeItem itemOp = new TreeItem(root, 0);
-			itemOp.setText((String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-name").invoke(operators[j]));
+			itemOp.setText((String) FN_OPERATOR_NAME.invoke(operators[j]));
 			itemOp.setData(operators[j]);
 		}			
 		root.setExpanded(true);
@@ -86,7 +99,7 @@ public class SnippetOperator {
 	}
 
 	public static String[] getArguments(Object operator) {
-		Object[] args = getArray(RT.var("damp.ekeko.snippets.operatorsrep", "operator-arguments").invoke(operator));		
+		Object[] args = getArray(FN_OPERATOR_ARGUMENTS.invoke(operator));		
 		String[] result = new String[args.length];
 		for (int i = 0; i < args.length; i++) {
 			result[i] = args[i].toString();
@@ -95,22 +108,22 @@ public class SnippetOperator {
 	}
 
 	public static String getArgumentWithPrecondition(Object operator) {
-		return (String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-argument-with-precondition").invoke(operator);		
+		return (String) FN_OPERATOR_ARGUMENT_WITH_PRECONDITION.invoke(operator);		
 	}
 
 	public static Object[] possibleNodesForArgument(Object snippetgroup, Object operator) {
-		return getArray(RT.var("damp.ekeko.snippets.precondition", "possible-nodes-for-operator-argument-in-group").invoke(snippetgroup, operator));		
+		return getArray(FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP.invoke(snippetgroup, operator));		
 	}
 
 	public static String getDescription(Object operator) {
-		String result = (String) RT.var("damp.ekeko.snippets.operatorsrep", "operator-description").invoke(operator);
+		String result = (String) FN_OPERATOR_DESCRIPTION.invoke(operator);
 		if (result == null)
 			return "";
 		return result;		
 	}
 
 	public static boolean isTransformOperator(Object operator) {
-		return (Boolean) RT.var("damp.ekeko.snippets.operatorsrep","is-transform-operator?").invoke(operator);
+		return (Boolean) FN_OPERATOR_ISTRANSFORM.invoke(operator);
 	}
 
 }

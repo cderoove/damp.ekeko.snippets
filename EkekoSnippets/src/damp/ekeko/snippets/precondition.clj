@@ -375,3 +375,17 @@
    :is-loop?                             [:node is-loop?]
 	})
 
+(defn
+  register-callbacks 
+  []
+  
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_APPLICABLE_OPERATORS_WITH_TYPE) applicable-operators-with-type)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_APPLICABLE_OPERATORS_FOR_TRANSFORMATION) applicable-operators-for-transformation)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP) possible-nodes-for-operator-argument-in-group)
+
+  
+  )
+
+
+(register-callbacks)
+

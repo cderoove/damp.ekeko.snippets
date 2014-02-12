@@ -515,6 +515,13 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
 
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-uservar-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_GROUNDER_FOR_NODE) snippet-grounder-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_CONSTRAINER_FOR_NODE) snippet-constrainer-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_USERFS_FOR_NODE) snippet-userfs-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE) snippet-grounder-with-args-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE) snippet-constrainer-with-args-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
 
 
   )

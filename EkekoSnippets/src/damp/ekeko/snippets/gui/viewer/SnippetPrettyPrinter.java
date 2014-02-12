@@ -11,6 +11,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Display;
 
+import clojure.lang.IFn;
 import clojure.lang.Keyword;
 import clojure.lang.RT;
 
@@ -20,7 +21,18 @@ import damp.ekeko.snippets.data.SnippetGroupHistory;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
-	private final String rep = "damp.ekeko.snippets.snippet";
+	public static IFn FN_SNIPPET_VAR_FOR_NODE;
+	public static IFn FN_SNIPPET_USERVAR_FOR_NODE;
+	public static IFn FN_SNIPPET_GROUNDER_FOR_NODE;
+	public static IFn FN_SNIPPET_CONSTRAINER_FOR_NODE;
+	public static IFn FN_SNIPPET_USERFS_FOR_NODE;
+	public static IFn FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE;
+	public static IFn FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE;
+	public static IFn FN_SNIPPET_LIST_CONTAINING;
+
+
+	
+	
 	protected Object snippet;
 	protected Object highlightNode;
 	protected LinkedList<StyleRange> styleRanges;
@@ -48,23 +60,23 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public Object getVar(Object node) {
-		return RT.var(rep, "snippet-var-for-node").invoke(snippet, node);
+		return FN_SNIPPET_VAR_FOR_NODE.invoke(snippet, node);
 	}
 
 	public Object getUserVar(Object node) {
-		return RT.var(rep, "snippet-uservar-for-node").invoke(snippet, node);
+		return FN_SNIPPET_USERVAR_FOR_NODE.invoke(snippet, node);
 	}
 
 	public Object getGroundF(Object node) {
-		return RT.var(rep, "snippet-grounder-for-node").invoke(snippet, node);
+		return FN_SNIPPET_GROUNDER_FOR_NODE.invoke(snippet, node);
 	}
 
 	public Object getConstrainF(Object node) {
-		return RT.var(rep, "snippet-constrainer-for-node").invoke(snippet, node);
+		return FN_SNIPPET_CONSTRAINER_FOR_NODE.invoke(snippet, node);
 	}
 
 	public Object[] getUserFS(Object node) {
-		return getArray(RT.var(rep, "snippet-userfs-for-node").invoke(snippet, node));
+		return getArray(FN_SNIPPET_USERFS_FOR_NODE.invoke(snippet, node));
 	}
 
 	//TODO: figure out why these are hard-coded
@@ -99,12 +111,12 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public String getGroundFString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-grounder-with-args-for-node").invoke(snippet, node)); 
+		Object[] functionArgs = getArray(FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE.invoke(snippet, node)); 
 		return getFunctionString(functionArgs);
 	}
 
 	public String getConstrainFString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(snippet, node)); 
+		Object[] functionArgs = getArray(FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE.invoke(snippet, node)); 
 		Object constrainf = getConstrainF(node);
 
 		if (constrainf == Keyword.intern("change-name")) 
@@ -126,7 +138,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public String getUserVarString(Object node) {
-		Object[] functionArgs = getArray(RT.var(rep, "snippet-constrainer-with-args-for-node").invoke(snippet, node)); 
+		Object[] functionArgs = getArray(FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE.invoke(snippet, node)); 
 		Object constrainf = getConstrainF(node);
 		Object uservar = getUserVar(node);
 		//TODO: figure out why these are hard-coded
@@ -231,7 +243,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	@Override
 	public void preVisit(ASTNode node) {	
 		if(isFirstElementOfList(node)) {
-			Object nodeListWrapper = RT.var(rep, "snippet-list-containing").invoke(snippet, node); 
+			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			preVisitNodeListWrapper(nodeListWrapper);
 		} 
 		printOpeningNode(node);
@@ -240,7 +252,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	public void postVisit(ASTNode node) {
 		if(isLastElementOfList(node)) {
-			Object nodeListWrapper = RT.var(rep, "snippet-list-containing").invoke(snippet, node); 
+			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			postVisitNodeListWrapper(nodeListWrapper);
 		}
 		printClosingHighlight(node);

@@ -625,7 +625,18 @@
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_APPLY_TO_SNIPPETGROUPHISTORY) apply-operator-to-snippetgrouphistory)
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_UNDO) undo-operator)
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REDO) redo-operator)
+  
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_TYPES) operator-types)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORTYPE_NAME) operatortype-name)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENTS) operator-arguments)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENT_WITH_PRECONDITION) operator-argument-with-precondition)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_DESCRIPTION) operator-description)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ISTRANSFORM) is-transform-operator?)
+
+  
   )
+
 
 (register-callbacks)
 
