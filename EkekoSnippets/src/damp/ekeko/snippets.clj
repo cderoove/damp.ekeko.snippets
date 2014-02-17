@@ -10,7 +10,6 @@
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
              [util :as util]
-             ;GUI classes expect the following to be loaded already        
              [rewrite]
              [snippetgrouphistory]
              [operators]

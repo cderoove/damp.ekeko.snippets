@@ -116,12 +116,11 @@
 (defn 
   gf-exact
   [snippet-val]
-  (cond
+  (if
     (and (instance? org.eclipse.jdt.core.dom.ASTNode snippet-val)  
          (not (instance? org.eclipse.jdt.core.dom.CompilationUnit snippet-val))  
          (astnode/property-descriptor-list? (astnode/owner-property snippet-val))) ;check if its a member of a list
     (gf-member-exact snippet-val)
-    :default
     (gf-minimalistic snippet-val)))
 
 (defn 
@@ -459,6 +458,10 @@
   make-constraining-function
   [type]
   (cond
+    (= type :variable)
+    cf-variable
+    
+    ;below has not been checked
     (= type :exact)
     cf-exact-with-variable
     (= type :any)
@@ -473,10 +476,6 @@
     cf-list-relax-size-with-variable
     (= type :contains-repetition)
     cf-list-relax-size-with-variable
-    (= type :variable)
-    cf-variable
-    (= type :variable-info)
-    cf-variable
     (= type :exact-variable)
     cf-exact-with-variable
     (= type :relax-type)

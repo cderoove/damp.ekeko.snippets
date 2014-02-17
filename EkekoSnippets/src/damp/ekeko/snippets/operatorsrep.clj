@@ -3,189 +3,282 @@
     :author "Coen De Roover, Siltvani"}
    damp.ekeko.snippets.operatorsrep
   (:refer-clojure :exclude [== type])
-  (:use [clojure.core.logic])
+  (:require [clojure.core.logic :as cl])
+  (:require [damp.ekeko 
+             [logic :as el]]
+            [damp.ekeko.jdt
+             [ast :as ast]
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
              [operators :as operators]
              [parsing :as parsing]
-             [snippet :as snippet]
              [snippetgroup :as snippetgroup]
              [snippetgrouphistory :as snippetgrouphistory]
+             [precondition :as precondition]
 
              ]))
 
+;; Operator information
 
+(defrecord 
+  Operator
+  [id operator category name scope description operands])
 
-;; Informations for Operator
-;; -------------------------
-
-
-(declare operator-information)
-(declare operator-arguments)
-(declare operator-arguments-with-precondition)
-(declare operatortype-information)
-
-(defn 
-  operator-id 
-  "Returns operator function of given map."
-  [map]
-  (key map))
+(defn
+  operator-id
+  [operator]
+  (:id operator))
 
 (defn 
-  operator-nodetype 
-  "Returns operator node type of given operator id."
-  [op-id]
-  (first (get operator-information op-id)))
+  operator-operator 
+  "Returns function implementing given operator."
+  [operator]
+  (:operator operator))
 
 (defn 
-  operator-function 
-  "Returns operator function of given operator id."
-  [op-id]
-  (fnext (get operator-information op-id)))
-
-(defn 
-  precondition-id 
-  "Returns precondition id of given operator id."
-  [op-id]
-  (first (nnext (get operator-information op-id))))
-
-(defn 
-  operator-arguments 
-  "Returns operator arguments of given operator id."
-  [op-id]
-  (get operator-arguments op-id))
-
-(defn 
-  argument-precondition-id 
-  "Returns argument precondition id of given operator id."
-  [op-id]
-  (fnext (get operator-arguments-with-precondition op-id)))
-
-(defn 
-  operator-argument-with-precondition
-  "Returns operator argument with precondition of given operator id."
-  [op-id]
-  (first (get operator-arguments-with-precondition op-id)))
-
-(defn 
-  is-operator-argument-with-precondition?
-  [op-id]
-  (not (nil? (get operator-arguments-with-precondition op-id))))
-
-(defn 
-  operator-type 
-  "Returns operator type of given operator id."
-  [op-id]
-  (fnext (nnext (get operator-information op-id))))
+  operator-category 
+  "Returns category of given operator."
+  [operator]
+  (:category operator))
 
 (defn 
   operator-name 
-  "Returns operator name of given operator id."
-  [op-id]
-  (fnext (nnext (next (get operator-information op-id)))))
+  "Returns name of given operator."
+  [operator]
+  (:name operator))
+
+(defn 
+  operator-scope 
+  "Returns scope of given operator."
+  [operator]
+  (:scope operator))
 
 (defn 
   operator-description 
-  "Returns operator description of given operator id."
-  [op-id]
-  (fnext (nnext (nnext (get operator-information op-id)))))
+  "Returns descroption of given operator."
+  [operator]
+  (:description operator))
 
 (defn 
-  operatortype-name
-  "Returns operator typename."
-  [type]
-  (get operatortype-information type))
+  operator-operands 
+  "Returns operands for given operator."
+  [operator]
+  (:operands operator))
+
+(defn
+  operator?
+  "Checks whether a value is an Operator instance."
+  [value]
+  (instance? Operator value))
+
+
+
+;; Operand information
+
+(defrecord 
+  Operand
+  [description scope])
 
 (defn 
-  operator-types
-  "Returns all operator types."
-  []
-  (keys operatortype-information))
+  operand-description
+  "Returns description of operand."
+  [operand]
+  (:description operand))
 
 (defn 
-  operator-ids
-  "Returns all operator ids."
-  []
-  (keys operator-information))
+  operand-scope
+  "Returns scope of operand."
+  [operand]
+  (:scope operand))
 
-(defn 
-  operator-names
-  "Returns all operator names."
-  []
-  (map operator-name (operator-ids)))
+(defn
+  operand-has-scope?
+  [operand]
+  (not= (operand-scope operand) nil))
 
-(defn 
-  operator-functions
-  "Returns all operator functions."
-  []
-  (map operator-function (operator-ids)))
 
-(defn 
-  operator-ids-with-type
-  "Returns all operator names with given type."
-  [type]
-  (defn process-ids [operators selecteds]
-    (if (empty? operators)
-      selecteds
-      (if (= type (operator-type (first operators)))
-        (process-ids (rest operators) (cons (first operators) selecteds))
-        (process-ids (rest operators) selecteds))))
-  (process-ids (operator-ids) '()))
+;(defrecord 
+;  Binding
+;  [operand value])
+
+(defn
+  binding-operand
+  [opval]
+  (.operand opval))
+
+(defn
+  binding-value
+  [opval]
+  (.value opval))
+
+(defn
+  set-binding-value!
+  [opval val]
+  (set! (.value opval) val)) 
   
+(defn
+  operator-bindings-for-operands
+  "Returns fresh, unitialized bindings for the operands of the given operator."
+  [operator]
+  (map (fn [operator]
+         (damp.ekeko.snippets.OperandBinding. operator ""))
+    (operator-operands operator)))
+
+(defn
+  binding-operand-description
+  [opval]
+  (operand-description (binding-operand opval)))
+
+;; Registered operator types
+
+(def
+  categories
+  {:generalization  "Generalization" 
+     :refinement    "Refinement"
+     :neutral       "Neutral"
+     :other         "Other"
+  })
+
+(defn
+  registered-categories
+  "Returns collection of registered operator categories (symbols)."
+  []
+  (keys categories))
+
+(defn
+  category-description
+  "Returns description of given operator type (symbol)"
+  [category]
+  (get categories category))
+
+
+
+;; Registered operators
+
+
+(def 
+  operators
+  [(Operator. 
+     :replace-by-variable  
+     operators/replace-by-variable
+     :generalization
+     "Replace by variable"
+     nil
+     "Replaces selection by a variable."
+     [(Operand. "Variable (e.g., ?v)" nil)])])
+
+
 (defn 
+  registered-operators
+  "Returns collection of registered operators."
+  []
+  operators)
+
+(defn
+  registered-operators-in-category
+  [category]
+  (filter (fn [operator]
+            (= category (operator-category operator)))
+          operators))
+
+
+;; Operator Precondition
+;; ---------------------
+
+(def 
+  operator-precondition
+  {:listvalue                            [:property ast/value|list]					          
+   :primitive-or-null-value              [:property precondition/primitive-or-null-value]					          
+   :is-variabledeclarationstatement?     [:node precondition/is-variabledeclarationstatement?]
+   :is-ifstatement?                      [:node precondition/is-ifstatement?]  
+   :is-type?                             [:node precondition/is-type?]	
+   :is-assignmentstatement?              [:node precondition/is-assignmentstatement?]    
+   :is-methodinvocationstatement?        [:node precondition/is-methodinvocationstatement?] 
+   :is-ast?                              [:node precondition/is-ast?]      
+   :is-listmember?                       [:node precondition/is-listmember?]   
+   :is-methodinvocationexpression?       [:node precondition/is-methodinvocationexpression?] 
+   :is-methoddeclaration?                [:node precondition/is-methoddeclaration?]
+   :is-variabledeclarationfragment?      [:node precondition/is-variabledeclarationfragment?]
+   :is-variabledeclaration?              [:node precondition/is-variabledeclaration?]
+   :is-simplename?                       [:node precondition/is-simplename?]
+   :is-importlibrary?                    [:node precondition/is-importlibrary?]
+   :is-loop?                             [:node precondition/is-loop?]
+	})
+
+
+
+(defn 
+  precondition-function 
+  "Returns precondition function of given precondition id."
+  [pre-id]
+  (fnext (get operator-precondition pre-id)))
+
+(defn 
+  precondition-type 
+  "Returns precondition type of given precondition id."
+  [pre-id]
+  (first (get operator-precondition pre-id)))
+
+  
+  
+  (comment 
+
+  (defn 
   operator-maps
   "Returns map {name function} of all operator."
   []
   (zipmap (operator-ids) (operator-functions)))
 
-(defn 
+  (defn 
   operator-ids-for-transformation
   "Returns all operator ids for transformation."
-  []
-  (concat 
-    (list :introduce-logic-variable
-          :add-user-defined-condition)
-    (operator-ids-with-type :transform)))
+    []
+    (concat 
+      (list :introduce-logic-variable
+            :add-user-defined-condition)
+      (operator-ids-with-type :transform)))
 
-(defn 
-  is-transform-operator?
-  [op-id]
-  (= (operator-type op-id) :transform)) 
+  (defn 
+    is-transform-operator?
+    [op-id]
+    (= (operator-category op-id) :transform)) 
   
+  )
 
-;; Function apply-operator 
-;; --------------------------------
+  ;; Function apply-operator 
+  ;; --------------------------------
 
-(defn apply-operator
-  "Apply operator to snippet, returns new snippet."
-  [snippet op-id node args]
-  (let [op-func (operator-function op-id)]
-    (cond 
-      (= op-id :add-node)
-      (op-func snippet node (parsing/parse-string-ast (first args)) (Integer/parseInt (fnext args)))
-      (= op-id :replace-node)
+  (defn apply-operator
+    "Apply operator to snippet, returns new snippet."
+    [snippet op-id node args]
+    (let [op-func (operator-operator op-id)]
+      (cond 
+        (= op-id :add-node)
+        (op-func snippet node (parsing/parse-string-ast (first args)) (Integer/parseInt (fnext args)))
+        (= op-id :replace-node)
       (op-func snippet node (parsing/parse-string-ast (first args)))
       (= op-id :update-logic-conditions)
       (apply operators/update-logic-conditions snippet args)
       (= op-id :introduce-logic-variables-for-snippet)
-      (do
-        (println "snippet" op-id (first args))
+        (do
+          (println "snippet" op-id (first args))
         (apply op-func snippet args))
       :else
-      (do
+        (do
         (println "snippet" op-id (first args))
-        (apply op-func snippet node args)))))
+          (apply op-func snippet node args)))))
 
-(defn apply-operator-to-snippetgroup
+  (defn apply-operator-to-snippetgroup
   "Apply operator to group and related snippet inside group, returns new group.
    node can be many, but should be in one snippet."
   [snippetgroup op-id node args]
-  (let [snippet (if (or (sequential? node) (.isArray (.getClass node)))
-                  (snippetgroup/snippetgroup-snippet-for-node snippetgroup (first node))
+    (let [snippet (if (or (sequential? node) (.isArray (.getClass node)))
+                    (snippetgroup/snippetgroup-snippet-for-node snippetgroup (first node))
                   (snippetgroup/snippetgroup-snippet-for-node snippetgroup node))
-        op-func (operator-function op-id)]
-    (if (is-operator-argument-with-precondition? op-id) 
-      (apply op-func snippetgroup node args)
-      (cond 
+          op-func (operator-operator op-id)]
+      (if (operand-has-scope? (first (operator-operands op-id))) ;todo: meer argumenten
+        (apply op-func snippetgroup node args)
+        (cond 
         (nil? snippet)
         (apply operators/update-logic-conditions-to-snippetgroup snippetgroup args)
         (= op-id :introduce-logic-variables-to-group)
@@ -197,84 +290,75 @@
           (let [newsnippet (apply-operator snippet op-id node args)]
             (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
 
-(defn apply-operator-to-snippetgrouphistory
+  (defn apply-operator-to-snippetgrouphistory
   "Apply operator to group history and save the applied operator, returns new group history."
   [snippetgrouphistory op-id node args]
   (let [newgroup (apply-operator-to-snippetgroup
-                   (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) 
-                   op-id node args)
-        newgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory newgroup)
-        var-node (snippetgrouphistory/snippetgrouphistory-var-for-node snippetgrouphistory node)]
-    (snippetgrouphistory/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
+                     (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) 
+                     op-id node args)
+          newgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory newgroup)
+          var-node (snippetgrouphistory/snippetgrouphistory-var-for-node snippetgrouphistory node)]
+      (snippetgrouphistory/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
      
+  
 
-;; Function undo and redo 
-;; --------------------------------
+  ;; Function undo and redo 
+  ;; --------------------------------
 
-(defn undo-operator
+  (defn undo-operator
   [grouphistory]
   "Undo last applied operator in given snippet group history." 
-  (defn undo-operator-rec [grouphistory op-histories]
-    (if (empty? op-histories)
-      grouphistory
-      (let [history (first op-histories)]
-        (undo-operator-rec
-          (apply-operator-to-snippetgrouphistory 
+    (defn undo-operator-rec [grouphistory op-histories]
+      (if (empty? op-histories)
+        grouphistory
+        (let [history (first op-histories)]
+          (undo-operator-rec
+            (apply-operator-to-snippetgrouphistory 
             grouphistory
             (snippetgrouphistory/history-operator history)
             (snippetgrouphistory/snippetgrouphistory-node-for-var grouphistory (snippetgrouphistory/history-varnode history))
             (snippetgrouphistory/history-args history))
-          (rest op-histories)))))
+            (rest op-histories)))))
   (let [op-histories (drop-last (snippetgrouphistory/snippetgrouphistory-history grouphistory))
-        undo-grouphistory (snippetgrouphistory/snippetgrouphistory-add-undohistory grouphistory)
-        new-grouphistory (snippetgrouphistory/reset-snippetgrouphistory undo-grouphistory)]
+          undo-grouphistory (snippetgrouphistory/snippetgrouphistory-add-undohistory grouphistory)
+          new-grouphistory (snippetgrouphistory/reset-snippetgrouphistory undo-grouphistory)]
     (undo-operator-rec new-grouphistory op-histories))) 
 
-(defn redo-operator
+  (defn redo-operator
   [grouphistory]
   "Redo last undo operator in given snippet group history." 
-  (if (empty? (snippetgrouphistory/snippetgrouphistory-undohistory grouphistory))
-    grouphistory 
+    (if (empty? (snippetgrouphistory/snippetgrouphistory-undohistory grouphistory))
+      grouphistory 
     (let [redo (snippetgrouphistory/snippetgrouphistory-first-undohistory grouphistory)
           redo-grouphistory (snippetgrouphistory/snippetgrouphistory-remove-undohistory grouphistory)]
       (apply-operator-to-snippetgrouphistory 
-        redo-grouphistory
-        (snippetgrouphistory/history-operator redo)
-        (snippetgrouphistory/snippetgrouphistory-node-for-var redo-grouphistory (snippetgrouphistory/history-varnode redo))
+          redo-grouphistory
+          (snippetgrouphistory/history-operator redo)
+          (snippetgrouphistory/snippetgrouphistory-node-for-var redo-grouphistory (snippetgrouphistory/history-varnode redo))
         (snippetgrouphistory/history-args redo)))))
     
 
-;; Operator Informations
-;; -----------------------------
+  
+  
+  ;; Operator Information
+  ;; --------------------
 
 
-; operator-information 
-;    {:operator-id1 [:operator-nodetype operator-function precondition-id
-;                      :operator-type operator-name operator-description]
-;     :operator-id2 ....
-;     ...}
-; :operator-nodetype -> node, property, snippet, and group
-; :operator-type -> generalization, refinement, neutral
+  (comment
+     ;; Following have not been checked
 
 
-(def 
+  (def 
   operator-information
   {
-   
-   
-   
-   
-   ;; Following have not been checked
-   
-   
-   
-   :node-deep                                        [:node   
+     
+     :node-deep                                        [:node   
                                                       operators/node-deep
                                                       :is-ast?					          
                                                       :generalization 
                                                       "Allow deep path"
                                                       "Operator with matching strategy :deep \nAllows node as child or nested child of its parent."]
-   
+     
    :any-element                                      [:property   
                                                       operators/contains-any-elements
                                                       :none					          
@@ -282,14 +366,14 @@
                                                       "Allow list with any element"
                                                       "Operator with matching strategy  :any\nMatch node with any element."]
    
-   :contains-deep                                    [:property   
+     :contains-deep                                    [:property   
                                                       operators/contains-deep
                                                       :listvalue					          
                                                       :generalization 
                                                       "Allow list with child+"
                                                       "Operator with matching strategy :child+\nMatch nodelist which contains all elements of snippet nodelist as its childs or nested childs"]
    
-   :contains-elements                                [:property   
+     :contains-elements                                [:property   
                                                       operators/contains-elements
                                                       :listvalue					          
                                                       :generalization 
@@ -349,30 +433,14 @@
                                                       :generalization 
                                                       "Allow relax loop"
                                                       "Operator with matching strategy :relax-loop\nAllow loop node as for, while or do statement."]
-   :introduce-logic-variable                         [:node  
-                                                      operators/introduce-logic-variable  
-                                                      :none                 
-                                                      :generalization 
-                                                      "Introduce logic variable"
-                                                      "Operator to introduce new logic variable and remove all it's property values"]
-   :introduce-logic-variable-by-random-var           [:node  
-                                                      operators/introduce-logic-variable-by-random-var  
-                                                      :is-simplename?                 
-                                                      :generalization 
-                                                      "Introduce logic variable by random variable"
-                                                      "Operator to introduce new logic variable and remove all it's property values"]
-   :introduce-logic-variable-with-info               [:node  
-                                                      operators/introduce-logic-variable-with-info  
-                                                      :none                 
-                                                      :generalization 
-                                                      "Introduce logic variable with information"
-                                                      "Operator to introduce new logic variable and remove all it's property values and add it as result in the query"]
+      
    :introduce-logic-variable-of-node-exact           [:node   
                                                       operators/introduce-logic-variable-of-node-exact  
                                                       :none      
-                                                      :netral 
+                                                      :neutral 
                                                       "Bind logic variable"
                                                       "Operator to introduce new logic variable without removing any it's property values"]
+     
    :introduce-logic-variables                        [:node 
                                                       operators/introduce-logic-variables  
                                                       :is-simplename?					
@@ -550,17 +618,17 @@
 	})
 
 
-;;Operators Arguments
-;;------------------------------
+  ;;Operators Arguments
+  ;;------------------------------
 
-(def 
+  (def 
   operator-arguments
-  {:introduce-logic-variable                         ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variable-with-info               ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variable-of-node-exact           ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variables                        ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variables-to-group               ["Logic Variable (eg. ?v)"]
-   :introduce-logic-variables-with-condition         ["Logic Variable (eg. ?v)" 
+  {:introduce-logic-variable                         ["Variable (e.g., ?v)"]
+   :introduce-logic-variable-with-info               ["Variable (e.g., ?v)"]
+   :introduce-logic-variable-of-node-exact           ["Variable (e.g., ?v)"]
+   :introduce-logic-variables                        ["Variable (e.g., ?v)"]
+   :introduce-logic-variables-to-group               ["Variable (e.g., ?v)"]
+   :introduce-logic-variables-with-condition         ["Variable (e.g., ?v)" 
                                                       "Conditions \n(eg. ((damp.ekeko.jdt.ast/has :identifier ?name ?id)\n      (damp.ekeko.jdt.ast/value-raw ?id \"methodX\"))"]
    :add-node                                         ["New Node (eg. int x = 5;)"
                                                       "Index (eg. 1)"]
@@ -581,7 +649,7 @@
 (def 
   operator-arguments-with-precondition
   {:match-invocation-declaration                     ["Declaration Node"       :is-methoddeclaration?]
-   :match-variable-declaration                       ["Declaration Node"       :is-variabledeclaration?]
+     :match-variable-declaration                       ["Declaration Node"       :is-variabledeclaration?]
    :match-variable-samebinding                       ["Variable Node"          :is-simplename?]
    :match-variable-type                              ["Type Node  "            :is-type?]
    :match-variable-typequalifiedname                 ["Qualified Name Node"    :is-importlibrary?]
@@ -589,54 +657,196 @@
    :node-deep                                        ["Parent Node"            :is-ast?]
   })
 
-;;Operators type
-;;------------------------------
-(def
-  operatortype-information
-  {:generalization  "Generalization" 
-   :refinement      "Refinement"
-   :netral          "Neutral"
-   :other           "Other"
-   })
 
 
-;;Operators for searchspace
-;;------------------------------
 
-(def 
-  searchspace-operators
-  {:allow-relax-loop                                  operators/allow-relax-loop
-   :allow-ifstatement-with-else                       operators/allow-ifstatement-with-else  
-   :allow-subtype                                     operators/allow-subtype
-   :relax-typeoftype                                  operators/relax-typeoftype
-   :negated-node                                      operators/negated-node
-	})
+) ;end of comment
 
-(defn searchspace-operator-ids [] (keys searchspace-operators))
-(defn searchspace-refinement-operator-ids [] 
-  (keys (filter (fn [x] (= (operator-type (first x)) :refinement)) searchspace-operators)))
-(defn searchspace-generalization-operator-ids [] 
-  (keys (filter (fn [x] (= (operator-type (first x)) :generalization)) searchspace-operators)))
 
+  
+;; Operator applicability
+;; ----------------------
+
+(defn 
+  applicable?
+  "Returns true if preconditions for given operator are fulfilled by the node."
+  [operator node]
+  (let [id (operator-scope operator)
+        pre-func (precondition-function id)
+        op-type  (precondition-type id)]
+    (if (or (= op-type :node)
+            (= op-type :property))
+      (not (empty?
+             (cl/run-nc 1 [?node] 
+                       (el/equals node ?node)
+                       (pre-func ?node))))
+    true)))
 
 (defn
-  register-callbacks 
-  []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_APPLY_TO_SNIPPETGROUPHISTORY) apply-operator-to-snippetgrouphistory)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_UNDO) undo-operator)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REDO) redo-operator)
-  
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_TYPES) operator-types)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORTYPE_NAME) operatortype-name)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENTS) operator-arguments)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENT_WITH_PRECONDITION) operator-argument-with-precondition)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_DESCRIPTION) operator-description)
-  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ISTRANSFORM) is-transform-operator?)
+  applicable-operators
+  "Filters operators that are applicable to the given node."
+  [node]
+  (filter
+    (fn [operator] 
+      (applicable? operator node))
+    (registered-operators)))
+
+(defn
+  applicable-operators-in-category
+  [node cat]
+  (filter (fn [operator]
+            (= (operator-category operator) cat))
+          (applicable-operators node)))
+    
+
+;; Operand candidates
+;; ------------------
+
+
+(defn 
+  node-possible-nodes
+  "Returns list of possible nodes from given precondition and ast root (ASTNode)."
+  [ast precondition-id]
+  (let [root ast
+        pre-func (precondition-function precondition-id)
+        op-type  (precondition-type precondition-id)]
+    (case op-type 
+        ;check astnode : the root itself and all childs
+        :node     (concat (damp.ekeko/ekeko [?node] 
+                                            (el/equals root ?node)
+                                            (pre-func ?node))
+                          (damp.ekeko/ekeko [?node] 
+                                            (ast/child+ root ?node)
+                                            (pre-func ?node)))
+        ;check property value-raw of the root and all childs
+        :property (concat (damp.ekeko/ekeko [?property] 
+                                            (cl/fresh [?node ?keyword] 
+                                                   (el/equals root ?node)
+                                                   (ast/has ?keyword ?node ?property)
+                                                   (pre-func ?property)))
+                          (damp.ekeko/ekeko [?property] 
+                                            (cl/fresh [?node ?keyword] 
+                                                   (ast/child+ root ?node)
+                                                   (ast/has ?keyword ?node ?property)
+                                                   (pre-func ?property))))
+        ;others, return empty list
+        '()))) 
+    
+(defn 
+  nodelist-possible-nodes
+  "Returns list of possible nodes from given precondition and ast root (nodelist)."
+  [ast precondition-id]
+  (let [list     (:value ast)
+        pre-func (precondition-function precondition-id)
+        op-type  (precondition-type precondition-id)]
+    (case op-type 
+        ;check astnode : the member of root and member of all childs
+        :node     (concat (damp.ekeko/ekeko [?node] 
+                                            (el/contains list ?node)
+                                            (pre-func ?node))
+                          (damp.ekeko/ekeko [?node] 
+                                            (cl/fresh [?member] 
+                                                   (el/contains list ?member)
+                                                   (ast/child+ ?member ?node)
+                                                   (pre-func ?node))))
+        ;check property value-raw of root it self, of property members and of property all childs
+        :property (concat (damp.ekeko/ekeko [?property] 
+                                            (el/equals ast ?property)
+                                            (pre-func ?property))
+                          (damp.ekeko/ekeko [?property] 
+                                            (cl/fresh [?node ?keyword] 
+                                                   (el/contains list ?node)
+                                                   (ast/has ?keyword ?node ?property)
+                                                   (pre-func ?property)))
+                          (damp.ekeko/ekeko [?property] 
+                                            (cl/fresh [?node ?keyword ?member] 
+                                                   (el/contains list ?member)
+                                                   (ast/child+ ?member ?node)
+                                                   (ast/has ?keyword ?node ?property)
+                                                   (pre-func ?property))))
+        ;others, return empty list
+        '()))) 
+
+(defn 
+  possible-nodes
+  "Returns list of possible nodes from given precondition."
+  [ast precondition-id]
+  (cond 
+    (astnode/ast? ast) (node-possible-nodes ast precondition-id)
+    (astnode/lstvalue? ast) (nodelist-possible-nodes ast precondition-id) 
+    :else nil))
+
+(defn 
+  possible-nodes-in-list
+  [ast precondition-id]
+  (map first (possible-nodes ast precondition-id)))
+
+(defn 
+  possible-nodes-in-group
+  [snippetgroup pre-id]
+  (mapcat (fn [x] (possible-nodes-in-list (:ast x) pre-id)) (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
+(defn 
+  possible-nodes-for-operator
+  "Returns list of possible nodes to be applied on to given operator."
+  [ast op]
+  (possible-nodes-in-list ast (operator-scope op)))
+
+(defn 
+  possible-nodes-for-operator-argument
+  "Returns list of possible nodes as argument of given operator."
+  [ast op]
+  (possible-nodes-in-list ast (operand-scope (first (operator-operands op)))))
+
+(defn 
+  possible-nodes-for-operator-in-group
+  [snippetgroup op]
+  (possible-nodes-in-group snippetgroup (operand-scope (first (operator-operands op)))))
+
+(defn 
+  possible-nodes-for-operator-argument-in-group
+  [snippetgroup op]
+  (possible-nodes-in-group snippetgroup (operand-scope (first (operator-operands op)))))
+
+
+
 
   
-  )
+  
+  
+  
+  (defn
+    register-callbacks 
+    []
+    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_APPLY_TO_SNIPPETGROUPHISTORY) apply-operator-to-snippetgrouphistory)
+    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_UNDO) undo-operator)
+    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REDO) redo-operator)
+  
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_CATEGORIES) registered-categories)
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORCATEGORY_DESCRIPTION) category-description)
+    
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
+    
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_BINDINGS_FOR_OPERANDS) operator-bindings-for-operands)
+
+;    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENT_WITH_PRECONDITION) operator-argument-with-precondition)
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_DESCRIPTION) operator-description)
+ ;   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ISTRANSFORM) is-transform-operator?)
+ 
+ 
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP) possible-nodes-for-operator-argument-in-group)
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_IS_OPERATOR) operator?)
+    
+    
+    (set! (damp.ekeko.snippets.gui.OperandBindingDescriptionLabelProvider/FN_BINDING_OPERAND_DESCRIPTION) binding-operand-description)
+    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_UPDATE_OPERANDBINDING_VALUE) set-binding-value!)
+    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_VALUE) binding-value)
+    
+
+   
+ 
+    )
 
 
-(register-callbacks)
+  (register-callbacks)
 

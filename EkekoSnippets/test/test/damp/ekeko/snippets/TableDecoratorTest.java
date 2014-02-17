@@ -4,7 +4,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-import damp.ekeko.snippets.gui.TableDecorator;
+import damp.ekeko.snippets.gui.OperandsTableDecorator;
 
 public class TableDecoratorTest {
   // Number of rows and columns
@@ -60,7 +60,7 @@ public class TableDecoratorTest {
       item.setText(new String[] {"1", "2", "3", "4", "5"});
     }
     
-    TableDecorator tableDecorator = new TableDecorator(table);
+    OperandsTableDecorator tableDecorator = new OperandsTableDecorator(table);
     tableDecorator.setTextEditor(3);
     tableDecorator.setButtonEditorAtNewRow();
     tableDecorator.removeAllEditors();

@@ -1,49 +1,46 @@
 package damp.ekeko.snippets.gui;
 
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.ui.part.ViewPart;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.custom.StyleRange;
-import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.text.TextViewer;
-import org.eclipse.swt.widgets.Tree;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.wb.swt.ResourceManager;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.wb.swt.ResourceManager;
 
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.RewrittenSnippetGroup;
 import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
-
-import org.eclipse.swt.graphics.Color;
 
 public class TransformsView extends TemplateView {
 
@@ -63,7 +60,7 @@ public class TransformsView extends TemplateView {
 	private Groups groups;
 	private SnippetGroupHistory snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
-	private TemplateViewTreeContentProvider contentProvider;
+	private TemplateTreeContentProvider contentProvider;
 
 	public TransformsView() {
 	}
@@ -132,10 +129,10 @@ public class TransformsView extends TemplateView {
 		trclmnProperty2.setWidth(150);
 		trclmnProperty2.setText("Property");
 
-		contentProvider = new TemplateViewTreeContentProvider();
+		contentProvider = new TemplateTreeContentProvider();
 		treeViewerSnippet.setContentProvider(getContentProvider());
-		snippetNodeCol2.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetPropCol2.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
+		snippetNodeCol2.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetPropCol2.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeSnippet.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -205,10 +202,10 @@ public class TransformsView extends TemplateView {
 		trclmnProperty.setWidth(150);
 		trclmnProperty.setText("Property");
 
-		contentProvider = new TemplateViewTreeContentProvider();
+		contentProvider = new TemplateTreeContentProvider();
 		treeViewerRWSnippet.setContentProvider(getContentProvider());
-		snippetNodeCol.setLabelProvider(new TemplateViewTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetPropCol.setLabelProvider(new TemplateViewTreeLabelProviders.PropertyColumnLabelProvider(this));
+		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(this));		
+		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(this));
 
 		treeTemplate.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
@@ -288,7 +285,7 @@ public class TransformsView extends TemplateView {
 		tcl_composite.setColumnData(tblclmnRewrittenCode, new ColumnPixelData(330, true, true));
 		tblclmnRewrittenCode.setText("Rewritten Code");
 
-		contentProvider = new TemplateViewTreeContentProvider();
+		contentProvider = new TemplateTreeContentProvider();
 
 		createActions();
 		initializeToolBar();
@@ -400,7 +397,7 @@ public class TransformsView extends TemplateView {
 		return selection;
 	}
 
-	public TemplateViewTreeContentProvider getContentProvider() {
+	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 
@@ -518,7 +515,7 @@ public class TransformsView extends TemplateView {
 	} 
 	
 	public void applyOperator(Object selectedNode, Object selectedRWNode, Object selectedOperator) {
-		String[] args = SnippetOperator.getArguments(selectedOperator);
+		String[] args = new String[0]; //  = SnippetOperator.getOperands(selectedOperator);
 
 		if (selectedRWNode != null) {
 			String	nodeInfo = "Rewritten Node\n " + SnippetGroupHistory.getTypeValue(selectedRWNode) + 
@@ -529,7 +526,7 @@ public class TransformsView extends TemplateView {
 						"\n" + selectedNode.toString().replace(", :",  "\n:") + "\n \n" + nodeInfo;
 			}
 			
-			SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+			OperatorApplicationDialog dlg = new OperatorApplicationDialog(Display.getCurrent().getActiveShell(),
 					"Apply Operator", "Apply Operator to " + nodeInfo, 
 					"\nApply the Operator?", args, null);
 			dlg.create();
@@ -543,7 +540,7 @@ public class TransformsView extends TemplateView {
 	}
 	
 	public void showQuery() {
-		SInputDialog dlg = new SInputDialog(Display.getCurrent().getActiveShell(),
+		OperatorApplicationDialog dlg = new OperatorApplicationDialog(Display.getCurrent().getActiveShell(),
 				"Apply Transformation", rwSnippetGroup.getTransformationQuery(snippetGroup), 
 				"", null, null);
 		dlg.create();

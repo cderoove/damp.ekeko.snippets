@@ -5,7 +5,7 @@ import org.eclipse.jface.viewers.Viewer;
 
 import clojure.lang.IFn;
 
-public class TemplateViewTreeContentProvider implements ITreeContentProvider {
+public class TemplateTreeContentProvider implements ITreeContentProvider {
 
 	private Object group;
 	
@@ -13,7 +13,7 @@ public class TemplateViewTreeContentProvider implements ITreeContentProvider {
 	public static IFn FN_CHILDREN;
 	public static IFn FN_PARENT;
 	
-	public TemplateViewTreeContentProvider() {
+	public TemplateTreeContentProvider() {
 	}
 	
 	@Override

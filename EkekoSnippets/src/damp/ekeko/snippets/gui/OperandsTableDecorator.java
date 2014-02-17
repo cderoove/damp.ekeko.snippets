@@ -12,11 +12,11 @@ import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-public class TableDecorator {
+public class OperandsTableDecorator {
 	private Table table;
 	private LinkedList<TableEditor> editors;
 	
-	public TableDecorator(Table table) {
+	public OperandsTableDecorator(Table table) {
 		this.table = table;
 		editors = new LinkedList<TableEditor>();
 	}

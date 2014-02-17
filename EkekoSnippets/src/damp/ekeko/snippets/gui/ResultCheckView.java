@@ -38,7 +38,7 @@ public class ResultCheckView extends ViewPart {
 	public static final String ID = "damp.ekeko.snippets.gui.ResultCheckView"; //$NON-NLS-1$
 	private Table tableResult;
 	private Table tableConfirmResult;
-	private TableDecorator tableConfirmResultDecorator;
+	private OperandsTableDecorator tableConfirmResultDecorator;
 	private Object[] result;
 	private SnippetGroupHistory snippetGroup;
 	private Object snippet;
@@ -131,7 +131,7 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResult.setLayoutData(gd_tableConfirmResult);
 		tableConfirmResult.setLinesVisible(true);
 		tableConfirmResult.setHeaderVisible(true);
-	    tableConfirmResultDecorator = new TableDecorator(tableConfirmResult);
+	    tableConfirmResultDecorator = new OperandsTableDecorator(tableConfirmResult);
 		
 		TableColumn tblclmnCResult = new TableColumn(tableConfirmResult, SWT.NONE);
 		tblclmnCResult.setWidth(0);

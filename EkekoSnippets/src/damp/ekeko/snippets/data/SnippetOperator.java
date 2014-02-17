@@ -7,53 +7,33 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
 import clojure.lang.IFn;
+import clojure.lang.Keyword;
 import clojure.lang.RT;
 
 public class SnippetOperator {
 
 	
-	public static IFn FN_OPERATOR_TYPES;
-	public static IFn FN_OPERATORTYPE_NAME;
+	public static IFn FN_OPERATOR_CATEGORIES;
+	public static IFn FN_OPERATORCATEGORY_DESCRIPTION;
 	public static IFn FN_OPERATOR_NAME;
-	public static IFn FN_OPERATOR_ARGUMENTS;
 	public static IFn FN_OPERATOR_ARGUMENT_WITH_PRECONDITION;
 	public static IFn FN_OPERATOR_DESCRIPTION;
 	public static IFn FN_OPERATOR_ISTRANSFORM;
-	public static IFn FN_APPLICABLE_OPERATORS_WITH_TYPE;
 	public static IFn FN_APPLICABLE_OPERATORS_FOR_TRANSFORMATION;
 	public static IFn FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP;
 	
-	public SnippetOperator() {
-	}
+	public static IFn FN_IS_OPERATOR;
+	public static IFn FN_OPERATOR_BINDINGS_FOR_OPERANDS;
 
+	
+	public static boolean isOperator(Object value) {
+		return (Boolean) FN_IS_OPERATOR.invoke(value);
+	}
+	
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
 	
-	public static void setInput(Tree tree, Object selectedNode) {
-		tree.removeAll();
-
-		TreeItem root = new TreeItem(tree, 0);
-		root.setText("Operator");
-		root.setData("");
-		
-		Object[] types = getArray(FN_OPERATOR_TYPES.invoke());
-		for (int i = 0; i < types.length; i++) {
-			TreeItem itemType = new TreeItem(root, 0);
-			itemType.setText((String) FN_OPERATORTYPE_NAME.invoke(types[i]));
-			itemType.setData(types[i]);
-			
-			Object[] operators = getArray(FN_APPLICABLE_OPERATORS_WITH_TYPE.invoke(types[i], selectedNode));
-			for (int j = 0; j < operators.length; j++) {
-				TreeItem itemOp = new TreeItem(itemType, 0);
-				itemOp.setText((String) FN_OPERATOR_NAME.invoke(operators[j]));
-				itemOp.setData(operators[j]);
-			}			
-			itemType.setExpanded(true);
-		}
-		root.setExpanded(true);
-	}
-
 	public static void setInputForTransformation(Tree tree, Object selectedNode) {
 		tree.removeAll();
 
@@ -74,10 +54,13 @@ public class SnippetOperator {
 		table.removeAll();
 		tableNode.removeAll();
 
-		String[] args = getArguments(operator);
+		//do nothing on keywords (denoting an operator category), should be fixed by using a treeviewer on operators rather than a manually built tree
+		if(operator instanceof Keyword) 
+			return;
+		Object[] args = getOperands(operator);
 		for (int i = 0; i < args.length; i++) {
 			TableItem item = new TableItem(table, 0);
-			item.setText(new String[] { args[i] , "" });
+			item.setText(new String[] { args[i].toString() , "" });
 		}
 		
 		String arg = getArgumentWithPrecondition(operator);
@@ -98,20 +81,21 @@ public class SnippetOperator {
 		} 
 	}
 
-	public static String[] getArguments(Object operator) {
-		Object[] args = getArray(FN_OPERATOR_ARGUMENTS.invoke(operator));		
-		String[] result = new String[args.length];
-		for (int i = 0; i < args.length; i++) {
-			result[i] = args[i].toString();
-		}			
-		return result;
+	public static Object[] getOperands(Object operator) {
+		return getArray(FN_OPERATOR_BINDINGS_FOR_OPERANDS.invoke(operator));
 	}
 
 	public static String getArgumentWithPrecondition(Object operator) {
+		if(operator instanceof Keyword)
+			return "";
+		
 		return (String) FN_OPERATOR_ARGUMENT_WITH_PRECONDITION.invoke(operator);		
 	}
 
 	public static Object[] possibleNodesForArgument(Object snippetgroup, Object operator) {
+		if(operator instanceof Keyword)
+			return new String[0];
+
 		return getArray(FN_POSSIBLE_NODES_FOR_OPERATOR_ARGUMENT_IN_GROUP.invoke(snippetgroup, operator));		
 	}
 

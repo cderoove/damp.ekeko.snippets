@@ -341,13 +341,7 @@ damp.ekeko.snippets.snippet
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
       (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval)
-        ;;TODO: should not be necessary, also not doing this for null-valued and primitive-valued properties
-        ;;(let [rawlst (:value lstval)
-        ;;     rawlstvar (util/gen-readable-lvar-for-value rawlst)]
-        ;;  (swap! snippet assoc-in [:ast2var rawlst] rawlstvar))
-        
-        )
+        (swap! snippet assoc-snippet-value lstval))
       (fn [primval]  (swap! snippet assoc-snippet-value primval))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
@@ -383,10 +377,6 @@ damp.ekeko.snippets.snippet
         (swap! snippet assoc-snippet-value astval (.track rw astval)))
       (fn [lstval] 
         (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval))))
-
-       ; (let [rawlst (:value lstval)
-       ;       rawlstvar (util/gen-readable-lvar-for-value rawlst)]
-        ;  (swap! snippet assoc-in [:ast2var rawlst] rawlstvar)))
       (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
     @snippet))
@@ -396,7 +386,7 @@ damp.ekeko.snippets.snippet
 ;;-----------------------------
 
 (defn 
-  update-gf-for-node
+  update-gf+
   "Update grounding function for node and all child+ of a given node in snippet."
   [snippet node gf]
   (defn update-snippet-value [snippet value]
@@ -411,7 +401,7 @@ damp.ekeko.snippets.snippet
     @snippet))
 
 (defn 
-  update-cf-for-node
+  update-cf+
   "Update constraining function for node and all child+ of a given node in snippet."
   [snippet node cf]
   (defn update-snippet-value [snippet value]
@@ -429,24 +419,62 @@ damp.ekeko.snippets.snippet
     @snippet))
 
 (defn 
-  remove-gf-for-node
-  "Clear grounding function for node and all child of a given node in snippet."
+  remove-gf+
+  "Clear grounding function for snippet node and its children."
   [snippet node]
-  (update-gf-for-node snippet node :epsilon))
+  (update-gf+ snippet node :epsilon))
 
 (defn 
-  remove-cf-for-node
-  "Clear constarining function for node and all child of a given node in snippet."
+  remove-cf+
+  "Clear constraining function for snippet node and its children."
   [snippet node]
-  (update-cf-for-node snippet node :epsilon))
+  (update-cf+ snippet node :epsilon))
 
 (defn 
-  remove-gf-cf-for-node
-  "Clear grounding and constraining function for node and all child of a given node in snippet."
+  remove-gfcf+
+  "Clear both grounding and for snippet node and its children."
   [snippet node]
-  (update-gf-for-node 
-    (update-cf-for-node snippet node :epsilon)
+  (update-gf+ 
+    (update-cf+ snippet node :epsilon)
     node :epsilon))
+
+
+(defn
+  update-uservar
+  "Adds a mapping from the match for the given snippet node to a user-defined variable."
+  [snippet node uservar]
+  (assoc-in snippet
+            [:var2uservar (snippet-var-for-node snippet node)]
+            (symbol uservar)))
+    
+(defn 
+  update-gf 
+  "Update grounding function of a given node in a given snippet with new grounding function of given type
+   Example: (update-groundf snippet node :node-deep)."
+  [snippet node type]
+  (update-in snippet [:ast2groundf node] (fn [x] (list type))))
+
+(defn 
+  update-gf-with-args 
+  "Update grounding function of a given node in a given snippet with the new grounding  function and args of given type
+   Example: (update-groundf snippet node :node-deep args)."
+  [snippet node type args]
+  (update-in snippet [:ast2groundf node] (fn [x] (concat (list type) args))))
+
+(defn 
+  update-cf 
+  "Update constraining function of a given node in a given snippet with the new constraining function of given type
+   Example: (update-constrainf snippet node :list-contains)."
+  [snippet node type]
+  (update-in snippet [:ast2constrainf node] (fn [x] (list type))))
+
+(defn 
+  update-cf-with-args 
+  "Update constraining function of a given node in a given snippet with the new constraining function and args of given type
+   Example: (update-constrainf snippet node :list-contains args)."
+  [snippet node type args]
+  (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
+  
 
 ;; Copying Snippet and Apply rewrite
 ;; ---------------------------------
@@ -507,6 +535,45 @@ damp.ekeko.snippets.snippet
       (copy-snippet snippet newsnippet))))
 
 
+
+
+;; Pretty printing 
+;;----------------
+
+(defn
+  print-plain-node
+  [snippet node]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.accept node visitor)
+    (.getResult visitor)))
+
+(defn
+  print-plain-snippet
+  [snippet]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.accept (:ast snippet) visitor)
+    (.getResult visitor)))
+
+(defn
+  print-snippet-with-highlight
+  [snippet highlightnode]
+  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter.)]
+    (.setSnippet visitor snippet)
+    (.setHighlightNode visitor highlightnode)
+    (.accept (:ast snippet) visitor)
+    (list (.getResult visitor) (.getHighlightPos visitor))))
+
+(defn
+  print-snippet
+  [snippet]
+  (first (print-snippet-with-highlight snippet nil))) 
+
+
+
+
+
 (defn
   register-callbacks
   []
@@ -522,6 +589,12 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE) snippet-grounder-with-args-for-node)
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE) snippet-constrainer-with-args-for-node)
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
+  
+  
+    ;;TODO: eliminate
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_PLAINNODE) print-plain-node)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETHIGHLIGHT) print-snippet-with-highlight)
+
 
 
   )

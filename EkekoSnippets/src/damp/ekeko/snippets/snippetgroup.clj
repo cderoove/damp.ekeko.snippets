@@ -151,6 +151,17 @@ damp.ekeko.snippets.snippetgroup
 
 
 
+;; Pretty printing
+;; ----------------
+
+
+(defn
+  print-snippetgroup
+  [snippetgroup]
+  (let [str-list (map snippet/print-snippet (snippetgroup-snippetlist snippetgroup))]
+    (reduce str str-list))) 
+
+
 
 ;;OTHER FUNCTIONS' NAME
 ;;---------------------------
@@ -166,6 +177,8 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_USERQUERY) snippetgroup-userquery)
   (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUPHISTORY_NEWSTATE) snippetgroup-new-state)
+  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETGROUP) print-snippetgroup)
+
   )
 
 (register-callbacks)

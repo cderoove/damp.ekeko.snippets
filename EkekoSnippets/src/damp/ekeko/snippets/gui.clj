@@ -12,19 +12,20 @@
              [util :as util]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
+             [operatorsrep :as operatorsrep]
              ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko.gui]))
 
-; Callbacks for TemplateViewTreeContentProvider
-; ---------------------------------------------
+; Callbacks for TemplateTreeContentProvider
+; -----------------------------------------
 
 ;;the following explicitly avoid creating new values that are not yet in the snippet datastructure
 
 
 ;(remove (fn [x] (astnode/primitivevalue? x))
 (defn
-  templateviewtreecontentprovider-children
+  templatetreecontentprovider-children
   [snippetgroup val]
   ;treeview children of given treeview parent
   (to-array 
@@ -35,7 +36,7 @@
     
  
 (defn
-  templateviewtreecontentprovider-parent
+  templatetreecontentprovider-parent
   [snippetgroup c]
   ;treeview parent of given treeview child
   (some 
@@ -44,7 +45,7 @@
     (snippetgroup/snippetgroup-snippetlist snippetgroup)))
     
 (defn
-  templateviewtreecontentprovider-elements
+  templatetreecontentprovider-elements
   [snippetgroup input]
   ;roots of treeview
   (when 
@@ -52,11 +53,11 @@
     (to-array (map snippet/snippet-root (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
   
 
-;; TemplateViewTreeLabelProvider
-;; -----------------------------
+;; Callbacks for TemplateTreeLabelProvider
+;; ---------------------------------------
 
 (defn
-  templateviewtreelabelprovider-node
+  templatetreelabelprovider-node
   [snippet element]
   (cond 
     (astnode/nilvalue? element)
@@ -67,7 +68,7 @@
     (str element)))
 
 (defn
-  templateviewtreelabelprovider-kind
+  templatetreelabelprovider-kind
   [snippet element]
   (if
     (astnode/ast? element)
@@ -75,17 +76,68 @@
     ""))
 
 (defn
-  templateviewtreelabelprovider-property
+  templatetreelabelprovider-property
   [snippet element]
-  (let [property (astnode/owner-property element)
-        id (astnode/property-descriptor-id property)]
+  (let [owner (astnode/owner element)
+        property (astnode/owner-property element)
+        id (astnode/property-descriptor-id property)
+        idwithowner (str id " of " (.getSimpleName (class owner)))]
     (if 
       (astnode/property-descriptor-list? property)
       (if 
         (astnode/lstvalue? element)
-        (str "list " id)
-        (str "element of " id))
-      id)))
+        (str "list " idwithowner)
+        (str "element of " idwithowner))
+      idwithowner)))
+
+
+; Callbacks for OperatorTreeContentProvider
+; -----------------------------------------
+
+(defn- 
+  operator-category?
+  [operator-or-category]
+  (keyword?  operator-or-category))
+
+(defn
+  operatortreecontentprovider-children
+  [snippetnode operator-or-category]
+  ;treeview children of given treeview parent
+  (to-array 
+    (if
+      (operator-category? operator-or-category)
+      (operatorsrep/applicable-operators-in-category snippetnode operator-or-category)
+      [])))
+      
+ 
+(defn
+  operatortreecontentprovider-parent
+  [snippetnode operator-or-category]
+  (when-not
+    (operator-category? operator-or-category)
+    (operatorsrep/operator-category operator-or-category)))
+  
+    
+(defn
+  operatortreecontentprovider-elements
+  [snippetnode input]
+  ;roots of treeview
+  (when 
+    (= snippetnode input)
+    (to-array (operatorsrep/registered-categories))))
+  
+
+;; OperatorTreeLabelProvider
+;; -----------------------------
+
+(defn
+  operatortreelabelprovider-operator
+  [element]
+  (if
+    (operator-category? element)
+    (operatorsrep/category-description element)
+    (operatorsrep/operator-name element)))
+  
   
 
 ;; Opening  TemplateView programmatically
@@ -114,70 +166,21 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
 
 
-
-;; Pretty printing
-;;----------------
-
-(defn
-  print-plain-node
-  [snippet node]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.accept node visitor)
-    (.getResult visitor)))
-
-(defn
-  print-plain-snippet
-  [snippet]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.accept (:ast snippet) visitor)
-    (.getResult visitor)))
-
-(defn
-  print-snippet-with-highlight
-  [snippet highlightnode]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.setHighlightNode visitor highlightnode)
-    (.accept (:ast snippet) visitor)
-    (list (.getResult visitor) (.getHighlightPos visitor))))
-
-(defn
-  print-snippet
-  [snippet]
-  (first (print-snippet-with-highlight snippet nil))) 
-
-(defn
-  print-snippetgroup
-  [snippetgroup]
-  (let [str-list (map print-snippet (snippetgroup/snippetgroup-snippetlist snippetgroup))]
-    (reduce str str-list))) 
-
-
-;;OTHER FUNCTIONS' NAME
-;;---------------------------
-
-(defn print-template [s] (print (print-snippet s)))
-(defn print-rewrite-sequence [s] (print (print-snippet s)))
-
-
 (defn
   configure-callbacks
   []
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_ELEMENTS) templateviewtreecontentprovider-elements)
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_CHILDREN) templateviewtreecontentprovider-children)
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeContentProvider/FN_PARENT) templateviewtreecontentprovider-parent)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeContentProvider/FN_ELEMENTS) templatetreecontentprovider-elements)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeContentProvider/FN_CHILDREN) templatetreecontentprovider-children)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeContentProvider/FN_PARENT) templatetreecontentprovider-parent)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_NODE) templatetreelabelprovider-node)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_KIND) templatetreelabelprovider-kind)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_PROPERTY) templatetreelabelprovider-property)
   
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_NODE) templateviewtreelabelprovider-node)
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_KIND) templateviewtreelabelprovider-kind)
-  (set! (damp.ekeko.snippets.gui.TemplateViewTreeLabelProviders/FN_LABELPROVIDER_PROPERTY) templateviewtreelabelprovider-property)
-  
-  ;;TODO: eliminate
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETGROUP) print-snippetgroup)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_PLAINNODE) print-plain-node)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETHIGHLIGHT) print-snippet-with-highlight)
-  
+  (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_ELEMENTS) operatortreecontentprovider-elements) 
+  (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_CHILDREN) operatortreecontentprovider-children)
+  (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_PARENT) operatortreecontentprovider-parent) 
+  (set! (damp.ekeko.snippets.gui.OperatorTreeLabelProvider/FN_LABELPROVIDER_OPERATOR)  operatortreelabelprovider-operator)
+      
   )
 
 

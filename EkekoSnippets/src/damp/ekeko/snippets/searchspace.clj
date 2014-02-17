@@ -12,6 +12,26 @@
   (:require [damp.ekeko])
   (:require [damp.ekeko.logic :as el]))    
 
+  
+  
+  (def 
+  searchspace-operators
+  {:allow-relax-loop                                  operators/allow-relax-loop
+   :allow-ifstatement-with-else                       operators/allow-ifstatement-with-else  
+   :allow-subtype                                     operators/allow-subtype
+       :relax-typeoftype                                  operators/relax-typeoftype
+   :negated-node                                      operators/negated-node
+	    })
+
+  (defn searchspace-operator-ids [] (keys searchspace-operators))
+  (defn searchspace-refinement-operator-ids [] 
+    (keys (filter (fn [x] (= (operatorsrep/operator-category (first x)) :refinement)) searchspace-operators)))
+(defn searchspace-generalization-operator-ids [] 
+  (keys (filter (fn [x] (= (operatorsrep/operator-category (first x)) :generalization)) searchspace-operators)))
+
+
+
+
 
 (defn dfs
   [init-value goal-positive goal-negative 
@@ -115,10 +135,10 @@
   (or
     (= op-id :nothing)
     (and 
-      (precondition/safe-operator-for-node? op-id node)
-      (= (operatorsrep/operator-type op-id) result-check))
+      (operatorsrep/applicable? op-id node)
+      (= (operatorsrep/operator-category op-id) result-check))
     (and 
-      (precondition/safe-operator-for-node? op-id node)
+      (operatorsrep/applicable? op-id node)
       (= result-check :any))))
 
 ;to test this, put negated-node precondition to is-simplename?
@@ -132,7 +152,7 @@
       goal-positive
       goal-negative
       group-nodes
-      operatorsrep/searchspace-operators
+      searchspace-operators
       operatorsrep/apply-operator-to-snippetgroup
       check-operator 
       check-result
@@ -166,9 +186,9 @@
   (let [group-nodes (snippetgroup/snippetgroup-nodes group)
         result-check (check-result group goal-positive goal-negative)
         operators (cond 
-                    (= result-check :refinement) (operatorsrep/searchspace-refinement-operator-ids)
-                    (= result-check :generalization) (operatorsrep/searchspace-generalization-operator-ids)
-                    :else (operatorsrep/searchspace-operator-ids))]
+                    (= result-check :refinement) (searchspace-refinement-operator-ids)
+                    (= result-check :generalization) (searchspace-generalization-operator-ids)
+                    :else (searchspace-operator-ids))]
     (apply-operators group operators group-nodes)))
 
 (defn

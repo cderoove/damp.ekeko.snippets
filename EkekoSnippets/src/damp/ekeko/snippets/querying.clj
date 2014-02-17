@@ -9,7 +9,6 @@
 	             [operators :as operators]
 	             [util :as util]
 	             [matching :as matching] 
-	             [gui :as gui] 
 	             [rewrite :as rewrite]]) 
    (:require 
      [damp.ekeko [logic :as el]]))
@@ -142,7 +141,7 @@
        (fn [ast2userfs] 
          (let [ast (key ast2userfs)
                userfs (val ast2userfs)
-               node-str (.replace (gui/print-plain-node snippet ast) "?" "*")]
+               node-str (.replace (snippet/print-plain-node snippet ast) "?" "*")]
            (userfs-to-query userfs node-str user-vars)))
        (:ast2userfs snippet))))
 	
