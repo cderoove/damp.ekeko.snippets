@@ -11,6 +11,8 @@ public class OperandBindingEditingSupport extends EditingSupport {
 
 	public static IFn FN_OPERANDBINDING_VALUE;
 	public static IFn FN_UPDATE_OPERANDBINDING_VALUE;
+	public static IFn FN_OPERANDBINDING_TEMPLATE;
+
 	
 	TableViewer operandsTableViewer;
 	

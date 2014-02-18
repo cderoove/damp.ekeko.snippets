@@ -6,7 +6,7 @@ public class OperandBindingValueLabelProvider extends ColumnLabelProvider {
 		
 	@Override
 	public String getText(Object element) {
-	  return (String) OperandBindingEditingSupport.FN_OPERANDBINDING_VALUE.invoke(element);  
+	  return OperandBindingEditingSupport.FN_OPERANDBINDING_VALUE.invoke(element).toString();  
 	}
 
 }

@@ -97,37 +97,62 @@
   (not= (operand-scope operand) nil))
 
 
+
 ;(defrecord 
 ;  Binding
-;  [operand value])
+;  [snippet operand value])
+; replaced by damp.ekeko.snippets.OperandBinding class
+
+
+(defn
+  make-binding
+  [operand template value]
+  (damp.ekeko.snippets.OperandBinding. operand template value)
+  )
 
 (defn
   binding-operand
-  [opval]
-  (.operand opval))
+  [binding]
+  (.operand binding))
 
 (defn
+  binding-template
+  [binding] 
+  (.template binding))
+  
+(defn
   binding-value
-  [opval]
-  (.value opval))
+  [binding]
+  (.value binding))
 
 (defn
   set-binding-value!
-  [opval val]
-  (set! (.value opval) val)) 
+  [binding val]
+  (set! (.value binding) val)) 
   
 (defn
   operator-bindings-for-operands
-  "Returns fresh, unitialized bindings for the operands of the given operator."
-  [operator]
-  (map (fn [operator]
-         (damp.ekeko.snippets.OperandBinding. operator ""))
-    (operator-operands operator)))
+  "Returns fresh bindings for the operands of the given operator."
+  [snippet operator]
+  (map (fn [operand]
+         (make-binding operand snippet  ""))
+       (operator-operands operator)))
+
+(defn
+  operator-bindings-for-operands-and-subject
+  "Returns fresh bindings for the subject of an operator and its additional operands."
+  [snippet subject-snippet-node operator]
+  (conj 
+    (operator-bindings-for-operands snippet operator)
+    (make-binding
+      (Operand. "Subject" nil)
+      snippet
+      subject-snippet-node)))
 
 (defn
   binding-operand-description
-  [opval]
-  (operand-description (binding-operand opval)))
+  [binding]
+  (operand-description (binding-operand binding)))
 
 ;; Registered operator types
 
@@ -827,7 +852,7 @@
     
     (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
     
-    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_BINDINGS_FOR_OPERANDS) operator-bindings-for-operands)
+    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_BINDINGS_FOR_OPERANDS) operator-bindings-for-operands-and-subject)
 
 ;    (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_ARGUMENT_WITH_PRECONDITION) operator-argument-with-precondition)
     (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_DESCRIPTION) operator-description)
@@ -841,7 +866,7 @@
     (set! (damp.ekeko.snippets.gui.OperandBindingDescriptionLabelProvider/FN_BINDING_OPERAND_DESCRIPTION) binding-operand-description)
     (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_UPDATE_OPERANDBINDING_VALUE) set-binding-value!)
     (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_VALUE) binding-value)
-    
+    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_TEMPLATE) binding-template)    
 
    
  

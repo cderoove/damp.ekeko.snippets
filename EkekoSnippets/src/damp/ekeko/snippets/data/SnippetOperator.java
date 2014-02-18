@@ -1,8 +1,5 @@
 package damp.ekeko.snippets.data;
 
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
@@ -49,40 +46,9 @@ public class SnippetOperator {
 		}			
 		root.setExpanded(true);
 	}
-
-	public static void setInputArguments(Table table, Table tableNode, Object snippetgroup, Object operator) {
-		table.removeAll();
-		tableNode.removeAll();
-
-		//do nothing on keywords (denoting an operator category), should be fixed by using a treeviewer on operators rather than a manually built tree
-		if(operator instanceof Keyword) 
-			return;
-		Object[] args = getOperands(operator);
-		for (int i = 0; i < args.length; i++) {
-			TableItem item = new TableItem(table, 0);
-			item.setText(new String[] { args[i].toString() , "" });
-		}
-		
-		String arg = getArgumentWithPrecondition(operator);
-		if (arg != null) {
-			tableNode.getColumn(0).setText(arg);
-			Object[] nodes = possibleNodesForArgument(snippetgroup, operator);
-			if (nodes.length <= 0) {
-				TableItem item = new TableItem(tableNode, 0);
-				item.setText("No Match Node");
-			} else {
-				for (int i = 0; i < nodes.length; i++) {
-					TableItem item = new TableItem(tableNode, 0);
-					ASTNode node = (ASTNode) nodes[i];
-					item.setText(new String[] {node.toString(), node.getParent().toString()});
-					item.setData(nodes[i]);
-				}
-			}
-		} 
-	}
-
-	public static Object[] getOperands(Object operator) {
-		return getArray(FN_OPERATOR_BINDINGS_FOR_OPERANDS.invoke(operator));
+	
+	public static Object[] getOperands(Object snippet, Object subjectNode, Object operator) {
+		return getArray(FN_OPERATOR_BINDINGS_FOR_OPERANDS.invoke(snippet, subjectNode, operator));
 	}
 
 	public static String getArgumentWithPrecondition(Object operator) {

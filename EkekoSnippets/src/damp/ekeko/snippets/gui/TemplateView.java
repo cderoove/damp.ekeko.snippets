@@ -612,7 +612,8 @@ public class TemplateView extends ViewPart {
 	} 
 	
 	private void updateOperandsTable() {
-		
+		Object selectedSnippet = getSelectedSnippet();
+		Object selectedSnippetNode = getSelectedSnippetNode();
 		Object selectedOperator = getSelectedOperator();
 		if(selectedOperator == null || !SnippetOperator.isOperator(selectedOperator)) {
 			textOpInfo.setText(""); 
@@ -621,7 +622,7 @@ public class TemplateView extends ViewPart {
 		}
 		
 		textOpInfo.setText(SnippetOperator.getDescription(selectedOperator));
-		operandsTableViewer.setInput(SnippetOperator.getOperands(selectedOperator));
+		operandsTableViewer.setInput(SnippetOperator.getOperands(selectedSnippet, selectedSnippetNode, selectedOperator));
 
 	}
 
