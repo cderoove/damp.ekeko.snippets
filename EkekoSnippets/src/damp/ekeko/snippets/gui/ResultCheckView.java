@@ -30,7 +30,7 @@ import org.eclipse.swt.graphics.Image;
 import clojure.lang.RT;
 import org.eclipse.swt.widgets.Label;
 
-import damp.ekeko.snippets.data.SnippetGroupHistory;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 
 public class ResultCheckView extends ViewPart {
@@ -40,7 +40,7 @@ public class ResultCheckView extends ViewPart {
 	private Table tableConfirmResult;
 	private OperandsTableDecorator tableConfirmResultDecorator;
 	private Object[] result;
-	private SnippetGroupHistory snippetGroup;
+	private TemplateGroup snippetGroup;
 	private Object snippet;
 	private StyledText textSnippet;
 
@@ -51,7 +51,7 @@ public class ResultCheckView extends ViewPart {
 		this.result = result;
 	}
 	
-	public void setGroup(SnippetGroupHistory group) {
+	public void setGroup(TemplateGroup group) {
 		this.snippetGroup = group;
 	}
 
@@ -352,7 +352,7 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResultDecorator.removeAllEditors();
 		TableItem lastItem = tableConfirmResult.getItem(tableConfirmResult.getItemCount()-1);
 		//set data for the last item --> item.setData(selected[i].getData());
-		lastItem.setData(SnippetGroupHistory.parseStringsToNodes(getArrString(lastItem)));
+		lastItem.setData(TemplateGroup.parseStringsToNodes(getArrString(lastItem)));
 		System.out.println(lastItem.getData());
 		lastItem.setBackground(red);
 		lastItem.setImage(1, positiveIcon);
@@ -363,7 +363,7 @@ public class ResultCheckView extends ViewPart {
 		tableConfirmResultDecorator.removeAllEditors();
 		TableItem lastItem = tableConfirmResult.getItem(tableConfirmResult.getItemCount()-1);
 		//set data for the last item --> item.setData(selected[i].getData());
-		lastItem.setData(SnippetGroupHistory.parseStringsToNodes(getArrString(lastItem)));
+		lastItem.setData(TemplateGroup.parseStringsToNodes(getArrString(lastItem)));
 		lastItem.setBackground(green);
 		lastItem.setImage(1, negativeIcon);
 		tableConfirmResultDecorator.setButtonEditorAtNewRow();

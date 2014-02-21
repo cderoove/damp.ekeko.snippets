@@ -141,7 +141,9 @@
        (fn [ast2userfs] 
          (let [ast (key ast2userfs)
                userfs (val ast2userfs)
-               node-str (.replace (snippet/print-plain-node snippet ast) "?" "*")]
+               ;;todo
+               ;;node-str (.replace (snippet/print-plain-node snippet ast) "?" "*")]
+               node-str (str ast)]
            (userfs-to-query userfs node-str user-vars)))
        (:ast2userfs snippet))))
 	
@@ -169,8 +171,8 @@
  (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_QUERY) snippetgroup-query)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_QUERY) snippet-query))
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_QUERY) snippetgroup-query)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_QUERY) snippet-query))
 
 (register-callbacks)
 

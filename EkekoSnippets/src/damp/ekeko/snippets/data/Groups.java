@@ -7,16 +7,16 @@ import java.util.Iterator;
 import clojure.lang.RT;
 
 public class Groups {
-	private HashMap<String, SnippetGroupHistory> groups;
+	private HashMap<String, TemplateGroup> groups;
 	private HashMap<String, RewrittenSnippetGroup> rewrittenGroups;
 	
 	public Groups() {
-		groups = new HashMap<String, SnippetGroupHistory>(); 
+		groups = new HashMap<String, TemplateGroup>(); 
 		rewrittenGroups = new HashMap<String, RewrittenSnippetGroup>(); 
 	}
 	
 	public void addGroup(String name) {
-		SnippetGroupHistory group = new SnippetGroupHistory(name); 
+		TemplateGroup group = new TemplateGroup(name); 
 		groups.put(name, group);
 		RewrittenSnippetGroup rwGroup = new RewrittenSnippetGroup(name); 
 		rewrittenGroups.put(name, rwGroup);
@@ -27,11 +27,11 @@ public class Groups {
 		rewrittenGroups.remove(name);
 	}
 
-	public SnippetGroupHistory getGroup(String name) {
+	public TemplateGroup getGroup(String name) {
 		return groups.get(name);
 	}
 
-	public RewrittenSnippetGroup getRewrittenGroup(SnippetGroupHistory group) {
+	public RewrittenSnippetGroup getRewrittenGroup(TemplateGroup group) {
 		return rewrittenGroups.get(group.getName());
 	}
 	
@@ -43,7 +43,7 @@ public class Groups {
 		RT.var("damp.ekeko.snippets.rewrite","reset-rewrites!").invoke();
 		
 		for (int i=0; i<names.length; i++) {
-			SnippetGroupHistory sGroup = groups.get(names[i].toString());
+			TemplateGroup sGroup = groups.get(names[i].toString());
 			RewrittenSnippetGroup rwGroup = rewrittenGroups.get(names[i].toString());
 			rwGroup.doTransformation(sGroup);
 		}
@@ -52,10 +52,10 @@ public class Groups {
 
 	private Object[] getGroupsValues() {
 		//returns array of clojure SnippetGroup
-		Collection<SnippetGroupHistory> values = groups.values();
+		Collection<TemplateGroup> values = groups.values();
 		Object[] data = new Object[values.size()];
 		
-		Iterator<SnippetGroupHistory> i = values.iterator();
+		Iterator<TemplateGroup> i = values.iterator();
 		int j = 0;
 		while (i.hasNext()) {
 			data[j] = i.next().getGroup();
@@ -80,19 +80,27 @@ public class Groups {
 		return data;
 	}
 
-	private HashMap<String, SnippetGroupHistory> makeGroupsMap(Object[] data) {
+	private HashMap<String, TemplateGroup> makeGroupsMap(Object[] data) {
+		
+		//TODO: refactor
+		/*
 		//given array of clojure SnippetGroup
-		HashMap<String, SnippetGroupHistory> groupMap = new HashMap<String, SnippetGroupHistory>();
+		HashMap<String, TemplateGroup> groupMap = new HashMap<String, TemplateGroup>();
 				
 		for (int i=0; i<data.length; i++) {
-			SnippetGroupHistory sGroup = new SnippetGroupHistory(data[i]);
+			TemplateGroup sGroup = new TemplateGroup(data[i]);
 			groupMap.put(sGroup.getName(), sGroup);
 		}
 		
 		return groupMap;
+		
+		*/
+		
+		return null;
 	}
 
 	private HashMap<String, RewrittenSnippetGroup> makeRewrittenGroupsMap(Object[] data) {
+		/*
 		//given array of clojure SnippetGroup
 		HashMap<String, RewrittenSnippetGroup> groupMap = new HashMap<String, RewrittenSnippetGroup>();
 				
@@ -102,6 +110,8 @@ public class Groups {
 		}
 		
 		return groupMap;
+		*/
+		return null;
 	}
 
 	public void save(String filename) {

@@ -179,8 +179,8 @@
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PARSE_TO_DOC) parse-string-to-document)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PARSE_TO_NODES) parse-string-to-document)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_DOC) parse-string-to-document)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_NODES) parse-string-to-document)
   
   )
 

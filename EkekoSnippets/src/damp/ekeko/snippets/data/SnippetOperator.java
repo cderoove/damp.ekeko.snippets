@@ -47,8 +47,8 @@ public class SnippetOperator {
 		root.setExpanded(true);
 	}
 	
-	public static Object[] getOperands(Object snippet, Object subjectNode, Object operator) {
-		return getArray(FN_OPERATOR_BINDINGS_FOR_OPERANDS.invoke(snippet, subjectNode, operator));
+	public static Object[] getOperands(Object group, Object snippet, Object subjectNode, Object operator) {
+		return getArray(FN_OPERATOR_BINDINGS_FOR_OPERANDS.invoke(group, snippet, subjectNode, operator));
 	}
 
 	public static String getArgumentWithPrecondition(Object operator) {

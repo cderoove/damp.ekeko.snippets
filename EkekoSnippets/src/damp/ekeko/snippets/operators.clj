@@ -10,7 +10,6 @@
              [parsing :as parsing]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
-             [snippetgrouphistory :as snippetgrouphistory]
              ])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
@@ -428,8 +427,8 @@
   (update-in snippet [:ast2userfs node-var] (fn [x] '())))
 
 
-;; Operator for SnippetGroup
-;; -------------------------
+;; Operators for SnippetGroup
+;; --------------------------
 
 (defn
   node-deep 
@@ -447,21 +446,6 @@
         new-gf-snippet (snippet/update-gf-with-args (change-cf-parent snippet node) node :deep (list var-parent))
         new-snippet (snippet/update-cf new-gf-snippet node :exact)]
     (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
-
-(defn 
-  add-snippet
-  "Add snippet to snippetgroup."
-  [snippetgroup snippet]
-  (let [new-snippetlist (concat (snippetgroup/snippetgroup-snippetlist snippetgroup) (list snippet))]
-    (assoc snippetgroup :snippetlist new-snippetlist)))
-
-(defn 
-  remove-snippet
-  "Remove snippet to snippetgroup."
-  [snippetgroup snippet]
-  (let [new-snippetlist (remove #{snippet} (snippetgroup/snippetgroup-snippetlist snippetgroup))]
-    (assoc snippetgroup :snippetlist new-snippetlist)))
-
 
 (defn
   update-logic-conditions-to-snippetgroup
@@ -605,35 +589,6 @@
     new-group))
 
 
-;; Operator for SnippetGroupHistory
-;; --------------------------------
-
-(defn 
-  add-snippet-to-snippetgrouphistory
-  "Add snippet to snippetgrouphistory."
-  [snippetgrouphistory snippet]
-  (let [new-snippetgroup (add-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet)
-        new-orisnippetgroup (add-snippet (snippetgrouphistory/snippetgrouphistory-original snippetgrouphistory) snippet)
-        new-snippetgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
-    (snippetgrouphistory/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
-
-(defn 
-  remove-snippet-from-snippetgrouphistory
-  "Remove snippet from snippetgrouphistory."
-  [snippetgrouphistory snippet]
-  (let [new-snippetgroup (remove-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet)
-        new-orisnippetgroup (remove-snippet (snippetgrouphistory/snippetgrouphistory-original snippetgrouphistory) snippet)
-        new-snippetgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)]
-    (snippetgrouphistory/snippetgrouphistory-update-original-group new-snippetgrouphistory new-orisnippetgroup)))
-
-(defn 
-  update-snippet-in-snippetgrouphistory
-  "Update snippet in snippetgrouphistory."
-  [snippetgrouphistory snippet newsnippet]
-  (let [new-snippetgroup (snippetgroup/snippetgroup-replace-snippet (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) snippet newsnippet)]
-    (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory new-snippetgroup)))
-
-
 ;; Operator for Transformation
 ;; ---------------------------
 
@@ -713,15 +668,10 @@
 ;;---------------------------
 
 (def bind-logic-variable introduce-logic-variable-of-node-exact)
-(def add-template add-snippet)
-(def remove-template remove-snippet)
-(def add-rewrite-sequence add-snippet)
 
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_ADD_SNIPPET_TO_SNIPPETGROUPHISTORY) add-snippet-to-snippetgrouphistory)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUPHISTORY) remove-snippet-from-snippetgrouphistory)
 
 
   )

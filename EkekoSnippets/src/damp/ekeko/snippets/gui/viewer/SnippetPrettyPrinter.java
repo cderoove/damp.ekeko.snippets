@@ -17,7 +17,7 @@ import clojure.lang.RT;
 
 import com.google.common.base.Joiner;
 
-import damp.ekeko.snippets.data.SnippetGroupHistory;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
@@ -341,7 +341,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	public String prettyPrint(Object snippet) {
 		setSnippet(snippet);
-		ASTNode root = SnippetGroupHistory.getRootOfSnippet(snippet); 
+		ASTNode root = TemplateGroup.getRootOfSnippet(snippet); 
 		root.accept(this);
 		return getResult();
 	}

@@ -13,12 +13,15 @@
              [operators :as operators]
              [parsing :as parsing]
              [snippetgroup :as snippetgroup]
-             [snippetgrouphistory :as snippetgrouphistory]
              [precondition :as precondition]
-
              ]))
 
 ;; Operator information
+
+
+(def opscope-subject :subject) ;operand scope denoting the subject of the operator
+(def opscope-variable :variable)
+
 
 (defrecord 
   Operator
@@ -77,7 +80,12 @@
 
 (defrecord 
   Operand
-  [description scope])
+  [description scope validation])
+
+(defn
+  make-operand 
+  [description scope validation]
+  (Operand. description scope validation))
 
 (defn 
   operand-description
@@ -96,6 +104,11 @@
   [operand]
   (not= (operand-scope operand) nil))
 
+(defn
+  operand-validation
+  "Returns predicate to be used for validating values it is bound to."
+  [operand]
+  (:validation operand))
 
 
 ;(defrecord 
@@ -106,14 +119,18 @@
 
 (defn
   make-binding
-  [operand template value]
-  (damp.ekeko.snippets.OperandBinding. operand template value)
-  )
+  [operand group template value]
+  (damp.ekeko.snippets.OperandBinding. operand group template value))
 
 (defn
   binding-operand
   [binding]
   (.operand binding))
+
+(defn
+  binding-group
+  [binding] 
+  (.group binding))
 
 (defn
   binding-template
@@ -128,31 +145,29 @@
 (defn
   set-binding-value!
   [binding val]
-  (set! (.value binding) val)) 
+  (set! (.value binding) val))
   
 (defn
   operator-bindings-for-operands
   "Returns fresh bindings for the operands of the given operator."
-  [snippet operator]
+  [group template operator]
   (map (fn [operand]
-         (make-binding operand snippet  ""))
+         (make-binding operand group template  ""))
        (operator-operands operator)))
 
 (defn
   operator-bindings-for-operands-and-subject
   "Returns fresh bindings for the subject of an operator and its additional operands."
-  [snippet subject-snippet-node operator]
+  [group template subject-template-node operator]
   (conj 
-    (operator-bindings-for-operands snippet operator)
+    (operator-bindings-for-operands group template operator)
     (make-binding
-      (Operand. "Subject" nil)
-      snippet
-      subject-snippet-node)))
-
-(defn
-  binding-operand-description
-  [binding]
-  (operand-description (binding-operand binding)))
+      (make-operand "Subject" 
+                    opscope-subject
+                    (fn [value] (= subject-template-node value)))
+      group
+      template
+      subject-template-node)))
 
 ;; Registered operator types
 
@@ -177,7 +192,7 @@
   (get categories category))
 
 
-
+  
 ;; Registered operators
 
 
@@ -190,7 +205,7 @@
      "Replace by variable"
      nil
      "Replaces selection by a variable."
-     [(Operand. "Variable (e.g., ?v)" nil)])])
+     [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])])
 
 
 (defn 
@@ -271,100 +286,30 @@
   )
 
   ;; Function apply-operator 
-  ;; --------------------------------
+  ;; -----------------------
 
   (defn apply-operator
     "Apply operator to snippet, returns new snippet."
-    [snippet op-id node args]
-    (let [op-func (operator-operator op-id)]
-      (cond 
-        (= op-id :add-node)
-        (op-func snippet node (parsing/parse-string-ast (first args)) (Integer/parseInt (fnext args)))
-        (= op-id :replace-node)
-      (op-func snippet node (parsing/parse-string-ast (first args)))
-      (= op-id :update-logic-conditions)
-      (apply operators/update-logic-conditions snippet args)
-      (= op-id :introduce-logic-variables-for-snippet)
-        (do
-          (println "snippet" op-id (first args))
-        (apply op-func snippet args))
-      :else
-        (do
-        (println "snippet" op-id (first args))
-          (apply op-func snippet node args)))))
+    [template operatorf subject args]
+    (apply operatorf template subject args))
 
-  (defn apply-operator-to-snippetgroup
-  "Apply operator to group and related snippet inside group, returns new group.
-   node can be many, but should be in one snippet."
-  [snippetgroup op-id node args]
-    (let [snippet (if (or (sequential? node) (.isArray (.getClass node)))
-                    (snippetgroup/snippetgroup-snippet-for-node snippetgroup (first node))
-                  (snippetgroup/snippetgroup-snippet-for-node snippetgroup node))
-          op-func (operator-operator op-id)]
-      (if (operand-has-scope? (first (operator-operands op-id))) ;todo: meer argumenten
-        (apply op-func snippetgroup node args)
-        (cond 
-        (nil? snippet)
-        (apply operators/update-logic-conditions-to-snippetgroup snippetgroup args)
-        (= op-id :introduce-logic-variables-to-group)
-        (apply operators/introduce-logic-variables-to-group snippetgroup node args)
-        :else
-        ;;apply operator to snippet
-        (do
-          (println "snippet" op-id (first args))
-          (let [newsnippet (apply-operator snippet op-id node args)]
-            (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet)))))))
+  (defn 
+    apply-operator-to-snippetgroup
+    "Apply operator to snippetgroup."
+    [snippetgroup operator bindings]
+    (let [subject-binding 
+          (first bindings)
+          ;(some (fn [binding] 
+          ;        (= "Subject" (operand-name (binding-operand  binding))))
+          ;      operands)
+          subject-template
+          (binding-template subject-binding)
+          subject-node
+          (binding-value subject-binding)]
+      (let [newsnippet (apply-operator subject-template (operator-operator operator) subject-node (map binding-value (rest bindings)))]
+        (snippetgroup/snippetgroup-replace-snippet snippetgroup subject-template newsnippet))))
 
-  (defn apply-operator-to-snippetgrouphistory
-  "Apply operator to group history and save the applied operator, returns new group history."
-  [snippetgrouphistory op-id node args]
-  (let [newgroup (apply-operator-to-snippetgroup
-                     (snippetgrouphistory/snippetgrouphistory-current snippetgrouphistory) 
-                     op-id node args)
-          newgrouphistory (snippetgrouphistory/snippetgrouphistory-update-group snippetgrouphistory newgroup)
-          var-node (snippetgrouphistory/snippetgrouphistory-var-for-node snippetgrouphistory node)]
-      (snippetgrouphistory/snippetgrouphistory-add-history newgrouphistory op-id var-node args)))
-     
-  
-
-  ;; Function undo and redo 
-  ;; --------------------------------
-
-  (defn undo-operator
-  [grouphistory]
-  "Undo last applied operator in given snippet group history." 
-    (defn undo-operator-rec [grouphistory op-histories]
-      (if (empty? op-histories)
-        grouphistory
-        (let [history (first op-histories)]
-          (undo-operator-rec
-            (apply-operator-to-snippetgrouphistory 
-            grouphistory
-            (snippetgrouphistory/history-operator history)
-            (snippetgrouphistory/snippetgrouphistory-node-for-var grouphistory (snippetgrouphistory/history-varnode history))
-            (snippetgrouphistory/history-args history))
-            (rest op-histories)))))
-  (let [op-histories (drop-last (snippetgrouphistory/snippetgrouphistory-history grouphistory))
-          undo-grouphistory (snippetgrouphistory/snippetgrouphistory-add-undohistory grouphistory)
-          new-grouphistory (snippetgrouphistory/reset-snippetgrouphistory undo-grouphistory)]
-    (undo-operator-rec new-grouphistory op-histories))) 
-
-  (defn redo-operator
-  [grouphistory]
-  "Redo last undo operator in given snippet group history." 
-    (if (empty? (snippetgrouphistory/snippetgrouphistory-undohistory grouphistory))
-      grouphistory 
-    (let [redo (snippetgrouphistory/snippetgrouphistory-first-undohistory grouphistory)
-          redo-grouphistory (snippetgrouphistory/snippetgrouphistory-remove-undohistory grouphistory)]
-      (apply-operator-to-snippetgrouphistory 
-          redo-grouphistory
-          (snippetgrouphistory/history-operator redo)
-          (snippetgrouphistory/snippetgrouphistory-node-for-var redo-grouphistory (snippetgrouphistory/history-varnode redo))
-        (snippetgrouphistory/history-args redo)))))
-    
-
-  
-  
+       
   ;; Operator Information
   ;; --------------------
 
@@ -843,9 +788,7 @@
   (defn
     register-callbacks 
     []
-    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_APPLY_TO_SNIPPETGROUPHISTORY) apply-operator-to-snippetgrouphistory)
-    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_UNDO) undo-operator)
-    (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_REDO) redo-operator)
+    (set! (damp.ekeko.snippets.data.TemplateGroup/FN_APPLY_TO_SNIPPETGROUP) apply-operator-to-snippetgroup)
   
     (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_CATEGORIES) registered-categories)
     (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORCATEGORY_DESCRIPTION) category-description)
@@ -863,11 +806,6 @@
     (set! (damp.ekeko.snippets.data.SnippetOperator/FN_IS_OPERATOR) operator?)
     
     
-    (set! (damp.ekeko.snippets.gui.OperandBindingDescriptionLabelProvider/FN_BINDING_OPERAND_DESCRIPTION) binding-operand-description)
-    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_UPDATE_OPERANDBINDING_VALUE) set-binding-value!)
-    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_VALUE) binding-value)
-    (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_TEMPLATE) binding-template)    
-
    
  
     )

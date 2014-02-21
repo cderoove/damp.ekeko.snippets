@@ -1,6 +1,5 @@
 package damp.ekeko.snippets.data;
 
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 
@@ -8,27 +7,22 @@ import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
-public class RewrittenSnippetGroup extends SnippetGroupHistory{
+public class RewrittenSnippetGroup extends TemplateGroup{
 	
 	public RewrittenSnippetGroup(String name) {
 		super(name);
 	}
 	
-	public RewrittenSnippetGroup(Object group) {
-		//given clojure SnippetGroup
-		super(group);
-	}
-
 	/**
 	 * 
 	 * REWRITE SNIPPET PART
 	 */
 	
-	public Object getOriginalSnippet(SnippetGroupHistory sGroup, Object rwSnippet) {
+	public Object getOriginalSnippet(TemplateGroup sGroup, Object rwSnippet) {
 		return RT.var("damp.ekeko.snippets.rewrite","get-original-snippet").invoke(sGroup.getGroup(), rwSnippet);
 	}
 
-	public void applyOperator(Object operator, SnippetGroupHistory sGroup, Object sNode, Object rwNode, String[] args) {
+	public void applyOperator(Object operator, TemplateGroup sGroup, Object sNode, Object rwNode, String[] args) {
 		Object snippet = sGroup.getSnippet(sNode);
 		Object oldRWSnippet = getSnippet(rwNode);
 		Object rwSnippet = null;
@@ -43,27 +37,27 @@ public class RewrittenSnippetGroup extends SnippetGroupHistory{
 		} else 
 			rwSnippet = RT.var("damp.ekeko.snippets.operatorsrep", "apply-operator").invoke(oldRWSnippet, operator, rwNode, args);		
 		
-		setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
+		//setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(group, oldRWSnippet, rwSnippet));
 	}
 
 	public void removeRule(Object rwNode) {
 		Object oldRWSnippet = getSnippet(rwNode);
 		Object rwSnippet = RT.var("damp.ekeko.snippets.operators", "remove-user-defined-condition").invoke(oldRWSnippet, rwNode);		
-		setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
+		//setGroupHistory(RT.var("damp.ekeko.snippets.operators", "update-snippet-in-snippetgrouphistory").invoke(getGroupHistory(), oldRWSnippet, rwSnippet));
 	}
 
-	public String getTransformationQuery(SnippetGroupHistory sGroup) {
+	public String getTransformationQuery(TemplateGroup sGroup) {
 		Object query = RT.var("damp.ekeko.snippets.querying","snippetgroup-rewrite-query").invoke(sGroup.getGroup(), getGroup(), Symbol.intern("damp.ekeko/ekeko")); 		
 		if (query != null)
 			return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 		return "";
 	}
 
-	public void doTransformation(SnippetGroupHistory sGroup) {
+	public void doTransformation(TemplateGroup sGroup) {
 		RT.var("damp.ekeko.snippets","query-rewrite-by-snippetgroup").invoke(sGroup.getGroup(), getGroup()); 		
 	}
 
-	public void setTableRW(Table table, SnippetGroupHistory sGroup) {
+	public void setTableRW(Table table, TemplateGroup sGroup) {
 		table.removeAll();
 		Object[] mapping = getArray(RT.var("damp.ekeko.snippets.rewrite","snippetgroup-rewrite-mapping").invoke(sGroup.getGroup(), getGroup()));
 

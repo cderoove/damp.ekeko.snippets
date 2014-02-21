@@ -32,7 +32,6 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
@@ -44,10 +43,9 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.wb.swt.ResourceManager;
 
-import clojure.lang.Keyword;
 import damp.ekeko.snippets.data.Groups;
-import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.data.TemplateGroup;
 import damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter;
 
 public class TemplateView extends ViewPart {
@@ -65,20 +63,20 @@ public class TemplateView extends ViewPart {
 	private Table operandsTable;
 	private Table tableNode;
 	
-	//TODO: clean up confusion between both
 	private Groups groups;
-	private SnippetGroupHistory snippetGroupHistory;
+
+	private TemplateGroup templateGroup;
 	
 	private TemplateTreeContentProvider contentProvider;
 	private TableViewer operandsTableViewer;
 
 	public TemplateView() {
-		snippetGroupHistory = new SnippetGroupHistory("Template Group");
+		templateGroup = new TemplateGroup("Template Group");
 	}
 	
-	public void setGroup(Groups groups, SnippetGroupHistory group) {
+	public void setGroup(Groups groups, TemplateGroup group) {
 		this.groups = groups;
-		snippetGroupHistory = group;
+		templateGroup = group;
 		renderSnippet();
 	}
 
@@ -203,9 +201,9 @@ public class TemplateView extends ViewPart {
 		
 		contentProvider = new TemplateTreeContentProvider();
 		snippetTreeViewer.setContentProvider(getContentProvider());
-		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(this));		
-		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(this));
-		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(this));
+		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(getSnippetGroup()));		
+		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(getSnippetGroup()));
+		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(getSnippetGroup()));
 		//snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(this));
 
 		treeSnippet.addListener(SWT.Selection, new Listener() {
@@ -244,7 +242,7 @@ public class TemplateView extends ViewPart {
 		tltmApplyOperator.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/etool16/validate.gif"));
 		tltmApplyOperator.setToolTipText("Apply Operator");
 		
-		
+		/*
 		ToolItem undoOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		undoOperator.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -265,7 +263,7 @@ public class TemplateView extends ViewPart {
 		});
 		redoOperator.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/redo_edit.gif"));
 		redoOperator.setToolTipText("Redo operator application");
-
+		*/
 
 		
 		
@@ -323,13 +321,15 @@ public class TemplateView extends ViewPart {
 		TableColumn operandDescriptionColCol = operandDescriptionCol.getColumn();
 		operandDescriptionColCol.setWidth(150);
 		operandDescriptionColCol.setText("Operand");
-		operandDescriptionCol.setLabelProvider(new OperandBindingDescriptionLabelProvider());
-				
+		operandDescriptionCol.setLabelProvider(new OperandBindingLabelProviderDescription());
+		
+		
+		
 		TableViewerColumn operandValueCol = new TableViewerColumn(operandsTableViewer, SWT.NONE);
 		TableColumn operandValueColCol = operandValueCol.getColumn();
 		operandValueColCol.setWidth(150);
 		operandValueColCol.setText("Value");
-		operandValueCol.setLabelProvider(new OperandBindingValueLabelProvider());
+		operandValueCol.setLabelProvider(new OperandBindingLabelProviderValue());
 
 		operandValueCol.setEditingSupport(new OperandBindingEditingSupport(operandsTableViewer));
 		
@@ -447,7 +447,7 @@ public class TemplateView extends ViewPart {
 	//returns a Snippet instance
 	public Object getSelectedSnippet() {
 		Object selectedSnippetNode = getSelectedSnippetNode();
-		return snippetGroupHistory.getSnippet(selectedSnippetNode);
+		return templateGroup.getSnippet(selectedSnippetNode);
 	}
 	
 	//returns an AST node or wrapper within a Snippet
@@ -465,17 +465,7 @@ public class TemplateView extends ViewPart {
 		}
 		return nodes;
 	}
-	
-	public String[] getInputs(Table table, int column) {
-		TableItem[] items = table.getItems();
-		String[] result = new String[items.length];
-
-		for (int i = 0; i < items.length; i++) {
-			result[i] = items[i].getText(column);
-		}		
-		return result;
-	}
-	
+		
 	public Object getSelectedNode() {
 		if (tableNode.getSelectionCount() > 0)
 			return tableNode.getSelection()[0].getData();
@@ -490,9 +480,9 @@ public class TemplateView extends ViewPart {
 		this.viewID = secondaryId;
 	}
 	
-	
-	private Object getSnippetGroup() {
-		return snippetGroupHistory.getGroup();
+
+	public Object getSnippetGroup() {
+		return templateGroup.getGroup();
 	}
 	
 	private void updateGroupTree() {
@@ -515,7 +505,7 @@ public class TemplateView extends ViewPart {
 		String code = getSelectedTextFromActiveEditor();
 		if (code != null && !code.isEmpty()) {
 			//throws NPE when selected text cannot be parsed as the starting point for a template
-			snippetGroupHistory.addSnippetCode(code);
+			templateGroup.addSnippetCode(code);
 			renderSnippet();
 		}
 	}
@@ -529,12 +519,12 @@ public class TemplateView extends ViewPart {
 		if(!MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), "Delete templates", "Are you sure you want to delete the selected templates?")) 
 			return;
 		for(Object selected : getSelectedSnippets()) 
-				snippetGroupHistory.removeSnippet(selected);
+			templateGroup.removeSnippet(selected);
 		renderSnippet();
 	}
 
 	public void viewQuery() {
-		String query = snippetGroupHistory.getQuery(getSelectedSnippet());
+		String query = templateGroup.getQuery(getSelectedSnippet());
 		OperatorApplicationDialog dlg = new OperatorApplicationDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
@@ -543,7 +533,7 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void runQuery() {
-		snippetGroupHistory.runQuery(getSelectedSnippet());
+		templateGroup.runQuery(getSelectedSnippet());
 	}
 	
 	class QueryResultThread extends Thread {
@@ -555,14 +545,14 @@ public class TemplateView extends ViewPart {
 		
         public void run() {
         	//result check view only for group
-			final Object[] result = snippetGroupHistory.getQueryResult("Group");
+			final Object[] result = templateGroup.getQueryResult("Group");
 			
     		Display.getDefault().syncExec(new Runnable() {    			
     		    public void run() {
     				try {
     					ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
     					view.setResult(result);
-    					view.setGroup(snippetGroupHistory);
+    					view.setGroup(templateGroup);
     					//view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
     					view.setSnippet(null);
     					view.putData();
@@ -581,7 +571,7 @@ public class TemplateView extends ViewPart {
 
 	public void addLogicCondition() {
 		Object[] inputs = {textCondition.getText()};
-		applyOperator(snippetGroupHistory.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
+		//applyOperator(templateGroup.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
 		updateTextFields();
 	}
 
@@ -593,7 +583,7 @@ public class TemplateView extends ViewPart {
 			return;
 		}			
 		//shows text for and condition associated with currently selected snippet
-		textCondition.setText(snippetGroupHistory.getLogicConditions(selectedSnippet));
+		textCondition.setText(templateGroup.getLogicConditions(selectedSnippet));
 		Object selectedSnippetNode = getSelectedSnippetNode();
 		SnippetPrettyPrinter prettyprinter = new SnippetPrettyPrinter();
 		prettyprinter.setHighlightNode(selectedSnippetNode);
@@ -612,6 +602,7 @@ public class TemplateView extends ViewPart {
 	} 
 	
 	private void updateOperandsTable() {
+		Object snippetGroup = getSnippetGroup();
 		Object selectedSnippet = getSelectedSnippet();
 		Object selectedSnippetNode = getSelectedSnippetNode();
 		Object selectedOperator = getSelectedOperator();
@@ -622,7 +613,7 @@ public class TemplateView extends ViewPart {
 		}
 		
 		textOpInfo.setText(SnippetOperator.getDescription(selectedOperator));
-		operandsTableViewer.setInput(SnippetOperator.getOperands(selectedSnippet, selectedSnippetNode, selectedOperator));
+		operandsTableViewer.setInput(SnippetOperator.getOperands(snippetGroup, selectedSnippet, selectedSnippetNode, selectedOperator));
 
 	}
 
@@ -680,13 +671,15 @@ public class TemplateView extends ViewPart {
 	} 
 	
 	private void onApplyOperator() {
-		Object[] nodes = getSelectedSnippets();
-		if (nodes.length == 1) 
-			applyOperator(getSelectedSnippetNode(), getSelectedOperator(), getInputs(operandsTable, 1));
+		Object operands = operandsTableViewer.getInput();
+		if(operands == null)
+			return;
+		applyOperator(getSelectedOperator(), operandsTableViewer.getInput());
+		
 	}
 	
-	public void applyOperator(Object selectedNode, Object selectedOperator, Object[] inputs) {
-		snippetGroupHistory.applyOperator(selectedOperator, selectedNode, inputs);
+	private void applyOperator(Object selectedOperator, Object operands) {
+		templateGroup.applyOperator(selectedOperator, operands);
 		refreshWidgets();
 	}
 	
@@ -698,6 +691,7 @@ public class TemplateView extends ViewPart {
 		updateOperandsTable();
 	}
 
+	/*
 	public void undo() {
 		snippetGroupHistory.undoOperator();
 		renderSnippet();
@@ -707,11 +701,12 @@ public class TemplateView extends ViewPart {
 		snippetGroupHistory.redoOperator();
 		renderSnippet();
 	}
-
+	*/
+	
 	public void transformation() {
 		try {
 			TransformsView view = (TransformsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.TransformsView");
-			view.setRewrittenGroup(groups, snippetGroupHistory);
+			view.setRewrittenGroup(groups, templateGroup);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

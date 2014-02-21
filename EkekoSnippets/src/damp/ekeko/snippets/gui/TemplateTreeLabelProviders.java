@@ -12,21 +12,21 @@ public class TemplateTreeLabelProviders {
 	public static IFn FN_LABELPROVIDER_DIRECTIVES;
 	
 	public abstract static class SnippetGroupColumnLabelProvider extends ColumnLabelProvider {
-		protected TemplateView snippetViewer;
+		protected Object  snippetGroup;
 		
-		public SnippetGroupColumnLabelProvider(TemplateView s) {
-			snippetViewer = s;
+		public SnippetGroupColumnLabelProvider(Object snippetGroup) {
+			this.snippetGroup = snippetGroup;
 		}
 		
 		protected Object getGroup() {
-			return snippetViewer.getContentProvider().getGroup();
+			return  snippetGroup;
 		}
 		
 	}
 	
 	public static class NodeColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 		
-		public NodeColumnLabelProvider(TemplateView s) {
+		public NodeColumnLabelProvider(Object s) {
 			super(s);
 		}
 		
@@ -37,7 +37,7 @@ public class TemplateTreeLabelProviders {
 	
 	public static class KindColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public KindColumnLabelProvider(TemplateView s) {
+		public KindColumnLabelProvider(Object s) {
 			super(s);
 		}
 		
@@ -48,7 +48,7 @@ public class TemplateTreeLabelProviders {
 
 	public static class PropertyColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public PropertyColumnLabelProvider(TemplateView s) {
+		public PropertyColumnLabelProvider(Object s) {
 			super(s);
 		}
 		
@@ -59,7 +59,7 @@ public class TemplateTreeLabelProviders {
 	
 	public static class DirectivesColumnLabelProvider extends SnippetGroupColumnLabelProvider {
 
-		public DirectivesColumnLabelProvider(TemplateView s) {
+		public DirectivesColumnLabelProvider(Object s) {
 			super(s);
 		}
 		

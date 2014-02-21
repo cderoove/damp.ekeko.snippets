@@ -39,8 +39,8 @@ import org.eclipse.wb.swt.ResourceManager;
 
 import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.RewrittenSnippetGroup;
-import damp.ekeko.snippets.data.SnippetGroupHistory;
 import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TransformsView extends TemplateView {
 
@@ -58,14 +58,14 @@ public class TransformsView extends TemplateView {
 	private Table tableRW;
 
 	private Groups groups;
-	private SnippetGroupHistory snippetGroup;
+	private TemplateGroup snippetGroup;
 	private RewrittenSnippetGroup rwSnippetGroup;
 	private TemplateTreeContentProvider contentProvider;
 
 	public TransformsView() {
 	}
 
-	public void setRewrittenGroup(Groups groups, SnippetGroupHistory group) {
+	public void setRewrittenGroup(Groups groups, TemplateGroup group) {
 		this.groups = groups;
 		snippetGroup = group;
 		rwSnippetGroup = groups.getRewrittenGroup(snippetGroup);
@@ -484,11 +484,12 @@ public class TransformsView extends TemplateView {
 	}
 
 	public void onSnippetSelection() {
+		
 		textSnippet.setSelectionRange(0, 0);
 		textSnippet.setText(snippetGroup.toString(getSelectedSnippet()));
 		markSnippet(textSnippet);
-		int x = snippetGroup.getActiveNodePos()[0];
-		int y = snippetGroup.getActiveNodePos()[1];
+		int x = 0;// = snippetGroup.getActiveNodePos()[0];
+		int y = 0;// = snippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textSnippet.setSelectionRange(x, y-x);
 	} 
@@ -504,8 +505,8 @@ public class TransformsView extends TemplateView {
 		
 		textRWSnippet.setText(code);
 		markSnippet(textRWSnippet);
-		int x = rwSnippetGroup.getActiveNodePos()[0];
-		int y = rwSnippetGroup.getActiveNodePos()[1];
+		int x= 0;// = rwSnippetGroup.getActiveNodePos()[0];
+		int y= 0;// = rwSnippetGroup.getActiveNodePos()[1];
 		if (x < 0) {x = 0; y = 0;}
 		textRWSnippet.setSelectionRange(x, y-x);
 	} 
@@ -515,14 +516,15 @@ public class TransformsView extends TemplateView {
 	} 
 	
 	public void applyOperator(Object selectedNode, Object selectedRWNode, Object selectedOperator) {
+		/*
 		String[] args = new String[0]; //  = SnippetOperator.getOperands(selectedOperator);
 
 		if (selectedRWNode != null) {
-			String	nodeInfo = "Rewritten Node\n " + SnippetGroupHistory.getTypeValue(selectedRWNode) + 
+			String	nodeInfo = "Rewritten Node\n " + TemplateGroup.getTypeValue(selectedRWNode) + 
 					"\n" + selectedRWNode.toString().replace(", :",  "\n:") ;
 
 			if (SnippetOperator.isTransformOperator(selectedOperator)) {
-				nodeInfo = "Original Node \n" + SnippetGroupHistory.getTypeValue(selectedNode) + 
+				nodeInfo = "Original Node \n" + TemplateGroup.getTypeValue(selectedNode) + 
 						"\n" + selectedNode.toString().replace(", :",  "\n:") + "\n \n" + nodeInfo;
 			}
 			
@@ -536,6 +538,8 @@ public class TransformsView extends TemplateView {
 				renderSnippet();
 			}
 		}
+		
+		*/
 	
 	}
 	

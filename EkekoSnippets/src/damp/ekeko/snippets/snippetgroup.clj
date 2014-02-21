@@ -132,13 +132,27 @@ damp.ekeko.snippets.snippetgroup
   "Returns all ast to user functions of the given grp."
   (mapcat snippet/snippet-userfs (:snippetlist grp)))
 
-
 (defn
   snippetgroup-new-state
   [grp]
   (let [new-snippetlist (map snippet/snippet-new-state  (:snippetlist grp))] 
     (update-in grp [:snippetlist] (fn [x] new-snippetlist))))
-  
+
+
+(defn 
+  add-snippet
+  "Add snippet to snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippetlist (concat (snippetgroup-snippetlist snippetgroup) (list snippet))]
+    (assoc snippetgroup :snippetlist new-snippetlist)))
+
+(defn 
+  remove-snippet
+  "Remove snippet from snippetgroup."
+  [snippetgroup snippet]
+  (let [new-snippetlist (remove #{snippet} (snippetgroup-snippetlist snippetgroup))]
+    (assoc snippetgroup :snippetlist new-snippetlist)))
+
   
 ;; Constructing SnippetGroup instances
 ;; -----------------------------------
@@ -148,18 +162,6 @@ damp.ekeko.snippets.snippetgroup
   "Create SnippetGroup instance."
   [name]
   (SnippetGroup. name '() '()))
-
-
-
-;; Pretty printing
-;; ----------------
-
-
-(defn
-  print-snippetgroup
-  [snippetgroup]
-  (let [str-list (map snippet/print-snippet (snippetgroup-snippetlist snippetgroup))]
-    (reduce str str-list))) 
 
 
 
@@ -173,11 +175,13 @@ damp.ekeko.snippets.snippetgroup
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_NAME) snippetgroup-name)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUP_USERQUERY) snippetgroup-userquery)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPETGROUPHISTORY_NEWSTATE) snippetgroup-new-state)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETGROUP) print-snippetgroup)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_MAKE_SNIPPETGROUP) make-snippetgroup)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NAME) snippetgroup-name)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_USERQUERY) snippetgroup-userquery)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NEWSTATE) snippetgroup-new-state)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
 
   )
 

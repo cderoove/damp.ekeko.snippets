@@ -535,51 +535,12 @@ damp.ekeko.snippets.snippet
       (copy-snippet snippet newsnippet))))
 
 
-
-
-;; Pretty printing 
-;;----------------
-
-(defn
-  print-plain-node
-  [snippet node]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.accept node visitor)
-    (.getResult visitor)))
-
-(defn
-  print-plain-snippet
-  [snippet]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPlainPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.accept (:ast snippet) visitor)
-    (.getResult visitor)))
-
-(defn
-  print-snippet-with-highlight
-  [snippet highlightnode]
-  (let [visitor (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter.)]
-    (.setSnippet visitor snippet)
-    (.setHighlightNode visitor highlightnode)
-    (.accept (:ast snippet) visitor)
-    (list (.getResult visitor) (.getHighlightPos visitor))))
-
-(defn
-  print-snippet
-  [snippet]
-  (first (print-snippet-with-highlight snippet nil))) 
-
-
-
-
-
 (defn
   register-callbacks
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_ROOT) snippet-root)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_USERQUERIES) snippet-userqueries)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_ROOT) snippet-root)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERIES) snippet-userqueries)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
 
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-uservar-for-node)
@@ -591,11 +552,6 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
   
   
-    ;;TODO: eliminate
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_PLAINNODE) print-plain-node)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_PRINT_SNIPPETHIGHLIGHT) print-snippet-with-highlight)
-
-
 
   )
 

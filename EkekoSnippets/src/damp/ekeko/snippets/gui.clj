@@ -166,6 +166,71 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
 
 
+;; Callbacks for operand binding cell editor
+;; -----------------------------------------
+
+
+(defn
+  make-groupnode-selectiondialog
+  [shell group template node]
+  (damp.ekeko.snippets.gui.GroupNodeSelectionDialog. shell group template node))
+
+
+(defmulti
+  operandbinding-celleditor
+  (fn [table operandbinding]
+    (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
+
+(defmethod 
+  operandbinding-celleditor
+  operatorsrep/opscope-subject
+  [table operandbinding]
+  (let [editor 
+        (proxy [org.eclipse.jface.viewers.DialogCellEditor] [table]
+          (openDialogBox [window] 
+            (let [shell (.getShell window)
+                  dialog (make-groupnode-selectiondialog 
+                           shell 
+                           (operatorsrep/binding-group operandbinding)
+                           (operatorsrep/binding-template operandbinding)
+                           (operatorsrep/binding-value operandbinding))]
+              (.getValue (.open dialog)))))]
+        editor))
+
+(defmethod 
+  operandbinding-celleditor
+  operatorsrep/opscope-variable 
+  [table operandbinding]
+  (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
+    editor))
+    
+  
+(defn
+  operandbinding-labelprovider-descriptiontext
+  [operandbinding]
+  (operatorsrep/operand-description (operatorsrep/binding-operand operandbinding)))
+
+(defmulti
+  operandbinding-labelprovider-valuetext
+  (fn [operandbinding]
+    (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
+
+(defmethod
+  operandbinding-labelprovider-valuetext
+  operatorsrep/opscope-subject
+  [operandbinding]
+  ;;todo: invoke prettyprinter on node in template (also accessible from operatorbinding)
+  (str (operatorsrep/binding-value operandbinding)))
+
+(defmethod
+  operandbinding-labelprovider-valuetext
+  :default
+  [operandbinding]
+  ;;todo: invoke prettyprinter on node in template (also accessible from operatorbinding)
+  (str (operatorsrep/binding-value operandbinding)))
+
+
+
 (defn
   configure-callbacks
   []
@@ -181,6 +246,11 @@
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_PARENT) operatortreecontentprovider-parent) 
   (set! (damp.ekeko.snippets.gui.OperatorTreeLabelProvider/FN_LABELPROVIDER_OPERATOR)  operatortreelabelprovider-operator)
       
+  (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_EDITOR) operandbinding-celleditor)
+  (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderDescription/FN_LABELPROVIDER_DESCRIPTION_TEXT) operandbinding-labelprovider-descriptiontext)
+  (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderValue/FN_LABELPROVIDER_DESCRIPTION_VALUE) operandbinding-labelprovider-valuetext)
+
+  
   )
 
 

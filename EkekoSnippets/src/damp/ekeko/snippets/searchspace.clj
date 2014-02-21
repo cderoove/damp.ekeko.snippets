@@ -194,7 +194,7 @@
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_SEARCH) iterate-snippet))
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SEARCH) iterate-snippet))
 
 (register-callbacks)
 

@@ -11,7 +11,6 @@
              [parsing :as parsing]
              [util :as util]
              [rewrite]
-             [snippetgrouphistory]
              [operators]
              [operatorsrep]
              [precondition]
@@ -90,10 +89,10 @@
 (defn
   register-callbacks
   []
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_QUERY_BY_SNIPPET) query-by-snippet*)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_QUERY_BY_SNIPPETGROUP) query-by-snippetgroup*)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_QUERY_BY_SNIPPETGROUP_HEADER) query-by-snippetgroup-with-header)
-  (set! (damp.ekeko.snippets.data.SnippetGroupHistory/FN_QUERY_BY_SNIPPET_HEADER) query-by-snippet-with-header)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET) query-by-snippet*)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP) query-by-snippetgroup*)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP_HEADER) query-by-snippetgroup-with-header)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET_HEADER) query-by-snippet-with-header)
 
   )
 
