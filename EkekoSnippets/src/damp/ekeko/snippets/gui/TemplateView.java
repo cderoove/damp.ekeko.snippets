@@ -8,17 +8,8 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.ITextSelection;
-import org.eclipse.jface.text.TextViewer;
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
@@ -26,22 +17,15 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.wb.swt.ResourceManager;
 
-import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplateView extends ViewPart {
@@ -49,18 +33,11 @@ public class TemplateView extends ViewPart {
 	public static final String ID = "damp.ekeko.snippets.gui.TemplateView"; //$NON-NLS-1$
 	private String viewID;
 
-	private List<Action> actions; 
-	private Tree operatorTree;
-	private TreeViewer operatorTreeViewer;
-	private StyledText textOpInfo;
-	private Table operandsTable;
-	private Table tableNode;
-	
+	private List<Action> actions; 	
 	private TemplateGroup templateGroup;
 	private TemplateGroupViewer templateGroupViewer;
-	
 	private TemplateTreeContentProvider contentProvider;
-	private TableViewer operandsTableViewer;
+	private OperatorOperandsViewer operatorOperandsViewer;
 
 	public TemplateView() {
 		templateGroup = TemplateGroup.newFromGroupName("Template Group");
@@ -109,7 +86,7 @@ public class TemplateView extends ViewPart {
 		tltmRemove.setToolTipText("Remove Snippet");
 		
 		
-		templateGroupViewer = new TemplateGroupViewer(snippetTreeGroup, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 0;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
+		templateGroupViewer = new TemplateGroupViewer(snippetTreeGroup, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 0;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
 			@Override
 			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
@@ -117,7 +94,6 @@ public class TemplateView extends ViewPart {
 				//event.getSelectedTemplate();
 				//event.getSelectedTemplateNode();
 				updateOperatorTreeView();
-				updateOperandsTable();
 			}
 		});
 
@@ -178,98 +154,7 @@ public class TemplateView extends ViewPart {
 		*/
 
 		
-		
-		operatorTreeViewer = new TreeViewer(snippetOperatorGroup, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
-		operatorTreeViewer.setAutoExpandLevel(3);
-		operatorTree = operatorTreeViewer.getTree();
-		operatorTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-		
-		TreeViewerColumn operatorNameColumn = new TreeViewerColumn(operatorTreeViewer, SWT.NONE);
-		TreeColumn trclmnOperator = operatorNameColumn.getColumn();
-		trclmnOperator.setWidth(150);
-		trclmnOperator.setText("Operator");
-		
-		operatorNameColumn.setLabelProvider(new OperatorTreeLabelProvider());
-		operatorTreeViewer.setContentProvider(new OperatorTreeContentProvider());
-		
-			
-		operatorTree.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event e) {
-		        onOperatorSelection();
-			}
-		});		
-
-		TextViewer textViewer = new TextViewer(snippetOperatorGroup, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		textOpInfo = textViewer.getTextWidget();
-		textOpInfo.setEditable(false);
-		GridData gd_textOpInfo = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
-		gd_textOpInfo.heightHint = 100;
-		textOpInfo.setLayoutData(gd_textOpInfo);
-
-		
-		
-		
-		Group snippetOperatorOperandsGroup = new Group(container, SWT.NONE);
-		snippetOperatorOperandsGroup.setLayout(new GridLayout(1, false));
-		
-		ToolBar toolBar_3 = new ToolBar(snippetOperatorOperandsGroup, SWT.FLAT | SWT.RIGHT);
-		toolBar_3.setOrientation(SWT.RIGHT_TO_LEFT);
-		toolBar_3.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
-		
-		
-		operandsTableViewer = new TableViewer(snippetOperatorOperandsGroup, SWT.BORDER | SWT.FULL_SELECTION);
-		operandsTable = operandsTableViewer.getTable();
-		operandsTable.setLinesVisible(true);
-		operandsTable.setHeaderVisible(true);
-		GridData gd_tableOpArgs = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_tableOpArgs.heightHint = 31;
-		operandsTable.setLayoutData(gd_tableOpArgs);
-		
-		operandsTableViewer.setContentProvider(new ArrayContentProvider());
-		
-		//operandsTableDecorator = new OperandsTableDecorator(operandsTable);
-		
-		TableViewerColumn operandDescriptionCol = new TableViewerColumn(operandsTableViewer, SWT.NONE);
-		TableColumn operandDescriptionColCol = operandDescriptionCol.getColumn();
-		operandDescriptionColCol.setWidth(150);
-		operandDescriptionColCol.setText("Operand");
-		operandDescriptionCol.setLabelProvider(new OperandBindingLabelProviderDescription());
-		
-		
-		
-		TableViewerColumn operandValueCol = new TableViewerColumn(operandsTableViewer, SWT.NONE);
-		TableColumn operandValueColCol = operandValueCol.getColumn();
-		operandValueColCol.setWidth(150);
-		operandValueColCol.setText("Value");
-		operandValueCol.setLabelProvider(new OperandBindingLabelProviderValue());
-
-		operandValueCol.setEditingSupport(new OperandBindingEditingSupport(operandsTableViewer));
-		
-
-
-
-		/*
-		TableViewer tableViewer = new TableViewer(snippetOperatorOperandsGroup, SWT.BORDER | SWT.FULL_SELECTION);
-		tableNode = tableViewer.getTable();
-		tableNode.setHeaderVisible(true);
-		tableNode.setLinesVisible(true);
-		GridData gd_table = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_table.heightHint = 31;
-		tableNode.setLayoutData(gd_table);
-		
-		TableViewerColumn tableViewerColumn_2 = new TableViewerColumn(tableViewer, SWT.NONE);
-		TableColumn tblclmnArgument = tableViewerColumn_2.getColumn();
-		tblclmnArgument.setWidth(150);
-		tblclmnArgument.setText("Node");
-		
-		TableViewerColumn tableViewerColumn_3 = new TableViewerColumn(tableViewer, SWT.NONE);
-		TableColumn tblclmnProp = tableViewerColumn_3.getColumn();
-		tblclmnProp.setWidth(150);
-		tblclmnProp.setText("Parent");
-		*/
-
-		
-		
+		operatorOperandsViewer = new OperatorOperandsViewer(snippetOperatorGroup, SWT.NONE);				GridData gd_operatorOperandsViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_operatorOperandsViewer.heightHint = 297;		operatorOperandsViewer.setLayoutData(gd_operatorOperandsViewer);
 		
 		
 	    createActions();
@@ -349,19 +234,7 @@ public class TemplateView extends ViewPart {
 		ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();	
 		return selection.getText();
 	}
-		 
-	public Object getSelectedOperator() {
-         IStructuredSelection selection = (IStructuredSelection) operatorTreeViewer.getSelection();
-         return selection.getFirstElement();
-	}
 			
-		
-	public Object getSelectedNode() {
-		if (tableNode.getSelectionCount() > 0)
-			return tableNode.getSelection()[0].getData();
-        return null;
-	}
-	
 	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
@@ -441,37 +314,8 @@ public class TemplateView extends ViewPart {
 	}
 
 	
-	
-	private void onNodeSelection() {
-		updateOperatorTreeView();
-		updateOperandsTable();
-		
-		
-	} 
-	
-	private void updateOperandsTable() {
-		Object snippetGroup =  templateGroup.getGroup();
-		Object selectedSnippet = templateGroupViewer.getSelectedSnippet();
-		Object selectedSnippetNode = templateGroupViewer.getSelectedSnippetNode();
-		Object selectedOperator = getSelectedOperator();
-		if(selectedOperator == null || !SnippetOperator.isOperator(selectedOperator)) {
-			textOpInfo.setText(""); 
-			operandsTableViewer.setInput(null);
-			return;	
-		}
-		
-		textOpInfo.setText(SnippetOperator.getDescription(selectedOperator));
-		operandsTableViewer.setInput(SnippetOperator.getOperands(snippetGroup, selectedSnippet, selectedSnippetNode, selectedOperator));
-
-	}
-
 	private void updateOperatorTreeView() {
-		
-		Object selectedSnippetNode = templateGroupViewer.getSelectedSnippetNode();
-		operatorTreeViewer.setInput(selectedSnippetNode);
-		operatorTreeViewer.setSelection(StructuredSelection.EMPTY);
-		
-		
+		operatorOperandsViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		
 		
 		/*
@@ -504,26 +348,12 @@ public class TemplateView extends ViewPart {
 		
 	}
 
-	private void onOperatorSelection() {
-		
-		
-		updateOperandsTable();
-
-		/*
-		tableOpArgsDecorator.removeAllEditors();
-		SnippetOperator.setInputArguments(tableOpArgs, tableNode, snippetGroupHistory.getGroup(), getSelectedOperator());
-		tableOpArgsDecorator.setTextEditor(1);
-		tableOpArgsDecorator.setButtonEditor(1);
-		
-		*/
-	} 
 	
 	private void onApplyOperator() {
-		Object operands = operandsTableViewer.getInput();
+		Object operands = operatorOperandsViewer.getOperands();
 		if(operands == null)
 			return;
-		applyOperator(getSelectedOperator(), operandsTableViewer.getInput());
-		
+		applyOperator(operatorOperandsViewer.getSelectedOperator(), operands);
 	}
 	
 	private void applyOperator(Object selectedOperator, Object operands) {
@@ -535,7 +365,6 @@ public class TemplateView extends ViewPart {
 	private void refreshWidgets() {
 		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		updateOperatorTreeView();
-		updateOperandsTable();
 	}
 
 	/*
