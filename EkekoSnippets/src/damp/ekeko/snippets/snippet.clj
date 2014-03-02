@@ -262,7 +262,7 @@ damp.ekeko.snippets.snippet
       (:var2uservar snippet))))
 
 (defn 
-  snippet-userqueries
+  snippet-userquery
   "Returns the logic conditions defined by users of the given snippet."
   [snippet]
   (let [query (:userquery snippet)]
@@ -271,12 +271,12 @@ damp.ekeko.snippets.snippet
           query)))
 
 (defn
-  snippet-userqueries-vars
+  snippet-userquery-vars
   [snippet]
   (reduce 
     (fn [list el] (concat list (rest el))) 
-    (rest (first (snippet-userqueries snippet)))  
-    (rest (snippet-userqueries snippet))))  
+    (rest (first (snippet-userquery snippet)))  
+    (rest (snippet-userquery snippet))))  
   
 
 (defn 
@@ -539,7 +539,7 @@ damp.ekeko.snippets.snippet
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_ROOT) snippet-root)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERIES) snippet-userqueries)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERY) snippet-userquery)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
 
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)

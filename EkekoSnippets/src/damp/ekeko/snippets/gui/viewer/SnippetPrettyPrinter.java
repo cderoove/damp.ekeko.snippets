@@ -1,5 +1,6 @@
 package damp.ekeko.snippets.gui.viewer;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
@@ -32,17 +33,20 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 
 	
-	
 	protected Object snippet;
 	protected Object highlightNode;
+	protected TemplateGroup templateGroup;
+	
+	
+	
 	protected LinkedList<StyleRange> styleRanges;
 	protected Stack<StyleRange> currentHighlight;
 
-	public SnippetPrettyPrinter () {
+	public SnippetPrettyPrinter (TemplateGroup group) {
 		styleRanges = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
+		this.templateGroup = group;
 	}
-
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
@@ -338,11 +342,22 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return getResult();
 	}
 
+	public String prettyPrintNode(Object snippet, Object node) {
+		setSnippet(snippet);
+		((ASTNode) node).accept(this);
+		return getResult();
+	}
 
-	public String prettyPrint(Object snippet) {
+	
+	public String prettyPrintSnippet(Object snippet) {
 		setSnippet(snippet);
 		ASTNode root = TemplateGroup.getRootOfSnippet(snippet); 
 		root.accept(this);
+		
+		Collection conditions = templateGroup.getLogicConditions(snippet);
+		this.buffer.append('\n');
+		this.buffer.append(Joiner.on('\n').join(conditions));
+		
 		return getResult();
 	}
 

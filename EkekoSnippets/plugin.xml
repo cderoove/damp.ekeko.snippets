@@ -15,12 +15,6 @@
       </view>
       <view
             category="damp.ekeko.snippets.views"
-            class="damp.ekeko.snippets.gui.GroupView"
-            id="damp.ekeko.snippets.gui.GroupView"
-            name="Ekeko/X Group View">
-      </view>
-      <view
-            category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.ResultCheckView"
             id="damp.ekeko.snippets.gui.ResultCheckView"
             name="Ekeko/X Subject Inspector View">
@@ -40,21 +34,12 @@
       </category>
       <command
             category="damp.ekeko.snippets.commands"
-            id="damp.ekeko.snippets.commands.group"
-            name="Ekeko/X Group View">
-      </command>
-      <command
-            category="damp.ekeko.snippets.commands"
             id="damp.ekeko.snippets.commands.template"
             name="Ekeko/X Template View">
       </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
-      <handler
-            class="damp.ekeko.snippets.gui.GroupViewCommandHandler"
-            commandId="damp.ekeko.snippets.commands.group">
-      </handler>
       <handler
             class="damp.ekeko.snippets.gui.TemplateViewCommandHandler"
             commandId="damp.ekeko.snippets.commands.template">
@@ -70,10 +55,6 @@
             <command
                   commandId="damp.ekeko.snippets.commands.template"
                   label="Template View">
-            </command>
-            <command
-                  commandId="damp.ekeko.snippets.commands.group"
-                  label="Group View">
             </command>
          </menu>
       </menuContribution>

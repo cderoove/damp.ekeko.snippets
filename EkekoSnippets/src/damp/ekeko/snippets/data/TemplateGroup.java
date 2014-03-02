@@ -1,5 +1,7 @@
 package damp.ekeko.snippets.data;
 
+import java.util.Collection;
+
 import org.eclipse.jdt.core.dom.ASTNode;
 
 import clojure.lang.IFn;
@@ -7,15 +9,16 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 
 public class TemplateGroup {
+	//Java wrapper for SnippetGroup record on the Clojure side
+	
 	public static IFn FN_MAKE_SNIPPETGROUP;
 
 	public static IFn FN_SNIPPETGROUP_NAME;
 	public static IFn FN_SNIPPETGROUP_SNIPPET_FOR_NODE;
-	public static IFn FN_SNIPPETGROUP_USERQUERY;
 	public static IFn FN_SNIPPETGROUP_NEWSTATE;
 
 	public static IFn FN_SNIPPET_ROOT;
-	public static IFn FN_SNIPPET_USERQUERIES;
+	public static IFn FN_SNIPPET_USERQUERY;
 	public static IFn FN_SNIPPET_FROMDOCUMENT;
 	
 	public static IFn FN_QUERY_BY_SNIPPET;
@@ -36,27 +39,38 @@ public class TemplateGroup {
 	public static IFn FN_PARSE_TO_DOC;
 	public static IFn FN_PARSE_TO_NODES;
 
-	protected Object group;
+	protected Object cljGroup;
 	
-	public TemplateGroup(String name) {
-		group = FN_MAKE_SNIPPETGROUP.invoke(name);
+	public static TemplateGroup newFromClojureGroup(Object cljGroup) {
+		TemplateGroup group = new TemplateGroup();
+		group.cljGroup = cljGroup;
+		return group;
 	}
-		
+	
+	public static TemplateGroup newFromGroupName(String name) {
+		TemplateGroup group = new TemplateGroup();
+		group.cljGroup = FN_MAKE_SNIPPETGROUP.invoke(name);
+		return group;
+	}
+	
+	private TemplateGroup() {
+	}
+	
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
 	
 	
 	public Object getGroup() {
-		return group;
+		return cljGroup;
 	}
 	
 	public String getName() {
-		return (String) FN_SNIPPETGROUP_NAME.invoke(group);
+		return (String) FN_SNIPPETGROUP_NAME.invoke(cljGroup);
 	}
 	
 	public Object getSnippet(Object node) {
-		return FN_SNIPPETGROUP_SNIPPET_FOR_NODE.invoke(group, node);		
+		return FN_SNIPPETGROUP_SNIPPET_FOR_NODE.invoke(cljGroup, node);		
 	}
 	
 	public ASTNode getRoot(Object node) {
@@ -83,31 +97,20 @@ public class TemplateGroup {
 		return node.toString();
 	}
 	
-	//TODO: single-parameter variant -> group, other -> snippet
-	public String getLogicConditions(Object node) {
-		Object snippet = getSnippet(node);
-		Object conds;
-		
-		if (snippet == null)		
-			conds = FN_SNIPPETGROUP_USERQUERY.invoke(group);
-		else
-			conds = FN_SNIPPET_USERQUERIES.invoke(snippet);
-		
-		String strConds = conds.toString().replace("\n", "");
-		if (strConds.contains("EmptyList"))
-			return "";
-		return strConds.substring(1, strConds.length() - 1).replace(") ", ") \n").replace("] ", "] \n");
+	@SuppressWarnings("rawtypes")
+	public Collection getLogicConditions(Object snippet) {
+		return (Collection) FN_SNIPPET_USERQUERY.invoke(snippet);
 	}
 	
 	public void applyOperator(Object operator, Object operands) {
-		group = FN_APPLY_TO_SNIPPETGROUP.invoke(group, operator, operands);		
+		cljGroup = FN_APPLY_TO_SNIPPETGROUP.invoke(cljGroup, operator, operands);		
 	}
 	
 	
 	public Object addSnippetCode(String code) {
 		Object document = FN_PARSE_TO_DOC.invoke(code);
 		Object snippet = FN_SNIPPET_FROMDOCUMENT.invoke(document);
-		group = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(group, snippet);
+		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
 		return snippet;
 	}
 
@@ -115,7 +118,7 @@ public class TemplateGroup {
 	public void removeSnippet(Object node) {
 		Object snippet = getSnippet(node);
 		if (snippet != null)	{
-			group = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(group, snippet);
+			cljGroup = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(cljGroup, snippet);
 		}
 	}
 
@@ -148,8 +151,8 @@ public class TemplateGroup {
 	}
 
 	public TemplateGroup newState() {
-		TemplateGroup newState = new TemplateGroup("Group");
-		newState.group = FN_SNIPPETGROUP_NEWSTATE.invoke(group); 		
+		TemplateGroup newState = TemplateGroup.newFromClojureGroup(cljGroup);
+		newState.cljGroup = FN_SNIPPETGROUP_NEWSTATE.invoke(cljGroup); 		
 		return newState;
 	}
 	

@@ -55,7 +55,7 @@
 	  (snippet-query-with-conditions 
 	    snippet ekekolaunchersymbol 
 	    (snippet-conditions snippet) 
-	    (snippet/snippet-userqueries snippet)))
+	    (snippet/snippet-userquery snippet)))
 	 
 	; Converting snippet group to query
 	;------------------------------------
@@ -116,7 +116,6 @@
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
 	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-	      (snippetgroup/snippetgroup-userquery snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup))))
 	
 	    
@@ -163,7 +162,6 @@
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
 	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-	      (snippetgroup/snippetgroup-userquery snippetgroup)
 	      (snippetgroup-query-for-userfs snippetgroup)
         (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
  

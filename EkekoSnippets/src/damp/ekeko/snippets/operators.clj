@@ -265,7 +265,7 @@
   "Add user logic conditions to snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(snippet/snippet-userqueries snippet) ~@conditions)]
+    (let [new-conditions `(~@(snippet/snippet-userquery snippet) ~@conditions)]
       (assoc snippet :userquery new-conditions))
     snippet))
 
@@ -274,7 +274,7 @@
   "Remove user logic conditions from snippet. conditions should be in quote, '((...) (...))."
   [snippet conditions]
   (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (snippet/snippet-userqueries snippet))]
+    (let [new-conditions (remove (set conditions) (snippet/snippet-userquery snippet))]
       (assoc snippet :userquery new-conditions))
     snippet))
   
@@ -447,29 +447,6 @@
         new-snippet (snippet/update-cf new-gf-snippet node :exact)]
     (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet new-snippet)))
 
-(defn
-  update-logic-conditions-to-snippetgroup
-  "Update user logic conditions to snippet group. conditions should be in quote, '(...) (...) or string."
-  [snippetgroup conditions]
-  (assoc snippetgroup :userquery (list (symbol conditions))))
-
-(defn
-  add-logic-conditions-to-snippetgroup
-  "Add user logic conditions to snippet group. conditions should be in quote, '((...) (...))."
-  [snippetgroup conditions]
-  (if (not (empty? conditions)) 
-    (let [new-conditions `(~@(snippetgroup/snippetgroup-userquery snippetgroup) ~@conditions)]
-      (assoc snippetgroup :userquery new-conditions))
-    snippetgroup))
-
-(defn
-  remove-logic-conditions-from-snippetgroup
-  "Remove user logic conditions from snippet group. conditions should be in quote, '((...) (...))."
-  [snippetgroup conditions]
-  (if (not (empty? conditions)) 
-    (let [new-conditions (remove (set conditions) (snippetgroup/snippetgroup-userquery snippetgroup))]
-      (assoc snippetgroup :userquery new-conditions))
-    snippetgroup))
 
 (defn
   internal-user-defined-condition

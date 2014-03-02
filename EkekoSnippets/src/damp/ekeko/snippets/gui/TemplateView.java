@@ -18,7 +18,6 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -36,17 +35,14 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
-import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.wb.swt.ResourceManager;
 
-import damp.ekeko.snippets.data.Groups;
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
-import damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter;
 
 public class TemplateView extends ViewPart {
 
@@ -54,30 +50,25 @@ public class TemplateView extends ViewPart {
 	private String viewID;
 
 	private List<Action> actions; 
-	private StyledText textSnippet;
-	private StyledText textCondition;
-	private TreeViewer snippetTreeViewer;
 	private Tree operatorTree;
 	private TreeViewer operatorTreeViewer;
 	private StyledText textOpInfo;
 	private Table operandsTable;
 	private Table tableNode;
 	
-	private Groups groups;
-
 	private TemplateGroup templateGroup;
+	private TemplateGroupViewer templateGroupViewer;
 	
 	private TemplateTreeContentProvider contentProvider;
 	private TableViewer operandsTableViewer;
 
 	public TemplateView() {
-		templateGroup = new TemplateGroup("Template Group");
+		templateGroup = TemplateGroup.newFromGroupName("Template Group");
 	}
 	
-	public void setGroup(Groups groups, TemplateGroup group) {
-		this.groups = groups;
+	public void setGroup(TemplateGroup group) {
 		templateGroup = group;
-		renderSnippet();
+		refreshWidgets();
 	}
 
 	/**
@@ -88,76 +79,13 @@ public class TemplateView extends ViewPart {
 	public void createPartControl(Composite parent) {
 		Composite container = new Composite(parent, SWT.NONE);
 		container.setLayout(new FillLayout(SWT.HORIZONTAL));
-		
-		Group snippetTextGroup = new Group(container, SWT.NONE);
-		snippetTextGroup.setLayout(new GridLayout(2, false));
-		
-		/*
-		Label lblSnippet = new Label(snippetTextGroup, SWT.NONE);
-		GridData gd_lblSnippet = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
-		gd_lblSnippet.heightHint = 23;
-		lblSnippet.setLayoutData(gd_lblSnippet);
-		lblSnippet.setText("");
-		*/
-		
-		ToolBar snippetTextToolBar = new ToolBar(snippetTextGroup, SWT.FLAT | SWT.RIGHT);
-		snippetTextToolBar.setOrientation(SWT.RIGHT_TO_LEFT);
-		snippetTextToolBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		
-		
-		ToolItem tltmCondition = new ToolItem(snippetTextToolBar, SWT.NONE);
-		tltmCondition.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				addLogicCondition();
-			}
-		});
-		tltmCondition.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/editor_area.gif"));
-		tltmCondition.setToolTipText("Add condition");
-		
-		
-		
-		TextViewer textViewerSnippet = new TextViewer(snippetTextGroup, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		textViewerSnippet.setEditable(false);
-		textSnippet = textViewerSnippet.getTextWidget();
-		textSnippet.setEditable(false);
-		GridData gd_textSnippet = new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1);
-		gd_textSnippet.heightHint = 95;
-		textSnippet.setLayoutData(gd_textSnippet);
-		//textSnippet.setSelectionBackground(new Color(Display.getCurrent(), 127, 255, 127));
-		
-		
-		/*
-		 * ToolBar toolBar_2 = new ToolBar(snippetTextGroup, SWT.FLAT | SWT.RIGHT);
-		 *
-		toolBar_2.setOrientation(SWT.RIGHT_TO_LEFT);
-		toolBar_2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
-		
-		*/
-		
-		
-		TextViewer textViewerCondition = new TextViewer(snippetTextGroup, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		textViewerCondition.setEditable(false);
-		textCondition = textViewerCondition.getTextWidget();
-		textCondition.setEditable(false);
-		GridData gd_textCondition = new GridData(SWT.FILL, SWT.FILL, true, false, 2, 1);		gd_textCondition.heightHint = 100;		textCondition.setLayoutData(gd_textCondition);
-		
+				
+			
 		Group snippetTreeGroup = new Group(container, SWT.NONE);
 		snippetTreeGroup.setLayout(new GridLayout(1, false));
 		
 		ToolBar toolBar = new ToolBar(snippetTreeGroup, SWT.FLAT | SWT.RIGHT);
-		toolBar.setOrientation(SWT.RIGHT_TO_LEFT);
-		toolBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		
-		ToolItem tltmRemove = new ToolItem(toolBar, SWT.NONE);
-		tltmRemove.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				removeSnippet();
-			}
-		});
-		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
-		tltmRemove.setToolTipText("Remove Snippet");
+		toolBar.setOrientation(SWT.RIGHT_TO_LEFT);		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
 		tltmAdd.addSelectionListener(new SelectionAdapter() {
@@ -169,49 +97,33 @@ public class TemplateView extends ViewPart {
 		tltmAdd.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/add_obj.gif"));
 		tltmAdd.setToolTipText("Add Snippet");
 				
-		snippetTreeViewer = new TreeViewer(snippetTreeGroup, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
-		snippetTreeViewer.setAutoExpandLevel(2);
-		Tree treeSnippet = snippetTreeViewer.getTree();
-		treeSnippet.setHeaderVisible(true);
-		treeSnippet.setLinesVisible(true);
-		treeSnippet.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
-		TreeViewerColumn snippetNodeCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
-		TreeColumn trclmnNode = snippetNodeCol.getColumn();
-		trclmnNode.setWidth(150);
-		trclmnNode.setText("Node");
-		
-		TreeViewerColumn snippetKindCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
-		TreeColumn snippetKindColCol = snippetKindCol.getColumn();
-		snippetKindColCol.setWidth(150);
-		snippetKindColCol.setText("Node kind");
-		
-		/*
-		TreeViewerColumn snippetDirectivesCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
-		TreeColumn snippetDirectivesColCol = snippetDirectivesCol.getColumn();
-		snippetDirectivesColCol.setWidth(75);
-		snippetDirectivesColCol.setText("Directives");
-		*/
-		
-		TreeViewerColumn snippetPropCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
-		TreeColumn trclmnProperty = snippetPropCol.getColumn();
-		trclmnProperty.setWidth(250);
-		trclmnProperty.setText("Value of property in parent");
-		
-		
-		contentProvider = new TemplateTreeContentProvider();
-		snippetTreeViewer.setContentProvider(getContentProvider());
-		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(getSnippetGroup()));		
-		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(getSnippetGroup()));
-		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(getSnippetGroup()));
-		//snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(this));
-
-		treeSnippet.addListener(SWT.Selection, new Listener() {
-			public void handleEvent(Event e) {
-		        onNodeSelection();
+		ToolItem tltmRemove = new ToolItem(toolBar, SWT.NONE);
+		tltmRemove.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				removeSnippet();
 			}
-		});		
+		});
+		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
+		tltmRemove.setToolTipText("Remove Snippet");
 		
+		
+		templateGroupViewer = new TemplateGroupViewer(snippetTreeGroup, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 0;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
+		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
+			@Override
+			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
+				//event.getSelectedTemplateGroup();
+				//event.getSelectedTemplate();
+				//event.getSelectedTemplateNode();
+				updateOperatorTreeView();
+				updateOperandsTable();
+			}
+		});
+
+		
+		
+		templateGroupViewer.setInput(templateGroup.getGroup(), null, null);
 		
 		Group snippetOperatorGroup = new Group(container, SWT.NONE);
 		snippetOperatorGroup.setLayout(new GridLayout(1, false));
@@ -442,29 +354,7 @@ public class TemplateView extends ViewPart {
          IStructuredSelection selection = (IStructuredSelection) operatorTreeViewer.getSelection();
          return selection.getFirstElement();
 	}
-	
-
-	//returns a Snippet instance
-	public Object getSelectedSnippet() {
-		Object selectedSnippetNode = getSelectedSnippetNode();
-		return templateGroup.getSnippet(selectedSnippetNode);
-	}
-	
-	//returns an AST node or wrapper within a Snippet
-	public Object getSelectedSnippetNode() {
-		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();
-		return selection.getFirstElement();
-	}
-	
-	
-	public Object[] getSelectedSnippets() {
-		TreeItem[] selectedItems = snippetTreeViewer.getTree().getSelection();
-		Object[] nodes = new Object[selectedItems.length];
-		for (int i=0; i < selectedItems.length; i++) {
-			nodes[i] = selectedItems[i].getData(); 
-		}
-		return nodes;
-	}
+			
 		
 	public Object getSelectedNode() {
 		if (tableNode.getSelectionCount() > 0)
@@ -479,34 +369,13 @@ public class TemplateView extends ViewPart {
 	public void setViewID(String secondaryId) {
 		this.viewID = secondaryId;
 	}
-	
-
-	public Object getSnippetGroup() {
-		return templateGroup.getGroup();
-	}
-	
-	private void updateGroupTree() {
-		snippetTreeViewer.setInput(getSnippetGroup());
-	}
-	
-	public void renderSnippet() {
-		updateGroupTree();
-		//TODO: dit moet blijkbaar wel gecalled worden
-		/*
-		if (treeViewerSnippet.getTree().getSelectionCount() == 0) {
-			TreeItem root = treeViewerSnippet.getTree().getItem(0);
-			treeViewerSnippet.getTree().setSelection(root);
-		}
-		*/
-		updateTextFields();
-}
-	
+				
 	public void addSnippet() {
 		String code = getSelectedTextFromActiveEditor();
 		if (code != null && !code.isEmpty()) {
 			//throws NPE when selected text cannot be parsed as the starting point for a template
 			templateGroup.addSnippetCode(code);
-			renderSnippet();
+			refreshWidgets();
 		}
 	}
 	
@@ -516,15 +385,17 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void removeSnippet() {
-		if(!MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), "Delete templates", "Are you sure you want to delete the selected templates?")) 
+		Object selected = templateGroupViewer.getSelectedSnippet();
+		if(selected == null)
 			return;
-		for(Object selected : getSelectedSnippets()) 
-			templateGroup.removeSnippet(selected);
-		renderSnippet();
+		if(!MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), "Delete template", "Are you sure you want to delete the selected template?")) 
+			return;
+		templateGroup.removeSnippet(selected);
+		refreshWidgets();
 	}
 
 	public void viewQuery() {
-		String query = templateGroup.getQuery(getSelectedSnippet());
+		String query = templateGroup.getQuery( templateGroupViewer.getSelectedSnippet());
 		OperatorApplicationDialog dlg = new OperatorApplicationDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
@@ -533,7 +404,7 @@ public class TemplateView extends ViewPart {
 	}
 
 	public void runQuery() {
-		templateGroup.runQuery(getSelectedSnippet());
+		templateGroup.runQuery(templateGroupViewer.getSelectedSnippet());
 	}
 	
 	class QueryResultThread extends Thread {
@@ -565,36 +436,13 @@ public class TemplateView extends ViewPart {
     }	
 		
 	public void checkResult() {
-		QueryResultThread qsThread = new QueryResultThread(getSelectedSnippet());
+		QueryResultThread qsThread = new QueryResultThread(templateGroupViewer.getSelectedSnippet());
 		qsThread.start();
 	}
 
-	public void addLogicCondition() {
-		Object[] inputs = {textCondition.getText()};
-		//applyOperator(templateGroup.getRoot(getSelectedSnippet()), Keyword.intern("update-logic-conditions"), inputs);
-		updateTextFields();
-	}
-
-	private void updateTextFields() {
-		Object selectedSnippet = getSelectedSnippet();
-		if(selectedSnippet == null) {
-			textCondition.setText("");
-			textSnippet.setText("");
-			return;
-		}			
-		//shows text for and condition associated with currently selected snippet
-		textCondition.setText(templateGroup.getLogicConditions(selectedSnippet));
-		Object selectedSnippetNode = getSelectedSnippetNode();
-		SnippetPrettyPrinter prettyprinter = new SnippetPrettyPrinter();
-		prettyprinter.setHighlightNode(selectedSnippetNode);
-		textSnippet.setText(prettyprinter.prettyPrint(selectedSnippet));
-		for(StyleRange range : prettyprinter.getStyleRanges())
-			textSnippet.setStyleRange(range);
-	}
 	
 	
 	private void onNodeSelection() {
-		updateTextFields();
 		updateOperatorTreeView();
 		updateOperandsTable();
 		
@@ -602,9 +450,9 @@ public class TemplateView extends ViewPart {
 	} 
 	
 	private void updateOperandsTable() {
-		Object snippetGroup = getSnippetGroup();
-		Object selectedSnippet = getSelectedSnippet();
-		Object selectedSnippetNode = getSelectedSnippetNode();
+		Object snippetGroup =  templateGroup.getGroup();
+		Object selectedSnippet = templateGroupViewer.getSelectedSnippet();
+		Object selectedSnippetNode = templateGroupViewer.getSelectedSnippetNode();
 		Object selectedOperator = getSelectedOperator();
 		if(selectedOperator == null || !SnippetOperator.isOperator(selectedOperator)) {
 			textOpInfo.setText(""); 
@@ -619,7 +467,7 @@ public class TemplateView extends ViewPart {
 
 	private void updateOperatorTreeView() {
 		
-		Object selectedSnippetNode = getSelectedSnippetNode();
+		Object selectedSnippetNode = templateGroupViewer.getSelectedSnippetNode();
 		operatorTreeViewer.setInput(selectedSnippetNode);
 		operatorTreeViewer.setSelection(StructuredSelection.EMPTY);
 		
@@ -685,8 +533,7 @@ public class TemplateView extends ViewPart {
 	
 
 	private void refreshWidgets() {
-		updateTextFields();
-		updateGroupTree();
+		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		updateOperatorTreeView();
 		updateOperandsTable();
 	}
@@ -704,11 +551,13 @@ public class TemplateView extends ViewPart {
 	*/
 	
 	public void transformation() {
+		/*
 		try {
 			TransformsView view = (TransformsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.TransformsView");
 			view.setRewrittenGroup(groups, templateGroup);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
+		*/
 	}
 }

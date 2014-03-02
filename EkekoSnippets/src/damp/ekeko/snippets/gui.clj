@@ -166,6 +166,8 @@
   (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
 
 
+
+
 ;; Callbacks for operand binding cell editor
 ;; -----------------------------------------
 
@@ -173,7 +175,7 @@
 (defn
   make-groupnode-selectiondialog
   [shell group template node]
-  (damp.ekeko.snippets.gui.GroupNodeSelectionDialog. shell group template node))
+  (damp.ekeko.snippets.gui.TemplateGroupNodeSelectionDialog. shell group template node))
 
 
 (defmulti

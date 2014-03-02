@@ -17,7 +17,7 @@ damp.ekeko.snippets.snippetgroup
 
 ; Datatype representing a group (list) of Snippet(s) and additional logic condition
 
-(defrecord SnippetGroup [name snippetlist userquery])
+(defrecord SnippetGroup [name snippetlist])
 
 (defn 
   snippetgroup-name
@@ -31,20 +31,12 @@ damp.ekeko.snippets.snippetgroup
   [snippetgroup]
   (:snippetlist snippetgroup))
 
-(defn 
-  snippetgroup-userquery
-  "Returns the logic conditions defined by users of the given snippet group."
-  [snippetgroup]
-  (let [query (:userquery snippetgroup)]
-        (if (nil? query)
-          '()
-          query)))
 
 (defn 
   snippetgroup-snippets-userqueries
   "Returns the logic conditions defined by users of the snippets in the snippet group."
   [snippetgroup]
-  (mapcat snippet/snippet-userqueries (snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet/snippet-userquery (snippetgroup-snippetlist snippetgroup)))
 
 (defn
   snippetgroup-nodes
@@ -161,7 +153,7 @@ damp.ekeko.snippets.snippetgroup
   make-snippetgroup
   "Create SnippetGroup instance."
   [name]
-  (SnippetGroup. name '() '()))
+  (SnippetGroup. name '()))
 
 
 
@@ -178,7 +170,6 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_MAKE_SNIPPETGROUP) make-snippetgroup)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NAME) snippetgroup-name)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_USERQUERY) snippetgroup-userquery)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NEWSTATE) snippetgroup-new-state)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
