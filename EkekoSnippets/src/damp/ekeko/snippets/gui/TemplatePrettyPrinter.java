@@ -1,4 +1,4 @@
-package damp.ekeko.snippets.gui.viewer;
+package damp.ekeko.snippets.gui;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -20,12 +20,16 @@ import com.google.common.base.Joiner;
 
 import damp.ekeko.snippets.data.TemplateGroup;
 
-public class SnippetPrettyPrinter extends NaiveASTFlattener {
+public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	public static IFn FN_SNIPPET_VAR_FOR_NODE;
 	public static IFn FN_SNIPPET_USERVAR_FOR_NODE;
 	public static IFn FN_SNIPPET_BOUNDDIRECTIVES;
 	public static IFn FN_SNIPPET_BOUNDDIRECTIVES_STRING;
+
+	public static IFn FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES;
+	public static IFn FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES;
+
 	
 	public static IFn FN_SNIPPET_LIST_CONTAINING;
 
@@ -40,7 +44,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 	protected LinkedList<StyleRange> styleRanges;
 	protected Stack<StyleRange> currentHighlight;
 
-	public SnippetPrettyPrinter (TemplateGroup group) {
+	public TemplatePrettyPrinter (TemplateGroup group) {
 		styleRanges = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
 		this.templateGroup = group;
@@ -139,9 +143,11 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	
 	static boolean isFirstElementOfList(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if(parent == null)
+			return false;
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			ASTNode parent = node.getParent();
 			List nodeList = (List) parent.getStructuralProperty(property);
 			if (nodeList.get(0).equals(node))	
 				return true;	
@@ -191,46 +197,31 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		printClosingNode(nodeListWrapper);
 	}
 
+	@SuppressWarnings("rawtypes")
+	public Collection getNonDefaultDirectives(Object cljTemplate, Object cljNode) {
+		return (Collection) FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
+	}
 	
+	public Boolean hasNonDefaultDirectives(Object cljTemplate, Object cljNode) {
+		return (Boolean) FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
+	}
 	
 	public void printOpeningNode(Object node) {
-		//print bracket
-		//TODO: only print if has non-default directives
-		int start = getCurrentCharacterIndex();
-		this.buffer.append("[");
-		styleRanges.add(styleRangeForMeta(start, 1));
+		if(hasNonDefaultDirectives(snippet, node)) {
+			int start = getCurrentCharacterIndex();
+			this.buffer.append("[");
+			styleRanges.add(styleRangeForMeta(start, 1));
+		}
 	}
 
 	private int getCurrentCharacterIndex() {
 		return this.buffer.length();
 	}
 
+	
+	
 	public void printClosingNode(Object node) {
-		String fString = "";
-		//print bracket, followed by groundf, constrainf, and userfs
-		List<String> directives = new LinkedList<String>();
-		
-		/*
-		if (!hasDefaultGroundf(node))
-			directives.add(getGroundFString(node));
-		if (!hasDefaultConstrainf(node))
-			directives.add(getConstrainFString(node));
-		if (hasUserf(node))
-			directives.add(getUserFSString(node));
-		*/
-		
-		/*
-		String userVarString = getUserVarString(node);
-		if (!userVarString.isEmpty())
-			directives.add(userVarString);
-		 */
-		
-		
-		//TODO: only print if has non-default directives
-		//!directives.isEmpty()
-		
-		
-		if (true) { 
+		if (hasNonDefaultDirectives(snippet, node)) { 
 			int start = getCurrentCharacterIndex();
 			this.buffer.append("]");
 			styleRanges.add(styleRangeForMeta(start, 1));	
@@ -238,7 +229,9 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("@[");
 			styleRanges.add(styleRangeForMeta(start, 2));
 			start = getCurrentCharacterIndex();
+			
 			this.buffer.append(FN_SNIPPET_BOUNDDIRECTIVES_STRING.invoke(snippet, node));
+			
 			styleRanges.add(styleRangeForDirectives(start, getCurrentCharacterIndex() - start));
 			start = getCurrentCharacterIndex();
 			this.buffer.append("]");
@@ -263,7 +256,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			styleRanges.add(style);
 		}
 	}
-
+	
 	public String getPlainResult(){
 		return getResult();
 	}

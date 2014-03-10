@@ -237,11 +237,6 @@
   (str (operatorsrep/binding-value operandbinding)))
 
 
-(defn
-  snippet-bounddirectives-string-for-node
-  [snippet node]
-  (let [bounddirectives (snippet/snippet-bounddirectives-for-node snippet node)]
-    (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
 
 
 
@@ -266,7 +261,6 @@
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderDescription/FN_LABELPROVIDER_DESCRIPTION_TEXT) operandbinding-labelprovider-descriptiontext)
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderValue/FN_LABELPROVIDER_DESCRIPTION_VALUE) operandbinding-labelprovider-valuetext)
   
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-bounddirectives-string-for-node)
 
 
   

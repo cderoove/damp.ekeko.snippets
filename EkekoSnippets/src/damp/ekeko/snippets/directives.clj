@@ -135,7 +135,6 @@
                                 operandbindings))
       (str generatorname))))
       
-
 (defn
   bounddirectives-include-directive?
   [bounddirectives directive]

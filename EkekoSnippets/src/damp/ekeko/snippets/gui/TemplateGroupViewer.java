@@ -23,7 +23,6 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 
 import damp.ekeko.snippets.data.TemplateGroup;
-import damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter;
 
 public class  TemplateGroupViewer extends Composite {
 
@@ -166,7 +165,7 @@ public class  TemplateGroupViewer extends Composite {
 			textViewerSnippet.getTextWidget().setText("");
 			return;
 		}			
-		SnippetPrettyPrinter prettyprinter = new SnippetPrettyPrinter(TemplateGroup.newFromClojureGroup(cljGroup));
+		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(TemplateGroup.newFromClojureGroup(cljGroup));
 		prettyprinter.setHighlightNode(getSelectedSnippetNode());
 		textViewerSnippet.getTextWidget().setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())

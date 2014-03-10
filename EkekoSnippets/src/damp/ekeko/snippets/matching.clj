@@ -34,7 +34,7 @@
 ;; -------------------
 
 (defn
-  gf-minimalistic
+  ground-relativetoparent-for-root
   "Only generates grounding conditions for the root node of the snippet."
   [snippet-ast]
   (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)]
@@ -48,7 +48,7 @@
 (declare directive-parent)
 
 (defn 
-  gf-member-exact
+  ground-relativetoparent-for-member
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
    For AST node is the member of the list : condition depends on cf of list owner
        cf = exact    -> ((el/equals ~var-el (.get ~var-list ~idx-el)))
@@ -91,7 +91,7 @@
               ;todo: put at bottom of cond, check for parent directives first
               (directives/bounddirectives-include-directive? bounddirectives directive-parent)
               `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
-              
+                  
               ;todo: add variants of parent with arguments
               
 	             (or (= cf-list-owner :contains) 
@@ -123,19 +123,6 @@
         `((cl/fresh [~list-match-raw] 
                     (ast/value-raw ~list-match ~list-match-raw)
                     ~@conditions))))))
-    
-(defn 
-  gf-node-exact
-  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
-   For AST node is the value of a property: ((has :property ?var-for-owner-match ?var-for-node-match))"
-  [snippet-ast]
-  (fn [snippet] 
-      (let [snippet-owner  (astnode/owner snippet-ast)
-            var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
-            var-match-owner (snippet/snippet-var-for-node snippet snippet-owner)
-            owner-property  (astnode/owner-property snippet-ast) 
-            owner-property-keyw (astnode/ekeko-keyword-for-property-descriptor owner-property)]
-        `((ast/has ~owner-property-keyw ~var-match-owner ~var-match)))))
 
 (defn
   node|listmember? 
@@ -146,15 +133,15 @@
          (astnode/property-descriptor-list? (astnode/owner-property snippet-val))))
 
 (defn 
-  gf-exact
+  ground-relativetoparent
   [snippet-val]
   (if
     (node|listmember? snippet-val)
-    (gf-member-exact snippet-val)
-    (gf-minimalistic snippet-val)))
+    (ground-relativetoparent-for-member snippet-val)
+    (ground-relativetoparent-for-root snippet-val)))
 
 (defn 
-  gf-deep
+  ground-deep
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
    For AST node is the value of a property: ((child+ ?var-for-owner-match ?var-for-node-match))"
   [snippet-ast]
@@ -168,27 +155,6 @@
               (snippet/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
               (symbol (first args)))]                                                            ;for gf :deep
         `((ast/child+ ~var-match-owner ~var-match)))))
-
-(comment
-(defn 
-  make-grounding-function
-  [type]
-  (cond 
-    (= type :minimalistic)
-    gf-minimalistic
-    (= type :exact)
-    gf-exact
-    (= type :deep)
-    gf-deep
-    (= type :child+)
-    gf-deep
-    (= type :epsilon)
-    make-epsilon-function
-    :default
-    (throw (Exception. (str "Unknown grounding function type: " type)))))
-)
-
-(def parent gf-exact)
 
 
 ;; Constraining Functions
@@ -327,19 +293,19 @@
          '() 
          `((cl/== ~var-userprovided ~var-match))))))
 
-(defn
-  cf-epsilon-with-variable
-  [snippet-val]
-  (fn [snippet] 
-     (let [var-match 
-           (snippet/snippet-var-for-node snippet snippet-val)
-           var-userprovided
-           (snippet/snippet-uservar-for-var snippet var-match)]
-       (if (nil? var-userprovided)
-         ((make-epsilon-function snippet-val) snippet)
-         (concat 
-           ((gf-node-exact snippet-val) snippet)
-           ((cf-variable snippet-val) snippet))))))
+;(defn
+;  cf-epsilon-with-variable
+;  [snippet-val]
+;  (fn [snippet] 
+;     (let [var-match 
+;           (snippet/snippet-var-for-node snippet snippet-val)
+;           var-userprovided
+;           (snippet/snippet-uservar-for-var snippet var-match)]
+;       (if (nil? var-userprovided)
+;         ((make-epsilon-function snippet-val) snippet)
+;         (concat 
+;           ((gf-node-exact snippet-val) snippet)
+;           ((cf-variable snippet-val) snippet))))))
 
 (defn
   cf-exact-with-variable
@@ -428,40 +394,40 @@
       ((cf-variable-declaration-with-initializer snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
-(defn 
-  ast-conditions
-  "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
-  [snippet ast]
-  (defn 
-    conditions
-    [ast-or-list]
-    (concat ((gf-exact ast-or-list) snippet)
-            ((cf-exact ast-or-list) snippet)))
-  (let [query (atom '())]
-    (util/walk-jdt-node 
-      ast
-      (fn [astval]  (swap! query concat (conditions astval)))
-      (fn [lstval] (swap! query concat (conditions lstval)))
-      (fn [primval] (swap! query concat (conditions primval)))
-      (fn [nilval] (swap! query concat (conditions nilval))))
-    @query))
+;(defn 
+;  ast-conditions
+;  "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
+;  [snippet ast]
+;  (defn 
+;    conditions
+;    [ast-or-list]
+;    (concat ((gf-exact ast-or-list) snippet)
+;            ((cf-exact ast-or-list) snippet)))
+;  (let [query (atom '())]
+;    (util/walk-jdt-node 
+;      ast
+;      (fn [astval]  (swap! query concat (conditions astval)))
+;      (fn [lstval] (swap! query concat (conditions lstval)))
+;      (fn [primval] (swap! query concat (conditions primval)))
+;      (fn [nilval] (swap! query concat (conditions nilval))))
+;    @query))
 
-(defn 
-  cf-negated
-    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
-     For ASTNode instances: (fails (all (node-conditions) (child-conditions)))."
-  [snippet-ast]
-  (fn [snippet]
-    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
-      `((el/fails (cl/all ~@conditions-of-ast))))))
+;(defn 
+;  cf-negated
+;    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+;     For ASTNode instances: (fails (all (node-conditions) (child-conditions)))."
+;  [snippet-ast]
+;  (fn [snippet]
+;    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
+;      `((el/fails (cl/all ~@conditions-of-ast))))))
 
-(defn
-  cf-negated-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-negated snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
+;(defn
+;  cf-negated-with-variable
+;  [snippet-val]
+;  (fn [snippet] 
+;    (concat 
+;      ((cf-negated snippet-val) snippet)
+;      ((cf-variable snippet-val) snippet))))
 
 (defn 
   cf-relax-loop
@@ -605,7 +571,7 @@
   (damp.ekeko.snippets.directives.Directive.
     "Node parent matches match parent."
     []
-    parent
+    ground-relativetoparent
     ))
 
 (def 
@@ -654,13 +620,40 @@
       value
       directive)))
 
+(def default-directives [directive-exact directive-parent])
+
 (defn
-  default-directives
+  default-directive?
+  [directive]
+  (some #{directive} default-directives))
+
+(defn
+  default-bounddirectives
   "Returns default matching directives for given snippet and element of the snippet element."
   [snippet value]
   (list 
     (bind-nullary-directive directive-exact snippet value)
     (bind-nullary-directive directive-parent snippet value)))
+
+(defn
+  nondefault-bounddirectives
+  [snippet value]
+  (remove 
+    (fn [bounddirective] 
+      (default-directive? (directives/bounddirective-directive bounddirective)))
+    (snippet/snippet-bounddirectives-for-node snippet value)))
+
+(defn
+  has-nondefault-bounddirectives?
+  [snippet value]
+  (boolean (not-empty (nondefault-bounddirectives snippet value))))
+
+(defn
+  snippet-nondefault-bounddirectives-string-for-node
+  [snippet node]
+  (let [bounddirectives (nondefault-bounddirectives snippet node)]
+    ;todo: incorporate arguments
+    (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
 
 (defn 
   jdt-node-as-snippet
@@ -677,7 +670,7 @@
         snippet
         (assoc-in [:ast2var value] lvar)
         (assoc-in [:ast2bounddirectives value] 
-                  (default-directives snippet value))
+                  (default-bounddirectives snippet value))
         (assoc-in [:var2ast lvar] value))))
   
   (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} {} '() nil nil {} {}))]
@@ -717,7 +710,7 @@
         snippet
         (assoc-in [:ast2var value] lvar)
         (assoc-in [:ast2bounddirectives value] 
-                  (default-directives snippet value))
+                  (default-bounddirectives snippet value))
         (assoc-in [:var2ast lvar] value)
         (assoc-in [:track2ast arrTrack] value)
         (assoc-in [:ast2track value] arrTrack))))
@@ -750,7 +743,13 @@
 (defn
   register-callbacks
   []
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet))
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES) nondefault-bounddirectives)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
+  
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
 
+  )
+  
 (register-callbacks)
 
