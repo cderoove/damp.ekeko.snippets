@@ -8,14 +8,17 @@
                [snippetgroup :as snippetgroup]
 	             [operators :as operators]
 	             [util :as util]
+               [directives :as directives]
 	             [matching :as matching] 
-	             [rewrite :as rewrite]]) 
+	            ; [rewrite :as rewrite]
+              ]) 
    (:require 
      [damp.ekeko [logic :as el]]))
 	  
 	;; Converting a snippet to a query
 	;; -------------------------------
 	
+
 	(defn 
 	  snippet-conditions
 	  "Returns a list of logic conditions that will retrieve matches for the given snippet."
@@ -23,9 +26,28 @@
 	  (defn 
 	    conditions
 	    [ast-or-list]
-	    (concat (((matching/make-grounding-function (snippet/snippet-grounder-for-node snippet ast-or-list)) ast-or-list) snippet)
-	            (((matching/make-constraining-function (snippet/snippet-constrainer-for-node snippet ast-or-list)) ast-or-list) snippet)))
-	  (let [ast (:ast snippet)
+      (let [bounddirectives
+            (snippet/snippet-bounddirectives-for-node snippet ast-or-list)
+           bounddirectives-grounding
+           (filter (fn [bounddirective]
+                     (matching/registered-grounding-directive? (directives/bounddirective-directive bounddirective)))
+                   bounddirectives)
+           bounddirectives-constraining
+           (filter (fn [bounddirective]
+                         (matching/registered-constraining-directive? (directives/bounddirective-directive bounddirective)))
+                   bounddirectives)
+           conditions-grounding
+           (mapcat
+             (fn [bounddirective]
+               (directives/snippet-bounddirective-conditions snippet bounddirective))
+             bounddirectives-grounding)
+           conditions-constraining
+           (mapcat
+             (fn [bounddirective]
+               (directives/snippet-bounddirective-conditions snippet bounddirective))
+             bounddirectives-constraining)]
+        (concat conditions-grounding conditions-constraining)))
+   (let [ast (:ast snippet)
 	        query (atom '())]
 	    (util/walk-jdt-node 
 	      ast
@@ -33,7 +55,7 @@
 	      (fn [lstval] (swap! query concat (conditions lstval)))
 	      (fn [primval] (swap! query concat (conditions primval)))
 	      (fn [nilval] (swap! query concat (conditions nilval))))
-	    (filter (fn[q] (not (nil? q))) @query)))
+     @query))
 	
 	(defn
 	  snippet-query-with-conditions
@@ -122,6 +144,8 @@
 	; Converting snippet group to rewrite query
 	;------------------------------------------
 	
+ (comment
+   
 	(defn
 	  snippet-rewrite-query-for-userfs
 	  [snippet]
@@ -165,6 +189,8 @@
 	      (snippetgroup-query-for-userfs snippetgroup)
         (snippetgroup-rewrite-query-for-userfs snippetgrouprewrite))))
  
+
+ )
  
  (defn
   register-callbacks 

@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-public class OperatorApplicationDialog extends Dialog {
+public class QueryInspectorDialog extends Dialog {
 	private String title;
 	private String infoText;
 	private String infoLabel;
@@ -28,7 +28,7 @@ public class OperatorApplicationDialog extends Dialog {
 	 * @param parentShell
 	 * @wbp.parser.constructor
 	 */
-	public OperatorApplicationDialog(Shell parentShell, String title, String infoText, String infoLabel, Object[] args, String[] inputs) {
+	public QueryInspectorDialog(Shell parentShell, String title, String infoText, String infoLabel, Object[] args, String[] inputs) {
 		super(parentShell);
 		setShellStyle(SWT.RESIZE);
 		this.title = title;
@@ -62,7 +62,7 @@ public class OperatorApplicationDialog extends Dialog {
 		if (args != null) {
 			Label lblTitle2 = new Label(container, SWT.NONE);
 			lblTitle2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 2, 1));
-			lblTitle2.setText("Arguments:");
+			lblTitle2.setText("Corresponding query:");
 		
 			txtInputs = new Text[args.length];
 			
@@ -120,7 +120,6 @@ public class OperatorApplicationDialog extends Dialog {
 			}
 		}
 		infoText = txtInfo.getText();
-		System.out.println("here");
 	    super.okPressed();	
 	}
 	

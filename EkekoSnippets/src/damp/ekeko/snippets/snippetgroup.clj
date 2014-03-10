@@ -118,17 +118,11 @@ damp.ekeko.snippets.snippetgroup
     (snippetgroup-snippet-for-var grp var)
     var))
 
-(defn
-  snippetgroup-userfs
-  [grp]
-  "Returns all ast to user functions of the given grp."
-  (mapcat snippet/snippet-userfs (:snippetlist grp)))
-
-(defn
-  snippetgroup-new-state
-  [grp]
-  (let [new-snippetlist (map snippet/snippet-new-state  (:snippetlist grp))] 
-    (update-in grp [:snippetlist] (fn [x] new-snippetlist))))
+;(defn
+;  snippetgroup-new-state
+;  [grp]
+;  (let [new-snippetlist (map snippet/snippet-new-state  (:snippetlist grp))] 
+;    (update-in grp [:snippetlist] (fn [x] new-snippetlist))))
 
 
 (defn 
@@ -160,7 +154,6 @@ damp.ekeko.snippets.snippetgroup
 ;;OTHER FUNCTIONS' NAME
 ;;---------------------------
 
-(def document-as-template snippet/document-as-snippet)
 (def template-root snippet/snippet-root)
 (def make-templategroup make-snippetgroup)
 
@@ -170,7 +163,6 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_MAKE_SNIPPETGROUP) make-snippetgroup)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NAME) snippetgroup-name)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NEWSTATE) snippetgroup-new-state)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
 

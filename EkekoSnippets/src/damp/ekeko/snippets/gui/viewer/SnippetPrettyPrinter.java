@@ -24,11 +24,9 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 
 	public static IFn FN_SNIPPET_VAR_FOR_NODE;
 	public static IFn FN_SNIPPET_USERVAR_FOR_NODE;
-	public static IFn FN_SNIPPET_GROUNDER_FOR_NODE;
-	public static IFn FN_SNIPPET_CONSTRAINER_FOR_NODE;
-	public static IFn FN_SNIPPET_USERFS_FOR_NODE;
-	public static IFn FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE;
-	public static IFn FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE;
+	public static IFn FN_SNIPPET_BOUNDDIRECTIVES;
+	public static IFn FN_SNIPPET_BOUNDDIRECTIVES_STRING;
+	
 	public static IFn FN_SNIPPET_LIST_CONTAINING;
 
 
@@ -71,89 +69,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		return FN_SNIPPET_USERVAR_FOR_NODE.invoke(snippet, node);
 	}
 
-	public Object getGroundF(Object node) {
-		return FN_SNIPPET_GROUNDER_FOR_NODE.invoke(snippet, node);
-	}
-
-	public Object getConstrainF(Object node) {
-		return FN_SNIPPET_CONSTRAINER_FOR_NODE.invoke(snippet, node);
-	}
-
-	public Object[] getUserFS(Object node) {
-		return getArray(FN_SNIPPET_USERFS_FOR_NODE.invoke(snippet, node));
-	}
-
-	//TODO: figure out why these are hard-coded
-	public boolean hasDefaultGroundf(Object node) {
-		Object groundf = getGroundF(node);
-		if(groundf == null) return true;
-		if (groundf == Keyword.intern("minimalistic") ||
-				groundf == Keyword.intern("exact") ||
-				groundf == Keyword.intern("child+") ||
-				groundf == Keyword.intern("epsilon"))
-			return true;
-		return false;
-	}
-
-	//TODO: figure out why these are hard-coded
-	public boolean hasDefaultConstrainf(Object node) {
-		Object constrainf = getConstrainF(node);
-		if(constrainf == null) return true;
-		if (constrainf == Keyword.intern("exact") ||
-				constrainf == Keyword.intern("variable") || 
-				constrainf == Keyword.intern("variable-info") || 
-				constrainf == Keyword.intern("epsilon")) 	
-			return true;
-		return false;
-	}
-
-	public boolean hasUserf(Object node) {
-		Object[] userf = getUserFS(node);
-		if (userf.length > 0)
-			return true;
-		return false;
-	}
-
-	public String getGroundFString(Object node) {
-		Object[] functionArgs = getArray(FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE.invoke(snippet, node)); 
-		return getFunctionString(functionArgs);
-	}
-
-	public String getConstrainFString(Object node) {
-		Object[] functionArgs = getArray(FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE.invoke(snippet, node)); 
-		Object constrainf = getConstrainF(node);
-
-		if (constrainf == Keyword.intern("change-name")) 
-			return getFunctionStringForChangeName(functionArgs);
-
-		if (getConstrainF(node) == Keyword.intern("exact-variable")) 
-			return getFunctionStringForExactVariable(getUserVar(node));
-
-		return getFunctionString(functionArgs);
-	}
-
-	public String getUserFSString(Object node) {
-		Object[] userFS = getUserFS(node);
-		String result = "";
-		for (int i=0; i<userFS.length; i++) {
-			result += getFunctionString(getArray(userFS[i])) + ",";
-		}
-		return result.substring(0, result.length()-1);
-	}
-
-	public String getUserVarString(Object node) {
-		Object[] functionArgs = getArray(FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE.invoke(snippet, node)); 
-		Object constrainf = getConstrainF(node);
-		Object uservar = getUserVar(node);
-		//TODO: figure out why these are hard-coded
-		if ((uservar != null) && 
-				(constrainf != Keyword.intern("exact-variable")) &&
-				(constrainf != Keyword.intern("variable")) &&
-				(constrainf != Keyword.intern("variable-info")))  	
-			return getFunctionStringForExactVariable(uservar);
-
-		return "";
-	}
+	//TODO: figure out why these are hard-coded	}
 
 	public String getFunctionString(Object[] functionList) {
 		//functionList = (:function arg1 arg2 ... argn)
@@ -205,7 +121,8 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		Object uservar = getUserVar(node);
 		//TODO: figure out why these are hard-coded
 		if (uservar != null) {
-			Object constrainf = getConstrainF(node);
+			Object constrainf = null;
+			//Object constrainf = getConstrainF(node);
 			if (constrainf == Keyword.intern("variable") ||
 					constrainf == Keyword.intern("variable-info") || 	
 					constrainf == Keyword.intern("change-name")) { 	
@@ -274,16 +191,14 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		printClosingNode(nodeListWrapper);
 	}
 
+	
+	
 	public void printOpeningNode(Object node) {
 		//print bracket
-		if (!hasDefaultGroundf(node) || 
-				!hasDefaultConstrainf(node) || 
-				hasUserf(node)) {
-			int start = getCurrentCharacterIndex();
-			this.buffer.append("[");
-			styleRanges.add(styleRangeForMeta(start, 1));
-		}
-
+		//TODO: only print if has non-default directives
+		int start = getCurrentCharacterIndex();
+		this.buffer.append("[");
+		styleRanges.add(styleRangeForMeta(start, 1));
 	}
 
 	private int getCurrentCharacterIndex() {
@@ -294,17 +209,28 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 		String fString = "";
 		//print bracket, followed by groundf, constrainf, and userfs
 		List<String> directives = new LinkedList<String>();
+		
+		/*
 		if (!hasDefaultGroundf(node))
 			directives.add(getGroundFString(node));
 		if (!hasDefaultConstrainf(node))
 			directives.add(getConstrainFString(node));
 		if (hasUserf(node))
 			directives.add(getUserFSString(node));
+		*/
+		
+		/*
 		String userVarString = getUserVarString(node);
 		if (!userVarString.isEmpty())
 			directives.add(userVarString);
-
-		if (!directives.isEmpty()) { 
+		 */
+		
+		
+		//TODO: only print if has non-default directives
+		//!directives.isEmpty()
+		
+		
+		if (true) { 
 			int start = getCurrentCharacterIndex();
 			this.buffer.append("]");
 			styleRanges.add(styleRangeForMeta(start, 1));	
@@ -312,7 +238,7 @@ public class SnippetPrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("@[");
 			styleRanges.add(styleRangeForMeta(start, 2));
 			start = getCurrentCharacterIndex();
-			this.buffer.append(Joiner.on(',').join(directives));
+			this.buffer.append(FN_SNIPPET_BOUNDDIRECTIVES_STRING.invoke(snippet, node));
 			styleRanges.add(styleRangeForDirectives(start, getCurrentCharacterIndex() - start));
 			start = getCurrentCharacterIndex();
 			this.buffer.append("]");

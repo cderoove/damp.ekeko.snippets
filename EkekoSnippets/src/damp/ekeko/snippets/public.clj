@@ -8,7 +8,8 @@
              [ast :as ast]])
   (:require [damp.ekeko.snippets
              [runtime :as runtime]
-             [rewrite :as rewrite]]))
+            ;[rewrite :as rewrite]
+            ]))
 
 
 ; ---------------------------------
@@ -58,7 +59,7 @@
     (ast/ast :MethodDeclaration ?method)    
     (ast/child+ ?method ?var)))
 
-
+(comment
 ; ---------------------------------
 ; REWRITE FUNCTIONS
 ; ---------------------------------
@@ -101,3 +102,5 @@
   [node string]
   (let [cu (.getRoot node)]
     (rewrite/add-node-in-rewrite-code cu :imports string 0)))
+
+)

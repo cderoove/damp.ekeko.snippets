@@ -5,26 +5,50 @@
   (:refer-clojure :exclude [== type])
   (:require [clojure.core.logic :as cl]) 
   (:require [damp.ekeko.snippets 
-             [querying :as querying]
              [snippet :as snippet]
+             [matching :as matching]
+             [querying :as querying]
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
              [util :as util]
-             [rewrite]
+            ;todo: fix
+            ;[rewrite] 
              [operators]
              [operatorsrep]
              [precondition]
              [querying]
              [gui]
              [runtime]
-             [searchspace]
+             ;todo: fix
+             ;[searchspace]
              [public]
-             [datastore]
+             ;todo: fix
+             ;[datastore]
              ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko])
   (:require [damp.ekeko.logic :as el]))    
+
+
+
+;(defn …
+;  snippet-new-state
+;  [snippet]
+;  (let [document (snippet-document snippet)]
+;    (let [new-document (parsing/parse-string-to-document (.get document))
+;          newsnippet (document-as-snippet new-document)]
+;      (copy-snippet snippet newsnippet))))
+
     
+
+
+
+
+
+
+
+
+
 (defn
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
@@ -41,7 +65,9 @@
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)))
+  (let [q (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)]
+    (println q)
+    (eval q)))
 
 (defn
   query-by-snippetgroup
@@ -49,12 +75,13 @@
   [snippetgroup]
   (distinct (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
 
+(comment
 (defn
   query-rewrite-by-snippetgroup
   "Queries the Ekeko projects for rewriting for the given snippetgroup and snippetgrouprewrite."
   [snippetgroup snippetgrouprewrite]
   (print (eval (querying/snippetgroup-rewrite-query snippetgroup snippetgrouprewrite 'damp.ekeko/ekeko))))
-
+)
 
 ;;for plugin purpose, result with header
 (defn
@@ -83,7 +110,7 @@
 
 (def query-by-templategroup query-by-snippetgroup)
 (def query-by-templategroup* query-by-snippetgroup*)
-(def query-rewrite-by-templategroup query-rewrite-by-snippetgroup)
+;(def query-rewrite-by-templategroup query-rewrite-by-snippetgroup)
 
 
 (defn

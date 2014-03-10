@@ -3,8 +3,7 @@
     :author "Coen De Roover, Siltvani"}
 damp.ekeko.snippets.snippet
   (:require [damp.ekeko.snippets 
-             [util :as util]
-             [parsing :as parsing]])
+             [util :as util]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
@@ -49,9 +48,8 @@ damp.ekeko.snippets.snippet
 
 (defrecord 
   Snippet
-  [ast ast2var ast2groundf ast2constrainf ast2userfs var2ast var2uservar 
+  [ast ast2var ast2bounddirectives var2ast var2uservar 
    userquery document rewrite track2ast ast2track])
-
 
 (defn 
   snippet-root 
@@ -71,54 +69,6 @@ damp.ekeko.snippets.snippet
    (i.e., the JDT node the snippet originated from)."
   [snippet]
   (snippet-var-for-node snippet (:ast snippet)))
-
-(defn 
-  snippet-grounder-with-args-for-node
-  [snippet template-ast]
-  (get-in snippet [:ast2groundf template-ast]))
-
-(defn 
-  snippet-constrainer-with-args-for-node
-  [snippet template-ast]
-  (get-in snippet [:ast2constrainf template-ast]))
-
-(defn 
-  snippet-grounder-for-node
-  "For the given AST node of the given snippet, returns the function type
-   that will generate grounding conditions for the corresponding logic variable."
-  [snippet template-ast]
-  (first (get-in snippet [:ast2groundf template-ast])))
-
-(defn 
-  snippet-constrainer-for-node
-  "For the given AST node of the given snippet, returns the function type
-   that will generate constraining conditions for the corresponding logic variable."
-  [snippet template-ast]
-  (first (get-in snippet [:ast2constrainf template-ast])))
-
-(defn 
-  snippet-grounder-args-for-node
-  "For the given AST node of the given snippet, returns the list of function arguments
-   that will generate grounding conditions for the corresponding logic variable."
-  [snippet template-ast]
-  (rest (get-in snippet [:ast2groundf template-ast])))
-
-(defn 
-  snippet-constrainer-args-for-node
-  "For the given AST node of the given snippet, returns the function arguments
-   that will generate constraining conditions for the corresponding logic variable."
-  [snippet template-ast]
-  (rest (get-in snippet [:ast2constrainf template-ast])))
-
-(defn 
-  snippet-userfs-for-node
-  "For the given AST node of the given snippet, returns list of user functions
-   with format ((function1 arg) (function2 arg) ..)."
-  [snippet template-ast]
-  (let [userfs (get-in snippet [:ast2userfs template-ast])]
-    (if (nil? userfs)
-      '()
-      userfs)))
 
 (defn 
   snippet-node-for-var 
@@ -167,16 +117,21 @@ damp.ekeko.snippets.snippet
       (snippet-node-for-uservar snippet snippet-var)
       node)))
 
+(defn
+  snippet-bounddirectives-for-node
+  "For the given AST node of the given snippet, returns the seq of bound directives used to generate conditions to find a match for the node."
+  [snippet snippet-node]
+  (get-in snippet [:ast2bounddirectives snippet-node]))
+
 (defn 
   snippet-nodes
   "Returns all AST nodes of the given snippet."
   [snippet]
   (keys (:ast2var snippet)))
 
-
 (defn 
   snippet-list-containing
-  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr. Should only be used by pretty printer."
+  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr."
   [snippet mbr]
   (let [ownerproperty (astnode/owner-property mbr)]
     (some (fn [value] 
@@ -193,7 +148,6 @@ damp.ekeko.snippets.snippet
   value at least should have one member."
   [snippet value]
   (snippet-list-containing snippet (first value)))
-
 
 (defn
   snippet-node-owner
@@ -213,12 +167,6 @@ damp.ekeko.snippets.snippet
       (= (astnode/owner value) node))
     (snippet-nodes snippet)))
 
-(defn
-  snippet-userfs
-  "Returns all ast to user functions of the given snippet."
-  [snippet]
-  (:ast2userfs snippet))
-
 (defn 
   snippet-vars
   "Returns the logic variables that correspond to the AST nodes
@@ -237,29 +185,33 @@ damp.ekeko.snippets.snippet
   snippet-uservars-for-information
   "Returns the logic variables of node with matching strategy :exact-variable or :variable-info of the given snippet."
   [snippet]
-  (vals
-    (filter 
-      (fn [x] 
-        (let [cf (snippet-constrainer-for-node 
-                   snippet
-                   (snippet-node-for-var snippet (key x)))]
-          (or (= cf :exact-variable)
-              (= cf :variable-info))))
-      (:var2uservar snippet))))
+  (snippet-uservars snippet))
+
+;  (vals
+;    (filter 
+;      (fn [x] 
+;        (let [cf (snippet-constrainer-for-node 
+;                   snippet
+;                   (snippet-node-for-var snippet (key x)))]
+;          (or (= cf :exact-variable)
+;              (= cf :variable-info))))
+;      (:var2uservar snippet))))
 
 (defn 
   snippet-uservars-for-variable
   "Returns the logic variables of node with matching strategy != :exact-variable of the given snippet."
   [snippet]
-  (vals
-    (filter 
-      (fn [x] 
-        (let [cf (snippet-constrainer-for-node 
-                   snippet
-                   (snippet-node-for-var snippet (key x)))]
-          (and (not (= cf :exact-variable))
-               (not (= cf :variable-info)))))
-      (:var2uservar snippet))))
+  (snippet-uservars snippet))
+  ;(vals
+  ;  (filter 
+  ;    (fn [x] 
+  ;      (let [cf (snippet-constrainer-for-node 
+  ;                 snippet
+  ;                 (snippet-node-for-var snippet (key x)))]
+  ;        (and (not (= cf :exact-variable))
+  ;             (not (= cf :variable-info)))))
+  ;    (:var2uservar snippet))))
+
 
 (defn 
   snippet-userquery
@@ -278,7 +230,6 @@ damp.ekeko.snippets.snippet
     (rest (first (snippet-userquery snippet)))  
     (rest (snippet-userquery snippet))))  
   
-
 (defn 
   snippet-document
   "Returns the document of source code of the given snippet."
@@ -313,74 +264,41 @@ damp.ekeko.snippets.snippet
 
   
 
-;; Constructing Snippet instances
-;; ------------------------------
+;; Copying Snippet and Apply rewrite
+;; ---------------------------------
 
-(defn 
-  make-astrewrite
-  [node]
-  (ASTRewrite/create (.getAST node)))
-
-(defn 
-  jdt-node-as-snippet
-  "Interpretes the given JDT ASTNode as a snippet with default matching 
-   strategies (i.e., grounding=:exact, constaining=:exact)
-   for the values of its properties.
-   note: Only used to test operators related binding."
-  [n]
-  (defn assoc-snippet-value [snippet value]
-    (let [lvar (util/gen-readable-lvar-for-value value)]
-      (->
-        snippet
-        (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] (list :exact))
-        (assoc-in [:ast2constrainf value] (list :exact))
-        (assoc-in [:var2ast lvar] value))))
-  (let [snippet (atom (Snippet. n {} {} {} {} {} {} '() nil nil {} {}))]
-    (util/walk-jdt-node 
-      n
-      (fn [astval] (swap! snippet assoc-snippet-value astval))
-      (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval))
-      (fn [primval]  (swap! snippet assoc-snippet-value primval))
-      (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
-    @snippet))
-  
-
-(defn 
-  document-as-snippet
-  "Parse Document doc as a snippet with default matching strategies 
-   (i.e., grounding=:exact, constaining=:exact)
-   for the values of its properties.
-   Function ASTRewrite/track is called for each ASTNode to activate the Node Tracking in ASTRewrite." 
-  [doc]
-  (defn assoc-snippet-value [snippet value track]
-    (let [lvar (util/gen-readable-lvar-for-value value)
-          arrTrack [(util/class-simplename (class value))
-                    (snippet-property-for-node snippet value) 
+(defn
+  copy-snippet
+  "Copy all informations in oldsnippet to newsnippet, comparing each node with NodeTrackPosition of ASTRewrite."
+  [oldsnippet newsnippet]
+  (defn update-newsnippet-value [snippet value track]
+    (let [arrTrack [(util/class-simplename (class value))
+                    (snippet-property-for-node oldsnippet value) 
                     (.getStartPosition track) 
-                    (.getLength track)]]
-      (->
-        snippet
-        (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2groundf value] (list :exact))
-        (assoc-in [:ast2constrainf value] (list :exact))
-        (assoc-in [:var2ast lvar] value)
-        (assoc-in [:track2ast arrTrack] value)
-        (assoc-in [:ast2track value] arrTrack))))
-  (let [n (parsing/parse-document doc)
-        rw (make-astrewrite n)
-        snippet (atom (Snippet. n {} {} {} {} {} {} '() doc rw {} {}))]
+                    (.getLength track)]
+          newast (snippet-node-for-track snippet arrTrack)] 
+      (if (not (nil? newast))
+        (->
+          snippet
+          (update-in [:ast2var newast] (fn [x] (snippet-var-for-node oldsnippet value)))
+          (update-in [:ast2directives newast] (fn [x] (get-in oldsnippet [:ast2directives value])))
+          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])      ;new variable replaced by old variable 
+          (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
+        snippet)))
+  (let [snippet (atom newsnippet)
+        rw (:rewrite oldsnippet)]
     (util/walk-jdt-node 
-      n
-      (fn [astval] 
-        (swap! snippet assoc-snippet-value astval (.track rw astval)))
-      (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval))))
-      (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
-      (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
+      (:ast oldsnippet)
+      (fn [astval]  (swap! snippet update-newsnippet-value astval (.track rw astval)))
+      (fn [lstval]  (swap! snippet update-newsnippet-value lstval (.track rw (:owner lstval))))
+      (fn [primval] (swap! snippet update-newsnippet-value primval (.track rw (:owner primval))))
+      (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
+    (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
+    (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
     @snippet))
-  
+
+
+
 
 ;; Updating Snippet instances
 ;;-----------------------------
@@ -405,10 +323,10 @@ damp.ekeko.snippets.snippet
   "Update constraining function for node and all child+ of a given node in snippet."
   [snippet node cf]
   (defn update-snippet-value [snippet value]
-    (if (or (= (snippet-constrainer-for-node snippet value) :variable)
-            (= (snippet-constrainer-for-node snippet value) :variable-info))
-      snippet
-      (update-in snippet [:ast2constrainf value] (fn [x] (list cf)))))
+   ; (if (or (= (snippet-constrainer-for-node snippet value) :variable)
+    ;        (= (snippet-constrainer-for-node snippet value) :variable-info))
+    ;  snippet
+      (update-in snippet [:ast2constrainf value] (fn [x] (list cf))))
   (let [snippet (atom snippet)]
     (util/walk-jdt-node 
       node
@@ -475,80 +393,17 @@ damp.ekeko.snippets.snippet
   [snippet node type args]
   (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
   
-
-;; Copying Snippet and Apply rewrite
-;; ---------------------------------
-
-(defn
-  copy-snippet
-  "Copy all informations in oldsnippet to newsnippet, comparing each node with NodeTrackPosition of ASTRewrite."
-  [oldsnippet newsnippet]
-  (defn update-userfs [snippet newast value]
-    (let [userfs (get-in oldsnippet [:ast2userfs value])]
-      (if (not (nil? userfs)) 
-        (assoc-in snippet [:ast2userfs newast] userfs)
-        snippet)))
-  (defn update-newsnippet-value [snippet value track]
-    (let [arrTrack [(util/class-simplename (class value))
-                    (snippet-property-for-node oldsnippet value) 
-                    (.getStartPosition track) 
-                    (.getLength track)]
-          newast (snippet-node-for-track snippet arrTrack)] 
-      (if (not (nil? newast))
-        (->
-          snippet
-          (update-in [:ast2var newast] (fn [x] (snippet-var-for-node oldsnippet value)))
-          (update-in [:ast2groundf newast] (fn [x] (get-in oldsnippet [:ast2groundf value])))
-          (update-in [:ast2constrainf newast] (fn [x] (get-in oldsnippet [:ast2constrainf value])))
-          (update-userfs newast value)
-          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])      ;new variable replaced by old variable 
-          (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
-        snippet)))
-  (let [snippet (atom newsnippet)
-        rw (:rewrite oldsnippet)]
-    (util/walk-jdt-node 
-      (:ast oldsnippet)
-      (fn [astval]  (swap! snippet update-newsnippet-value astval (.track rw astval)))
-      (fn [lstval]  (swap! snippet update-newsnippet-value lstval (.track rw (:owner lstval))))
-      (fn [primval] (swap! snippet update-newsnippet-value primval (.track rw (:owner primval))))
-      (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
-    (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
-    (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
-    @snippet))
-
-(defn 
-  apply-rewrite 
-  "Apply rewrite to snippet."
-  [snippet]
-  (let [rewrite (snippet-rewrite snippet)
-        document (snippet-document snippet)]
-    (.apply (.rewriteAST rewrite document nil) document)
-    (let [newsnippet (document-as-snippet document)]
-      (copy-snippet snippet newsnippet)))) 
-
-(defn 
-  snippet-new-state
-  [snippet]
-  (let [document (snippet-document snippet)]
-    (let [new-document (parsing/parse-string-to-document (.get document))
-          newsnippet (document-as-snippet new-document)]
-      (copy-snippet snippet newsnippet))))
-
+                         
 
 (defn
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_ROOT) snippet-root)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERY) snippet-userquery)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
 
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-uservar-for-node)
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_GROUNDER_FOR_NODE) snippet-grounder-for-node)
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_CONSTRAINER_FOR_NODE) snippet-constrainer-for-node)
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_USERFS_FOR_NODE) snippet-userfs-for-node)
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_GROUNDERWITHARGS_FOR_NODE) snippet-grounder-with-args-for-node)
-  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_CONSTRAINERWITHARGS_FOR_NODE) snippet-constrainer-with-args-for-node)
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES) snippet-bounddirectives-for-node)
   (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
   
   
@@ -556,11 +411,4 @@ damp.ekeko.snippets.snippet
   )
 
 (register-callbacks)
-
-
-
-
-
-
-
 

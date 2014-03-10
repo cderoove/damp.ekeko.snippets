@@ -2,6 +2,10 @@ package damp.ekeko.snippets.data;
 
 import java.util.Collection;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.dom.ASTNode;
 
 import clojure.lang.IFn;
@@ -15,7 +19,6 @@ public class TemplateGroup {
 
 	public static IFn FN_SNIPPETGROUP_NAME;
 	public static IFn FN_SNIPPETGROUP_SNIPPET_FOR_NODE;
-	public static IFn FN_SNIPPETGROUP_NEWSTATE;
 
 	public static IFn FN_SNIPPET_ROOT;
 	public static IFn FN_SNIPPET_USERQUERY;
@@ -115,11 +118,8 @@ public class TemplateGroup {
 	}
 
 
-	public void removeSnippet(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet != null)	{
-			cljGroup = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(cljGroup, snippet);
-		}
+	public void removeSnippet(Object snippet) {
+		cljGroup = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(cljGroup, snippet);
 	}
 
 	public String getQuery(Object node) {
@@ -132,13 +132,22 @@ public class TemplateGroup {
 		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 	}
 	
-	public void runQuery(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet == null)		
-			FN_QUERY_BY_SNIPPETGROUP.invoke(getGroup()); 		
-		else 
-			FN_QUERY_BY_SNIPPET.invoke(snippet);		
-			//RT.var(ns_snippets,"query-by-snippet-in-group*").invoke(snippet, getGroup());		
+	public void runQuery(final Object node) {
+		Job job = new Job("Matching template") {
+			protected IStatus run(final IProgressMonitor m) {
+				m.beginTask("Evaluating corresponding query", 1);
+				Object snippet = getSnippet(node);
+				if (snippet == null)		
+					FN_QUERY_BY_SNIPPETGROUP.invoke(getGroup()); 		
+				else 
+					FN_QUERY_BY_SNIPPET.invoke(snippet);		
+				//RT.var(ns_snippets,"query-by-snippet-in-group*").invoke(snippet, getGroup());		
+				m.worked(1);
+				m.done();
+				return Status.OK_STATUS;
+			}
+		};
+		job.schedule();
 	}
 
 	public Object[] getQueryResult(Object node) {
@@ -148,12 +157,6 @@ public class TemplateGroup {
 		else 
 			return getArray(FN_QUERY_BY_SNIPPET_HEADER.invoke(snippet));
 			//return getArray(RT.var(ns_snippets,"query-by-snippet-in-group-with-header").invoke(snippet, getGroup()));
-	}
-
-	public TemplateGroup newState() {
-		TemplateGroup newState = TemplateGroup.newFromClojureGroup(cljGroup);
-		newState.cljGroup = FN_SNIPPETGROUP_NEWSTATE.invoke(cljGroup); 		
-		return newState;
 	}
 	
 	public Object[] searchSpace(Object[] positiveExamples, Object[] negativeExamples) {

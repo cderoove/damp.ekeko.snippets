@@ -13,6 +13,7 @@
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
              [operatorsrep :as operatorsrep]
+             [directives :as directives]
              ])
   (:require [damp.ekeko.jdt [astnode :as astnode]])
   (:require [damp.ekeko.gui]))
@@ -90,6 +91,10 @@
         (str "element of " idwithowner))
       idwithowner)))
 
+(defn
+  templatetreelabelprovider-directives
+  [snippet element]
+  (snippet/snippet-bounddirectives-for-node snippet element))
 
 ; Callbacks for OperatorTreeContentProvider
 ; -----------------------------------------
@@ -232,6 +237,13 @@
   (str (operatorsrep/binding-value operandbinding)))
 
 
+(defn
+  snippet-bounddirectives-string-for-node
+  [snippet node]
+  (let [bounddirectives (snippet/snippet-bounddirectives-for-node snippet node)]
+    (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
+
+
 
 (defn
   configure-callbacks
@@ -242,6 +254,8 @@
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_NODE) templatetreelabelprovider-node)
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_KIND) templatetreelabelprovider-kind)
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_PROPERTY) templatetreelabelprovider-property)
+  (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_DIRECTIVES) templatetreelabelprovider-directives)
+
   
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_ELEMENTS) operatortreecontentprovider-elements) 
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_CHILDREN) operatortreecontentprovider-children)
@@ -251,6 +265,9 @@
   (set! (damp.ekeko.snippets.gui.OperandBindingEditingSupport/FN_OPERANDBINDING_EDITOR) operandbinding-celleditor)
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderDescription/FN_LABELPROVIDER_DESCRIPTION_TEXT) operandbinding-labelprovider-descriptiontext)
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderValue/FN_LABELPROVIDER_DESCRIPTION_VALUE) operandbinding-labelprovider-valuetext)
+  
+  (set! (damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-bounddirectives-string-for-node)
+
 
   
   )

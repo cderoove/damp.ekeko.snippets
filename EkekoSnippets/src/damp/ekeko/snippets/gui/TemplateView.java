@@ -269,9 +269,10 @@ public class TemplateView extends ViewPart {
 
 	public void viewQuery() {
 		String query = templateGroup.getQuery( templateGroupViewer.getSelectedSnippet());
-		OperatorApplicationDialog dlg = new OperatorApplicationDialog(Display.getCurrent().getActiveShell(),
+		QueryInspectorDialog dlg = new QueryInspectorDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
+		
 		if (dlg.open() == Window.OK) 
 			runQuery();
 	}

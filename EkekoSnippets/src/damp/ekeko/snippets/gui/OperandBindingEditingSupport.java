@@ -6,7 +6,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Table;
 
 import clojure.lang.IFn;
-import damp.ekeko.snippets.OperandBinding;
+import damp.ekeko.snippets.OperatorOperandBinding;
 
 public class OperandBindingEditingSupport extends EditingSupport {
 
@@ -32,12 +32,12 @@ public class OperandBindingEditingSupport extends EditingSupport {
 
 	@Override
 	protected Object getValue(Object element) {
-		return ((OperandBinding) element).getValue();
+		return ((OperatorOperandBinding) element).getValue();
 	}
 
 	@Override
 	protected void setValue(Object element, Object value) {
-		((OperandBinding) element).setValue(value);
+		((OperatorOperandBinding) element).setValue(value);
 		operandsTableViewer.update(element, null);
 	}
 

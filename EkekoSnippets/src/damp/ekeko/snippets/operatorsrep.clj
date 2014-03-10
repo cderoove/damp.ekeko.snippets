@@ -1,5 +1,5 @@
 (ns 
-  ^{:doc "Representation for operators."
+  ^{:doc "Representation for operators and their operands."
     :author "Coen De Roover, Siltvani"}
    damp.ekeko.snippets.operatorsrep
   (:refer-clojure :exclude [== type])
@@ -15,7 +15,7 @@
              [snippetgroup :as snippetgroup]
              [precondition :as precondition]
              ]))
-
+ 
 ;; Operator information
 
 
@@ -120,7 +120,7 @@
 (defn
   make-binding
   [operand group template value]
-  (damp.ekeko.snippets.OperandBinding. operand group template value))
+  (damp.ekeko.snippets.OperatorOperandBinding. operand group template value))
 
 (defn
   binding-operand
@@ -200,7 +200,8 @@
   operators
   [(Operator. 
      :replace-by-variable  
-     operators/replace-by-variable
+     ;operators/replace-by-variable
+     (fn [x] x)
      :generalization
      "Replace by variable"
      nil

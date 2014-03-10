@@ -43,12 +43,14 @@ public class OperatorOperandsViewer extends Composite {
 		GridData gd_operatorTree = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
 		gd_operatorTree.heightHint = 191;
 		operatorTree.setLayoutData(gd_operatorTree);
-
+		
 		TreeViewerColumn operatorNameColumn = new TreeViewerColumn(operatorTreeViewer, SWT.NONE);
 		TreeColumn trclmnOperator = operatorNameColumn.getColumn();
 		trclmnOperator.setWidth(150);
 		trclmnOperator.setText("Operator");
 
+		//ColumnViewerToolTipSupport.enableFor(operatorTreeViewer, ToolTip.NO_RECREATE);
+		
 		operatorNameColumn.setLabelProvider(new OperatorTreeLabelProvider());
 		operatorTreeViewer.setContentProvider(new OperatorTreeContentProvider());
 
@@ -67,6 +69,7 @@ public class OperatorOperandsViewer extends Composite {
 		gd_textOpInfo.heightHint = 50;
 		textOpInfo.setLayoutData(gd_textOpInfo);
 		*/
+		
 		
 		
 		operandsTableViewer = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);

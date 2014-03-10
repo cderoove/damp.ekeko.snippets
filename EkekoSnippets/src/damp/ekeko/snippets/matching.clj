@@ -3,20 +3,22 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.matching
   (:require [clojure.core.logic :as cl])
+  
   (:require [damp.ekeko.snippets 
+             [directives :as directives]
              [util :as util]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
+             [parsing :as parsing]
              [runtime :as runtime]])
   (:require 
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
      [astnode :as astnode]
-     [ast :as ast]]))
+     [ast :as ast]])
+  (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
+  )
 
-;; for each grounding or constraining function maker, there are additional arguments beside snippet-ast,
-;; which can be accessed in snippet :ast2groundf or :ast2constrainf via getter function
-;; snippet-grounder-args-for-node and snippet-constrainer-args-for-node (see snippet.clj)
 
 (defn
   make-epsilon-function
@@ -26,6 +28,11 @@
     '()))
 
 (declare ast-primitive-as-expression)
+
+
+;TODO: special case :modifiers list because it contains both modifiers and annotations
+;would like a field declaration without annotations to match field declaration with annotations?
+
 
 ;; Grounding Functions
 ;; -------------------
@@ -42,6 +49,8 @@
           `((ast/ast ~snippet-ast-keyw ~var-match)))
         '()))))
 
+(declare directive-parent)
+
 (defn 
   gf-member-exact
   "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
@@ -54,21 +63,40 @@
       (= snippet-ast (:ast snippet))
       (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
             var-match (snippet/snippet-var-for-node snippet snippet-ast)] 
-        `((ast/ast ~snippet-ast-keyw ~var-match)))
-      (let [
+        `((ast/ast ~snippet-ast-keyw ~var-match)
+           ))
+      (let [bounddirectives (snippet/snippet-bounddirectives-for-node snippet snippet-ast)
+            var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
+
+            ;todo: check for parent directives that might require different grounding
             list-owner      (snippet/snippet-list-containing snippet snippet-ast)
-            cf-list-owner   (snippet/snippet-constrainer-for-node snippet list-owner)
+            list-owner-directives (snippet/snippet-bounddirectives-for-node snippet list-owner)
+            
             list-match       (snippet/snippet-var-for-node snippet list-owner)
             list-raw         (:value list-owner)
             list-match-raw   (util/gen-readable-lvar-for-value list-raw)
-            
-            var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
-            
             index-match     (.indexOf list-raw snippet-ast)
+            
+            cf-list-owner :toeliminate
+            
+            foo 
+            (do 
+              (println "bounddirectives " bounddirectives ) 
+              (println "var-match " var-match)
+              (println "list-owner " list-owner)
+              (println "list-owner-directives " list-owner-directives)
+              (println "list-match " list-match)
+              (println "list-raw " list-raw)
+              (println "list-match-raw " list-match-raw)
+              (println "index-match " index-match))
+              
             conditions 
             (cond
-	             (= cf-list-owner :exact)
-	             `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
+              ;todo: put at bottom of cond, check for parent directives first
+              (directives/bounddirectives-include-directive? bounddirectives directive-parent)
+              `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
+              
+              ;todo: add variants of parent with arguments
               
 	             (or (= cf-list-owner :contains) 
 	                 (= cf-list-owner :contains-eq-size))
@@ -113,13 +141,19 @@
             owner-property-keyw (astnode/ekeko-keyword-for-property-descriptor owner-property)]
         `((ast/has ~owner-property-keyw ~var-match-owner ~var-match)))))
 
+(defn
+  node|listmember? 
+  "Checks whether value is an ASTNode that is the member of a list."
+  [snippet-val]
+  (and (instance? org.eclipse.jdt.core.dom.ASTNode snippet-val)  
+         (not (instance? org.eclipse.jdt.core.dom.CompilationUnit snippet-val))  
+         (astnode/property-descriptor-list? (astnode/owner-property snippet-val))))
+
 (defn 
   gf-exact
   [snippet-val]
   (if
-    (and (instance? org.eclipse.jdt.core.dom.ASTNode snippet-val)  
-         (not (instance? org.eclipse.jdt.core.dom.CompilationUnit snippet-val))  
-         (astnode/property-descriptor-list? (astnode/owner-property snippet-val))) ;check if its a member of a list
+    (node|listmember? snippet-val)
     (gf-member-exact snippet-val)
     (gf-minimalistic snippet-val)))
 
@@ -130,13 +164,16 @@
   [snippet-ast]
   (fn [snippet] 
       (let [var-match       (snippet/snippet-var-for-node snippet snippet-ast)
-            args            (snippet/snippet-grounder-args-for-node snippet snippet-ast)
+            ;todo
+            ;args            (snippet/snippet-grounder-args-for-node snippet snippet-ast)
+            args []
             var-match-owner 
             (if (empty? args)
               (snippet/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
               (symbol (first args)))]                                                            ;for gf :deep
         `((ast/child+ ~var-match-owner ~var-match)))))
 
+(comment
 (defn 
   make-grounding-function
   [type]
@@ -153,11 +190,17 @@
     make-epsilon-function
     :default
     (throw (Exception. (str "Unknown grounding function type: " type)))))
+)
+
+(def parent gf-exact)
+
 
 ;; Constraining Functions
 ;; ----------------------
 
 ;;TODO: not in sync with node-filtered-ekeko-properties (or something like that)
+
+
 (defn 
   is-ignored-property?
   [property-keyw]
@@ -264,6 +307,10 @@
     (cf-primitive-exact snippet-val)
     (astnode/nilvalue? snippet-val)
     (cf-nil-exact snippet-val)))
+
+
+
+(def exact cf-exact)
 
 ;; Constraining Functions
 ;; Generalized
@@ -454,6 +501,8 @@
       ((cf-relax-loop snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
+(comment
+
 (defn
   make-constraining-function
   [type]
@@ -507,6 +556,17 @@
     :default
     (throw (Exception. (str "Unknown constraining function type: " type))))) 
 
+)
+
+
+
+
+(defn
+  to-literal-string
+  [value]
+  (let [qstr (.toString value)]
+    `~qstr))
+
 (defn 
   ast-primitive-as-expression
   "Returns the string representation of a primitive-valued JDT node (e.g., instances of Modifier.ModifierKeyword)."
@@ -517,21 +577,184 @@
         (number? primitive)
         primitive
         (instance? org.eclipse.jdt.core.dom.Modifier$ModifierKeyword primitive)
-        `(runtime/to-modifier-keyword ~(.toString primitive))
+        `(runtime/to-modifier-keyword ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PrimitiveType$Code primitive)
-        `(runtime/to-primitive-type-code ~(.toString primitive))
+        `(runtime/to-primitive-type-code ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.Assignment$Operator primitive)
-        `(runtime/to-assignment-operator ~(.toString primitive))
+        `(runtime/to-assignment-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.InfixExpression$Operator primitive)
-        `(runtime/to-infix-expression-operator ~(.toString primitive))
+        `(runtime/to-infix-expression-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PrefixExpression$Operator primitive)
-        `(runtime/to-prefix-expression-operator ~(.toString primitive))
+        `(runtime/to-prefix-expression-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PostfixExpression$Operator primitive)
-        `(runtime/to-postfix-expression-operator ~(.toString primitive))
+        `(runtime/to-postfix-expression-operator ~(to-literal-string primitive))
         (nil? primitive) 
         (throw (Exception. (str "Encountered a null-valued property value that should have been wrapped by Ekeko.")))
-        :else  (.toString primitive)))
+        :else (to-literal-string primitive)))
 
 
+;;Registering directives
+;;----------------------
 
+(def
+  directive-exact
+  (damp.ekeko.snippets.directives.Directive. 
+    "Node type and properties match type and properties of match."
+    []
+    exact 
+    ))
+
+(def 
+  directive-parent
+  (damp.ekeko.snippets.directives.Directive.
+    "Node parent matches match parent."
+    []
+    parent
+    ))
+
+(def 
+  directives-constraining
+  [directive-exact])
+
+(def
+  directives-grounding
+  [directive-parent])
+  
+(defn 
+  registered-constraining-directives
+  "Returns collection of registered constraining directives."
+  []
+  directives-constraining)
+
+(defn 
+  registered-grounding-directives
+  "Returns collection of registered grounding directives."
+  []
+  directives-grounding)
+
+(defn
+  registered-grounding-directive?
+  "Succeeds for registered directives that are grounding."
+  [directive]
+  (some #{directive} directives-grounding))
+
+(defn
+  registered-constraining-directive?
+  "Succeeds for registered directives that are constraining."
+  [directive]
+  (some #{directive} directives-constraining))
+
+
+;; Constructing Snippet instances with default matching directives
+;; ---------------------------------------------------------------
+
+(defn 
+  bind-nullary-directive
+  [directive snippet value]
+  (directives/make-bounddirective 
+    directive
+    (directives/directive-bindings-for-directiveoperands-and-match
+      snippet
+      value
+      directive)))
+
+(defn
+  default-directives
+  "Returns default matching directives for given snippet and element of the snippet element."
+  [snippet value]
+  (list 
+    (bind-nullary-directive directive-exact snippet value)
+    (bind-nullary-directive directive-parent snippet value)))
+
+(defn 
+  jdt-node-as-snippet
+  "Interpretes the given JDT ASTNode as a snippet with default matching 
+   strategies (i.e., grounding=:exact, constaining=:exact)
+   for the values of its properties.
+   note: Only used to test operators related binding."
+  [n]
+  (defn 
+    assoc-snippet-value
+    [snippet value]
+    (let [lvar (util/gen-readable-lvar-for-value value)]
+      (->
+        snippet
+        (assoc-in [:ast2var value] lvar)
+        (assoc-in [:ast2bounddirectives value] 
+                  (default-directives snippet value))
+        (assoc-in [:var2ast lvar] value))))
+  
+  (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} {} '() nil nil {} {}))]
+    (util/walk-jdt-node 
+      n
+      (fn [astval] (swap! snippet assoc-snippet-value astval))
+      (fn [lstval] 
+        (swap! snippet assoc-snippet-value lstval))
+      (fn [primval]  (swap! snippet assoc-snippet-value primval))
+      (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
+    @snippet))
+  
+
+
+;;TODO: is tracking really necessary?
+;;seems to complicate things, need to reduce duplicated code
+(defn 
+  document-as-snippet
+  "Parse Document doc as a snippet with default matching strategies 
+   (i.e., grounding=:exact, constaining=:exact)
+   for the values of its properties.
+   Function ASTRewrite/track is called for each ASTNode to activate the Node Tracking in ASTRewrite." 
+  [doc]
+  
+  (defn 
+    make-astrewrite
+    [node]
+    (ASTRewrite/create (.getAST node)))
+  
+  (defn assoc-snippet-value [snippet value track]
+    (let [lvar (util/gen-readable-lvar-for-value value)
+          arrTrack [(util/class-simplename (class value))
+                    (snippet/snippet-property-for-node snippet value) 
+                    (.getStartPosition track) 
+                    (.getLength track)]]
+      (->
+        snippet
+        (assoc-in [:ast2var value] lvar)
+        (assoc-in [:ast2bounddirectives value] 
+                  (default-directives snippet value))
+        (assoc-in [:var2ast lvar] value)
+        (assoc-in [:track2ast arrTrack] value)
+        (assoc-in [:ast2track value] arrTrack))))
+  
+  (let [n (parsing/parse-document doc)
+        rw (make-astrewrite n)
+        snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} {} '() doc rw {} {}))]
+    (util/walk-jdt-node 
+      n
+      (fn [astval] 
+        (swap! snippet assoc-snippet-value astval (.track rw astval)))
+      (fn [lstval] 
+        (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval))))
+      (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
+      (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
+    @snippet))
+
+
+(defn 
+  apply-rewrite 
+  "Apply rewrite to snippet."
+  [snippet]
+  (let [rewrite (snippet/snippet-rewrite snippet)
+        document (snippet/snippet-document snippet)]
+    (.apply (.rewriteAST rewrite document nil) document)
+    (let [newsnippet (document-as-snippet document)]
+      (snippet/copy-snippet snippet newsnippet)))) 
+
+
+(defn
+  register-callbacks
+  []
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet))
+
+(register-callbacks)
 
