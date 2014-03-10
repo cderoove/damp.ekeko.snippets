@@ -30,10 +30,6 @@
 (declare ast-primitive-as-expression)
 
 
-;TODO: special case :modifiers list because it contains both modifiers and annotations
-;would like a field declaration without annotations to match field declaration with annotations?
-
-
 ;; Grounding Functions
 ;; -------------------
 

@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
 
 import damp.ekeko.snippets.data.TemplateGroup;
 import damp.ekeko.snippets.gui.viewer.SnippetPrettyPrinter;
@@ -147,11 +148,7 @@ public class  TemplateGroupViewer extends Composite {
 	public boolean removeNodeSelectionListener(TemplateGroupViewerNodeSelectionListener listener) {
 		return nodeSelectionListeners.remove(listener);
 	}
-	
-	public void refresh() {
-		updateTextFields();
-	}
-		
+			
 	public Object getSelectedSnippetNode() {
 		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();
 		cljNode = selection.getFirstElement();
@@ -176,6 +173,10 @@ public class  TemplateGroupViewer extends Composite {
 			textViewerSnippet.getTextWidget().setStyleRange(range);
 	}
 	
+	public void clearSelection() {
+		snippetTreeViewer.setSelection(null);
+	}
+	
 	public void setInput(Object cljGroup, Object cljTemplate, Object cljNode) {
 		this.cljGroup = cljGroup;
 		this.cljTemplate = cljTemplate;
@@ -185,8 +186,21 @@ public class  TemplateGroupViewer extends Composite {
 		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
 		snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(cljGroup));
 		snippetTreeViewer.setInput(cljGroup);
-		if(cljNode != null)
-			snippetTreeViewer.setSelection(new StructuredSelection(cljNode));
+		if(cljNode != null) {
+			//set selection to node
+			snippetTreeViewer.setSelection(new StructuredSelection(cljNode), true);
+		}
+		else if (cljTemplate != null) {
+			//set selection to template
+			snippetTreeViewer.setSelection(new StructuredSelection(cljTemplate), true);
+		}
+		else  {
+			//set selection to first template in template group
+			Tree tree = snippetTreeViewer.getTree();
+			TreeItem[] items = tree.getItems();
+			if(items.length > 0)
+				tree.setSelection(items[0]);
+		}
 		updateTextFields();
 	}
 	

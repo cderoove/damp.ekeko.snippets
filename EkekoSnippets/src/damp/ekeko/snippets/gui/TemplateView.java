@@ -248,6 +248,7 @@ public class TemplateView extends ViewPart {
 		if (code != null && !code.isEmpty()) {
 			//throws NPE when selected text cannot be parsed as the starting point for a template
 			templateGroup.addSnippetCode(code);
+			templateGroupViewer.clearSelection();
 			refreshWidgets();
 		}
 	}
@@ -264,6 +265,7 @@ public class TemplateView extends ViewPart {
 		if(!MessageDialog.openConfirm(Display.getCurrent().getActiveShell(), "Delete template", "Are you sure you want to delete the selected template?")) 
 			return;
 		templateGroup.removeSnippet(selected);
+		templateGroupViewer.clearSelection();
 		refreshWidgets();
 	}
 
