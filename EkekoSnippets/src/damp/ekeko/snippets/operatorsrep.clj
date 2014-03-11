@@ -159,16 +159,16 @@
   operator-bindings-for-operands-and-subject
   "Returns fresh bindings for the subject of an operator and its additional operands."
   [group template subject-template-node operator]
-  (conj 
-    (operator-bindings-for-operands group template operator)
+  (cons 
     (make-binding
       (make-operand "Subject" 
                     opscope-subject
                     (fn [value] (= subject-template-node value)))
       group
       template
-      subject-template-node)))
-
+      subject-template-node)
+    (operator-bindings-for-operands group template operator)))
+    
 ;; Registered operator types
 
 (def
@@ -200,8 +200,7 @@
   operators
   [(Operator. 
      :replace-by-variable  
-     ;operators/replace-by-variable
-     (fn [x] x)
+     operators/replace-by-variable
      :generalization
      "Replace by variable"
      nil
@@ -300,14 +299,12 @@
     [snippetgroup operator bindings]
     (let [subject-binding 
           (first bindings)
-          ;(some (fn [binding] 
-          ;        (= "Subject" (operand-name (binding-operand  binding))))
-          ;      operands)
           subject-template
           (binding-template subject-binding)
           subject-node
           (binding-value subject-binding)]
-      (let [newsnippet (apply-operator subject-template (operator-operator operator) subject-node (map binding-value (rest bindings)))]
+      (let [newsnippet 
+            (apply-operator subject-template (operator-operator operator) subject-node (map binding-value (rest bindings)))]
         (snippetgroup/snippetgroup-replace-snippet snippetgroup subject-template newsnippet))))
 
        

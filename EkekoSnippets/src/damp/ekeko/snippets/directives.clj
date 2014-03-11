@@ -82,11 +82,11 @@
   directive-bindings-for-directiveoperands-and-match
   "Returns fresh bindings for a directive's match variable and its additional operands."
   [template subject-template-node directive]
-  (conj 
-    (directive-bindings-for-directiveoperands directive)
+  (cons
     (make-directiveoperand-binding
       (make-directiveoperand "Match for template node")
-      subject-template-node)))
+      subject-template-node)
+    (directive-bindings-for-directiveoperands directive)))
 
 ;; Directive with bindings for its operands (implemented imperatively to support JFace viewers)
 
@@ -129,15 +129,21 @@
         ]
     (if 
       operandbindings
-      (clojure.string/join " " 
-                           (map (fn [operandbinding]
-                                  (str (directiveoperandbinding-value operandbinding)))
-                                operandbindings))
+      (str "("
+           generatorname 
+           " "
+           (clojure.string/join " " 
+                                (map (fn [operandbinding]
+                                       (str (directiveoperandbinding-value operandbinding)))
+                                     operandbindings))
+           ")")
       (str generatorname))))
       
 (defn
-  bounddirectives-include-directive?
+  bounddirective-for-directive
   [bounddirectives directive]
-  (let [directives (map bounddirective-directive bounddirectives)]
-    (some #{directive} directives)))
-  
+  (some (fn [bounddirective]
+          (when
+            (= directive (bounddirective-directive bounddirective))
+            bounddirective))
+        bounddirectives))

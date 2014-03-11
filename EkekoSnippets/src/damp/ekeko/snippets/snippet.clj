@@ -48,7 +48,7 @@ damp.ekeko.snippets.snippet
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast var2uservar 
+  [ast ast2var ast2bounddirectives var2ast  
    userquery document rewrite track2ast ast2track])
 
 (defn 
@@ -77,51 +77,18 @@ damp.ekeko.snippets.snippet
   [snippet snippet-var]
   (get-in snippet [:var2ast snippet-var]))
 
-(defn 
-  snippet-node-for-uservar 
-  "For the user logic variable of the given snippet, returns the AST node  
-   that is bound to a matching logic variable."
-  [snippet user-var]
-  (let [found-map (filter (fn [x] (= (val x) user-var)) (:var2uservar snippet))]
-    (snippet-node-for-var snippet (key (first found-map))))) 
-
-(defn 
-  snippet-uservar-for-var 
-  "For the given logic var of the given snippet, returns the name of the user defined logic variable."
-  [snippet snippet-var]
-  (get-in snippet [:var2uservar snippet-var]))
-
-(defn 
-  snippet-uservar-for-node 
-  "For the given AST node of the given snippet, returns the name of the user logic
-   variable that will be bound to a matching AST node from the Java project."
-  [snippet template-ast]
-  (snippet-uservar-for-var snippet (snippet-var-for-node snippet template-ast)))
-
-(defn 
-  snippet-lvar-for-node 
-  "For the given AST node of the given snippet, returns the name of the user logic
-   variable (if exist) or default logic variable that will be bound to a matching AST node from the Java project."
-  [snippet snippet-var]
-  (let [uservar (snippet-uservar-for-node snippet snippet-var)]
-    (if (nil? uservar)
-      (snippet-var-for-node snippet snippet-var)
-      uservar)))
-
-(defn 
-  snippet-node-for-lvar 
-  "For the given var or user var of the given snippet, returns ASTNode bound to it."
-  [snippet snippet-var]
-  (let [node (snippet-node-for-var snippet snippet-var)]
-    (if (nil? node)
-      (snippet-node-for-uservar snippet snippet-var)
-      node)))
 
 (defn
   snippet-bounddirectives-for-node
   "For the given AST node of the given snippet, returns the seq of bound directives used to generate conditions to find a match for the node."
   [snippet snippet-node]
   (get-in snippet [:ast2bounddirectives snippet-node]))
+
+(defn
+  snippet-bounddirectives
+  "Returns all bounddirectives for all nodes of the snippet."
+  [snippet]
+  (vals (:ast2bounddirectives snippet)))
 
 (defn 
   snippet-nodes
@@ -186,31 +153,6 @@ damp.ekeko.snippets.snippet
   "Returns the logic variables of node with matching strategy :exact-variable or :variable-info of the given snippet."
   [snippet]
   (snippet-uservars snippet))
-
-;  (vals
-;    (filter 
-;      (fn [x] 
-;        (let [cf (snippet-constrainer-for-node 
-;                   snippet
-;                   (snippet-node-for-var snippet (key x)))]
-;          (or (= cf :exact-variable)
-;              (= cf :variable-info))))
-;      (:var2uservar snippet))))
-
-(defn 
-  snippet-uservars-for-variable
-  "Returns the logic variables of node with matching strategy != :exact-variable of the given snippet."
-  [snippet]
-  (snippet-uservars snippet))
-  ;(vals
-  ;  (filter 
-  ;    (fn [x] 
-  ;      (let [cf (snippet-constrainer-for-node 
-  ;                 snippet
-  ;                 (snippet-node-for-var snippet (key x)))]
-  ;        (and (not (= cf :exact-variable))
-  ;             (not (= cf :variable-info)))))
-  ;    (:var2uservar snippet))))
 
 
 (defn 
@@ -298,63 +240,26 @@ damp.ekeko.snippets.snippet
     @snippet))
 
 
+(defn
+  update-bounddirectives
+  [snippet node bounddirectives]
+  (update-in snippet
+             [:ast2bounddirectives node]
+             (fn [oldbounddirectives] bounddirectives)))
+  
+(defn
+  add-bounddirective
+  [snippet node bounddirective]
+  (update-in snippet
+             [:ast2bounddirectives node]
+             (fn [oldbounddirectives] (conj oldbounddirectives bounddirective))))
 
-
-;; Updating Snippet instances
-;;-----------------------------
-
-(defn 
-  update-gf+
-  "Update grounding function for node and all child+ of a given node in snippet."
-  [snippet node gf]
-  (defn update-snippet-value [snippet value]
-    (update-in snippet [:ast2groundf value] (fn [x] (list gf))))
-  (let [snippet (atom snippet)]
-    (util/walk-jdt-node 
-      node
-      (fn [astval] (swap! snippet update-snippet-value astval))
-      (fn [lstval] (swap! snippet update-snippet-value lstval))
-      (fn [primval]  (swap! snippet update-snippet-value primval))
-      (fn [nilval] (swap! snippet update-snippet-value nilval)))
-    @snippet))
-
-(defn 
-  update-cf+
-  "Update constraining function for node and all child+ of a given node in snippet."
-  [snippet node cf]
-  (defn update-snippet-value [snippet value]
-   ; (if (or (= (snippet-constrainer-for-node snippet value) :variable)
-    ;        (= (snippet-constrainer-for-node snippet value) :variable-info))
-    ;  snippet
-      (update-in snippet [:ast2constrainf value] (fn [x] (list cf))))
-  (let [snippet (atom snippet)]
-    (util/walk-jdt-node 
-      node
-      (fn [astval] (swap! snippet update-snippet-value astval))
-      (fn [lstval] (swap! snippet update-snippet-value lstval))
-      (fn [primval]  (swap! snippet update-snippet-value primval))
-      (fn [nilval] (swap! snippet update-snippet-value nilval)))
-    @snippet))
-
-(defn 
-  remove-gf+
-  "Clear grounding function for snippet node and its children."
-  [snippet node]
-  (update-gf+ snippet node :epsilon))
-
-(defn 
-  remove-cf+
-  "Clear constraining function for snippet node and its children."
-  [snippet node]
-  (update-cf+ snippet node :epsilon))
-
-(defn 
-  remove-gfcf+
-  "Clear both grounding and for snippet node and its children."
-  [snippet node]
-  (update-gf+ 
-    (update-cf+ snippet node :epsilon)
-    node :epsilon))
+(defn
+  remove-bounddirective
+  [snippet node bounddirective]
+  (update-in snippet
+             [:ast2bounddirectives node]
+             (fn [oldbounddirectives] (remove #{bounddirective} oldbounddirectives))))
 
 
 (defn
@@ -364,36 +269,7 @@ damp.ekeko.snippets.snippet
   (assoc-in snippet
             [:var2uservar (snippet-var-for-node snippet node)]
             (symbol uservar)))
-    
-(defn 
-  update-gf 
-  "Update grounding function of a given node in a given snippet with new grounding function of given type
-   Example: (update-groundf snippet node :node-deep)."
-  [snippet node type]
-  (update-in snippet [:ast2groundf node] (fn [x] (list type))))
-
-(defn 
-  update-gf-with-args 
-  "Update grounding function of a given node in a given snippet with the new grounding  function and args of given type
-   Example: (update-groundf snippet node :node-deep args)."
-  [snippet node type args]
-  (update-in snippet [:ast2groundf node] (fn [x] (concat (list type) args))))
-
-(defn 
-  update-cf 
-  "Update constraining function of a given node in a given snippet with the new constraining function of given type
-   Example: (update-constrainf snippet node :list-contains)."
-  [snippet node type]
-  (update-in snippet [:ast2constrainf node] (fn [x] (list type))))
-
-(defn 
-  update-cf-with-args 
-  "Update constraining function of a given node in a given snippet with the new constraining function and args of given type
-   Example: (update-constrainf snippet node :list-contains args)."
-  [snippet node type args]
-  (update-in snippet [:ast2constrainf node] (fn [x] (concat (list type) args))))
-  
-                         
+                             
 
 (defn
   register-callbacks
@@ -401,9 +277,6 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_ROOT) snippet-root)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERY) snippet-userquery)
 
-  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VAR_FOR_NODE) snippet-var-for-node)
-  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-uservar-for-node)
-  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES) snippet-bounddirectives-for-node)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
   
   

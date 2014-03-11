@@ -89,7 +89,7 @@
             conditions 
             (cond
               ;todo: put at bottom of cond, check for parent directives first
-              (directives/bounddirectives-include-directive? bounddirectives directive-parent)
+              (directives/bounddirective-for-directive bounddirectives directive-parent)
               `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
                   
               ;todo: add variants of parent with arguments
@@ -169,8 +169,8 @@
   (= property-keyw :javadoc))
 
 (defn 
-  cf-node-exact
-    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
+  constrain-exact-for-node
+  "Returns a function that will generate constraining conditions for the given property value of a code snippet:
      For ASTNode instances: ((ast :kind-of-node ?var-for-node-match)  
                                (has :property1 ?var-for-node-match ?var-for-child1-match)
                                (has :property2 ?var-for-node-match ''primitive-valued-child-as-string''))
@@ -181,21 +181,25 @@
           snippet-properties (astnode/node-ekeko-properties snippet-ast)
           var-match          (snippet/snippet-var-for-node snippet snippet-ast)
           child-conditions 
-              (for [[property-keyw retrievalf] 
-                    (seq snippet-properties)
-                    :let [value     (retrievalf) 
-                          var-value (snippet/snippet-var-for-node snippet value)]]
-                (if (not (is-ignored-property? property-keyw))
-                  `(ast/has ~property-keyw ~var-match ~var-value)))
-          filtered-child-conditions (filter (fn [x] (not (nil? x))) child-conditions)]
+          (mapcat
+            (fn [[property-keyw retrievalf]]
+              (let [value     
+                    (retrievalf) 
+                    var-value
+                    (snippet/snippet-var-for-node snippet value)]
+                (if
+                  (is-ignored-property? property-keyw)
+                  '()
+                  `((ast/has ~property-keyw ~var-match ~var-value)))))
+            (seq snippet-properties))]
       (if 
         (= snippet-ast (:ast snippet)) 
-        `(~@filtered-child-conditions) ;because snippet root is already ground to an ast of the right kind
+        `(~@child-conditions) ;because snippet root is already ground to an ast of the right kind
         `((ast/ast ~snippet-keyw ~var-match)
            ~@child-conditions)))))
 
 (defn 
-  internal-cf-list
+  internal-constrain-list
     "Returns constraining-conditions for the given property value of a code snippet.
      For Ekeko wrappers of ASTNode$NodeList instances: 
          (listvalue ?var-match)
@@ -208,31 +212,28 @@
         snippet-list-size (.size lst)
         var-match (snippet/snippet-var-for-node snippet snippet-val)
         var-match-raw (util/gen-readable-lvar-for-value lst) ;freshly generated, not included in snippet datastructure ..
-        size-condition
+        size-conditions
         (if (= type :samesize)
           `((el/equals ~snippet-list-size (.size ~var-match-raw)))
           `())]
-        ;element-conditions -> moved to gf-member-exact
-        ;(for [element lst
-        ;      :let [idx-el (.indexOf lst element)
-        ;            var-el (snippet/snippet-var-for-node snippet element)]]
-        ;  (function-element-condition var-match-raw var-el idx-el))]
-    `((ast/value|list ~var-match)
-      (cl/fresh [~var-match-raw] 
-         (ast/value-raw ~var-match ~var-match-raw)
-         ~@size-condition))))
-       ;~@element-conditions)))
+    (if 
+      size-conditions
+      `((ast/value|list ~var-match)
+         (cl/fresh [~var-match-raw] 
+                   (ast/value-raw ~var-match ~var-match-raw)
+                 ~@size-conditions))
+      `((ast/value|list ~var-match)))))
 
 (defn
-  cf-list-exact
+  constrain-exact-for-list
   "Returns a function that will generate constraining conditions for the given property value of a code snippet.
    Conditions : - size of list need to be the same"
   [snippet-val]
   (fn [snippet] 
-    (internal-cf-list snippet snippet-val :samesize))) 
+    (internal-constrain-list snippet snippet-val :samesize))) 
 
 (defn
-  cf-primitive-exact
+  constrain-exact-for-primitive
   "Returns a function that will generate constraining conditions for the given primitive property value of a code snippet.
    For Ekeko wrappers of primitive values (int/string/...):
       (primitivevalue ?var-match)
@@ -244,10 +245,10 @@
        (let [var-match 
              (snippet/snippet-var-for-node snippet snippet-ast)]
        `((ast/value|primitive ~var-match)
-          (ast/value-raw ~var-match ~exp))))))
+         (ast/value-raw ~var-match ~exp))))))
 
 (defn
-  cf-nil-exact
+  constrain-exact-for-nil
   "Returns a function that will generate constraining conditions for the given primitive property value of a code snippet.
    For Ekeko wrappers of Java null: 
       (nullvalue ?var-match)"
@@ -258,40 +259,78 @@
        `((ast/value|null ~var-match)))))
 
 (defn 
-  cf-exact
+  constrain-exact
   [snippet-val]
   (cond
     (astnode/ast? snippet-val)
-    (cf-node-exact snippet-val)
+    (constrain-exact-for-node snippet-val)
     (astnode/lstvalue? snippet-val)
-    (cf-list-exact snippet-val)
+    (constrain-exact-for-list snippet-val)
     (astnode/primitivevalue? snippet-val)
-    (cf-primitive-exact snippet-val)
+    (constrain-exact-for-primitive snippet-val)
     (astnode/nilvalue? snippet-val)
-    (cf-nil-exact snippet-val)))
-
-
-
-(def exact cf-exact)
+    (constrain-exact-for-nil snippet-val)))
 
 ;; Constraining Functions
 ;; Generalized
 ;; ----------------------
 
+
+;; Functions related to nodes that have been replaced by logic variable
+;; --------------------------------------------------------------------
+
+(declare directive-replacedbyvariable)
+
+(defn 
+  snippet-replacement-var-for-node 
+  "For the given AST node of the given snippet, returns the name of the user logic
+   variable that will be bound to a matching AST node from the Java project."
+  [snippet node]
+  (if-let [replaced-bd 
+           (directives/bounddirective-for-directive 
+             (snippet/snippet-bounddirectives-for-node snippet node)
+             directive-replacedbyvariable)]
+    (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1)))))
+
+(defn 
+  snippet-node-replaced-by-var?
+  [snippet node]
+  (boolean (snippet-replacement-var-for-node snippet node))) 
+
 (defn
-  cf-variable
-  "Returns a function that will generate a condition that will unify the match for the
-   given code snippet AST node with a user-provided logic variable:
-      (== ?uservar ?var-match)"
-  [snippet-ast]
-   (fn [snippet]
-     (let [var-match 
-           (snippet/snippet-var-for-node snippet snippet-ast)
-           var-userprovided
-           (snippet/snippet-uservar-for-var snippet var-match)]
-       (if (nil? var-userprovided)
-         '() 
-         `((cl/== ~var-userprovided ~var-match))))))
+  snippet-replacement-vars
+  [snippet]
+  (remove nil? 
+          (map
+            (fn [node]
+              (snippet-replacement-var-for-node snippet node))
+            (snippet/snippet-nodes snippet))))
+
+(defn
+  snippetgroup-replacement-vars
+  "Returns all user logic variables from the given snippet group."
+  [snippetgroup]
+  (mapcat snippet-replacement-vars (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
+
+(defn
+  constrain-replacedbyvariable
+  "Constraining directive for nodes that have been replaced by a variable."
+  [snippet-ast replacement-var-string]
+  (fn [snippet]
+     (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
+           replacement-var (symbol replacement-var-string)]
+       `((cl/== ~replacement-var ~var-match)))))
+
+
+;(defn
+;  snippetgroup-uservars-for-information
+;  [snippetgroup]
+;  (mapcat snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
+
+    
+
+
 
 ;(defn
 ;  cf-epsilon-with-variable
@@ -307,6 +346,8 @@
 ;           ((gf-node-exact snippet-val) snippet)
 ;           ((cf-variable snippet-val) snippet))))))
 
+(comment
+  
 (defn
   cf-exact-with-variable
   [snippet-val]
@@ -463,6 +504,10 @@
       ((cf-relax-loop snippet-val) snippet)
       ((cf-variable snippet-val) snippet))))
 
+
+)
+
+
 (comment
 
 (defn
@@ -563,7 +608,7 @@
   (damp.ekeko.snippets.directives.Directive. 
     "Node type and properties match type and properties of match."
     []
-    exact 
+    constrain-exact 
     ))
 
 (def 
@@ -575,8 +620,16 @@
     ))
 
 (def 
+  directive-replacedbyvariable
+  (damp.ekeko.snippets.directives.Directive.
+    "Node has been replaced by a variable."
+    []
+    constrain-replacedbyvariable))
+
+(def 
   directives-constraining
-  [directive-exact])
+  [directive-exact
+   directive-replacedbyvariable])
 
 (def
   directives-grounding
@@ -620,7 +673,10 @@
       value
       directive)))
 
-(def default-directives [directive-exact directive-parent])
+(def default-directives [directive-exact 
+                         directive-parent 
+                         directive-replacedbyvariable ;ensures these aren't pretty-printed
+                         ])
 
 (defn
   default-directive?
@@ -655,6 +711,62 @@
     ;todo: incorporate arguments
     (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
 
+
+
+
+(defn
+  remove-all-directives
+  [template value]
+  (snippet/update-bounddirectives template value []))
+
+(defn
+  remove-all-directives*
+  [template value]
+  (let [snippet (atom template)]
+    (util/walk-jdt-node 
+      value
+      (fn [astval]
+        (swap! snippet remove-all-directives astval))
+      (fn [lstval] 
+        (swap! snippet remove-all-directives lstval))
+      (fn [primval]
+        (swap! snippet remove-all-directives primval))
+      (fn [nilval]
+        (swap! snippet remove-all-directives nilval)))
+    @snippet))
+
+(defn
+  remove-all-directives+
+  [template value]
+  (let [snippet (atom template)]
+    (util/walk-jdt-node 
+      value
+      (fn [astval]
+        (when (not= astval value)
+          (swap! snippet remove-all-directives astval)))
+      (fn [lstval] 
+        (when (not= lstval value)
+          (swap! snippet remove-all-directives lstval)))
+      (fn [primval]
+        (when (not= primval value)
+          (swap! snippet remove-all-directives primval)))
+      (fn [nilval]
+        (when (not= nilval value)
+          (swap! snippet remove-all-directives nilval))))
+    @snippet))
+
+(defn
+  remove-directives 
+  [template value directives]
+  (let [bounddirectives 
+        (snippet/snippet-bounddirectives-for-node template value)
+        remainingbounddirectives
+        (remove (fn [bounddirective]
+                  (some #{(directives/bounddirective-directive bounddirective)}
+                        directives))
+                bounddirectives)]
+    (snippet/update-bounddirectives template value remainingbounddirectives)))
+
 (defn 
   jdt-node-as-snippet
   "Interpretes the given JDT ASTNode as a snippet with default matching 
@@ -672,8 +784,8 @@
         (assoc-in [:ast2bounddirectives value] 
                   (default-bounddirectives snippet value))
         (assoc-in [:var2ast lvar] value))))
-  
-  (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} {} '() nil nil {} {}))]
+   
+  (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} '() nil nil {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -717,7 +829,7 @@
   
   (let [n (parsing/parse-document doc)
         rw (make-astrewrite n)
-        snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} {} '() doc rw {} {}))]
+        snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} '() doc rw {} {}))]
     (util/walk-jdt-node 
       n
       (fn [astval] 
@@ -748,6 +860,7 @@
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
   
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-replacement-var-for-node)
 
   )
   

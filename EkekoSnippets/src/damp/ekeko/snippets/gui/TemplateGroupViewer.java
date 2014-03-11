@@ -166,7 +166,8 @@ public class  TemplateGroupViewer extends Composite {
 			return;
 		}			
 		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(TemplateGroup.newFromClojureGroup(cljGroup));
-		prettyprinter.setHighlightNode(getSelectedSnippetNode());
+		Object selectedSnippetNode = getSelectedSnippetNode();
+		prettyprinter.setHighlightNode(selectedSnippetNode);
 		textViewerSnippet.getTextWidget().setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())
 			textViewerSnippet.getTextWidget().setStyleRange(range);
@@ -185,6 +186,7 @@ public class  TemplateGroupViewer extends Composite {
 		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
 		snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(cljGroup));
 		snippetTreeViewer.setInput(cljGroup);
+		
 		if(cljNode != null) {
 			//set selection to node
 			snippetTreeViewer.setSelection(new StructuredSelection(cljNode), true);
@@ -200,7 +202,9 @@ public class  TemplateGroupViewer extends Composite {
 			if(items.length > 0)
 				tree.setSelection(items[0]);
 		}
+		
 		updateTextFields();
+
 	}
 	
 }

@@ -5,19 +5,43 @@ damp.ekeko.snippets.operators
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko])
   (:require [damp.ekeko.snippets 
-             [runtime :as runtime]
-             [util :as util]
-             [parsing :as parsing]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
+             [matching :as matching]
+             [directives :as directives]
              ])
-  (:require [damp.ekeko.jdt 
-             [astnode :as astnode]
-             [ast :as ast]]))
+  ;(:require [damp.ekeko.jdt 
+  ;           [astnode :as astnode]
+  ;           [ast :as ast]])
+  )
 
 
 ;; Operators for Snippet
 ;; ---------------------
+
+;remove-all-directives+ (on node and all children)
+;remove-directives: constraining (fron node itsel_
+;add-constraining directive: ignore, ignore-variable, maybe enought to have an entry in ast2uservar, is ast2uservar still needed? 
+;could just use operandbindings of directive instead
+
+(defn 
+  replace-by-variable 
+  "Replace snippet AST node by a logic variable."
+  [snippet node uservar]
+  (let [purged-of-children ;remove all directives for children
+        (matching/remove-all-directives+ snippet node)
+        purged ;remove constraining directives for node, keep matching directives
+        (matching/remove-directives purged-of-children node (matching/registered-constraining-directives))]
+    (snippet/add-bounddirective purged
+                                node 
+                                (directives/make-bounddirective 
+                                  matching/directive-replacedbyvariable
+                                  [(directives/make-directiveoperand-binding
+                                     (directives/make-directiveoperand "Match for template node")
+                                     node)
+                                   (directives/make-directiveoperand-binding
+                                     (directives/make-directiveoperand "Variable replacing node")
+                                     uservar)]))))
 
 (comment
   
@@ -301,16 +325,6 @@ damp.ekeko.snippets.operators
     (let [snippet-with-uservar (assoc-in snippet [:var2uservar (snippet/snippet-var-for-node snippet node)] (symbol uservar))]
       (snippet/update-cf snippet-with-uservar node :exact-variable)))
   
-  (defn 
-    replace-by-variable 
-    "Replace snippet AST node by a logic variable."
-    [snippet node uservar]
-    (snippet/update-cf 
-      (snippet/remove-gfcf+ 
-        (snippet/update-uservar snippet node uservar)
-        node)
-      node
-      :variable))
   
   (defn 
     internal-introduce-logic-variables-with-condition

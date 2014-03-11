@@ -61,12 +61,12 @@
 	  snippet-query-with-conditions
 	  [snippet ekekolaunchersymbol conditions userconditions]
 	  (let [root-var (snippet/snippet-var-for-root snippet)
-	        uservars-exact (into #{} (snippet/snippet-uservars-for-information snippet))
-	        uservars-var (into #{} (snippet/snippet-uservars-for-variable snippet))
+	        uservars-exact (into #{} (matching/snippet-replacement-vars snippet))
+	        ;uservars-var (into #{} (matching/snippet-replacement-vars snippet))
 	        vars (disj (into #{} (snippet/snippet-vars snippet)) root-var)]
 	    `(~ekekolaunchersymbol 
 	       [~root-var ~@uservars-exact]
-	       (cl/fresh [~@vars ~@uservars-var]
+	       (cl/fresh [~@vars] ;~@uservars-var]
 	                 ~@conditions
 	                 ~@userconditions))))
 	  
@@ -120,12 +120,12 @@
 	  snippetgroup-query-with-conditions
 	  [snippetgroup ekekolaunchersymbol conditions userconditions]
 	  (let [root-vars (snippetgroup/snippetgroup-rootvars snippetgroup)
-	        uservars-exact (into #{} (snippetgroup/snippetgroup-uservars-for-information snippetgroup))
-	        uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
+	        uservars-exact (into #{} (matching/snippetgroup-replacement-vars snippetgroup))
+	        ;uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
 	        vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
 	    `(~ekekolaunchersymbol 
 	       [~@root-vars ~@uservars-exact]
-	       (cl/fresh [~@vars ~@uservars-var]
+	       (cl/fresh [~@vars] ;~@uservars-var]
 	                 ~@conditions
 	                 ~@userconditions))))
 	

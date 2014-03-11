@@ -13,7 +13,6 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Display;
 
 import clojure.lang.IFn;
-import clojure.lang.Keyword;
 import clojure.lang.RT;
 
 import com.google.common.base.Joiner;
@@ -22,9 +21,7 @@ import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
-	public static IFn FN_SNIPPET_VAR_FOR_NODE;
 	public static IFn FN_SNIPPET_USERVAR_FOR_NODE;
-	public static IFn FN_SNIPPET_BOUNDDIRECTIVES;
 	public static IFn FN_SNIPPET_BOUNDDIRECTIVES_STRING;
 
 	public static IFn FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES;
@@ -63,10 +60,6 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	public StyleRange[] getStyleRanges() {
 		return styleRanges.toArray(new StyleRange[0]);
-	}
-
-	public Object getVar(Object node) {
-		return FN_SNIPPET_VAR_FOR_NODE.invoke(snippet, node);
 	}
 
 	public Object getUserVar(Object node) {
@@ -118,29 +111,45 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 
 
+
+	private void printVariableReplacement(Object replacementVar) {
+		int start = getCurrentCharacterIndex();
+		this.buffer.append(replacementVar);
+		styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));	
+	}
+	
 	@Override
 	public boolean preVisit2(ASTNode node) {
+		//TODO: this does not work for empty lists ... 
+		//should override every method in NativeASTFlattener to check whether list children should be visited (but too much work)
+		
 		preVisit(node);
-
-		Object uservar = getUserVar(node);
-		//TODO: figure out why these are hard-coded
-		if (uservar != null) {
-			Object constrainf = null;
-			//Object constrainf = getConstrainF(node);
-			if (constrainf == Keyword.intern("variable") ||
-					constrainf == Keyword.intern("variable-info") || 	
-					constrainf == Keyword.intern("change-name")) { 	
-				int start = getCurrentCharacterIndex();
-				buffer.append(uservar);
-				styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));
-				return false;
+		if(isElementOfList(node)) {
+			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
+			Object listReplacedMentVar = getUserVar(nodeListWrapper);
+			if(listReplacedMentVar != null) {
+				printVariableReplacement(listReplacedMentVar);
+				return false; //do not print node itself because list has been replaced
 			} else {
 				return true;
 			}
 		}
+		Object replacementVar = getUserVar(node);
+		if (replacementVar != null) {
+			printVariableReplacement(replacementVar);
+			return false;//do not print node itself because node has been replace
+		} 
 		return true;
 	}
-
+	
+	
+	static boolean isElementOfList(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if(parent == null)
+			return false;
+		StructuralPropertyDescriptor property = node.getLocationInParent();
+		return property != null && property.isChildListProperty();
+	}
 	
 	static boolean isFirstElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
@@ -156,9 +165,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	}
 	
 	static boolean isLastElementOfList(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if(parent == null)
+			return false;
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		if (property != null && property.isChildListProperty()) {
-			ASTNode parent = node.getParent();
 			List nodeList = (List) parent.getStructuralProperty(property);
 			if(nodeList.get(nodeList.size()-1).equals(node))
 				return true;
@@ -172,7 +183,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		if(isFirstElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			preVisitNodeListWrapper(nodeListWrapper);
-		} 
+		}
 		printOpeningNode(node);
 		printOpeningHighlight(node);
 	}
@@ -187,7 +198,6 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	}	
 
 	public void preVisitNodeListWrapper(Object nodeListWrapper) {
-		//TODO: check whether logic variable has been associated with list itself
 		printOpeningNode(nodeListWrapper);
 		printOpeningHighlight(nodeListWrapper);
 	}
@@ -198,13 +208,18 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public Collection getNonDefaultDirectives(Object cljTemplate, Object cljNode) {
+	public static Collection getNonDefaultDirectives(Object cljTemplate, Object cljNode) {
 		return (Collection) FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
 	}
 	
-	public Boolean hasNonDefaultDirectives(Object cljTemplate, Object cljNode) {
+	public static Boolean hasNonDefaultDirectives(Object cljTemplate, Object cljNode) {
 		return (Boolean) FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
 	}
+	
+	public static String boundDirectivesString(Object cljTemplate, Object cljNode) {
+		return (String) FN_SNIPPET_BOUNDDIRECTIVES_STRING.invoke(cljTemplate, cljNode);
+	}
+
 	
 	public void printOpeningNode(Object node) {
 		if(hasNonDefaultDirectives(snippet, node)) {
@@ -217,8 +232,6 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	private int getCurrentCharacterIndex() {
 		return this.buffer.length();
 	}
-
-	
 	
 	public void printClosingNode(Object node) {
 		if (hasNonDefaultDirectives(snippet, node)) { 
@@ -230,7 +243,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			styleRanges.add(styleRangeForMeta(start, 2));
 			start = getCurrentCharacterIndex();
 			
-			this.buffer.append(FN_SNIPPET_BOUNDDIRECTIVES_STRING.invoke(snippet, node));
+			this.buffer.append(boundDirectivesString(snippet, node));
 			
 			styleRanges.add(styleRangeForDirectives(start, getCurrentCharacterIndex() - start));
 			start = getCurrentCharacterIndex();

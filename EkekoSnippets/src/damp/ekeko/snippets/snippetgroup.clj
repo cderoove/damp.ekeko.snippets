@@ -57,21 +57,6 @@ damp.ekeko.snippets.snippetgroup
   [snippetgroup]
   (mapcat snippet/snippet-vars (snippetgroup-snippetlist snippetgroup)))
 
-(defn
-  snippetgroup-uservars
-  "Returns all user logic variables from the given snippet group."
-  [snippetgroup]
-  (mapcat snippet/snippet-uservars (snippetgroup-snippetlist snippetgroup)))
-
-(defn
-  snippetgroup-uservars-for-information
-  [snippetgroup]
-  (mapcat snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
-
-(defn
-  snippetgroup-uservars-for-variable
-  [snippetgroup]
-  (mapcat snippet/snippet-uservars-for-variable (snippetgroup-snippetlist snippetgroup)))
 
 (defn 
   snippetgroup-snippet-for-node
@@ -104,19 +89,6 @@ damp.ekeko.snippets.snippetgroup
   (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
     (update-in group [:snippetlist] (fn [x] newlist))))
 
-(defn 
-  snippetgroup-var-for-node
-  [grp node]
-  (snippet/snippet-var-for-node
-    (snippetgroup-snippet-for-node grp node)
-    node))
-
-(defn 
-  snippetgroup-node-for-var
-  [grp var]
-  (snippet/snippet-node-for-lvar
-    (snippetgroup-snippet-for-var grp var)
-    var))
 
 ;(defn
 ;  snippetgroup-new-state
