@@ -7,7 +7,12 @@
 
 (defrecord 
   Directive
-  [description operands generator])
+  [name operands generator description])
+
+(defn
+  directive-name
+  [directive]
+  (:name directive))
 
 (defn
   directive-description
@@ -117,27 +122,27 @@
         opvals (map directiveoperandbinding-value (bounddirective-operandbindings bounddirective))]
   ((apply generator opvals) snippet)))
 
-  
+
 (defn
   bounddirective-string
   "Returns a human-readable sexp string for the bound directive."
   [bounddirective]
-  (let [generatorname 
-        (:name (meta (directive-generator (bounddirective-directive bounddirective))))
+  (let [name 
+        (directive-name (bounddirective-directive bounddirective))
         operandbindings
         (rest (bounddirective-operandbindings bounddirective)) ;first=match
         ]
     (if 
-      operandbindings
+      (not-empty operandbindings)
       (str "("
-           generatorname 
+           name 
            " "
            (clojure.string/join " " 
                                 (map (fn [operandbinding]
                                        (str (directiveoperandbinding-value operandbinding)))
                                      operandbindings))
            ")")
-      (str generatorname))))
+      (str name))))
       
 (defn
   bounddirective-for-directive

@@ -203,7 +203,7 @@ public class  TemplateGroupViewer extends Composite {
 				tree.setSelection(items[0]);
 		}
 		
-		updateTextFields();
+		onNodeSelectionInternal();
 
 	}
 	

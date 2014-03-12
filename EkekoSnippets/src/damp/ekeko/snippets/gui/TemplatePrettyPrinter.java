@@ -126,12 +126,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		preVisit(node);
 		if(isElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-			Object listReplacedMentVar = getUserVar(nodeListWrapper);
-			if(listReplacedMentVar != null) {
-				printVariableReplacement(listReplacedMentVar);
+			Object listReplacementVar = getUserVar(nodeListWrapper);
+			if(listReplacementVar != null) {
+				printVariableReplacement(listReplacementVar);
 				return false; //do not print node itself because list has been replaced
-			} else {
-				return true;
 			}
 		}
 		Object replacementVar = getUserVar(node);

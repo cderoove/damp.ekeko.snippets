@@ -87,18 +87,6 @@ public class TemplateView extends ViewPart {
 		
 		
 		templateGroupViewer = new TemplateGroupViewer(snippetTreeGroup, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 0;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
-		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
-			@Override
-			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
-				//event.getSelectedTemplateGroup();
-				//event.getSelectedTemplate();
-				//event.getSelectedTemplateNode();
-				updateOperatorTreeView();
-			}
-		});
-
-		
-		
 		templateGroupViewer.setInput(templateGroup.getGroup(), null, null);
 		
 		Group snippetOperatorGroup = new Group(container, SWT.NONE);
@@ -156,6 +144,18 @@ public class TemplateView extends ViewPart {
 		
 		operatorOperandsViewer = new OperatorOperandsViewer(snippetOperatorGroup, SWT.NONE);				GridData gd_operatorOperandsViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_operatorOperandsViewer.heightHint = 297;		operatorOperandsViewer.setLayoutData(gd_operatorOperandsViewer);
 		
+		
+		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
+			@Override
+			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
+				//event.getSelectedTemplateGroup();
+				//event.getSelectedTemplate();
+				//event.getSelectedTemplateNode();
+				updateOperators();
+			}
+		});
+
+
 		
 	    createActions();
 		initializeToolBar();
@@ -315,42 +315,6 @@ public class TemplateView extends ViewPart {
 		QueryResultThread qsThread = new QueryResultThread(templateGroupViewer.getSelectedSnippet());
 		qsThread.start();
 	}
-
-	
-	private void updateOperatorTreeView() {
-		operatorOperandsViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
-		
-		
-		/*
-		
-		//:generalization 
-		Object[] types = getArray(FN_OPERATOR_CATEGORIES.invoke());
-		for (int i = 0; i < types.length; i++) {
-			TreeItem itemType = new TreeItem(root, 0);
-			//"Generalization"
-			itemType.setText((String) FN_OPERATORCATEGORY_DESCRIPTION.invoke(types[i]));
-			itemType.setData(types[i]);
-			
-			Object[] operators = getArray(FN_APPLICABLE_OPERATORS_IN_CATEGORY.invoke(types[i], selectedNode));
-			for (int j = 0; j < operators.length; j++) {
-				TreeItem itemOp = new TreeItem(itemType, 0);
-				itemOp.setText((String) FN_OPERATOR_NAME.invoke(operators[j]));
-				itemOp.setData(operators[j]);
-			}			
-			itemType.setExpanded(true);
-		}
-		root.setExpanded(true);
-		*/
-
-		
-		//tableOpArgs.removeAll();
-		//tableOpArgsDecorator.removeAllEditors();
-		//tableNode.removeAll();
-
-		
-		
-	}
-
 	
 	private void onApplyOperator() {
 		Object operands = operatorOperandsViewer.getOperands();
@@ -359,6 +323,15 @@ public class TemplateView extends ViewPart {
 		applyOperator(operatorOperandsViewer.getSelectedOperator(), operands);
 	}
 	
+	
+	private void updateOperators() {
+		operatorOperandsViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+	}
+	
+	private void updateTemplate() {
+		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+		
+	}
 	private void applyOperator(Object selectedOperator, Object operands) {
 		templateGroup.applyOperator(selectedOperator, operands);
 		refreshWidgets();
@@ -366,8 +339,8 @@ public class TemplateView extends ViewPart {
 	
 
 	private void refreshWidgets() {
-		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
-		updateOperatorTreeView();
+		updateTemplate();
+		updateOperators();
 	}
 
 	/*

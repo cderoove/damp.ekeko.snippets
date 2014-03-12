@@ -606,22 +606,23 @@
 (def
   directive-exact
   (damp.ekeko.snippets.directives.Directive. 
-    "Node type and properties match type and properties of match."
+    "matches|exactly"
     []
     constrain-exact 
-    ))
+    "Node type and properties match exactly."))
 
 (def 
   directive-parent
   (damp.ekeko.snippets.directives.Directive.
-    "Node parent matches match parent."
+    "context|parent"
     []
     ground-relativetoparent
-    ))
+    "Node parent matches match parent."))
 
 (def 
   directive-replacedbyvariable
   (damp.ekeko.snippets.directives.Directive.
+    "matches|variable"
     "Node has been replaced by a variable."
     []
     constrain-replacedbyvariable))
@@ -710,9 +711,6 @@
   (let [bounddirectives (nondefault-bounddirectives snippet node)]
     ;todo: incorporate arguments
     (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
-
-
-
 
 (defn
   remove-all-directives
