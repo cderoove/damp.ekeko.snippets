@@ -211,9 +211,9 @@
      "add-directive-equals"
      operators/add-directive-equals
      :neutral
-     "Add equals/2 matching directive."
+     "Add equals/1 matching directive."
      nil
-     "Adds matching directive equals/2 to selection."
+     "Adds matching directive equals/1 to selection."
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
    
    ])
