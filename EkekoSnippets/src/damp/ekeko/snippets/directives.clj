@@ -10,6 +10,11 @@
   [name operands generator description])
 
 (defn
+  make-directive
+  [name operands generator description]
+  (Directive. name operands generator description))
+
+(defn
   directive-name
   [directive]
   (:name directive))
@@ -117,9 +122,11 @@
 
 (defn
   snippet-bounddirective-conditions
+  "Generatings matching conditions for the given snippet's bound directive."
   [snippet bounddirective]
   (let [generator (directive-generator (bounddirective-directive bounddirective))
         opvals (map directiveoperandbinding-value (bounddirective-operandbindings bounddirective))]
+    (println generator)
   ((apply generator opvals) snippet)))
 
 

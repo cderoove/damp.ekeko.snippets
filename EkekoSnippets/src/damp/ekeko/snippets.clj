@@ -91,7 +91,7 @@
   (cons 
     (concat 
       (snippetgroup/snippetgroup-rootvars snippetgroup)
-      (matching/snippetgroup-replacement-vars snippetgroup)) 
+      (matching/snippetgroup-vars-among-directivebindings snippetgroup)) 
     (query-by-snippetgroup snippetgroup)))
 
 (defn

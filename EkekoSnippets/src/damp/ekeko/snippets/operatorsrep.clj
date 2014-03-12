@@ -199,13 +199,24 @@
 (def 
   operators
   [(Operator. 
-     :replace-by-variable  
+     "replace-by-variable"  
      operators/replace-by-variable
      :generalization
-     "Replace by variable"
+     "Replace by variable."
      nil
      "Replaces selection by a variable."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])])
+     [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
+   
+   (Operator. 
+     "add-directive-equals"
+     operators/add-directive-equals
+     :neutral
+     "Add equals/2 matching directive."
+     nil
+     "Adds matching directive equals/2 to selection."
+     [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
+   
+   ])
 
 
 (defn 

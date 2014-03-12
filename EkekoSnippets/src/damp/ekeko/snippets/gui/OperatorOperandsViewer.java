@@ -46,7 +46,7 @@ public class OperatorOperandsViewer extends Composite {
 		
 		TreeViewerColumn operatorNameColumn = new TreeViewerColumn(operatorTreeViewer, SWT.NONE);
 		TreeColumn trclmnOperator = operatorNameColumn.getColumn();
-		trclmnOperator.setWidth(150);
+		trclmnOperator.setWidth(200);
 		trclmnOperator.setText("Operator");
 
 		//ColumnViewerToolTipSupport.enableFor(operatorTreeViewer, ToolTip.NO_RECREATE);
@@ -122,6 +122,10 @@ public class OperatorOperandsViewer extends Composite {
 	
 	private void updateWidgets() {
 		operatorTreeViewer.setInput(cljSelectedSnippetNode);
+		for(TreeColumn tc : operatorTree.getColumns())
+                  tc.pack(); //resizes
+        		
+		
 		Object selectedOperator = getSelectedOperator();
 		if(selectedOperator == null || !SnippetOperator.isOperator(selectedOperator)) {
 			operandsTableViewer.setInput(null);

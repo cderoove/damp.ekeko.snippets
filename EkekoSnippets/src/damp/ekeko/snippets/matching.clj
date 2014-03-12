@@ -297,20 +297,45 @@
   [snippet node]
   (boolean (snippet-replacement-var-for-node snippet node))) 
 
-(defn
-  snippet-replacement-vars
-  [snippet]
-  (remove nil? 
-          (map
-            (fn [node]
-              (snippet-replacement-var-for-node snippet node))
-            (snippet/snippet-nodes snippet))))
+(defn-
+  string-represents-variable?
+  [string]
+  (@#'el/ekeko-lvar-sym? string))
 
 (defn
-  snippetgroup-replacement-vars
-  "Returns all user logic variables from the given snippet group."
+  snippet-vars-among-directivebindings-for-node
+  "Returns all variables that feature as the binding for a directive operand of the node.
+   Includes replacement vars."
+  [snippet node]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
+    (mapcat
+      (fn [bounddirective]
+        (map symbol
+             (filter string-represents-variable?
+                     (map directives/directiveoperandbinding-value 
+                          (directives/bounddirective-operandbindings bounddirective)))))
+      bds)))
+
+(defn
+  snippet-vars-among-directivebindings
+  "Returns all variables that feature as the binding for a directive operand of the snippet.
+   Includes replacement vars."
+  [snippet]
+  (mapcat
+    (fn [node]
+      (snippet-vars-among-directivebindings-for-node snippet node))
+    (snippet/snippet-nodes snippet)))
+
+
+
+(defn
+  snippetgroup-vars-among-directivebindings
+  "Returns all variables that feature as the binding for a directive operand among the snippets in the snippet group.
+   Includes replacement vars."
   [snippetgroup]
-  (mapcat snippet-replacement-vars (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+  (mapcat snippet-vars-among-directivebindings (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
+  
 
 
 (defn
@@ -321,6 +346,17 @@
      (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
            replacement-var (symbol replacement-var-string)]
        `((cl/== ~replacement-var ~var-match)))))
+
+
+(defn
+  constrain-equals
+  "Constraining directive that will unify the node's match with the given variable."
+  [snippet-ast var-string]
+  (fn [snippet]
+     (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
+           var (symbol var-string)]
+       `((cl/== ~var ~var-match)))))
+
 
 
 ;(defn
@@ -605,32 +641,43 @@
 
 (def
   directive-exact
-  (damp.ekeko.snippets.directives.Directive. 
+  (directives/make-directive
     "matches|exactly"
     []
     constrain-exact 
-    "Node type and properties match exactly."))
+    "Type and properties match exactly."))
 
 (def 
   directive-parent
-  (damp.ekeko.snippets.directives.Directive.
+  (directives/make-directive
     "context|parent"
     []
     ground-relativetoparent
-    "Node parent matches match parent."))
+    "Parents match."))
 
 (def 
   directive-replacedbyvariable
-  (damp.ekeko.snippets.directives.Directive.
-    "matches|variable"
-    "Node has been replaced by a variable."
-    []
-    constrain-replacedbyvariable))
+  (directives/make-directive
+    "replaced-by-variable"
+    [(directives/make-directiveoperand "Variable")]
+    constrain-replacedbyvariable
+    "Node and children have been replaced by a variable."
+    ))
+
+(def 
+  directive-equals
+  (directives/make-directive
+    "equals"
+    [(directives/make-directiveoperand "Variable")]
+    constrain-equals
+    "Template matches variable."
+    ))
 
 (def 
   directives-constraining
   [directive-exact
-   directive-replacedbyvariable])
+   directive-replacedbyvariable
+   directive-equals])
 
 (def
   directives-grounding

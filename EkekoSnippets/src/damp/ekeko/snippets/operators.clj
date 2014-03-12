@@ -24,6 +24,18 @@ damp.ekeko.snippets.operators
 ;add-constraining directive: ignore, ignore-variable, maybe enought to have an entry in ast2uservar, is ast2uservar still needed? 
 ;could just use operandbindings of directive instead
 
+(defn
+  make-directiveoperand-for-match
+  []
+  (directives/make-directiveoperand "Match for template node"))
+
+(defn
+  make-directiveoperandbinding-for-match
+  [node]
+  (directives/make-directiveoperand-binding
+    (make-directiveoperand-for-match)
+    node))
+
 (defn 
   replace-by-variable 
   "Replace snippet AST node by a logic variable."
@@ -36,12 +48,24 @@ damp.ekeko.snippets.operators
                                 node 
                                 (directives/make-bounddirective 
                                   matching/directive-replacedbyvariable
-                                  [(directives/make-directiveoperand-binding
-                                     (directives/make-directiveoperand "Match for template node")
-                                     node)
+                                  [(make-directiveoperandbinding-for-match node)
                                    (directives/make-directiveoperand-binding
-                                     (directives/make-directiveoperand "Variable replacing node")
+                                     (directives/make-directiveoperand "Variable replacing template node")
                                      uservar)]))))
+
+(defn 
+  add-directive-equals 
+  "Adds directive-equals to node."
+  [snippet node uservar]
+  (snippet/add-bounddirective snippet
+                              node 
+                              (directives/make-bounddirective 
+                                matching/directive-equals
+                                [(make-directiveoperandbinding-for-match node)
+                                 (directives/make-directiveoperand-binding
+                                   (directives/make-directiveoperand "Variable equals to template node")
+                                   uservar)])))
+
 
 (comment
   
