@@ -19,7 +19,7 @@
 	;; -------------------------------
 	
 
-	(defn 
+	(defn-
 	  snippet-conditions
 	  "Returns a list of logic conditions that will retrieve matches for the given snippet."
 	  [snippet]
@@ -57,19 +57,25 @@
 	      (fn [nilval] (swap! query concat (conditions nilval))))
      @query))
 	
-	(defn
+	(defn-
 	  snippet-query-with-conditions
 	  [snippet ekekolaunchersymbol conditions userconditions]
 	  (let [root-var (snippet/snippet-var-for-root snippet)
 	        uservars-exact (into #{} (matching/snippet-vars-among-directivebindings snippet))
 	        ;uservars-var (into #{} (matching/snippet-replacement-vars snippet))
 	        vars (disj (into #{} (snippet/snippet-vars snippet)) root-var)]
-	    `(~ekekolaunchersymbol 
-	       [~root-var ~@uservars-exact]
-	       (cl/fresh [~@vars] ;~@uservars-var]
-	                 ~@conditions
-	                 ~@userconditions))))
-	  
+     (if 
+       (not-empty vars) 
+       `(~ekekolaunchersymbol 
+	         [~root-var ~@uservars-exact]
+	         (cl/fresh [~@vars]
+	                   ~@conditions
+	                   ~@userconditions))
+       `(~ekekolaunchersymbol 
+	         [~root-var ~@uservars-exact]
+          ~@conditions
+          ~@userconditions))))
+       
 	(defn
 	  snippet-query
 	  "Returns an Ekeko query that that will retrieve matches for the given snippet."
@@ -82,52 +88,31 @@
 	; Converting snippet group to query
 	;------------------------------------
 	
-	(defn
-	  snippet-query-for-userfs
-	  [snippet]
-	  "Returns all user functions of the given snippet.
-	  ((function var-match var-arg) ...)."
-   (defn userfs-to-query [var-match userfs] 
-     (map 
-       (fn [userf] 
-         (let [function (symbol (str "damp.ekeko.snippets.public/" (first userf)))
-               var-arg (symbol (fnext userf))]
-           (println function " " var-match " " var-arg)
-           `(~function ~var-match ~var-arg)))
-       userfs))
-	  (mapcat 
-	    (fn [ast2userfs] 
-	      (let [ast (key ast2userfs)
-	            var-match (snippet/snippet-var-for-node snippet ast)
-	            userfs (val ast2userfs)]
-	        (userfs-to-query var-match userfs)))
-	    (:ast2userfs snippet)))
-	
-	(defn
-	  snippetgroup-query-for-userfs
-	  [grp]
-	  "Returns all user functions of the given grp.
-	  ((function var-match var-arg) ...)."
-	  (mapcat snippet-query-for-userfs (:snippetlist grp)))
-	
-	(defn
+	(defn-
 	  snippetgroup-conditions
 	  "Returns a list of logic conditions that will retrieve matches for the given snippet group."
 	  [snippetgroup]
 	  (mapcat snippet-conditions (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 	
-	(defn
+	(defn-
 	  snippetgroup-query-with-conditions
 	  [snippetgroup ekekolaunchersymbol conditions userconditions]
 	  (let [root-vars (snippetgroup/snippetgroup-rootvars snippetgroup)
 	        uservars-exact (into #{} (matching/snippetgroup-vars-among-directivebindings snippetgroup))
 	        ;uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
 	        vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
-	    `(~ekekolaunchersymbol 
-	       [~@root-vars ~@uservars-exact]
-	       (cl/fresh [~@vars] ;~@uservars-var]
-	                 ~@conditions
-	                 ~@userconditions))))
+      (if 
+       (not-empty vars) 
+       `(~ekekolaunchersymbol 
+          [~@root-vars ~@uservars-exact]
+          (cl/fresh [~@vars]
+                    ~@conditions
+                    ~@userconditions))
+       `(~ekekolaunchersymbol 
+          [~@root-vars ~@uservars-exact]
+          ~@conditions
+          ~@userconditions))))
+       
 	
 	(defn
 	  snippetgroup-query
@@ -138,7 +123,8 @@
 	    (snippetgroup-conditions snippetgroup) 
 	    (concat 
 	      (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-	      (snippetgroup-query-for-userfs snippetgroup))))
+       '()
+	      )))
 	
 	    
 	; Converting snippet group to rewrite query
