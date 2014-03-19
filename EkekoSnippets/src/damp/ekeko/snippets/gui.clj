@@ -25,25 +25,45 @@
 
 
 ;(remove (fn [x] (astnode/primitivevalue? x))
+
+(defn
+  snippet-node-parent|fortreeviewer
+  [snippet c]
+  (let [ownerproperty (astnode/owner-property c)]
+    ;owner of list = node
+    ;owner of node = parent
+    ;owner of list element = node ... should look for list containing value insted
+    (if
+      (and 
+        (astnode/property-descriptor-list? ownerproperty)
+        (not (astnode/lstvalue? c)))
+      (snippet/snippet-list-containing snippet c)
+      (snippet/snippet-node-owner snippet c))))
+
+(defn
+  snippet-node-children|fortreeviewer
+  [snippet node]
+  (filter 
+    (fn [child]
+      (=  node (snippet-node-parent|fortreeviewer snippet child)))
+    (snippet/snippet-nodes snippet)))
+
 (defn
   templatetreecontentprovider-children
   [snippetgroup val]
   ;treeview children of given treeview parent
   (to-array 
     (mapcat 
-      (fn [snippet] 
-        (snippet/snippet-node-children snippet val))
+      (fn [snippet] (snippet-node-children|fortreeviewer snippet val))
       (snippetgroup/snippetgroup-snippetlist snippetgroup))))
-    
  
 (defn
   templatetreecontentprovider-parent
   [snippetgroup c]
   ;treeview parent of given treeview child
   (some 
-    (fn [snippet] 
-      (snippet/snippet-node-owner snippet c))
-    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+    (fn [snippet] (snippet-node-parent|fortreeviewer snippet c)
+      (snippetgroup/snippetgroup-snippetlist snippetgroup))))
     
 (defn
   templatetreecontentprovider-elements
@@ -87,7 +107,7 @@
       (astnode/property-descriptor-list? property)
       (if 
         (astnode/lstvalue? element)
-        (str "list " idwithowner)
+        (str idwithowner)
         (str "element of " idwithowner))
       idwithowner)))
 

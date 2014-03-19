@@ -77,7 +77,7 @@ public class  TemplateGroupViewer extends Composite {
 		snippetPropCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
-		trclmnProperty.setText("Location");
+		trclmnProperty.setText("Description");
 		
 		snippetDirectivesCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn snippetDirectivesColCol = snippetDirectivesCol.getColumn();

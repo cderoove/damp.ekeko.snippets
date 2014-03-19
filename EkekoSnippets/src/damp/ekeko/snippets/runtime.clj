@@ -231,3 +231,31 @@
             (ast-variable-type ?var ?type)
             (ast-type-qualifiedname ?type ?qname)))
 
+    
+(defn
+  match-match|samehierarchy
+  [?a ?b]
+  (cl/fresh [?root]
+         (ast/astorvalue-root ?a ?root)
+         (ast/astorvalue-root ?b ?root)))
+
+
+  ;; Checked
+  ;; -------
+
+  (defn
+    ground-relativetoparent+|match-ownermatch-userarg 
+    "Used by matching directive parent+/1 (ground-relativetoparent+)."
+    [?match ?ownermatch ?userarg]
+    (cl/conda [(el/v+ ?userarg)
+               ;?ownermatch and ?userarg both ground
+               (match-match|samehierarchy ?ownermatch ?userarg) ;short-circuits other hierarchies
+               (ast/astorvalue-offspring+ ?userarg ?match)]
+              [(el/v- ?userarg)
+               (cl/fresh [?root]
+                      (ast/ast-root ?ownermatch ?root)
+                      (ast/astorvalue-offspring+ ?root ?match))]))
+
+  
+  
+  

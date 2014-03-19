@@ -59,8 +59,7 @@
       (= snippet-ast (:ast snippet))
       (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
             var-match (snippet/snippet-var-for-node snippet snippet-ast)] 
-        `((ast/ast ~snippet-ast-keyw ~var-match)
-           ))
+        `((ast/ast ~snippet-ast-keyw ~var-match)))
       (let [bounddirectives (snippet/snippet-bounddirectives-for-node snippet snippet-ast)
             var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
 
@@ -135,26 +134,36 @@
 (defn 
   ground-relativetoparent
   [snippet-val]
+  ;no need for a seperate case for other non-member/non-root nodes
+  ;these are ground through the constraining functions of their parent
+  ;wrong->constraining functions of parent should only constrain non-node values!
   (if
     (node|listmember? snippet-val)
     (ground-relativetoparent-for-member snippet-val)
     (ground-relativetoparent-for-root snippet-val)))
 
-(defn 
-  ground-deep
-  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
-   For AST node is the value of a property: ((child+ ?var-for-owner-match ?var-for-node-match))"
-  [snippet-ast]
-  (fn [snippet] 
-      (let [var-match       (snippet/snippet-var-for-node snippet snippet-ast)
-            ;todo
-            ;args            (snippet/snippet-grounder-args-for-node snippet snippet-ast)
-            args []
-            var-match-owner 
-            (if (empty? args)
-              (snippet/snippet-var-for-node snippet (astnode/owner snippet-ast)) ;for gf :child+
-              (symbol (first args)))]                                                            ;for gf :deep
-        `((ast/child+ ~var-match-owner ~var-match)))))
+(defn
+  ground-relativetoparent+ 
+  (;reside within arbitraty depth for the match for their parent
+    [snippet-val]
+    (fn [snippet]
+      (let [var-match (snippet/snippet-var-for-node snippet snippet-val)]
+        ;ignore for root, as these are ground independent of a context
+        (if 
+          (= snippet-val (snippet/snippet-root snippet))
+          `(())
+          (let [var-match-owner (snippet/snippet-var-for-node (astnode/owner snippet-val))]
+            `((ast/astorvalue-offspring+ ~var-match-owner ~var-match)))))))
+  (;reside within arbitraty depth of parent's root
+    [snippet-val ancestorvar]
+    (fn [snippet]
+      (let [var-match (snippet/snippet-var-for-node snippet snippet-val)
+            var (symbol ancestorvar)
+            var-match-owner (snippet/snippet-var-for-node (astnode/owner snippet-val))]
+        `(runtime/ground-relativetoparent+|match-ownermatch-userarg  ~var-match ~var-match-owner var)))))
+    
+
+
 
 
 ;; Constraining Functions
@@ -188,7 +197,8 @@
                     var-value
                     (snippet/snippet-var-for-node snippet value)]
                 (if
-                  (is-ignored-property? property-keyw)
+                  (or (is-ignored-property? property-keyw)
+                      false) ;;TODO: keep only value properties! 
                   '()
                   `((ast/has ~property-keyw ~var-match ~var-value)))))
             (seq snippet-properties))]

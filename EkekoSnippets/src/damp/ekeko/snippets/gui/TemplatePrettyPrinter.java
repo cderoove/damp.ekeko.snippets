@@ -177,7 +177,9 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	
 	@Override
-	public void preVisit(ASTNode node) {	
+	public void preVisit(ASTNode node) {
+		if(node==null)
+			return;
 		if(isFirstElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			preVisitNodeListWrapper(nodeListWrapper);

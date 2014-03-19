@@ -105,7 +105,8 @@ damp.ekeko.snippets.snippet
             (when 
               (and 
                 (astnode/lstvalue? value)
-                (= ownerproperty (astnode/owner-property value)))
+                (= ownerproperty (astnode/owner-property value))
+                (some #{mbr} (:value value)))
               value)) 
           (snippet-nodes snippet))))
     
@@ -129,6 +130,8 @@ damp.ekeko.snippets.snippet
   "Returns representations in snippet for children of given node."
   [snippet node]
   ;;finds all values in snippet whose owner is equal to the given node.
+  ;;note that using astnode/node-property-values would create new wrappersfor primitive values.
+  ;;which the JFace treeviewer might not like
   (filter
     (fn [value] 
       (= (astnode/owner value) node))

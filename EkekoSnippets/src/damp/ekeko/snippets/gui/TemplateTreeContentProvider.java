@@ -39,7 +39,8 @@ public class TemplateTreeContentProvider implements ITreeContentProvider {
 	public Object getParent(Object element) {
 		if (element == null)
 			return null;
-		return FN_PARENT.invoke(group, element);
+		Object parent = FN_PARENT.invoke(group, element);
+		return parent;
 	}
 
 	@Override
