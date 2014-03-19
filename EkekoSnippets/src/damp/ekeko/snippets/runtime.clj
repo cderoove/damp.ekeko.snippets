@@ -243,6 +243,7 @@
   ;; Checked
   ;; -------
 
+(comment
   (defn
     ground-relativetoparent+|match-ownermatch-userarg 
     "Used by matching directive parent+/1 (ground-relativetoparent+)."
@@ -255,6 +256,7 @@
                (cl/fresh [?root]
                       (ast/ast-root ?ownermatch ?root)
                       (ast/astorvalue-offspring+ ?root ?match))]))
+)
 
   
   

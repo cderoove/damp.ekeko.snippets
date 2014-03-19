@@ -202,7 +202,7 @@
      "replace-by-variable"  
      operators/replace-by-variable
      :generalization
-     "Replace by variable."
+     "Replace by variable"
      nil
      "Replaces selection by a variable."
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
@@ -216,8 +216,39 @@
      "Adds matching directive equals/1 to selection."
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
    
-   ])
+   (Operator. 
+     "relax-scope-to-child+"
+     operators/relax-scope-to-offspring
+     :generalization
+     "Allow matches to reside at an arbitrary depth within the parent match."
+     nil
+     "Candidate matches will reside at an arbitrary depth within the match for the parent of the selection.
+      "
+     [])
+   
+   (Operator. 
+     "relax-size-to-atleast"
+     operators/relax-size-to-atleast
+     :generalization
+     "Allow matches to contain additional members."
+     nil
+     "Candidate matches are lists with at least as many elements as the selection."
+     [])
 
+   
+
+   
+   ])
+   
+;(Operator. 
+;  "relax-scope-to-child+"
+;  operators/relax-scope-to-offspring1
+;  :generalization
+;  "Relax matching scope to scope|offspring/1"
+;  nil
+;  "Candidate matches will reside an arbitrary depth within the match for the given ancestor variable."
+;  [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
+;])
 
 (defn 
   registered-operators

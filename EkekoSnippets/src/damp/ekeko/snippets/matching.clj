@@ -40,7 +40,7 @@
 ;; -------------------
 
 
-(declare directive-parent)
+(declare directive-child)
 
 ;(defn 
 ;  ground-relativetoparent-for-member
@@ -169,25 +169,27 @@
         :default
         `()))))
 
+
 (defn
   ground-relativetoparent+ 
-  (;reside within arbitraty depth for the match for their parent
+  (;arity 0: reside within arbitraty depth for the match for their parent
     [snippet-val]
     (fn [snippet]
       (let [var-match (snippet/snippet-var-for-node snippet snippet-val)]
         ;ignore for root, as these are ground independent of a context
         (if 
-          (= snippet-val (snippet/snippet-root snippet))
+          (root-of-snippet? snippet-val snippet)
           `(())
-          (let [var-match-owner (snippet/snippet-var-for-node (astnode/owner snippet-val))]
-            `((ast/astorvalue-offspring+ ~var-match-owner ~var-match)))))))
-  (;reside within arbitraty depth of parent's root
-    [snippet-val ancestorvar]
-    (fn [snippet]
-      (let [var-match (snippet/snippet-var-for-node snippet snippet-val)
-            var (symbol ancestorvar)
-            var-match-owner (snippet/snippet-var-for-node (astnode/owner snippet-val))]
-        `(runtime/ground-relativetoparent+|match-ownermatch-userarg  ~var-match ~var-match-owner var)))))
+          (let [var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
+            `((ast/astorvalue-offspring+ ~var-match-owner ~var-match))))))))
+ 
+  ;(;arity 1: reside within arbitraty depth of given variable binding (should be ancestor)
+  ;  [snippet-val ancestorvar]
+  ;  (fn [snippet]
+  ;    (let [var-match (snippet/snippet-var-for-node snippet snippet-val)
+  ;          var (symbol ancestorvar)
+  ;          var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
+  ;      `((runtime/ground-relativetoparent+|match-ownermatch-userarg  ~var-match ~var-match-owner ~var))))))
     
 
 ;; Constraining Functions
@@ -251,6 +253,23 @@
         (astnode/nilvalue? snippet-val)
         `((ast/value|null ~var-match)))))) 
 
+(defn
+  constrain-size|atleast
+  "Requires candidate matches to have at least as many elements as the template list."
+  [val]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          lst
+          (:value val)
+          template-list-size 
+          (.size lst)
+          var-match-raw (util/gen-readable-lvar-for-value lst)]
+      `(;(ast/value|list ~var-match)
+         (cl/fresh [~var-match-raw] 
+                   (ast/value-raw ~var-match ~var-match-raw)
+                   (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
+  
 
 ;; Functions related to nodes that have been replaced by logic variable
 ;; --------------------------------------------------------------------
@@ -618,18 +637,39 @@
 (def
   directive-exact
   (directives/make-directive
-    "matches|exactly"
+    "match|exactly"
     []
     constrain-exact 
     "Type and properties match exactly."))
 
 (def 
-  directive-parent
+  directive-child
   (directives/make-directive
-    "context|parent"
+    "child"
     []
     ground-relativetoparent
-    "Resides within the match for its parent."))
+    "Child of match for parent."))
+
+(def 
+  directive-offspring
+  (directives/make-directive
+    "child+"
+    []
+    ground-relativetoparent+ ;arity 0
+    "Finds match candidates among the offspring of the match for the parent."))
+
+(def 
+  directive-size|atleast
+  (directives/make-directive
+    "atleast"
+    []
+    constrain-size|atleast 
+    "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
+
+
+
+
+
 
 (def 
   directive-replacedbyvariable
@@ -657,7 +697,11 @@
 
 (def
   directives-grounding
-  [directive-parent])
+  [directive-child
+   directive-offspring
+   ;directive-offspring1
+
+   ])
   
 (defn 
   registered-constraining-directives
@@ -698,7 +742,7 @@
       directive)))
 
 (def default-directives [directive-exact 
-                         directive-parent 
+                         directive-child 
                          directive-replacedbyvariable ;ensures these aren't pretty-printed
                          ])
 
@@ -713,7 +757,7 @@
   [snippet value]
   (list 
     (bind-nullary-directive directive-exact snippet value)
-    (bind-nullary-directive directive-parent snippet value)))
+    (bind-nullary-directive directive-child snippet value)))
 
 (defn
   nondefault-bounddirectives
@@ -787,6 +831,12 @@
                         directives))
                 bounddirectives)]
     (snippet/update-bounddirectives template value remainingbounddirectives)))
+
+(defn
+  remove-directive
+  [template value directive]
+  (remove-directives template value [directive]))
+  
 
 (defn 
   jdt-node-as-snippet

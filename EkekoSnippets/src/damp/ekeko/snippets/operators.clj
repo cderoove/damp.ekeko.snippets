@@ -42,7 +42,9 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (let [purged-of-children ;remove all directives for children
         (matching/remove-all-directives+ snippet node)
-        purged ;remove constraining directives for node, keep matching directives
+        purged 
+        ;remove constraining directives for node, keep grounding directives
+        ;(TODO: perhaps only remove the default constraining directive?)
         (matching/remove-directives purged-of-children node (matching/registered-constraining-directives))]
     (snippet/add-bounddirective purged
                                 node 
@@ -66,6 +68,43 @@ damp.ekeko.snippets.operators
                                    (directives/make-directiveoperand "Variable equals to template node")
                                    uservar)])))
 
+
+  
+
+(defn
+  relax-size-to-atleast
+  "Uses match-size|atleast/0 for constraining match candidates for a template list."
+  [template lst]
+  (snippet/add-bounddirective 
+    (matching/remove-directives template lst (matching/registered-constraining-directives))
+    lst
+    (directives/make-bounddirective matching/directive-size|atleast
+                                    [(make-directiveoperandbinding-for-match lst)])))
+  
+
+(defn
+  relax-scope-to-offspring
+  "Uses scope|offspring/0 for grounding.
+   If member of list, list should relax it's size requirement."
+  [template value]
+  (snippet/add-bounddirective 
+    (matching/remove-directives 
+      (if 
+        (matching/value|listmember? value)
+        (let [lst (snippet/snippet-list-containing template value)]
+          (relax-size-to-atleast template lst))
+        template)
+      value 
+      (matching/registered-grounding-directives))
+    value
+    (directives/make-bounddirective matching/directive-offspring
+                                    [(make-directiveoperandbinding-for-match value)])))
+
+  
+    
+    
+
+  
 
 (comment
   
