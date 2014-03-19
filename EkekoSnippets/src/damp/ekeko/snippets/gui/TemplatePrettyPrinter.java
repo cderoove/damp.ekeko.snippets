@@ -189,12 +189,12 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	}
 
 	public void postVisit(ASTNode node) {
+		printClosingHighlight(node);
+		printClosingNode(node);
 		if(isLastElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			postVisitNodeListWrapper(nodeListWrapper);
 		}
-		printClosingHighlight(node);
-		printClosingNode(node);
 	}	
 
 	public void preVisitNodeListWrapper(Object nodeListWrapper) {
