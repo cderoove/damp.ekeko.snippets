@@ -38,6 +38,7 @@ public class  TemplateGroupViewer extends Composite {
 	private Object cljGroup, cljTemplate, cljNode;
 	private Table directivesTable;
 	private TableViewer directivesTableViewer;
+	private TreeViewerColumn snippetElementCol;
 
 	public TemplateGroupViewer(Composite parent, int style) {
 		super(parent, SWT.NONE);
@@ -58,7 +59,7 @@ public class  TemplateGroupViewer extends Composite {
 		textViewerSnippet.setEditable(false);
 
 		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
-		snippetTreeViewer.setAutoExpandLevel(2);
+		snippetTreeViewer.setAutoExpandLevel(3);
 		Tree treeSnippet = snippetTreeViewer.getTree();
 		treeSnippet.setHeaderVisible(true);
 		treeSnippet.setLinesVisible(true);
@@ -67,12 +68,17 @@ public class  TemplateGroupViewer extends Composite {
 		snippetNodeCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn trclmnNode = snippetNodeCol.getColumn();
 		trclmnNode.setWidth(150);
-		trclmnNode.setText("Node");
+		trclmnNode.setText("Element");
 
+		snippetElementCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
+		TreeColumn templateElementColCol = snippetElementCol.getColumn();
+		templateElementColCol.setWidth(150);
+		templateElementColCol.setText("Textual Representation");
+		
 		snippetKindCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn snippetKindColCol = snippetKindCol.getColumn();
 		snippetKindColCol.setWidth(150);
-		snippetKindColCol.setText("Node kind");
+		snippetKindColCol.setText("Element Kind");
 
 		snippetPropCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
@@ -83,6 +89,8 @@ public class  TemplateGroupViewer extends Composite {
 		TreeColumn snippetDirectivesColCol = snippetDirectivesCol.getColumn();
 		snippetDirectivesColCol.setWidth(150);
 		snippetDirectivesColCol.setText("Directives");
+
+		
 		
 
 		snippetTreeViewer.setContentProvider(new TemplateTreeContentProvider());
@@ -181,6 +189,7 @@ public class  TemplateGroupViewer extends Composite {
 		this.cljGroup = cljGroup;
 		this.cljTemplate = cljTemplate;
 		this.cljNode = cljNode;
+		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));		
 		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(cljGroup));		
 		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(cljGroup));
 		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));

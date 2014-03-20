@@ -207,7 +207,69 @@ damp.ekeko.snippets.snippet
     (util/class-simplename (class ast))
     (astnode/property-descriptor-id (astnode/owner-property ast))))
 
+(defn
+  snippet-value 
+  "Returns the value if there exists a match variable for it in the snippet, returns nil otherwise."
+  [snippet val]
+  (some #{val} (snippet-nodes snippet)))
   
+(defn
+  snippet-value-list?
+  "Returns true for snippet values that are wrapped lists."
+  [snippet val]
+  (boolean 
+    (if-let [value (snippet-value snippet val)]
+      (astnode/lstvalue? value))))
+
+(defn
+  snippet-value-list-unwrapped
+  "Returns the ASTNode$NodeList wrapped by this template value."
+  [snippet val]
+  (when
+    (snippet-value-list? snippet val)
+    (astnode/value-unwrapped val)))
+  
+(defn
+  snippet-value-primitive?
+  "Returns true for snippet values that are wrapped primitives."
+  [snippet val]
+  (boolean 
+    (if-let [value (snippet-value snippet val)]
+      (astnode/primitivevalue? value))))
+
+(defn
+  snippet-value-primitive-unwrapped
+  "Returns the primitive wrapped by this template value."
+  [snippet val]
+  (when
+    (snippet-value-primitive? snippet val)
+    (astnode/value-unwrapped val)))
+
+(defn
+  snippet-value-node?
+  "Returns true for snippet values that are AST nodes."
+  [snippet val]
+  (boolean 
+    (if-let [value (snippet-value snippet val)]
+      (astnode/ast? value))))
+
+(defn
+  snippet-value-node-unwrapped
+  "Returns the node 'wrapped' by this template value."
+  [snippet val]
+  (when
+    (snippet-value-node? snippet val)
+    val))
+
+
+(defn
+  snippet-value-null?
+  "Returns true for snippet values that are wrapped nulls."  
+  [snippet val]
+  (boolean 
+    (if-let [value (snippet-value snippet val)]
+      (astnode/nilvalue? value))))
+
 
 ;; Copying Snippet and Apply rewrite
 ;; ---------------------------------
@@ -281,8 +343,13 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERY) snippet-userquery)
 
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
-  
-  
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISLIST) snippet-value-list?)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_LIST) snippet-value-list-unwrapped)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISVALUE)  snippet-value-primitive?)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_VALUE)  snippet-value-primitive-unwrapped)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISNODE) snippet-value-node?)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_NODE) snippet-value-node-unwrapped)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISNULL) snippet-value-null?)
 
   )
 

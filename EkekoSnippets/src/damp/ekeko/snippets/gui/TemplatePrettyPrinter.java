@@ -29,6 +29,17 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	
 	public static IFn FN_SNIPPET_LIST_CONTAINING;
+	
+	public static IFn FN_SNIPPET_ELEMENT_ISLIST;
+	public static IFn FN_SNIPPET_ELEMENT_ISVALUE;
+	public static IFn FN_SNIPPET_ELEMENT_ISNODE;
+	public static IFn FN_SNIPPET_ELEMENT_ISNULL;
+
+
+	public static IFn FN_SNIPPET_ELEMENT_VALUE;
+	public static IFn FN_SNIPPET_ELEMENT_LIST;
+	public static IFn FN_SNIPPET_ELEMENT_NODE;
+
 
 
 	
@@ -40,10 +51,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	
 	protected LinkedList<StyleRange> styleRanges;
 	protected Stack<StyleRange> currentHighlight;
+	@SuppressWarnings("rawtypes")
+	private Stack listWrapperForWhichToIgnoreListDecorations;
 
+	@SuppressWarnings("rawtypes")
 	public TemplatePrettyPrinter (TemplateGroup group) {
 		styleRanges = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
+		listWrapperForWhichToIgnoreListDecorations = new Stack();
 		this.templateGroup = group;
 	}
 	public static Object[] getArray(Object clojureList) {
@@ -128,8 +143,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
 			Object listReplacementVar = getUserVar(nodeListWrapper);
 			if(listReplacementVar != null) {
-				printVariableReplacement(listReplacementVar);
-				return false; //do not print node itself because list has been replaced
+				if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+						!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+					printVariableReplacement(listReplacementVar);
+					return false; //do not print node itself because list has been replaced
+				}
 			}
 		}
 		Object replacementVar = getUserVar(node);
@@ -182,7 +200,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			return;
 		if(isFirstElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-			preVisitNodeListWrapper(nodeListWrapper);
+			if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+					!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+				preVisitNodeListWrapper(nodeListWrapper);
+			}
 		}
 		printOpeningNode(node);
 		printOpeningHighlight(node);
@@ -192,8 +213,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		printClosingHighlight(node);
 		printClosingNode(node);
 		if(isLastElementOfList(node)) {
-			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-			postVisitNodeListWrapper(nodeListWrapper);
+				Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
+				if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+						!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+					postVisitNodeListWrapper(nodeListWrapper);
+			}
 		}
 	}	
 
@@ -274,10 +298,103 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		return getResult();
 	}
 
-	public String prettyPrintNode(Object snippet, Object node) {
+	public static boolean isNodeValueInTemplate(Object template, Object element) {
+		return (Boolean) FN_SNIPPET_ELEMENT_ISNODE.invoke(template, element);
+	}
+	
+	public static ASTNode getActualNodeValueInTemplate(Object template, Object element) {
+		return (ASTNode) FN_SNIPPET_ELEMENT_NODE.invoke(template, element);
+	}
+	
+	public static Collection getActualListValueInTemplate(Object template, Object element) {
+		return (Collection) FN_SNIPPET_ELEMENT_LIST.invoke(template, element);
+	}
+	
+	public static Boolean isListValueInTemplate(Object template, Object element) {
+		return (Boolean) FN_SNIPPET_ELEMENT_ISLIST.invoke(template, element);
+	}
+
+	public static Boolean isPrimitiveValueInTemplate(Object template, Object element) {
+		return (Boolean) FN_SNIPPET_ELEMENT_ISVALUE.invoke(template, element);
+	}
+	
+	public static Object getActualPrimitiveValueInTemplate(Object template, Object element) {
+		return FN_SNIPPET_ELEMENT_VALUE.invoke(template, element);
+	}
+
+	public static Boolean isNullValueInTemplate(Object template, Object element) {
+		return (Boolean) FN_SNIPPET_ELEMENT_ISNULL.invoke(template, element);
+	}
+
+	//called by labelproviders to pretty print an individual template value
+	public String prettyPrintElement(Object snippet, Object element) {
 		setSnippet(snippet);
-		((ASTNode) node).accept(this);
-		return getResult();
+
+		if(isNodeValueInTemplate(snippet, element)) {
+			ASTNode node = (ASTNode) FN_SNIPPET_ELEMENT_NODE.invoke(snippet, element);
+			if(isElementOfList(node)) {
+				Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
+				if(nodeListWrapper != null) {
+					listWrapperForWhichToIgnoreListDecorations.push(nodeListWrapper);
+					node.accept(this);
+					listWrapperForWhichToIgnoreListDecorations.pop();
+					return getResult();
+				}
+			}
+			node.accept(this);
+			return getResult();
+		} 
+
+		if(isListValueInTemplate(snippet, element)) {
+			
+			Object listReplacementVar = getUserVar(element);
+			if(listReplacementVar != null) {
+				printVariableReplacement(listReplacementVar);
+				return getResult();
+			}
+
+			printOpeningNode(element);
+			listWrapperForWhichToIgnoreListDecorations.push(element);
+			
+			@SuppressWarnings("rawtypes")
+			Collection lst = getActualListValueInTemplate(snippet, element);
+			
+			for(Object member : lst) {
+				prettyPrintElement(snippet, member);
+				this.buffer.append(" ");
+			}
+			
+			if(!lst.isEmpty()) {
+				this.buffer.deleteCharAt(getCurrentCharacterIndex()-1);
+			}
+		
+			listWrapperForWhichToIgnoreListDecorations.pop();
+			printClosingNode(element);
+
+			return getResult().trim();
+		}
+		
+		if(isPrimitiveValueInTemplate(snippet, element)) {
+			Object value = getActualPrimitiveValueInTemplate(snippet, element);
+			if(hasNonDefaultDirectives(snippet, element)) {
+				printOpeningNode(element);
+				this.buffer.append(value.toString());
+				printClosingNode(element);
+			}
+			return getResult();
+		} 
+		
+		if(isNullValueInTemplate(snippet, element)) {
+			if(hasNonDefaultDirectives(snippet, element)) {
+				printOpeningNode(element);
+				this.buffer.append("null");
+				printClosingNode(element);
+			}
+			return getResult();
+		} else
+			throw new RuntimeException("Unexpected value to be pretty-printed: " + element.toString());
+		
+		
 	}
 
 	

@@ -91,9 +91,12 @@
 (defn
   templatetreelabelprovider-kind
   [snippet element]
-  (if
+  (cond
     (astnode/ast? element)
     (.getSimpleName (class element))
+    (astnode/lstvalue? element)
+    "list"
+    :default
     ""))
 
 (defn

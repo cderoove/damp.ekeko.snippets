@@ -96,8 +96,8 @@ public class OperatorOperandsViewer extends Composite {
 		TableColumn operandValueColCol = operandValueCol.getColumn();
 		operandValueColCol.setWidth(150);
 		operandValueColCol.setText("Value");
+		
 		operandValueCol.setLabelProvider(new OperandBindingLabelProviderValue());
-
 		operandValueCol.setEditingSupport(new OperandBindingEditingSupport(operandsTableViewer));
 
 	}
