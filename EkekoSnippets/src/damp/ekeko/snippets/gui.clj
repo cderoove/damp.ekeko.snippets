@@ -62,8 +62,8 @@
   [snippetgroup c]
   ;treeview parent of given treeview child
   (some 
-    (fn [snippet] (snippet-node-parent|fortreeviewer snippet c)
-      (snippetgroup/snippetgroup-snippetlist snippetgroup))))
+    (fn [snippet] (snippet-node-parent|fortreeviewer snippet c))
+    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
     
 (defn
   templatetreecontentprovider-elements

@@ -18,10 +18,9 @@
  
 ;; Operator information
 
-
 (def opscope-subject :subject) ;operand scope denoting the subject of the operator
-(def opscope-variable :variable)
-
+(def opscope-variable :variable) ;operand/operator scope for logic variables
+(def opscope-node)  ;operand/operator scope for node
 
 (defrecord 
   Operator
@@ -202,7 +201,7 @@
      "replace-by-variable"  
      operators/replace-by-variable
      :generalization
-     "Replace by variable"
+     "Replace by variable."
      nil
      "Replaces selection by a variable."
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
@@ -211,7 +210,7 @@
      "add-directive-equals"
      operators/add-directive-equals
      :neutral
-     "Add equals/1 matching directive."
+     "Require match to unify with variable."
      nil
      "Adds matching directive equals/1 to selection."
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
@@ -230,10 +229,20 @@
      "relax-size-to-atleast"
      operators/relax-size-to-atleast
      :generalization
-     "Allow matches to contain additional members."
+     "Allow matches to be larger."
      nil
      "Candidate matches are lists with at least as many elements as the selection."
      [])
+   
+   (Operator. 
+     "relax-scope-to-member"
+     operators/relax-scope-to-member
+     :generalization
+     "Allow matches to reside at any index within the parent match."
+     nil
+     "Candidate matches can reside at any index within the parent list."
+     [])
+
 
    
 

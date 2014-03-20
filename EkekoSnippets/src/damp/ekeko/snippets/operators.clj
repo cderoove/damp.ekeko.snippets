@@ -83,17 +83,30 @@ damp.ekeko.snippets.operators
   
 
 (defn
+  relax-scope-to-member
+  "Uses member/0 for grounding of list members."
+  [template value]
+  (snippet/add-bounddirective 
+    (matching/remove-directives template value (matching/registered-grounding-directives))
+    value
+    (directives/make-bounddirective matching/directive-member
+                                    [(make-directiveoperandbinding-for-match value)])))
+
+(defn
   relax-scope-to-offspring
-  "Uses scope|offspring/0 for grounding.
-   If member of list, list should relax it's size requirement."
+  "Uses scope|offspring/0 for grounding."
   [template value]
   (snippet/add-bounddirective 
     (matching/remove-directives 
-      (if 
-        (matching/value|listmember? value)
-        (let [lst (snippet/snippet-list-containing template value)]
-          (relax-size-to-atleast template lst))
-        template)
+      ; No longer doing: "If member of list, list should relax it's size requirement."
+      ; because prefer to keep all operators as atomic as possible
+      ; in order to derive mutation patterns
+      ;(if 
+      ;  (matching/value|listmember? value)
+      ;  (let [lst (snippet/snippet-list-containing template value)]
+      ;    (relax-size-to-atleast template lst))
+      ;  template)
+      template
       value 
       (matching/registered-grounding-directives))
     value

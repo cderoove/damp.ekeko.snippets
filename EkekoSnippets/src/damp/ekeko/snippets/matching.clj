@@ -182,6 +182,28 @@
           `(())
           (let [var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
             `((ast/astorvalue-offspring+ ~var-match-owner ~var-match))))))))
+
+
+
+
+(defn
+  ground-element
+  [val]
+  (fn [template]
+    (let [match
+          (snippet/snippet-var-for-node template val)
+          lst 
+          (snippet/snippet-list-containing template val)
+          list-match
+          (snippet/snippet-var-for-node template lst)
+          list-match-raw
+          (util/gen-readable-lvar-for-value (:value list))]
+      `((cl/fresh [~list-match-raw] 
+                  (ast/value-raw ~list-match ~list-match-raw)
+                  (el/contains ~list-match-raw ~match))))))
+    
+
+
  
   ;(;arity 1: reside within arbitraty depth of given variable binding (should be ancestor)
   ;  [snippet-val ancestorvar]
@@ -637,7 +659,7 @@
 (def
   directive-exact
   (directives/make-directive
-    "match|exactly"
+    "match"
     []
     constrain-exact 
     "Type and properties match exactly."))
@@ -653,7 +675,7 @@
 (def 
   directive-offspring
   (directives/make-directive
-    "child+"
+    "anydepth"
     []
     ground-relativetoparent+ ;arity 0
     "Finds match candidates among the offspring of the match for the parent."))
@@ -661,7 +683,7 @@
 (def 
   directive-size|atleast
   (directives/make-directive
-    "atleast"
+    "orlarger"
     []
     constrain-size|atleast 
     "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
@@ -686,8 +708,18 @@
     "equals"
     [(directives/make-directiveoperand "Variable")]
     constrain-equals
-    "Template matches variable."
+    "Match unifies with variable."
     ))
+
+
+(def 
+  directive-member
+  (directives/make-directive
+    "anyindex"
+    []
+    ground-element
+    "Match is a member of the match for the parent list."))
+
 
 (def 
   directives-constraining
@@ -699,8 +731,7 @@
   directives-grounding
   [directive-child
    directive-offspring
-   ;directive-offspring1
-
+   directive-member
    ])
   
 (defn 
