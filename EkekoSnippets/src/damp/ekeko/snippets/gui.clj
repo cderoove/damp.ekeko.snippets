@@ -240,6 +240,7 @@
   [operandbinding]
   (operatorsrep/operand-description (operatorsrep/binding-operand operandbinding)))
 
+
 (defmulti
   operandbinding-labelprovider-valuetext
   (fn [operandbinding]

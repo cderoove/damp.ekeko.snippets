@@ -11,6 +11,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -28,6 +29,7 @@ public class OperatorOperandsViewer extends Composite {
 
 	
 	private Object cljGroup,  cljSnippet,  cljSelectedSnippetNode;
+	private Label operatorLabel;
 	
 	public OperatorOperandsViewer(Composite parent, int style) {
 		super(parent, style);
@@ -70,7 +72,10 @@ public class OperatorOperandsViewer extends Composite {
 		textOpInfo.setLayoutData(gd_textOpInfo);
 		*/
 		
-		
+		operatorLabel = new Label(this, SWT.NONE | SWT.WRAP);
+		GridData gd_operatorLabel = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
+		//gd_tableOpArgs.heightHint = 31;
+		operatorLabel.setLayoutData(gd_operatorLabel);
 		
 		operandsTableViewer = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
 		operandsTable = operandsTableViewer.getTable();
@@ -81,6 +86,7 @@ public class OperatorOperandsViewer extends Composite {
 		operandsTable.setLayoutData(gd_tableOpArgs);
 		
 		operandsTableViewer.setContentProvider(new ArrayContentProvider());
+		
 		
 		//operandsTableDecorator = new OperandsTableDecorator(operandsTable);
 		
@@ -111,8 +117,6 @@ public class OperatorOperandsViewer extends Composite {
 		return operandsTableViewer.getInput();
 	}
 
-	
-	
 	public void setInput(Object cljGroup, Object cljSnippet, Object cljSelectedSnippetNode) {
 		this.cljGroup = cljGroup;
 		this.cljSnippet = cljSnippet;
@@ -129,10 +133,12 @@ public class OperatorOperandsViewer extends Composite {
 		Object selectedOperator = getSelectedOperator();
 		if(selectedOperator == null || !SnippetOperator.isOperator(selectedOperator)) {
 			operandsTableViewer.setInput(null);
+			operatorLabel.setText("");
 			return;	
 		}
 		
 		//textOpInfo.setText(SnippetOperator.getDescription(selectedOperator));
+		operatorLabel.setText(SnippetOperator.getDescription(selectedOperator));
 		operandsTableViewer.setInput(SnippetOperator.getOperands(cljGroup, cljSnippet, cljSelectedSnippetNode, selectedOperator));
 
 	}

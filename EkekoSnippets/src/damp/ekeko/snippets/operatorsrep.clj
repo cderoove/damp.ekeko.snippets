@@ -221,7 +221,7 @@
      :generalization
      "Allow matches to reside at an arbitrary depth within the parent match."
      nil
-     "Candidate matches will reside at an arbitrary depth within the match for the parent of the selection.
+     "Matches can reside at an arbitrary depth within the match for the parent.
       "
      [])
    
@@ -231,7 +231,7 @@
      :generalization
      "Allow matches to be larger."
      nil
-     "Candidate matches are lists with at least as many elements as the selection."
+     "Matches are lists with at least as many elements as the selection."
      [])
    
    (Operator. 
@@ -240,7 +240,7 @@
      :generalization
      "Allow matches to reside at any index within the parent match."
      nil
-     "Candidate matches can reside at any index within the parent list."
+     "Matches can reside at any index within the parent list."
      [])
 
 

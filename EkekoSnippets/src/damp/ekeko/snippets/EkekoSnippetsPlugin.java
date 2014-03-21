@@ -1,7 +1,13 @@
 package damp.ekeko.snippets;
 
+import org.eclipse.jdt.ui.PreferenceConstants;
+import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.themes.ITheme;
+import org.eclipse.ui.themes.IThemeManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -61,6 +67,13 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	 */
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(PLUGIN_ID, path);
+	}
+	
+	public static Font getEditorFont() {
+		IThemeManager themeManager = PlatformUI.getWorkbench().getThemeManager();
+		ITheme currentTheme = themeManager.getCurrentTheme();
+		FontRegistry fontRegistry = currentTheme.getFontRegistry();
+		return fontRegistry.get(PreferenceConstants.EDITOR_TEXT_FONT);
 	}
 	
 	public void startClojureCode(BundleContext bundleContext) throws Exception {

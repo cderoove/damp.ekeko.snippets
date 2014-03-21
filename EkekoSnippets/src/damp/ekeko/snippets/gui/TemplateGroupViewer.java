@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 
+import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class  TemplateGroupViewer extends Composite {
@@ -39,6 +40,7 @@ public class  TemplateGroupViewer extends Composite {
 	private Table directivesTable;
 	private TableViewer directivesTableViewer;
 	private TreeViewerColumn snippetElementCol;
+	//private TextViewer textViewerNode;
 
 	public TemplateGroupViewer(Composite parent, int style) {
 		super(parent, SWT.NONE);
@@ -56,7 +58,26 @@ public class  TemplateGroupViewer extends Composite {
 		GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
 		gd_styledText.heightHint = 100;
 		styledText.setLayoutData(gd_styledText);
-		textViewerSnippet.setEditable(false);
+		textViewerSnippet.setEditable(false);		
+		styledText.setFont(EkekoSnippetsPlugin.getEditorFont());
+		styledText.setCaret(null);
+
+		
+		//Label label = new Label(getShell(), SWT.SINGLE);
+		//RGB background = label.getBackground().getRGB();
+		//label.dispose();
+
+		
+		/*
+		textViewerNode = new TextViewer(composite, SWT.NONE | SWT.WRAP | SWT.READ_ONLY | SWT.NO_FOCUS);
+		StyledText textViewerNodeText = textViewerNode.getTextWidget();
+		GridData gd_styledTextNode = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
+		//gd_styledTextNode.heightHint = 100;
+		textViewerNodeText.setLayoutData(gd_styledTextNode);
+		//textViewerNodeText.setFont(EkekoSnippetsPlugin.getEditorFont());
+		textViewerNodeText.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+		textViewerNodeText.setCaret(null);
+		*/
 
 		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		snippetTreeViewer.setAutoExpandLevel(3);
@@ -171,14 +192,26 @@ public class  TemplateGroupViewer extends Composite {
 		Object selectedSnippet = getSelectedSnippet();
 		if(selectedSnippet == null) {
 			textViewerSnippet.getTextWidget().setText("");
+			//textViewerNode.getTextWidget().setText("");
 			return;
 		}			
-		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(TemplateGroup.newFromClojureGroup(cljGroup));
+	
 		Object selectedSnippetNode = getSelectedSnippetNode();
+		TemplateGroup templateGroup = TemplateGroup.newFromClojureGroup(cljGroup);
+		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(templateGroup);
 		prettyprinter.setHighlightNode(selectedSnippetNode);
 		textViewerSnippet.getTextWidget().setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())
 			textViewerSnippet.getTextWidget().setStyleRange(range);
+	
+		/*
+		prettyprinter =  new TemplatePrettyPrinter(templateGroup);
+		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(selectedSnippet, selectedSnippetNode));
+		for(StyleRange range : prettyprinter.getStyleRanges())
+			textViewerNode.getTextWidget().setStyleRange(range);
+		*/
+		
+	
 	}
 	
 	public void clearSelection() {
