@@ -9,12 +9,6 @@
       </category>
       <view
             category="damp.ekeko.snippets.views"
-            class="damp.ekeko.snippets.gui.TemplateView"
-            id="damp.ekeko.snippets.gui.TemplateView"
-            name="Ekeko/X Template View">
-      </view>
-      <view
-            category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.ResultCheckView"
             id="damp.ekeko.snippets.gui.ResultCheckView"
             name="Ekeko/X Subject Inspector View">
@@ -35,7 +29,7 @@
       <command
             category="damp.ekeko.snippets.commands"
             id="damp.ekeko.snippets.commands.template"
-            name="Ekeko/X Template View">
+            name="Ekeko/X Template Editor">
       </command>
    </extension>
    <extension
@@ -76,5 +70,14 @@
       <contexts
             file="contexts.xml">
       </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="damp.ekeko.snippets.gui.TemplateEditor"
+            icon="icons/ekeko16.png"
+            id="damp.ekeko.snippets.gui.TemplateEditor"
+            name="Ekeko/X Template Editor">
+      </editor>
    </extension>
 </plugin>

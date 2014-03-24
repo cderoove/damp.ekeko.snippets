@@ -14,7 +14,8 @@ public class TemplateViewCommandHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
 		try {
-			window.getActivePage().showView(TemplateView.ID);
+			//window.getActivePage().showView(TemplateEditor.ID);
+			window.getActivePage().openEditor(new TemplateGroupEditorInput(), TemplateEditor.ID);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

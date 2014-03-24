@@ -3,11 +3,13 @@ package damp.ekeko.snippets.gui;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -20,27 +22,32 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorSite;
+import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.texteditor.ITextEditor;
+import org.eclipse.ui.part.EditorPart;
 import org.eclipse.wb.swt.ResourceManager;
 
 import damp.ekeko.snippets.data.TemplateGroup;
 
-public class TemplateView extends ViewPart {
+public class TemplateEditor extends EditorPart {
 
-	public static final String ID = "damp.ekeko.snippets.gui.TemplateView"; //$NON-NLS-1$
-	private String viewID;
+	public static final String ID = "damp.ekeko.snippets.gui.TemplateEditor"; //$NON-NLS-1$
+	//private String viewID;
 
 	private List<Action> actions; 	
 	private TemplateGroup templateGroup;
 	private TemplateGroupViewer templateGroupViewer;
 	private TemplateTreeContentProvider contentProvider;
 	private OperatorOperandsViewer operatorOperandsViewer;
+	private String lastSelectedWorkspaceTextString;
 
-	public TemplateView() {
-		templateGroup = TemplateGroup.newFromGroupName("Template Group");
+
+	public TemplateEditor() {
+		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
 	}
 	
 	public void setGroup(TemplateGroup group) {
@@ -157,9 +164,26 @@ public class TemplateView extends ViewPart {
 
 
 		
+		
+		ISelectionListener sl = new ISelectionListener() {
+			@Override
+			public void selectionChanged(IWorkbenchPart part, ISelection sel) {
+				if(sel instanceof ITextSelection) {
+					ITextSelection lastSelectedText = (ITextSelection) sel;
+					if(!lastSelectedText.isEmpty())
+						lastSelectedWorkspaceTextString = lastSelectedText.getText();
+				}
+			}
+		};
+
+		//code also listen for JavaEditor selections only (JavaUI.ID_CU_EDITOR),
+		//but people might be using different editors (e.g., WindowBuilder)
+		getSite().getPage().addSelectionListener(sl);
+
+		
 	    createActions();
 		initializeToolBar();
-		initializeMenu();
+		//initializeMenu();
 	}
 
 
@@ -196,7 +220,6 @@ public class TemplateView extends ViewPart {
 		actions.add(inspectMatches);
 
 		/*
-		//TODO: move to top-level
 		Action actTrans = new Action("Program Transformation") {			public void run() {
 				transformation();
 			}
@@ -211,14 +234,14 @@ public class TemplateView extends ViewPart {
 	 * Initialize the toolbar.
 	 */
 	private void initializeToolBar() {
-		IToolBarManager toolbarManager = getViewSite().getActionBars().getToolBarManager();
+		IToolBarManager toolbarManager = getEditorSite().getActionBars().getToolBarManager();
 		for(Action action : actions) {
 			toolbarManager.add(action);
 		}
 	}
 
 	private void initializeMenu() {
-		IMenuManager menuManager = getViewSite().getActionBars().getMenuManager();
+		IMenuManager menuManager = getEditorSite().getActionBars().getMenuManager();
 		for(Action action : actions) {
 			menuManager.add(action);
 		}
@@ -228,23 +251,34 @@ public class TemplateView extends ViewPart {
 	public void setFocus() {
 		// Set the focus
 	}
+
 	
-	String getSelectedTextFromActiveEditor() {
+	
+	String getSelectedTextFromJavaEditor() {
+		
+		/*
+		 * can no longer use this snippet as we have become an editor ourselves, 
+		 * and are active at the moment the user calls this method
+		 * 
 		ITextEditor editor =  (ITextEditor) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 		ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();	
 		return selection.getText();
+		*/
+		return lastSelectedWorkspaceTextString;
 	}
 			
 	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
 
+	/*
 	public void setViewID(String secondaryId) {
 		this.viewID = secondaryId;
 	}
+	*/
 				
 	public void addSnippet() {
-		String code = getSelectedTextFromActiveEditor();
+		String code = getSelectedTextFromJavaEditor();
 		if (code != null && !code.isEmpty()) {
 			//throws NPE when selected text cannot be parsed as the starting point for a template
 			templateGroup.addSnippetCode(code);
@@ -365,4 +399,36 @@ public class TemplateView extends ViewPart {
 		}
 		*/
 	}
+
+	@Override
+	public void doSave(IProgressMonitor monitor) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void doSaveAs() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
+			setInput(input);
+			setSite(site);
+	}
+
+	@Override
+	public boolean isDirty() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isSaveAsAllowed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
 }

@@ -35,7 +35,8 @@ Require-Bundle: damp.ekeko.plugin;bundle-version="1.0.3",
  org.eclipse.jdt.ui,
  org.eclipse.ui.workbench,
  org.eclipse.jface,
- org.eclipse.swt
+ org.eclipse.swt,
+ org.eclipse.ui.editors;bundle-version="3.8.100"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs

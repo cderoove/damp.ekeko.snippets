@@ -171,27 +171,27 @@
 ;; Opening  TemplateView programmatically
 ;; --------------------------------------
 
-(def templateview-cnt (atom 0))
+;(def templateview-cnt (atom 0))
 
-(defn 
-  open-templateview
-  [snippetgroup]
-  (let [page (-> (PlatformUI/getWorkbench)
-               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
-               .getActivePage)
-        qvid (damp.ekeko.snippets.gui.TemplateView/ID)
-        uniqueid (str @templateview-cnt)
-        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
-    (swap! templateview-cnt inc)
-    (.setViewID viewpart uniqueid)
-    (.setInput (.getViewer viewpart) snippetgroup)
-    viewpart))
+;(defn 
+;  open-templateview
+;  [snippetgroup]
+;  (let [page (-> (PlatformUI/getWorkbench)
+;               .getActiveWorkbenchWindow ;nil if called from non-ui thread 
+;               .getActivePage)
+;        qvid (damp.ekeko.snippets.gui.TemplateEditor/ID)
+;        uniqueid (str @templateview-cnt)
+;        viewpart (.showView page qvid uniqueid (IWorkbenchPage/VIEW_ACTIVATE))]
+;    (swap! templateview-cnt inc)
+;    (.setViewID viewpart uniqueid)
+;    (.setInput (.getViewer viewpart) snippetgroup)
+;    viewpart))
 
 
-(defn
-  view-template
-  [snippetgroup]
-  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
+;(defn
+;  view-template
+;  [snippetgroup]
+;  (damp.ekeko.gui/eclipse-uithread-return (fn [] (open-templateview snippetgroup))))
 
 
 
