@@ -154,7 +154,9 @@
                       (el/equals ~var-match (.get ~list-match-raw ~index-match)))))
         (or 
           (astnode/ast? snippet-val)
-          (astnode/lstvalue? snippet-val))
+          (astnode/lstvalue? snippet-val)
+          (astnode/nilvalue? snippet-val)
+          )
         (let [owner 
               (astnode/owner snippet-val)
               owner-match
@@ -165,7 +167,7 @@
               (astnode/ekeko-keyword-for-property-descriptor owner-property)]
           `((ast/has ~owner-property-keyword ~owner-match ~var-match) 
              ))
-        ;constraining the parent has already ground primitive values and null
+        ;constraining the parent has already ground primitive values
         :default
         `()))))
 
@@ -273,7 +275,7 @@
              (ast/value-raw ~var-match ~exp)))
         ;constrain null-values
         (astnode/nilvalue? snippet-val)
-        `((ast/value|null ~var-match)))))) 
+        `((ast/value|null ~var-match))))))
 
 (defn
   constrain-size|atleast
@@ -759,18 +761,15 @@
   (some #{directive} directives-constraining))
 
 
+(defn 
+  registered-directives
+  []
+  (concat (registered-grounding-directives) 
+          (registered-constraining-directives)))
+
+
 ;; Constructing Snippet instances with default matching directives
 ;; ---------------------------------------------------------------
-
-(defn 
-  bind-nullary-directive
-  [directive snippet value]
-  (directives/make-bounddirective 
-    directive
-    (directives/directive-bindings-for-directiveoperands-and-match
-      snippet
-      value
-      directive)))
 
 (def default-directives [directive-exact 
                          directive-child 
@@ -787,8 +786,8 @@
   "Returns default matching directives for given snippet and element of the snippet element."
   [snippet value]
   (list 
-    (bind-nullary-directive directive-exact snippet value)
-    (bind-nullary-directive directive-child snippet value)))
+    (directives/bind-directive-with-defaults directive-exact snippet value)
+    (directives/bind-directive-with-defaults directive-child snippet value)))
 
 (defn
   nondefault-bounddirectives
@@ -963,6 +962,10 @@
   
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-replacement-var-for-node)
+
+  
+  (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_REGISTERED_DIRECTIVES) registered-directives)
+  
 
   )
   

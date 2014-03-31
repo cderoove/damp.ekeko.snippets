@@ -41,8 +41,15 @@ public class TemplateGroup {
 	
 	public static IFn FN_PARSE_TO_DOC;
 	public static IFn FN_PARSE_TO_NODES;
+	
+	public static IFn FN_UPDATE_SNIPPET_IN_SNIPPETGROUP;
 
 	protected Object cljGroup;
+	
+	//returns new snippet group
+	public static Object updateSnippetInSnippetGroup(Object cljGroup, Object cljSnippet, IFn updater) {
+		return FN_UPDATE_SNIPPET_IN_SNIPPETGROUP.invoke(cljGroup, cljSnippet, updater);
+	}
 	
 	public static TemplateGroup newFromClojureGroup(Object cljGroup) {
 		TemplateGroup group = new TemplateGroup();

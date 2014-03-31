@@ -97,14 +97,13 @@ public class OperatorOperandsViewer extends Composite {
 		operandDescriptionCol.setLabelProvider(new OperandBindingLabelProviderDescription());
 		
 		
-		
 		TableViewerColumn operandValueCol = new TableViewerColumn(operandsTableViewer, SWT.NONE);
 		TableColumn operandValueColCol = operandValueCol.getColumn();
 		operandValueColCol.setWidth(150);
 		operandValueColCol.setText("Value");
 		
-		operandValueCol.setLabelProvider(new OperandBindingLabelProviderValue());
-		operandValueCol.setEditingSupport(new OperandBindingEditingSupport(operandsTableViewer));
+		operandValueCol.setLabelProvider(new OperatorOperandBindingLabelProviderValue());
+		operandValueCol.setEditingSupport(new OperatorOperandBindingEditingSupport(operandsTableViewer));
 
 	}
 	

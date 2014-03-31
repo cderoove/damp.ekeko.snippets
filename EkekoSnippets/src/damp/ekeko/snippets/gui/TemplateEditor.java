@@ -14,12 +14,10 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
@@ -31,6 +29,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.wb.swt.ResourceManager;
 
+import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplateEditor extends EditorPart {
@@ -42,9 +41,12 @@ public class TemplateEditor extends EditorPart {
 	private TemplateGroup templateGroup;
 	private TemplateGroupViewer templateGroupViewer;
 	private TemplateTreeContentProvider contentProvider;
-	private OperatorOperandsViewer operatorOperandsViewer;
+	//private OperatorOperandsViewer operatorOperandsViewer;
+	
+	//private BoundDirectivesViewer boundDirectivesViewer;
 	private String lastSelectedWorkspaceTextString;
 
+	
 
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
@@ -61,14 +63,10 @@ public class TemplateEditor extends EditorPart {
 	 */
 	@Override
 	public void createPartControl(Composite parent) {
-		Composite container = new Composite(parent, SWT.NONE);
-		container.setLayout(new FillLayout(SWT.HORIZONTAL));
 				
-			
-		Group snippetTreeGroup = new Group(container, SWT.NONE);
-		snippetTreeGroup.setLayout(new GridLayout(1, false));
+		parent.setLayout(new GridLayout(1, false));
 		
-		ToolBar toolBar = new ToolBar(snippetTreeGroup, SWT.FLAT | SWT.RIGHT);
+		ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setOrientation(SWT.RIGHT_TO_LEFT);		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
@@ -78,24 +76,58 @@ public class TemplateEditor extends EditorPart {
 				addSnippet();
 			}
 		});
-		tltmAdd.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/add_obj.gif"));
-		tltmAdd.setToolTipText("Add Snippet");
+		
+		tltmAdd.setImage(EkekoSnippetsPlugin.IMG_ADD);
+		tltmAdd.setToolTipText("Add template");
 				
 		
-		ToolItem tltmRemove = new ToolItem(toolBar, SWT.NONE);
+		final ToolItem tltmRemove = new ToolItem(toolBar, SWT.NONE);
 		tltmRemove.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				removeSnippet();
 			}
 		});
-		tltmRemove.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/obj16/delete_obj.gif"));
-		tltmRemove.setToolTipText("Remove Snippet");
+		tltmRemove.setImage(EkekoSnippetsPlugin.IMG_DELETE);
+		tltmRemove.setDisabledImage(EkekoSnippetsPlugin.IMG_DELETE_DISABLED);
+		tltmRemove.setToolTipText("Delete template");
+		tltmRemove.setEnabled(false);
+
+
+		final ToolItem tltmEditBoundDirectives = new ToolItem(toolBar, SWT.NONE);
+		tltmEditBoundDirectives.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onEditBoundDirectives(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+			}
+		});
+		//tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_EDIT_TEMPLATE);
+		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
+		tltmEditBoundDirectives.setEnabled(false);
+			
 		
-		
-		templateGroupViewer = new TemplateGroupViewer(snippetTreeGroup, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 0;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
+		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
 		templateGroupViewer.setInput(templateGroup.getGroup(), null, null);
+
+		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {	
+			@Override
+			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
+				if(event.getSelectedTemplateNode() == null) {
+					tltmRemove.setEnabled(false);
+					tltmEditBoundDirectives.setEnabled(false);
+				} else {
+					tltmEditBoundDirectives.setEnabled(true);
+					if(event.getSelectedTemplateNode().equals(TemplateGroup.getRootOfSnippet(event.getSelectedTemplate())))
+						tltmRemove.setEnabled(true);
+					else
+						tltmRemove.setEnabled(false);
+				}
+			}
+		});
+					
 		
+		/*
+
 		Group snippetOperatorGroup = new Group(container, SWT.NONE);
 		snippetOperatorGroup.setLayout(new GridLayout(1, false));
 		
@@ -103,9 +135,6 @@ public class TemplateEditor extends EditorPart {
 		snippetOperatorGroupToolbar.setOrientation(SWT.RIGHT_TO_LEFT);
 		snippetOperatorGroupToolbar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
 
-		
-		
-		/*
 		Label lblOperator = new Label(snippetOperatorGroup, SWT.NONE);
 		GridData gd_lblOperator = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
 		gd_lblOperator.heightHint = 22;
@@ -114,7 +143,7 @@ public class TemplateEditor extends EditorPart {
 		
 		*/
 		
-		
+		/*
 		ToolItem tltmApplyOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		tltmApplyOperator.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -124,6 +153,10 @@ public class TemplateEditor extends EditorPart {
 		});
 		tltmApplyOperator.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/etool16/validate.gif"));
 		tltmApplyOperator.setToolTipText("Apply Operator");
+		*/
+		
+		
+		
 		
 		/*
 		ToolItem undoOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
@@ -149,7 +182,15 @@ public class TemplateEditor extends EditorPart {
 		*/
 
 		
+		/*
 		operatorOperandsViewer = new OperatorOperandsViewer(snippetOperatorGroup, SWT.NONE);				GridData gd_operatorOperandsViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_operatorOperandsViewer.heightHint = 297;		operatorOperandsViewer.setLayoutData(gd_operatorOperandsViewer);
+		*/
+		
+		/*
+		boundDirectivesViewer = new BoundDirectivesViewer(snippetOperatorGroup, SWT.NONE);
+		GridData gd_boundDirectivesViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_boundDirectivesViewer.heightHint = 297;
+		boundDirectivesViewer.setLayoutData(gd_boundDirectivesViewer);
 		
 		
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
@@ -159,10 +200,22 @@ public class TemplateEditor extends EditorPart {
 				//event.getSelectedTemplate();
 				//event.getSelectedTemplateNode();
 				updateOperators();
+				updateBoundDirectives();
+			}
+		});
+		 */
+
+		
+		templateGroupViewer.addNodeDoubleClickListener(new TemplateGroupViewerNodeDoubleClickListener() {
+			@Override
+			public void nodeDoubleClicked(TemplateGroupViewerNodeSelectionEvent event) {
+				onEditBoundDirectives(event.getSelectedTemplateGroup(), event.getSelectedTemplate(), event.getSelectedTemplateNode());
 			}
 		});
 
 
+		
+		
 		
 		
 		ISelectionListener sl = new ISelectionListener() {
@@ -186,6 +239,16 @@ public class TemplateEditor extends EditorPart {
 		//initializeMenu();
 	}
 
+
+	protected void onEditBoundDirectives(Object selectedTemplateGroup, Object selectedTemplate, Object selectedNode) {
+		
+		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), selectedTemplateGroup, selectedTemplate, selectedNode);
+		int open = dialog.open();
+		if(open == BoundDirectivesEditorDialog.CANCEL)
+			return;
+		templateGroup = TemplateGroup.newFromClojureGroup(dialog.getUpdatedGroup());
+		refreshWidgets();
+	}
 
 	private void createActions() {
 		// Create the actions
@@ -351,30 +414,32 @@ public class TemplateEditor extends EditorPart {
 	}
 	
 	private void onApplyOperator() {
+		/*
 		Object operands = operatorOperandsViewer.getOperands();
 		if(operands == null)
 			return;
 		applyOperator(operatorOperandsViewer.getSelectedOperator(), operands);
+		*/
 	}
 	
 	
 	private void updateOperators() {
+		/*
 		operatorOperandsViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+		*/
 	}
+	
 	
 	private void updateTemplate() {
 		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		
 	}
-	private void applyOperator(Object selectedOperator, Object operands) {
-		templateGroup.applyOperator(selectedOperator, operands);
-		refreshWidgets();
-	}
 	
-
+	
 	private void refreshWidgets() {
 		updateTemplate();
-		updateOperators();
+		//updateBoundDirectives();
+		//updateOperators();
 	}
 
 	/*
@@ -429,6 +494,11 @@ public class TemplateEditor extends EditorPart {
 	public boolean isSaveAsAllowed() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public void setSelectedText(String selectedText) {
+		lastSelectedWorkspaceTextString = selectedText;
+		
 	}
 	
 }

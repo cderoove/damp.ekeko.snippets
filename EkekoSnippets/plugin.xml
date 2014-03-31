@@ -35,7 +35,7 @@
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            class="damp.ekeko.snippets.gui.TemplateViewCommandHandler"
+            class="damp.ekeko.snippets.gui.TemplateEditorCommandHandler"
             commandId="damp.ekeko.snippets.commands.template">
       </handler>
    </extension>
@@ -48,7 +48,7 @@
                label="Ekeko/X">
             <command
                   commandId="damp.ekeko.snippets.commands.template"
-                  label="Template View">
+                  label="Template Editor">
             </command>
          </menu>
       </menuContribution>

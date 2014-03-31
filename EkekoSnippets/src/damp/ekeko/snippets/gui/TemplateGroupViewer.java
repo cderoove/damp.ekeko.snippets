@@ -4,16 +4,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -33,8 +35,9 @@ public class  TemplateGroupViewer extends Composite {
 	private TreeViewerColumn snippetPropCol;
 	private TreeViewerColumn snippetNodeCol;
 	private TreeViewerColumn snippetDirectivesCol;
-
+	
 	private List<TemplateGroupViewerNodeSelectionListener> nodeSelectionListeners; 
+	private List<TemplateGroupViewerNodeDoubleClickListener> nodeDoubleClickListeners; 
 
 	private Object cljGroup, cljTemplate, cljNode;
 	private Table directivesTable;
@@ -46,18 +49,21 @@ public class  TemplateGroupViewer extends Composite {
 		super(parent, SWT.NONE);
 		
 		nodeSelectionListeners = new LinkedList<TemplateGroupViewerNodeSelectionListener>();
+		nodeDoubleClickListeners = new LinkedList<TemplateGroupViewerNodeDoubleClickListener>();
+
+		//Composite composite = this;
+		//gridLayout.marginWidth = 0;
+		//gridLayout.marginHeight = 0;
+		//composite.setLayout(gridLayout);
 		
-		//Composite composite = new Composite(parent, SWT.NONE);
-		Composite composite = this;
-		GridLayout gridLayout = new GridLayout(1, false);
-		gridLayout.marginWidth = 0;
-		gridLayout.marginHeight = 0;
-		composite.setLayout(gridLayout);
+		this.setLayout(new FillLayout());
+		SashForm composite = new SashForm(this, SWT.VERTICAL);
+		
 		textViewerSnippet = new TextViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		StyledText styledText = textViewerSnippet.getTextWidget();
-		GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
-		gd_styledText.heightHint = 100;
-		styledText.setLayoutData(gd_styledText);
+		//GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
+		//gd_styledText.heightHint = 100;
+		//styledText.setLayoutData(gd_styledText);
 		textViewerSnippet.setEditable(false);		
 		styledText.setFont(EkekoSnippetsPlugin.getEditorFont());
 		styledText.setCaret(null);
@@ -84,7 +90,7 @@ public class  TemplateGroupViewer extends Composite {
 		Tree treeSnippet = snippetTreeViewer.getTree();
 		treeSnippet.setHeaderVisible(true);
 		treeSnippet.setLinesVisible(true);
-		treeSnippet.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		//treeSnippet.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
 		snippetNodeCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn trclmnNode = snippetNodeCol.getColumn();
@@ -110,6 +116,7 @@ public class  TemplateGroupViewer extends Composite {
 		TreeColumn snippetDirectivesColCol = snippetDirectivesCol.getColumn();
 		snippetDirectivesColCol.setWidth(150);
 		snippetDirectivesColCol.setText("Directives");
+		composite.setWeights(new int[] {144, 153});
 
 		
 		
@@ -122,45 +129,23 @@ public class  TemplateGroupViewer extends Composite {
 			}
 		});	
 		
-		
-		
-		/*
-		
-		TO BE MOVED
-		
-		directivesTableViewer = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
-		directivesTable = directivesTableViewer.getTable();
-		directivesTable.setLinesVisible(true);
-		directivesTable.setHeaderVisible(true);
-		GridData gd_tableDirectives = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-		gd_tableDirectives.heightHint = 31;
-		directivesTable.setLayoutData(gd_tableDirectives);
-		
-		directivesTableViewer.setContentProvider(new ArrayContentProvider());
-		
-		//operandsTableDecorator = new OperandsTableDecorator(operandsTable);
-		
-		TableViewerColumn directiveNameCol = new TableViewerColumn(directivesTableViewer, SWT.NONE);
-		TableColumn directiveNameColCol = directiveNameCol.getColumn();
-		directiveNameColCol.setWidth(150);
-		directiveNameColCol.setText("Directive");
-		directiveNameCol.setLabelProvider(new DirectiveNameLabelProviderDescription());
-		directiveNameCol.setEditingSupport(new DirectiveNameEditingSupport(directivesTableViewer));
+		snippetTreeViewer.addDoubleClickListener(new IDoubleClickListener() {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
+				onNodeDoubleClickInternal();
+			}
+		}); 
 
-		
-		TableViewerColumn operandValueCol = new TableViewerColumn(operandsTableViewer, SWT.NONE);
-		TableColumn operandValueColCol = operandValueCol.getColumn();
-		operandValueColCol.setWidth(150);
-		operandValueColCol.setText("Value");
-		operandValueCol.setLabelProvider(new OperandBindingLabelProviderValue());
-
-		operandValueCol.setEditingSupport(new OperandBindingEditingSupport(operandsTableViewer));
-		
-		*/
-
-		
 	}
 	
+	private void onNodeDoubleClickInternal() {
+		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, cljGroup, cljTemplate, cljNode);
+		for(TemplateGroupViewerNodeDoubleClickListener listener : nodeDoubleClickListeners) {
+			listener.nodeDoubleClicked(event);
+		}
+		
+	}
+
 	private void onNodeSelectionInternal() {
 		updateTextFields();
 		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, cljGroup, cljTemplate, cljNode);
@@ -176,6 +161,15 @@ public class  TemplateGroupViewer extends Composite {
 	public boolean removeNodeSelectionListener(TemplateGroupViewerNodeSelectionListener listener) {
 		return nodeSelectionListeners.remove(listener);
 	}
+	
+	public boolean addNodeDoubleClickListener(TemplateGroupViewerNodeDoubleClickListener listener) {
+		return nodeDoubleClickListeners.add(listener);
+	}
+	
+	public boolean removeNodeDoubleClickListener(TemplateGroupViewerNodeDoubleClickListener listener) {
+		return nodeDoubleClickListeners.remove(listener);
+	}
+
 			
 	public Object getSelectedSnippetNode() {
 		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();

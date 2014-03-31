@@ -37,6 +37,11 @@
   (:operands directive))
 
 (defn
+  directive-arity
+  [directive]
+  (count (directive-operands directive)))
+
+(defn
   directive?
   "Checks whether a value is a Directive instance."
   [value]
@@ -85,7 +90,7 @@
   "Returns fresh bindings for the operands of the given directive."
   [directive]
   (map (fn [operand]
-         (make-directiveoperand-binding operand  nil))
+         (make-directiveoperand-binding operand  "?operand"))
        (directive-operands directive)))
 
 (defn
@@ -94,7 +99,7 @@
   [template subject-template-node directive]
   (cons
     (make-directiveoperand-binding
-      (make-directiveoperand "Match for template node")
+      (make-directiveoperand "Template element")
       subject-template-node)
     (directive-bindings-for-directiveoperands directive)))
 
@@ -120,6 +125,20 @@
   [bounddirective bindings]
   (set! (.operandBindings bounddirective) bindings))
 
+
+
+(defn 
+  bind-directive-with-defaults
+  [directive snippet value]
+  (make-bounddirective 
+    directive
+    (directive-bindings-for-directiveoperands-and-match
+      snippet
+      value
+      directive)))
+
+
+
 (defn
   snippet-bounddirective-conditions
   "Generatings matching conditions for the given snippet's bound directive."
@@ -128,6 +147,7 @@
         opvals (map directiveoperandbinding-value (bounddirective-operandbindings bounddirective))]
     (println generator)
   ((apply generator opvals) snippet)))
+
 
 
 (defn
@@ -159,3 +179,28 @@
             (= directive (bounddirective-directive bounddirective))
             bounddirective))
         bounddirectives))
+
+(defn
+  bounddirective-directive-description
+  [bounddirective]
+  (directive-description (bounddirective-directive bounddirective)))
+
+
+(defn
+  register-callbacks
+  []
+  (set! (damp.ekeko.snippets.BoundDirective/FN_BOUNDDIRECTIVE_DESCRIPTION) bounddirective-directive-description)
+  (set! (damp.ekeko.snippets.BoundDirective/FN_BOUNDDIRECTIVE_STRING) bounddirective-string)
+  
+  (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_NAME) directive-name)
+  (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_DESCRIPTION) directive-description)
+    (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_ARITY) directive-arity)
+
+
+  
+  )
+
+  (register-callbacks)
+
+
+

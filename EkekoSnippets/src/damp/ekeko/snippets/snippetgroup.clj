@@ -4,6 +4,7 @@
 damp.ekeko.snippets.snippetgroup
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
+             [directives :as directives]
              [util :as util]
              [parsing :as parsing]])
   (:require [damp.ekeko.jdt 
@@ -101,16 +102,52 @@ damp.ekeko.snippets.snippetgroup
   add-snippet
   "Add snippet to snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippetlist (concat (snippetgroup-snippetlist snippetgroup) (list snippet))]
+  (let [new-snippetlist 
+        (into [] (concat (snippetgroup-snippetlist snippetgroup) [snippet]))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
 (defn 
   remove-snippet
   "Remove snippet from snippetgroup."
   [snippetgroup snippet]
-  (let [new-snippetlist (remove #{snippet} (snippetgroup-snippetlist snippetgroup))]
+  (let [new-snippetlist 
+        (into [] (remove #{snippet} (snippetgroup-snippetlist snippetgroup)))]
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
+(defn
+  update-snippet
+  "Updates the given snippet in this snippet group with the result of the given function.
+   Returns array of new snippetgroup, new snippet."
+  [snippetgroup snippet updater]
+  (let [newsnippet (updater snippet)]
+    (to-array 
+      [(assoc snippetgroup 
+              :snippetlist 
+              (assoc 
+                (snippetgroup-snippetlist snippetgroup)
+                (.indexOf (snippetgroup-snippetlist snippetgroup) snippet)
+                newsnippet))
+       newsnippet])))
+
+
+(defn 
+  snippetgroup-remove-bounddirective
+  "Returns array of new snippetgroup, new snippet."
+  [snippetgroup snippet node bounddirective]
+  (update-snippet snippetgroup
+                  snippet
+                  (fn [snippet] (snippet/remove-bounddirective snippet node bounddirective))))
+
+(defn 
+  snippetgroup-add-directive
+  "Returns array of new snippetgroup, new snippet."
+  [snippetgroup snippet node directive]
+  (let [bounddirective 
+        (directives/bind-directive-with-defaults directive snippet node)]
+    (update-snippet snippetgroup
+                    snippet
+                    (fn [snippet] (snippet/add-bounddirective snippet node bounddirective)))))
+                                      
   
 ;; Constructing SnippetGroup instances
 ;; -----------------------------------
@@ -119,7 +156,7 @@ damp.ekeko.snippets.snippetgroup
   make-snippetgroup
   "Create SnippetGroup instance."
   [name]
-  (SnippetGroup. name '()))
+  (SnippetGroup. name []))
 
 
 
@@ -137,6 +174,10 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_UPDATE_SNIPPET_IN_SNIPPETGROUP) update-snippet)
+  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE) snippetgroup-remove-bounddirective)
+  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_ADD_DIRECTIVE_TO_NODE) snippetgroup-add-directive)
+
 
   )
 

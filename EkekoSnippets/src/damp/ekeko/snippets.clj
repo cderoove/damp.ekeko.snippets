@@ -30,7 +30,6 @@
   (:require [damp.ekeko.logic :as el]))    
 
 
-
 ;(defn …
 ;  snippet-new-state
 ;  [snippet]

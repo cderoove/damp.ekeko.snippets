@@ -4,7 +4,7 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 
 import clojure.lang.IFn;
 
-public class OperandBindingLabelProviderValue extends ColumnLabelProvider {
+public class OperatorOperandBindingLabelProviderValue extends ColumnLabelProvider {
 
 	public static IFn FN_LABELPROVIDER_DESCRIPTION_VALUE;
 	

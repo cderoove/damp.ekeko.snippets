@@ -4,6 +4,8 @@ import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.themes.ITheme;
@@ -67,6 +69,21 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	 */
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(PLUGIN_ID, path);
+	}
+	
+	public static Image IMG_ADD;   
+	public static Image IMG_DELETE; 
+	public static Image IMG_DELETE_DISABLED;
+	public static Image IMG_EDIT_TEMPLATE; 
+	
+	static {
+		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+		
+		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
+		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
+		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
+		IMG_EDIT_TEMPLATE = sharedImages.getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OPEN_MARKER);
+				
 	}
 	
 	public static Font getEditorFont() {
