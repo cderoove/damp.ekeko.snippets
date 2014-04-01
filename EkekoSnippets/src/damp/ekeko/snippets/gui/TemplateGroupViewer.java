@@ -257,6 +257,11 @@ public class  TemplateGroupViewer extends Composite {
 		onNodeSelectionInternal();
 
 	}
+	
+	@Override
+	public boolean setFocus() {
+		return snippetTreeViewer.getControl().setFocus();
+	}
 
 }
 		

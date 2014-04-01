@@ -38,7 +38,12 @@
       <command
             category="damp.ekeko.snippets.commands"
             id="damp.ekeko.snippets.commands.template"
-            name="Ekeko/X Template Editor">
+            name="Template Editor">
+      </command>
+      <command
+            category="damp.ekeko.snippets.commands"
+            id="damp.ekeko.snippets.commands.transformation"
+            name="Transformation Editor">
       </command>
    </extension>
    <extension
@@ -46,6 +51,10 @@
       <handler
             class="damp.ekeko.snippets.gui.TemplateEditorCommandHandler"
             commandId="damp.ekeko.snippets.commands.template">
+      </handler>
+      <handler
+            class="damp.ekeko.snippets.gui.TransformationEditorCommandHandler"
+            commandId="damp.ekeko.snippets.commands.transformation">
       </handler>
    </extension>
    <extension
@@ -59,6 +68,11 @@
                   commandId="damp.ekeko.snippets.commands.template"
                   icon="icons/notebooks.png"
                   label="Template Editor">
+            </command>
+            <command
+                  commandId="damp.ekeko.snippets.commands.transformation"
+                  icon="icons/cog.png"
+                  label="Transformation Editor">
             </command>
          </menu>
       </menuContribution>
@@ -86,7 +100,18 @@
             class="damp.ekeko.snippets.gui.TemplateEditor"
             icon="icons/notebooks.png"
             id="damp.ekeko.snippets.gui.TemplateEditor"
-            name="Ekeko/X Template Editor">
+            name="Template Editor">
+      </editor>
+      <editor
+            class="damp.ekeko.snippets.gui.TransformationEditor"
+            icon="icons/cog.png"
+            id="damp.ekeko.snippets.gui.TransformationEditor"
+            name="Transformation Editor">
+      </editor>
+      <editor
+            class="org.eclipse.ui.part.foor"
+            id="org.eclipse.ui.part.foor"
+            name="New MultiPageEditorPart">
       </editor>
    </extension>
 </plugin>

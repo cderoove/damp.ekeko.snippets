@@ -25,7 +25,7 @@ public class TemplateEditorCommandHandler extends AbstractHandler {
 			String selectedText = selection.getText();
 			
 			//window.getActivePage().showView(TemplateEditor.ID);
-			IEditorPart openedEditor = window.getActivePage().openEditor(new TemplateGroupEditorInput(), TemplateEditor.ID);
+			IEditorPart openedEditor = window.getActivePage().openEditor(new TemplateEditorInput(), TemplateEditor.ID);
 			TemplateEditor templateEditor = (TemplateEditor) openedEditor;
 			templateEditor.setSelectedText(selectedText);
 

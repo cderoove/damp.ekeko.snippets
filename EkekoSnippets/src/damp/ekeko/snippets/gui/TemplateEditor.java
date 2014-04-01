@@ -46,6 +46,8 @@ public class TemplateEditor extends EditorPart {
 	
 	//private BoundDirectivesViewer boundDirectivesViewer;
 	private String lastSelectedWorkspaceTextString;
+	protected Action matchTemplateAction;
+	protected Action inspectQueryAction;
 
 	
 
@@ -263,31 +265,30 @@ public class TemplateEditor extends EditorPart {
 		refreshWidgets();
 	}
 
-	private void createActions() {
+	protected void createActions() {
 		// Create the actions
 		
 		actions = new LinkedList<Action>();
 				
-		Action runQuery = new Action("Match template") {
+		matchTemplateAction = new Action("Match template") {
 			public void run() {
 				runQuery();
 			}
 		};
-		//runQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
 		
-		runQuery.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_MATCH));
-		runQuery.setToolTipText("Match template");
-		actions.add(runQuery);
+		matchTemplateAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_MATCH));
+		matchTemplateAction.setToolTipText("Match template");
+		actions.add(matchTemplateAction);
 		
-		Action inspectQuery = new Action("Inspect corresponding query") {
+		inspectQueryAction = new Action("Inspect corresponding query") {
 			public void run() {
 				viewQuery();
 			}
 		};
 		//inspectQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
-		inspectQuery.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
-		inspectQuery.setToolTipText("Inspect corresponding query");
-		actions.add(inspectQuery);
+		inspectQueryAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
+		inspectQueryAction.setToolTipText("Inspect corresponding query");
+		actions.add(inspectQueryAction);
 		
 		/*
 		Action inspectMatches = new Action("Inspect matches") {
@@ -315,14 +316,14 @@ public class TemplateEditor extends EditorPart {
 	/**
 	 * Initialize the toolbar.
 	 */
-	private void initializeToolBar() {
+	protected void initializeToolBar() {
 		IToolBarManager toolbarManager = getEditorSite().getActionBars().getToolBarManager();
 		for(Action action : actions) {
 			toolbarManager.add(action);
 		}
 	}
 
-	private void initializeMenu() {
+	protected void initializeMenu() {
 		IMenuManager menuManager = getEditorSite().getActionBars().getMenuManager();
 		for(Action action : actions) {
 			menuManager.add(action);
@@ -331,9 +332,7 @@ public class TemplateEditor extends EditorPart {
 
 	@Override
 	public void setFocus() {
-		
-		
-		
+		templateGroupViewer.setFocus();
 	}
 
 	
