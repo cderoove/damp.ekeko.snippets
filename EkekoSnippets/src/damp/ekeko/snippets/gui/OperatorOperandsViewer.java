@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 
 import damp.ekeko.snippets.data.SnippetOperator;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class OperatorOperandsViewer extends Composite {
 
@@ -27,8 +28,8 @@ public class OperatorOperandsViewer extends Composite {
 	private TableViewer operandsTableViewer;
 	private Table operandsTable;
 
-	
-	private Object cljGroup,  cljSnippet,  cljSelectedSnippetNode;
+	private TemplateGroup jGroup;
+	private Object cljSnippet,  cljSelectedSnippetNode;
 	private Label operatorLabel;
 	
 	public OperatorOperandsViewer(Composite parent, int style) {
@@ -115,9 +116,13 @@ public class OperatorOperandsViewer extends Composite {
 	public Object getOperands() {
 		return operandsTableViewer.getInput();
 	}
+	
+	public TemplateGroup getTemplateGroup() {
+		return jGroup;
+	}
 
-	public void setInput(Object cljGroup, Object cljSnippet, Object cljSelectedSnippetNode) {
-		this.cljGroup = cljGroup;
+	public void setInput(TemplateGroup jGroup, Object cljSnippet, Object cljSelectedSnippetNode) {
+		this.jGroup = jGroup;
 		this.cljSnippet = cljSnippet;
 		this.cljSelectedSnippetNode = cljSelectedSnippetNode;
 		updateWidgets();
@@ -138,7 +143,7 @@ public class OperatorOperandsViewer extends Composite {
 		
 		//textOpInfo.setText(SnippetOperator.getDescription(selectedOperator));
 		operatorLabel.setText(SnippetOperator.getDescription(selectedOperator));
-		operandsTableViewer.setInput(SnippetOperator.getOperands(cljGroup, cljSnippet, cljSelectedSnippetNode, selectedOperator));
+		operandsTableViewer.setInput(SnippetOperator.getOperands(jGroup.getGroup(), cljSnippet, cljSelectedSnippetNode, selectedOperator));
 
 	}
 		

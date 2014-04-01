@@ -8,6 +8,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
+import damp.ekeko.snippets.data.TemplateGroup;
+
 
 public class TemplateGroupNodeSelectionDialog extends Dialog
 {
@@ -51,7 +53,7 @@ public class TemplateGroupNodeSelectionDialog extends Dialog
 		});
 		templateGroupViewer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		
-		templateGroupViewer.setInput(cljGroup, cljTemplate, cljNode);
+		templateGroupViewer.setInput(TemplateGroup.newFromClojureGroup(cljGroup), cljTemplate, cljNode);
 		
 		return composite;	
 	}

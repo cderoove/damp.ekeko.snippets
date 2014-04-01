@@ -6,6 +6,7 @@ import java.util.List;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
@@ -39,11 +40,14 @@ public class  TemplateGroupViewer extends Composite {
 	private List<TemplateGroupViewerNodeSelectionListener> nodeSelectionListeners; 
 	private List<TemplateGroupViewerNodeDoubleClickListener> nodeDoubleClickListeners; 
 
-	private Object cljGroup, cljTemplate, cljNode;
+	private TemplateGroup jGroup;
+	private Object cljTemplate, cljNode;
 	private Table directivesTable;
 	private TableViewer directivesTableViewer;
 	private TreeViewerColumn snippetElementCol;
 	//private TextViewer textViewerNode;
+	private LinkedList<ISelectionChangedListener> workbenchListeners;
+	
 
 	public TemplateGroupViewer(Composite parent, int style) {
 		super(parent, SWT.NONE);
@@ -51,6 +55,9 @@ public class  TemplateGroupViewer extends Composite {
 		nodeSelectionListeners = new LinkedList<TemplateGroupViewerNodeSelectionListener>();
 		nodeDoubleClickListeners = new LinkedList<TemplateGroupViewerNodeDoubleClickListener>();
 
+		workbenchListeners = new LinkedList<ISelectionChangedListener>();
+		
+		
 		//Composite composite = this;
 		//gridLayout.marginWidth = 0;
 		//gridLayout.marginHeight = 0;
@@ -139,7 +146,7 @@ public class  TemplateGroupViewer extends Composite {
 	}
 	
 	private void onNodeDoubleClickInternal() {
-		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, cljGroup, cljTemplate, cljNode);
+		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, jGroup, cljTemplate, cljNode);
 		for(TemplateGroupViewerNodeDoubleClickListener listener : nodeDoubleClickListeners) {
 			listener.nodeDoubleClicked(event);
 		}
@@ -148,10 +155,11 @@ public class  TemplateGroupViewer extends Composite {
 
 	private void onNodeSelectionInternal() {
 		updateTextFields();
-		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, cljGroup, cljTemplate, cljNode);
+		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, jGroup, cljTemplate, cljNode);
 		for(TemplateGroupViewerNodeSelectionListener listener : nodeSelectionListeners) {
 			listener.nodeSelected(event);
 		}
+			
 	}
 	
 	public boolean addNodeSelectionListener(TemplateGroupViewerNodeSelectionListener listener) {
@@ -178,7 +186,7 @@ public class  TemplateGroupViewer extends Composite {
 	}
 
 	public Object getSelectedSnippet() {
-		cljTemplate =  TemplateGroup.FN_SNIPPETGROUP_SNIPPET_FOR_NODE.invoke(cljGroup, getSelectedSnippetNode());
+		cljTemplate = jGroup.getSnippet(getSelectedSnippetNode());
 		return cljTemplate;
 	}
 
@@ -191,8 +199,7 @@ public class  TemplateGroupViewer extends Composite {
 		}			
 	
 		Object selectedSnippetNode = getSelectedSnippetNode();
-		TemplateGroup templateGroup = TemplateGroup.newFromClojureGroup(cljGroup);
-		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(templateGroup);
+		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(jGroup);
 		prettyprinter.setHighlightNode(selectedSnippetNode);
 		textViewerSnippet.getTextWidget().setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())
@@ -212,11 +219,19 @@ public class  TemplateGroupViewer extends Composite {
 		snippetTreeViewer.setSelection(null);
 	}
 	
-	public void setInput(Object cljGroup, Object cljTemplate, Object cljNode) {
-		this.cljGroup = cljGroup;
+	public void updateWidgets() {
+		setInput(jGroup, cljTemplate, cljNode);
+		updateTextFields();
+	}
+	
+	public void setInput(TemplateGroup jGroup, Object cljTemplate, Object cljNode) {
+		this.jGroup = jGroup;
 		this.cljTemplate = cljTemplate;
 		this.cljNode = cljNode;
-		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));		
+		
+		Object cljGroup = jGroup.getGroup();
+
+		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));	
 		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(cljGroup));		
 		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(cljGroup));
 		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
@@ -242,8 +257,7 @@ public class  TemplateGroupViewer extends Composite {
 		onNodeSelectionInternal();
 
 	}
-	
-}
 
+}
 		
 	

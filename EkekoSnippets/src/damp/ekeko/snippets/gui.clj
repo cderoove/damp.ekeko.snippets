@@ -246,9 +246,11 @@
   (fn [operandbinding]
     (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
 
+
+
 (defmethod
   operandbinding-labelprovider-valuetext
-  :default
+  operatorsrep/opscope-subject
   [operandbinding]
   (let [grp (damp.ekeko.snippets.data.TemplateGroup/newFromClojureGroup (operatorsrep/binding-group operandbinding))
         pp (damp.ekeko.snippets.gui.TemplatePrettyPrinter. grp)]
@@ -256,6 +258,13 @@
       pp 
       (operatorsrep/binding-template operandbinding)
       (operatorsrep/binding-value operandbinding))))
+
+(defmethod
+  operandbinding-labelprovider-valuetext
+  :default
+  [operandbinding]
+  (str (operatorsrep/binding-value operandbinding)))
+
 
 
 (defn

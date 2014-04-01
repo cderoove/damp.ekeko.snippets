@@ -8,6 +8,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.window.Window;
@@ -23,11 +24,11 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
-import org.eclipse.wb.swt.ResourceManager;
 
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
@@ -98,7 +99,7 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onEditBoundDirectives(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+				onEditBoundDirectives(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 			}
 		});
 		//tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_EDIT_TEMPLATE);
@@ -107,7 +108,7 @@ public class TemplateEditor extends EditorPart {
 			
 		
 		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
-		templateGroupViewer.setInput(templateGroup.getGroup(), null, null);
+		templateGroupViewer.setInput(templateGroup, null, null);
 
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {	
 			@Override
@@ -237,12 +238,24 @@ public class TemplateEditor extends EditorPart {
 	    createActions();
 		initializeToolBar();
 		//initializeMenu();
+		
+		//does not work reliably, so reverting
+		//getSite().setSelectionProvider(templateGroupViewer);
+		
+		try {
+			IViewPart view = getSite().getPage().showView(OperatorOperandsView.ID);
+			OperatorOperandsView operatorOperandsView = (OperatorOperandsView) view;
+			operatorOperandsView.shouldRegisterAsListenerTo(templateGroupViewer);
+		} catch (PartInitException e1) {
+			e1.printStackTrace();
+		}
+				
 	}
 
 
-	protected void onEditBoundDirectives(Object selectedTemplateGroup, Object selectedTemplate, Object selectedNode) {
+	protected void onEditBoundDirectives(TemplateGroup oldTemplateGroup, Object selectedTemplate, Object selectedNode) {
 		
-		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), selectedTemplateGroup, selectedTemplate, selectedNode);
+		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), oldTemplateGroup, selectedTemplate, selectedNode);
 		int open = dialog.open();
 		if(open == BoundDirectivesEditorDialog.CANCEL)
 			return;
@@ -260,7 +273,9 @@ public class TemplateEditor extends EditorPart {
 				runQuery();
 			}
 		};
-		runQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
+		//runQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/profile_exc.gif"));
+		
+		runQuery.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_MATCH));
 		runQuery.setToolTipText("Match template");
 		actions.add(runQuery);
 		
@@ -269,10 +284,12 @@ public class TemplateEditor extends EditorPart {
 				viewQuery();
 			}
 		};
-		inspectQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
+		//inspectQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
+		inspectQuery.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
 		inspectQuery.setToolTipText("Inspect corresponding query");
 		actions.add(inspectQuery);
 		
+		/*
 		Action inspectMatches = new Action("Inspect matches") {
 			public void run() {
 				checkResult();
@@ -282,6 +299,8 @@ public class TemplateEditor extends EditorPart {
 		inspectMatches.setToolTipText("Inspect matches");
 		actions.add(inspectMatches);
 
+*/
+		
 		/*
 		Action actTrans = new Action("Program Transformation") {			public void run() {
 				transformation();
@@ -312,7 +331,9 @@ public class TemplateEditor extends EditorPart {
 
 	@Override
 	public void setFocus() {
-		// Set the focus
+		
+		
+		
 	}
 
 	
@@ -431,7 +452,7 @@ public class TemplateEditor extends EditorPart {
 	
 	
 	private void updateTemplate() {
-		templateGroupViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
+		templateGroupViewer.setInput(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		
 	}
 	
@@ -498,7 +519,6 @@ public class TemplateEditor extends EditorPart {
 
 	public void setSelectedText(String selectedText) {
 		lastSelectedWorkspaceTextString = selectedText;
-		
 	}
 	
 }

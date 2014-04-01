@@ -21,7 +21,7 @@ import ccw.util.osgi.ClojureOSGi;
 public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "damp.ekeko.snippets.gui"; //$NON-NLS-1$
+	public static final String PLUGIN_ID = "damp.ekeko.snippets.plugin"; //$NON-NLS-1$
 
 	// The shared instance
 	private static EkekoSnippetsPlugin plugin;
@@ -74,7 +74,23 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static Image IMG_ADD;   
 	public static Image IMG_DELETE; 
 	public static Image IMG_DELETE_DISABLED;
-	public static Image IMG_EDIT_TEMPLATE; 
+	
+	
+	public static Image IMG_TEMPLATE; 
+	public static Image IMG_TEMPLATE_ADD;   
+	public static Image IMG_TEMPLATE_DELETE; 
+
+	
+	
+	public static Image IMG_TEMPLATE_MATCH; 
+	public static Image IMG_TEMPLATE_INSPECT; 
+
+
+	public static Image IMG_TRANSFORMATION; 
+	public static Image IMG_TRANSFORM; 
+
+	public static Image IMG_OPERATOR_APPLY; 
+
 	
 	static {
 		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
@@ -82,7 +98,19 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
 		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
 		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
-		IMG_EDIT_TEMPLATE = sharedImages.getImage(org.eclipse.ui.ide.IDE.SharedImages.IMG_OPEN_MARKER);
+		
+		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
+		IMG_TEMPLATE_ADD= getImageDescriptor("icons/notebook--plus.png").createImage();
+		IMG_TEMPLATE_DELETE = getImageDescriptor("icons/notebook--minus.png").createImage();
+		
+		IMG_TEMPLATE_MATCH = getImageDescriptor("icons/occluder.png").createImage();
+		IMG_TEMPLATE_INSPECT = getImageDescriptor("icons/magnifier.png").createImage();
+		
+		IMG_TRANSFORMATION = getImageDescriptor("icons/cog.png").createImage();
+		IMG_TRANSFORM = getImageDescriptor("icons/cog_go.png").createImage();
+		
+		IMG_OPERATOR_APPLY = getImageDescriptor("icons/tick.png").createImage();
+
 				
 	}
 	
