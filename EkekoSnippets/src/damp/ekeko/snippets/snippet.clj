@@ -49,7 +49,12 @@ damp.ekeko.snippets.snippet
 (defrecord 
   Snippet
   [ast ast2var ast2bounddirectives var2ast  
-   userquery document rewrite track2ast ast2track])
+   userquery document rewrite track2ast ast2track]
+  clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
+  (-uninitialized [_]
+    (Snippet. 
+      nil nil nil nil nil nil nil nil nil)))
+      
 
 (defn 
   snippet-root 
@@ -308,9 +313,14 @@ damp.ekeko.snippets.snippet
 (defn
   update-bounddirectives
   [snippet node bounddirectives]
+  (println "node:" node)
   (update-in snippet
              [:ast2bounddirectives node]
-             (fn [oldbounddirectives] bounddirectives)))
+             (fn [oldbounddirectives] 
+               (println "old: " oldbounddirectives)
+               (println "new: " bounddirectives)
+               
+               bounddirectives)))
   
 (defn
   add-bounddirective

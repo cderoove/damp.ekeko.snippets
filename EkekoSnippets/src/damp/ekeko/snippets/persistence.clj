@@ -31,12 +31,14 @@
 
 (defn
   class-propertydescriptor-with-id
-  [ownerclass pdid]                
+  [ownerclasskeyword pdid]                
   (some (fn [pd]
           (when (= pdid
                    (astnode/property-descriptor-id pd))
             pd))
-        (astnode/nodeclass-property-descriptors ownerclass)))
+        (astnode/nodeclass-property-descriptors 
+          (astnode/class-for-ekeko-keyword ownerclasskeyword)
+          )))
 
 
 (defmethod
@@ -46,8 +48,11 @@
   (let [id 
         (astnode/property-descriptor-id pd)
         ownerclass
-        (astnode/property-descriptor-owner-node-class pd)]
-    (.write w (str  "#=" `(class-propertydescriptor-with-id ~ownerclass ~id)))))
+        (astnode/property-descriptor-owner-node-class pd)
+        ownerclass-keyword
+        (astnode/ekeko-keyword-for-class ownerclass)
+        ]
+    (.write w (str  "#=" `(class-propertydescriptor-with-id ~ownerclass-keyword ~id)))))
 
 (defmethod 
   clojure.core/print-dup 
@@ -139,9 +144,11 @@
   [snippet identifier]
   (some 
     (fn [value] 
-      (when (= (snippet-value-identifier snippet value)
-               identifier)
-        value))
+      (let [value-id (snippet-value-identifier snippet value)]
+        (println value-id)
+        (when (= value-id identifier)
+          (println "found one!")
+          value)))
     (snippet/snippet-nodes snippet)))
 
 (defn
@@ -162,23 +169,28 @@
 (defn
   snippet-from-node-and-persisted-directives
   [node data]
-  (reduce
-    (fn [sofar [identifier bounddirectives]]
-      (let [value 
-            (snippet-value-corresponding-to-identifier sofar identifier)
-            bounddirectives-with-implicit-operand
-            (map
-              (fn [bounddirective]
-                  (directives/set-bounddirective-operandbindings!
-                    bounddirective
-                    (cons 
-                      (directives/make-implicit-operand value)
-                      (directives/bounddirective-operandbindings bounddirective))))
-              bounddirectives)]
-        (snippet/update-bounddirectives snippet value bounddirectives-with-implicit-operand)))
-    (matching/jdt-node-as-snippet node)
-    (seq data)))
+  (let [result 
+        (reduce
+          (fn [sofar [identifier bounddirectives]]
+            (let [value 
+                  (snippet-value-corresponding-to-identifier sofar identifier)
+          
+                  bounddirectives-with-implicit-operand
+                  (map
+                    (fn [bounddirective]
+                      (directives/make-bounddirective
+                        (directives/bounddirective-directive bounddirective)
+                        (cons 
+                          (directives/make-implicit-operand value)
+                          (directives/bounddirective-operandbindings bounddirective))))
+                    bounddirectives)
+                  ]
+              (snippet/update-bounddirectives sofar value bounddirectives-with-implicit-operand)))
+          (matching/jdt-node-as-snippet node)
+          (seq data))]
+    result))
 
+    
 
 
 
@@ -191,8 +203,21 @@
         directives
         (snippet-persistable-directives snippet)]
   (.write w (str  "#=" `(snippet-from-node-and-persisted-directives 
-                          (matching/jdt-node-as-snippet ~root)
+                          ~root
                           ~directives)))))
+
+
+(defn
+  snippet-as-persistent-string
+  [snippet]
+  (binding [*print-dup* true]
+    (pr-str snippet)))
+
+(defn
+  snippet-from-persistent-string
+  [string]
+  (binding [*read-eval* true]
+    (read-string string)))
 
 
 
@@ -205,7 +230,7 @@
 (defn
   slurp-snippet
   [filename]
-  (binding [*print-dup* true]
+  (binding [*read-eval* true]
     (read-string (slurp filename))))
 
 

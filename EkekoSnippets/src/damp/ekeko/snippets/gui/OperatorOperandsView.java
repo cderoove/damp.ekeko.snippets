@@ -93,12 +93,15 @@ public class OperatorOperandsView extends ViewPart {
 			return;
 		templateGroup.applyOperator(selectedOperator, operands);
 		for(TemplateGroupViewer viewer : selectionProviders) {
-			viewer.updateWidgets();
-			TemplateEditor parentTemplateEditor = viewer.getParentTemplateEditor();
-			if(parentTemplateEditor != null) {
-				if(templateGroup.equals(parentTemplateEditor.getGroup()))
-					parentTemplateEditor.becomeDirty();
-			}
+			if(!viewer.isDisposed()) {
+				TemplateEditor parentTemplateEditor = viewer.getParentTemplateEditor();
+				if(parentTemplateEditor != null) {
+					if(templateGroup.equals(parentTemplateEditor.getGroup())) {
+						viewer.updateWidgets();
+						parentTemplateEditor.becomeDirty();
+					}
+
+				}}
 		}
 	}
 

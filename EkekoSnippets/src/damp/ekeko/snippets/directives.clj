@@ -176,14 +176,17 @@
            ")")
       (str name))))
       
+;not comparing based on directive itself, directives seems to differ when produced by Clojure reader
 (defn
   bounddirective-for-directive
   [bounddirectives directive]
-  (some (fn [bounddirective]
+  (let [name (directive-name directive)]
+    (some (fn [bounddirective]
           (when
-            (= directive (bounddirective-directive bounddirective))
+            (= name 
+               (directive-name (bounddirective-directive bounddirective)))
             bounddirective))
-        bounddirectives))
+        bounddirectives)))
 
 (defn
   bounddirective-directive-description

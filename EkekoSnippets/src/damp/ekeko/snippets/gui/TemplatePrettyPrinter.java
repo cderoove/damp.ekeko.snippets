@@ -27,9 +27,9 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static IFn FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES;
 	public static IFn FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES;
 
-	
+
 	public static IFn FN_SNIPPET_LIST_CONTAINING;
-	
+
 	public static IFn FN_SNIPPET_ELEMENT_ISLIST;
 	public static IFn FN_SNIPPET_ELEMENT_ISVALUE;
 	public static IFn FN_SNIPPET_ELEMENT_ISNODE;
@@ -42,13 +42,13 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 
 
-	
+
 	protected Object snippet;
 	protected Object highlightNode;
 	protected TemplateGroup templateGroup;
-	
-	
-	
+
+
+
 	protected LinkedList<StyleRange> styleRanges;
 	protected Stack<StyleRange> currentHighlight;
 	@SuppressWarnings("rawtypes")
@@ -132,21 +132,23 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		this.buffer.append(replacementVar);
 		styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));	
 	}
-	
+
 	@Override
 	public boolean preVisit2(ASTNode node) {
 		//TODO: this does not work for empty lists ... 
 		//should override every method in NativeASTFlattener to check whether list children should be visited (but too much work)
-		
 		preVisit(node);
 		if(isElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-			Object listReplacementVar = getUserVar(nodeListWrapper);
-			if(listReplacementVar != null) {
-				if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
-						!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-					printVariableReplacement(listReplacementVar);
-					return false; //do not print node itself because list has been replaced
+			//can be null when node is root of template
+			if(nodeListWrapper != null) {
+				Object listReplacementVar = getUserVar(nodeListWrapper);
+				if(listReplacementVar != null) {
+					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+						printVariableReplacement(listReplacementVar);
+						return false; //do not print node itself because list has been replaced
+					}
 				}
 			}
 		}
@@ -157,8 +159,8 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		} 
 		return true;
 	}
-	
-	
+
+
 	static boolean isElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if(parent == null)
@@ -166,7 +168,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		StructuralPropertyDescriptor property = node.getLocationInParent();
 		return property != null && property.isChildListProperty();
 	}
-	
+
 	static boolean isFirstElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if(parent == null)
@@ -179,7 +181,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		}
 		return false;
 	}
-	
+
 	static boolean isLastElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if(parent == null)
@@ -193,7 +195,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		return false;
 	}
 
-	
+
 	@Override
 	public void preVisit(ASTNode node) {
 		if(node==null)
@@ -213,10 +215,12 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		printClosingHighlight(node);
 		printClosingNode(node);
 		if(isLastElementOfList(node)) {
-				Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-				if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
-						!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-					postVisitNodeListWrapper(nodeListWrapper);
+			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
+			if(nodeListWrapper == null)
+				return;
+			if(	listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+					!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+				postVisitNodeListWrapper(nodeListWrapper);
 			}
 		}
 	}	
@@ -235,16 +239,16 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static Collection getNonDefaultDirectives(Object cljTemplate, Object cljNode) {
 		return (Collection) FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
 	}
-	
+
 	public static Boolean hasNonDefaultDirectives(Object cljTemplate, Object cljNode) {
 		return (Boolean) FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES.invoke(cljTemplate, cljNode);
 	}
-	
+
 	public static String boundDirectivesString(Object cljTemplate, Object cljNode) {
 		return (String) FN_SNIPPET_BOUNDDIRECTIVES_STRING.invoke(cljTemplate, cljNode);
 	}
 
-	
+
 	public void printOpeningNode(Object node) {
 		if(hasNonDefaultDirectives(snippet, node)) {
 			int start = getCurrentCharacterIndex();
@@ -256,7 +260,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	private int getCurrentCharacterIndex() {
 		return this.buffer.length();
 	}
-	
+
 	public void printClosingNode(Object node) {
 		if (hasNonDefaultDirectives(snippet, node)) { 
 			int start = getCurrentCharacterIndex();
@@ -266,9 +270,9 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("@[");
 			styleRanges.add(styleRangeForMeta(start, 2));
 			start = getCurrentCharacterIndex();
-			
+
 			this.buffer.append(boundDirectivesString(snippet, node));
-			
+
 			styleRanges.add(styleRangeForDirectives(start, getCurrentCharacterIndex() - start));
 			start = getCurrentCharacterIndex();
 			this.buffer.append("]");
@@ -293,7 +297,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			styleRanges.add(style);
 		}
 	}
-	
+
 	public String getPlainResult(){
 		return getResult();
 	}
@@ -301,15 +305,15 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static boolean isNodeValueInTemplate(Object template, Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_ISNODE.invoke(template, element);
 	}
-	
+
 	public static ASTNode getActualNodeValueInTemplate(Object template, Object element) {
 		return (ASTNode) FN_SNIPPET_ELEMENT_NODE.invoke(template, element);
 	}
-	
+
 	public static Collection getActualListValueInTemplate(Object template, Object element) {
 		return (Collection) FN_SNIPPET_ELEMENT_LIST.invoke(template, element);
 	}
-	
+
 	public static Boolean isListValueInTemplate(Object template, Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_ISLIST.invoke(template, element);
 	}
@@ -317,7 +321,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static Boolean isPrimitiveValueInTemplate(Object template, Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_ISVALUE.invoke(template, element);
 	}
-	
+
 	public static Object getActualPrimitiveValueInTemplate(Object template, Object element) {
 		return FN_SNIPPET_ELEMENT_VALUE.invoke(template, element);
 	}
@@ -346,7 +350,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		} 
 
 		if(isListValueInTemplate(snippet, element)) {
-			
+
 			Object listReplacementVar = getUserVar(element);
 			if(listReplacementVar != null) {
 				printVariableReplacement(listReplacementVar);
@@ -355,25 +359,25 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 			printOpeningNode(element);
 			listWrapperForWhichToIgnoreListDecorations.push(element);
-			
+
 			@SuppressWarnings("rawtypes")
 			Collection lst = getActualListValueInTemplate(snippet, element);
-			
+
 			for(Object member : lst) {
 				prettyPrintElement(snippet, member);
 				this.buffer.append(" ");
 			}
-			
+
 			if(!lst.isEmpty()) {
 				this.buffer.deleteCharAt(getCurrentCharacterIndex()-1);
 			}
-		
+
 			listWrapperForWhichToIgnoreListDecorations.pop();
 			printClosingNode(element);
 
 			return getResult().trim();
 		}
-		
+
 		if(isPrimitiveValueInTemplate(snippet, element)) {
 			Object value = getActualPrimitiveValueInTemplate(snippet, element);
 			if(hasNonDefaultDirectives(snippet, element)) {
@@ -383,7 +387,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			}
 			return getResult();
 		} 
-		
+
 		if(isNullValueInTemplate(snippet, element)) {
 			if(hasNonDefaultDirectives(snippet, element)) {
 				printOpeningNode(element);
@@ -393,20 +397,20 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			return getResult();
 		} else
 			throw new RuntimeException("Unexpected value to be pretty-printed: " + element.toString());
-		
-		
+
+
 	}
 
-	
+
 	public String prettyPrintSnippet(Object snippet) {
 		setSnippet(snippet);
 		ASTNode root = TemplateGroup.getRootOfSnippet(snippet); 
 		root.accept(this);
-		
+
 		Collection conditions = templateGroup.getLogicConditions(snippet);
 		this.buffer.append('\n');
 		this.buffer.append(Joiner.on('\n').join(conditions));
-		
+
 		return getResult();
 	}
 

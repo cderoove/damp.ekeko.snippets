@@ -22,7 +22,10 @@ public class TemplateGroup {
 
 	public static IFn FN_SNIPPET_ROOT;
 	public static IFn FN_SNIPPET_USERQUERY;
-	public static IFn FN_SNIPPET_FROMDOCUMENT;
+	//public static IFn FN_SNIPPET_FROMDOCUMENT;
+	
+	
+	public static IFn FN_SNIPPET_FROM_STRING;
 	
 	public static IFn FN_QUERY_BY_SNIPPET;
 	public static IFn FN_QUERY_BY_SNIPPETGROUP;
@@ -126,8 +129,10 @@ public class TemplateGroup {
 	
 	
 	public Object addSnippetCode(String code) {
-		Object document = FN_PARSE_TO_DOC.invoke(code);
-		Object snippet = FN_SNIPPET_FROMDOCUMENT.invoke(document);
+		//Object document = FN_PARSE_TO_DOC.invoke(code);
+		
+		//Object snippet = FN_SNIPPET_FROMDOCUMENT.invoke(document);
+		Object snippet = FN_SNIPPET_FROM_STRING.invoke(code);
 		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
 		return snippet;
 	}

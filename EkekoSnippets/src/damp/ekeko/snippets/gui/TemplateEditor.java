@@ -22,7 +22,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
@@ -484,8 +483,11 @@ public class TemplateEditor extends EditorPart {
 	}
 	
 	public void becomeDirty() {
+		//TODO: temporarily disabled until persistence is implemented
+		/*
 		isDirty = true;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
+		*/
 	}
 	
 }

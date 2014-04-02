@@ -52,7 +52,7 @@ public class TransformationEditor extends MultiPageEditorPart {
 	protected void onExecuteTransformation() {
 		// CompareUI.openCompareDialog(input);
 		// TODO Auto-generated method stub
-		TemplateGroup.transformBySnippetGroups(subjectsEditor.getGroup().getGroup(), subjectsEditor.getGroup().getGroup());
+		TemplateGroup.transformBySnippetGroups(subjectsEditor.getGroup().getGroup(), rewritesEditor.getGroup().getGroup());
 		
 	}
 

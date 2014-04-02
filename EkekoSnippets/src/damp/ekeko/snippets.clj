@@ -12,8 +12,7 @@
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
              [util :as util]
-            ;todo: remove when replaced by rewriting
-            ;[rewrite] 
+             [persistence :as persistence]
              [operators]
              [operatorsrep]
              [precondition]

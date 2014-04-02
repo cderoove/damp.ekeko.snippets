@@ -11,12 +11,19 @@
              [astbindings :as astbindings]
              [rewrites :as rewrites]
              ;[soot :as soot]
-             ])
+             ]
+            [damp.ekeko.snippets 
+             [snippetgroup :as snippetgroup]
+             ]
+
+            )
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
-     SimpleName VariableDeclarationFragment Type]
+     SimpleName VariableDeclarationFragment Type MethodDeclaration]
     [damp.ekeko.snippets.gui TemplateCodeGenerator]
+    [damp.ekeko.snippets.data TemplateGroup]
+
     ))
 
 (defn to-primitive-type-code
@@ -268,9 +275,13 @@
   [template variables values]
   (let [var2value
         (zipmap variables values)
+        templategroup
+        (snippetgroup/make-snippetgroup "Dummy group" [template])
+        jtemplategroup
+        (TemplateGroup/newFromClojureGroup templategroup)
         generator 
-        (TemplateCodeGenerator. template var2value)]
-    (.prettyPrintSnippet template)))
+        (TemplateCodeGenerator. jtemplategroup var2value)]
+    (.prettyPrintSnippet generator template)))
     
     
         

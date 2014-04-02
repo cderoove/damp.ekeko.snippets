@@ -9,7 +9,10 @@
              [directives :as directives]
              [util :as util]
              [parsing :as parsing]
-             [runtime :as runtime]])
+             [runtime :as runtime]
+             [persistence :as persistence]
+             
+             ])
   (:require 
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt [rewrites :as rewrites]]))
@@ -20,20 +23,37 @@
   [template]
   (let [root
         (snippet/snippet-root template)
+        
         var-match 
         (snippet/snippet-var-for-node template root)
+        
         replacement-vars|strings
         (matching/snippet-replacement-vars template) 
+        
+        replacement-vars|quotedstrings
+        (map matching/to-literal-string replacement-vars|strings)
+        
         replacement-vars|symbols
         (map symbol replacement-vars|strings)
+        stemplate
+        (persistence/snippet-as-persistent-string template)
+        runtime-template-var  
+        (util/gen-readable-lvar-for-value root)
         ]
-    `((el/equals ~var-match 
-                 (runtime/template-to-string|projected
-                    ;this might cause problems because template cannot be converted to a clojure value!
-                    ;workaround: generate string of template with placeholders for vars (siltvani might have done something similar)
-                    [~@replacement-vars|strings]
-                    [~replacement-vars|symbols])))))
-    
+    `((cl/fresh [~runtime-template-var ~var-match] 
+                (cl/== ~runtime-template-var
+                           (persistence/snippet-from-persistent-string ~stemplate))
+                
+                
+                (cl/project [~runtime-template-var ~@replacement-vars|symbols]
+                            (cl/== ~var-match 
+                                   (runtime/template-to-string|projected 
+                                     ~runtime-template-var
+                                     [~@replacement-vars|quotedstrings]
+                                     [~@replacement-vars|symbols]
+                )))
+                
+                ))))
 
 (defn
   rewrite-replace

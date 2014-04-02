@@ -305,11 +305,13 @@
   "For the given AST node of the given snippet, returns the name of the user logic
    variable that will be bound to a matching AST node from the Java project."
   [snippet node]
+  (let [bds
+        (snippet/snippet-bounddirectives-for-node snippet node)]
   (if-let [replaced-bd 
            (directives/bounddirective-for-directive 
-             (snippet/snippet-bounddirectives-for-node snippet node)
+             bds
              directive-replacedbyvariable)]
-    (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1)))))
+    (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1))))))
 
 (defn 
   snippet-node-replaced-by-var?
@@ -319,12 +321,13 @@
 (defn
   snippet-replacement-vars
   [snippet] 
-  (remove nil? 
-          (map
-            (fn [node] 
-              (snippet-replacement-var-for-node snippet node))
-            (snippet/snippet-nodes snippet))))
-
+  (distinct
+    (remove nil? 
+            (map
+              (fn [node] 
+                (snippet-replacement-var-for-node snippet node))
+              (snippet/snippet-nodes snippet)))))
+  
 (defn-
   string-represents-variable?
   [string]
@@ -897,60 +900,26 @@
    
   (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} '() nil nil {} {}))]
     (util/walk-jdt-node 
-      n
+     n 
       (fn [astval] (swap! snippet assoc-snippet-value astval))
       (fn [lstval] 
         (swap! snippet assoc-snippet-value lstval))
       (fn [primval]  (swap! snippet assoc-snippet-value primval))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
-  
 
 
-;;TODO: is tracking really necessary?
-;;seems to complicate things, need to reduce duplicated code
-(defn 
-  document-as-snippet
-  "Parse Document doc as a snippet with default matching strategies 
-   (i.e., grounding=:exact, constaining=:exact)
-   for the values of its properties.
-   Function ASTRewrite/track is called for each ASTNode to activate the Node Tracking in ASTRewrite." 
-  [doc]
+(defn
+  snippet-from-string
+  [string]
+  (let [parsed (parsing/parse-string-ast string)
+        normalized (parsing/parse-string-ast (str parsed))]
+    (jdt-node-as-snippet normalized)
+  ))
   
-  (defn 
-    make-astrewrite
-    [node]
-    (ASTRewrite/create (.getAST node)))
   
-  (defn assoc-snippet-value [snippet value track]
-    (let [lvar (util/gen-readable-lvar-for-value value)
-          arrTrack [(util/class-simplename (class value))
-                    (snippet/snippet-property-for-node snippet value) 
-                    (.getStartPosition track) 
-                    (.getLength track)]]
-      (->
-        snippet
-        (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2bounddirectives value] 
-                  (default-bounddirectives snippet value))
-        (assoc-in [:var2ast lvar] value)
-        (assoc-in [:track2ast arrTrack] value)
-        (assoc-in [:ast2track value] arrTrack))))
-  
-  (let [n (parsing/parse-document doc)
-        rw (make-astrewrite n)
-        snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} '() doc rw {} {}))]
-    (util/walk-jdt-node 
-      n
-      (fn [astval] 
-        (swap! snippet assoc-snippet-value astval (.track rw astval)))
-      (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval (.track rw (:owner lstval))))
-      (fn [primval]  (swap! snippet assoc-snippet-value primval (.track rw (:owner primval))))
-      (fn [nilval] (swap! snippet assoc-snippet-value nilval (.track rw (:owner nilval)))))
-    @snippet))
 
-
+(comment
 (defn 
   apply-rewrite 
   "Apply rewrite to snippet."
@@ -960,12 +929,12 @@
     (.apply (.rewriteAST rewrite document nil) document)
     (let [newsnippet (document-as-snippet document)]
       (snippet/copy-snippet snippet newsnippet)))) 
-
+)
 
 (defn
   register-callbacks
   []
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROMDOCUMENT) document-as-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_STRING) snippet-from-string)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES) nondefault-bounddirectives)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
   

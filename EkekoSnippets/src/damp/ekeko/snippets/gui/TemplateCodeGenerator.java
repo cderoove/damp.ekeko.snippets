@@ -28,6 +28,9 @@ public class TemplateCodeGenerator extends TemplatePrettyPrinter {
 	}
 	
 	public Object getUnwrappedValue(Object templateElement) {
+		//TODO: value can also stem form LHS template!
+		
+		
 		if(isNodeValueInTemplate(snippet, templateElement))
 			return templateElement;
 		if(isListValueInTemplate(snippet, templateElement))
@@ -36,20 +39,21 @@ public class TemplateCodeGenerator extends TemplatePrettyPrinter {
 			return getActualPrimitiveValueInTemplate(snippet, templateElement);
 		if(isNullValueInTemplate(snippet, templateElement))
 			return null;
-		throw new RuntimeException("Unexpected template value to be unwrapped: " + templateElement.toString());
+		//throw new RuntimeException("Unexpected template value to be unwrapped: " + templateElement.toString());]
+		return null;
 	}
 	
 	public String getStringForTemplateElement(Object templateElement) {
 		Object unwrappedValue = getUnwrappedValue(templateElement);
 		if(unwrappedValue == null)
-			return "";
+			return "" + templateElement;
 		return unwrappedValue.toString();
 	}
 	
 	@Override
 	protected void printVariableReplacement(Object replacementVar) {
-		Object variableBinding = getVariableBinding(replacementVar);
-		String variableBindingString = getStringForTemplateElement(replacementVar);
+		Object variableBinding = getVariableBinding("" + replacementVar);
+		String variableBindingString = getStringForTemplateElement(variableBinding);
 		this.buffer.append(variableBindingString);
 	}
 	
