@@ -48,6 +48,15 @@ public class  TemplateGroupViewer extends Composite {
 	//private TextViewer textViewerNode;
 	private LinkedList<ISelectionChangedListener> workbenchListeners;
 	
+	private TemplateEditor parentTemplateEditor;
+	
+	public void setParentTemplateEditor(TemplateEditor editor) {
+		parentTemplateEditor = editor;
+	}
+	
+	public TemplateEditor getParentTemplateEditor() {
+		return parentTemplateEditor;
+	}
 
 	public TemplateGroupViewer(Composite parent, int style) {
 		super(parent, SWT.NONE);

@@ -155,8 +155,11 @@ damp.ekeko.snippets.snippetgroup
 (defn 
   make-snippetgroup
   "Create SnippetGroup instance."
-  [name]
-  (SnippetGroup. name []))
+  ([name]
+    (SnippetGroup. name []))
+  ([name snippetseq]
+    (SnippetGroup. name snippetseq)))
+    
 
 
 

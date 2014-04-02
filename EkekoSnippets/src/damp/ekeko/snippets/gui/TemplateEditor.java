@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
@@ -49,6 +50,7 @@ public class TemplateEditor extends EditorPart {
 	protected Action matchTemplateAction;
 	protected Action inspectQueryAction;
 
+	private boolean isDirty = false;
 	
 
 	public TemplateEditor() {
@@ -114,7 +116,8 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.setEnabled(false);
 			
 		
-		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
+		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);
+		templateGroupViewer.setParentTemplateEditor(this);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
 		templateGroupViewer.setInput(templateGroup, null, null);
 
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {	
@@ -268,6 +271,7 @@ public class TemplateEditor extends EditorPart {
 			return;
 		templateGroup = TemplateGroup.newFromClojureGroup(dialog.getUpdatedGroup());
 		refreshWidgets();
+		becomeDirty();
 	}
 
 	protected void createActions() {
@@ -373,6 +377,7 @@ public class TemplateEditor extends EditorPart {
 			templateGroupViewer.clearSelection();
 			refreshWidgets();
 		}
+		becomeDirty();
 	}
 	
 	public void viewSnippet() {
@@ -389,6 +394,7 @@ public class TemplateEditor extends EditorPart {
 		templateGroup.removeSnippet(selected);
 		templateGroupViewer.clearSelection();
 		refreshWidgets();
+		becomeDirty();
 	}
 
 	public void viewQuery() {
@@ -433,28 +439,7 @@ public class TemplateEditor extends EditorPart {
         }
     }	
 		
-	public void checkResult() {
-		QueryResultThread qsThread = new QueryResultThread(templateGroupViewer.getSelectedSnippet());
-		qsThread.start();
-	}
-	
-	private void onApplyOperator() {
-		/*
-		Object operands = operatorOperandsViewer.getOperands();
-		if(operands == null)
-			return;
-		applyOperator(operatorOperandsViewer.getSelectedOperator(), operands);
-		*/
-	}
-	
-	
-	private void updateOperators() {
-		/*
-		operatorOperandsViewer.setInput(templateGroup.getGroup(), templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
-		*/
-	}
-	
-	
+			
 	private void updateTemplate() {
 		templateGroupViewer.setInput(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		
@@ -463,37 +448,12 @@ public class TemplateEditor extends EditorPart {
 	
 	private void refreshWidgets() {
 		updateTemplate();
-		//updateBoundDirectives();
-		//updateOperators();
 	}
 
-	/*
-	public void undo() {
-		snippetGroupHistory.undoOperator();
-		renderSnippet();
-	}
-
-	public void redo() {
-		snippetGroupHistory.redoOperator();
-		renderSnippet();
-	}
-	*/
 	
-	public void transformation() {
-		/*
-		try {
-			TransformsView view = (TransformsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.TransformsView");
-			view.setRewrittenGroup(groups, templateGroup);
-		} catch (PartInitException e) {
-			e.printStackTrace();
-		}
-		*/
-	}
-
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-		// TODO Auto-generated method stub
-		
+        //TODO
 	}
 
 	@Override
@@ -511,18 +471,21 @@ public class TemplateEditor extends EditorPart {
 
 	@Override
 	public boolean isDirty() {
-		// TODO Auto-generated method stub
-		return false;
+		return isDirty;
 	}
 
 	@Override
 	public boolean isSaveAsAllowed() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	public void setSelectedText(String selectedText) {
 		lastSelectedWorkspaceTextString = selectedText;
+	}
+	
+	public void becomeDirty() {
+		isDirty = true;
+		firePropertyChange(IEditorPart.PROP_DIRTY); 
 	}
 	
 }

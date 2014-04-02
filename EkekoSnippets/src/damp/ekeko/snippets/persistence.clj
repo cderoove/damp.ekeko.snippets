@@ -7,6 +7,7 @@
      [util :as util]
      [directives :as directives]
      [snippet :as snippet]
+     [snippetgroup :as snippetgroup]
      [parsing :as parsing]
      [matching :as matching]
      ])
@@ -32,8 +33,9 @@
   class-propertydescriptor-with-id
   [ownerclass pdid]                
   (some (fn [pd]
-          (= pdid
-             (astnode/property-descriptor-id pd)))
+          (when (= pdid
+                   (astnode/property-descriptor-id pd))
+            pd))
         (astnode/nodeclass-property-descriptors ownerclass)))
 
 
@@ -78,12 +80,6 @@
         (directives/directiveoperandbinding-value bd)]
     (.write w (str  "#=" `(directives/make-directiveoperand-binding ~directiveoperand ~value)))))
 
-
-(defmethod 
-  clojure.core/print-dup 
-  Snippet
-  [snippet w]
-  (.write w (str  "#=" `(matching/jdt-node-as-snippet ~(snippet/snippet-root snippet)))))
 
 
 ;if node:
@@ -143,13 +139,13 @@
   [snippet identifier]
   (some 
     (fn [value] 
-      (when (= (snippet-value-identifier value)
+      (when (= (snippet-value-identifier snippet value)
                identifier)
         value))
     (snippet/snippet-nodes snippet)))
 
 (defn
-  snippet-persistable-data
+  snippet-persistable-directives
   [snippet]
   (reduce
     (fn [sofar value] 
@@ -163,9 +159,64 @@
 
 
 
+(defn
+  snippet-from-node-and-persisted-directives
+  [node data]
+  (reduce
+    (fn [sofar [identifier bounddirectives]]
+      (let [value 
+            (snippet-value-corresponding-to-identifier sofar identifier)
+            bounddirectives-with-implicit-operand
+            (map
+              (fn [bounddirective]
+                  (directives/set-bounddirective-operandbindings!
+                    bounddirective
+                    (cons 
+                      (directives/make-implicit-operand value)
+                      (directives/bounddirective-operandbindings bounddirective))))
+              bounddirectives)]
+        (snippet/update-bounddirectives snippet value bounddirectives-with-implicit-operand)))
+    (matching/jdt-node-as-snippet node)
+    (seq data)))
 
 
 
+
+(defmethod 
+  clojure.core/print-dup 
+  Snippet
+  [snippet w]
+  (let [root 
+        (snippet/snippet-root snippet)
+        directives
+        (snippet-persistable-directives snippet)]
+  (.write w (str  "#=" `(snippet-from-node-and-persisted-directives 
+                          (matching/jdt-node-as-snippet ~root)
+                          ~directives)))))
+
+
+
+(defn
+  spit-snippet
+  [filename snippet]
+  (binding [*print-dup* true]
+    (spit filename (pr-str snippet))))
+
+(defn
+  slurp-snippet
+  [filename]
+  (binding [*print-dup* true]
+    (read-string (slurp filename))))
+
+
+(def
+  spit-snippetgroup
+  spit-snippet)
+
+
+(def
+  slurp-snippetgroup
+  slurp-snippet)
 
 
 
@@ -174,8 +225,9 @@
   (def node (parsing/parse-string-ast "public Integer field;"))
   (def snippet (matching/jdt-node-as-snippet node))
   
-  (snippet-persistable-data snippet)
-  
+  (def pers (snippet-persistable-directives snippet))
+  (def newsnippet (snippet-from-node-and-persisted-directives node pers))
+
   (def serialized
     (binding [*print-dup* true]
       (pr-str snippet)))
@@ -186,6 +238,12 @@
       (read-string serialized)))
   
   deserialized
+
+  (spit-snippetgroup "test.snippetgroup" (snippetgroup/make-snippetgroup "Test" [snippet]))
+  
+  (slurp-snippetgroup "test.snippetgroup")
+  
+  
   
   
   )

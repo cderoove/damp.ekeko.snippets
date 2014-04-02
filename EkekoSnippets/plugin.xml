@@ -98,20 +98,17 @@
          point="org.eclipse.ui.editors">
       <editor
             class="damp.ekeko.snippets.gui.TemplateEditor"
+            extensions="ekekoxtemplate"
             icon="icons/notebooks.png"
             id="damp.ekeko.snippets.gui.TemplateEditor"
             name="Template Editor">
       </editor>
       <editor
             class="damp.ekeko.snippets.gui.TransformationEditor"
+            extensions="ekekoxtransformation"
             icon="icons/cog.png"
             id="damp.ekeko.snippets.gui.TransformationEditor"
             name="Transformation Editor">
-      </editor>
-      <editor
-            class="org.eclipse.ui.part.foor"
-            id="org.eclipse.ui.part.foor"
-            name="New MultiPageEditorPart">
       </editor>
    </extension>
 </plugin>
