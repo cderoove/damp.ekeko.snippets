@@ -313,13 +313,9 @@ damp.ekeko.snippets.snippet
 (defn
   update-bounddirectives
   [snippet node bounddirectives]
-  (println "node:" node)
   (update-in snippet
              [:ast2bounddirectives node]
              (fn [oldbounddirectives] 
-               (println "old: " oldbounddirectives)
-               (println "new: " bounddirectives)
-               
                bounddirectives)))
   
 (defn

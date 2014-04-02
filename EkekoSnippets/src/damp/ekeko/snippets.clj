@@ -25,7 +25,10 @@
              ;todo: fix
              ;[datastore]
              ])
-  (:require [damp.ekeko.jdt [astnode :as astnode]])
+  (:require [damp.ekeko.jdt 
+             [astnode :as astnode]
+             [rewrites :as rewrites]
+             ])
   (:require [damp.ekeko])
   (:require [damp.ekeko.logic :as el]))    
 
@@ -68,8 +71,10 @@
   transform-by-snippetgroups
   "Performs the program transformation defined by the lhs and rhs snippetgroups." 
   [snippetgroup|lhs snippetgroup|rhs]
-  (eval (querying/transformation-query snippetgroup|lhs snippetgroup|rhs)))
-
+  (do 
+    (eval (querying/transformation-query snippetgroup|lhs snippetgroup|rhs))
+    (rewrites/apply-and-reset-rewrites)))
+  
 
 ;;for plugin purpose, result with header
 (defn

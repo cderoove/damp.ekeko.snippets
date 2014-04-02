@@ -40,34 +40,37 @@
         runtime-template-var  
         (util/gen-readable-lvar-for-value root)
         ]
-    `((cl/fresh [~runtime-template-var ~var-match] 
+    `((cl/fresh [~runtime-template-var] 
                 (cl/== ~runtime-template-var
                            (persistence/snippet-from-persistent-string ~stemplate))
-                
-                
                 (cl/project [~runtime-template-var ~@replacement-vars|symbols]
                             (cl/== ~var-match 
-                                   (runtime/template-to-string|projected 
-                                     ~runtime-template-var
-                                     [~@replacement-vars|quotedstrings]
-                                     [~@replacement-vars|symbols]
-                )))
-                
+                                   (parsing/parse-string-ast
+                                     (runtime/template-to-string|projected 
+                                       ~runtime-template-var
+                                       [~@replacement-vars|quotedstrings]
+                                       [~@replacement-vars|symbols])
+                                     )))
                 ))))
 
 (defn
   rewrite-replace
-  [template]
-  (fn [template-ast]))
+  [root-ast replacement-var-string]
+  (fn [snippet]
+    (let [var-generatedcode (snippet/snippet-var-for-node snippet root-ast)
+          var (symbol replacement-var-string)]
+      `((el/perform 
+          (rewrites/replace-node ~var ~var-generatedcode)
+          )))))
 
 
 (def
   directive-replace
   (directives/make-directive
     "replace"
-    []
+    [(directives/make-directiveoperand "Replacement")]
     rewrite-replace 
-    "Replace the operand the template."))
+    "Replaces its operand by the template."))
 
 
 (def 
@@ -79,3 +82,11 @@
   registered-directives
   []
   directives-rewriting)
+
+
+(defn
+  registered-rewriting-directive?
+  [directive]
+  (let [name (directives/directive-name directive)]
+    (some #{name}
+          (map directives/directive-name directives-rewriting))))

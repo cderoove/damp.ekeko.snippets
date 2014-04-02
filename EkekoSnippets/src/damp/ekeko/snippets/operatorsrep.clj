@@ -176,6 +176,7 @@
      :refinement    "Refinement"
      :neutral       "Neutral"
      :other         "Other"
+     :rewrite       "Rewriting"
   })
 
 (defn
@@ -242,7 +243,17 @@
      nil
      "Matches can reside at any index within the parent list."
      [])
+   
+   
 
+   (Operator. 
+     "replace-operand-by-template"
+     operators/replace-operand-by-template
+     :rewrite
+     "Replaces its operand by the template it is associated with."
+     nil
+     "Rewrites the operand by replacing it with the code corresponding to the template."
+     [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
 
    
 

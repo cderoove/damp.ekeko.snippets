@@ -145,9 +145,7 @@
   (some 
     (fn [value] 
       (let [value-id (snippet-value-identifier snippet value)]
-        (println value-id)
         (when (= value-id identifier)
-          (println "found one!")
           value)))
     (snippet/snippet-nodes snippet)))
 

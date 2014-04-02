@@ -98,22 +98,26 @@ damp.ekeko.snippets.querying
 
 (defn-
   snippetgroup-query-with-conditions
-  [snippetgroup ekekolaunchersymbol conditions userconditions]
-  (let [root-vars (snippetgroup/snippetgroup-rootvars snippetgroup)
+  ([snippetgroup ekekolaunchersymbol conditions userconditions]
+   (snippetgroup-query-with-conditions snippetgroup ekekolaunchersymbol conditions userconditions '()))
+  ([snippetgroup ekekolaunchersymbol conditions userconditions additionalrootvars]
+  (let [root-vars 
+        (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
+                additionalrootvars)
         uservars-exact (into #{} (matching/snippetgroup-vars-among-directivebindings snippetgroup))
         ;uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
-        vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
-    (if 
-      (not-empty vars) 
+       vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
+   (if 
+     (not-empty vars) 
       `(~ekekolaunchersymbol 
          [~@root-vars ~@uservars-exact]
          (cl/fresh [~@vars]
                    ~@conditions
                    ~@userconditions))
-      `(~ekekolaunchersymbol 
-         [~@root-vars ~@uservars-exact]
-         ~@conditions
-         ~@userconditions))))
+     `(~ekekolaunchersymbol 
+        [~@root-vars ~@uservars-exact]
+        ~@conditions
+        ~@userconditions)))))
 
   
 
@@ -121,37 +125,50 @@ damp.ekeko.snippets.querying
   snippetgroup-query
   "Returns an Ekeko query that that will retrieve matches for the given snippet group."
   ([snippetgroup ekekolaunchersymbol]
-    (snippetgroup-query snippetgroup ekekolaunchersymbol '()))
-  ([snippetgroup ekekolaunchersymbol additionalconditions]
+    (snippetgroup-query snippetgroup ekekolaunchersymbol '() '()))
+  ([snippetgroup ekekolaunchersymbol additionalconditions additionalrootvars]
     (snippetgroup-query-with-conditions 
       snippetgroup ekekolaunchersymbol 
       (snippetgroup-conditions snippetgroup) 
       (concat 
         (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
         additionalconditions
-        ))))
+        )
+      additionalrootvars
+      )))
 
 
 ; Converting snippet group to rewrite query
 ;------------------------------------------
 
 
-;rewrite directives only feature at the root of a template
-(defn
+
+
+
+(defn-
   snippet-conditions|rewrite
   [snippet]
   (let [root 
         (snippet/snippet-root snippet)
         conditions-codegeneration
         (rewriting/newnode-from-template snippet)
+        ;rewrite directives only feature at the root of a template
+        root-bounddirectives
+        (filter 
+          (fn [bounddirective]
+              (rewriting/registered-rewriting-directive? (directives/bounddirective-directive bounddirective)))
+          (snippet/snippet-bounddirectives-for-node snippet root))
         conditions-rewriting
-        []]
+        (mapcat
+            (fn [bounddirective]
+              (directives/snippet-bounddirective-conditions snippet bounddirective))
+            root-bounddirectives)]
     (concat conditions-codegeneration conditions-rewriting)))
 
 
 ;todo: user-defined variables
 
-(defn
+(defn-
   snippetgroup-conditions|rewrite
   [snippetgroup]
   (mapcat snippet-conditions|rewrite (snippetgroup/snippetgroup-snippetlist snippetgroup)))
@@ -159,7 +176,11 @@ damp.ekeko.snippets.querying
 (defn
   transformation-query
   [snippetgroup|lhs snippetgroup|rhs]
-  (let [q (snippetgroup-query snippetgroup|lhs 'damp.ekeko/ekeko* (snippetgroup-conditions|rewrite snippetgroup|rhs))]
+  (let [q (snippetgroup-query snippetgroup|lhs 
+                              'damp.ekeko/ekeko* 
+                              (snippetgroup-conditions|rewrite snippetgroup|rhs)
+                              (snippetgroup/snippetgroup-rootvars snippetgroup|rhs)
+                              )]
     (println q)
     q))
 

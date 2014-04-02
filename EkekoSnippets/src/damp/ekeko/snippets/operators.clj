@@ -9,6 +9,7 @@ damp.ekeko.snippets.operators
              [snippetgroup :as snippetgroup]
              [matching :as matching]
              [directives :as directives]
+             [rewriting :as rewriting]
              ])
   ;(:require [damp.ekeko.jdt 
   ;           [astnode :as astnode]
@@ -115,6 +116,22 @@ damp.ekeko.snippets.operators
 
   
     
+(defn 
+  replace-operand-by-template
+  ""
+  [snippet value-to-be-ignored uservar]
+  (let
+    [root (snippet/snippet-root snippet)]
+    (snippet/add-bounddirective
+      snippet
+      root 
+      (directives/make-bounddirective 
+        rewriting/directive-replace
+        [(make-directiveoperandbinding-for-match root)
+         (directives/make-directiveoperand-binding
+           (directives/make-directiveoperand "Variable to be replaced by template")
+           uservar)]))))
+
     
 
   
