@@ -93,14 +93,20 @@
          (make-directiveoperand-binding operand  "?operand"))
        (directive-operands directive)))
 
+
+(defn
+  make-implicit-operand
+  [subject-template-node]
+  (make-directiveoperand-binding
+      (make-directiveoperand "Template element")
+      subject-template-node))
+
 (defn
   directive-bindings-for-directiveoperands-and-match
   "Returns fresh bindings for a directive's match variable and its additional operands."
   [template subject-template-node directive]
   (cons
-    (make-directiveoperand-binding
-      (make-directiveoperand "Template element")
-      subject-template-node)
+    (make-implicit-operand subject-template-node)
     (directive-bindings-for-directiveoperands directive)))
 
 ;; Directive with bindings for its operands (implemented imperatively to support JFace viewers)
@@ -145,7 +151,6 @@
   [snippet bounddirective]
   (let [generator (directive-generator (bounddirective-directive bounddirective))
         opvals (map directiveoperandbinding-value (bounddirective-operandbindings bounddirective))]
-    (println generator)
   ((apply generator opvals) snippet)))
 
 
@@ -194,7 +199,7 @@
   
   (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_NAME) directive-name)
   (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_DESCRIPTION) directive-description)
-    (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_ARITY) directive-arity)
+  (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_DIRECTIVE_ARITY) directive-arity)
 
 
   

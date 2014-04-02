@@ -60,6 +60,11 @@ public class TemplateEditor extends EditorPart {
 		refreshWidgets();
 	}
 
+	public TemplateGroup getGroup() {
+		return templateGroup;
+	}
+	
+	
 	/**
 	 * Create contents of the view part.
 	 * @param parent

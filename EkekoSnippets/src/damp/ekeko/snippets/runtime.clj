@@ -9,12 +9,15 @@
              [aststructure :as aststructure]
              [structure :as structure]
              [astbindings :as astbindings]
+             [rewrites :as rewrites]
              ;[soot :as soot]
              ])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
-     SimpleName VariableDeclarationFragment Type]))
+     SimpleName VariableDeclarationFragment Type]
+    [damp.ekeko.snippets.gui TemplateCodeGenerator]
+    ))
 
 (defn to-primitive-type-code
   [string]
@@ -240,6 +243,8 @@
          (ast/astorvalue-root ?b ?root)))
 
 
+
+
   ;; Checked
   ;; -------
 
@@ -258,6 +263,18 @@
                       (ast/astorvalue-offspring+ ?root ?match))]))
 )
 
+(defn 
+  template-to-string|projected
+  [template variables values]
+  (let [var2value
+        (zipmap variables values)
+        generator 
+        (TemplateCodeGenerator. template var2value)]
+    (.prettyPrintSnippet template)))
+    
+    
+        
+
   
-  
-  
+
+

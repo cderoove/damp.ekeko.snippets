@@ -10,6 +10,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.MultiPageEditorPart;
 
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TransformationEditor extends MultiPageEditorPart {
 
@@ -49,7 +50,9 @@ public class TransformationEditor extends MultiPageEditorPart {
 	}
 		
 	protected void onExecuteTransformation() {
+		// CompareUI.openCompareDialog(input);
 		// TODO Auto-generated method stub
+		TemplateGroup.transformBySnippetGroups(subjectsEditor.getGroup().getGroup(), subjectsEditor.getGroup().getGroup());
 		
 	}
 

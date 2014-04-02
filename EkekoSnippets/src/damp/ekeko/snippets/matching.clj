@@ -1,5 +1,5 @@
 (ns 
-  ^{:doc "Matching strategies for snippet-driven querying."
+  ^{:doc "Matching directives for template-based program transformation."
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.matching
   (:require [clojure.core.logic :as cl])
@@ -315,6 +315,15 @@
   snippet-node-replaced-by-var?
   [snippet node]
   (boolean (snippet-replacement-var-for-node snippet node))) 
+
+(defn
+  snippet-replacement-vars
+  [snippet] 
+  (remove nil? 
+          (map
+            (fn [node] 
+              (snippet-replacement-var-for-node snippet node))
+            (snippet/snippet-nodes snippet))))
 
 (defn-
   string-represents-variable?

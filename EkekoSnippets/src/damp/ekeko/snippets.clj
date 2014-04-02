@@ -7,11 +7,12 @@
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [matching :as matching]
+             [rewriting :as rewriting]
              [querying :as querying]
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
              [util :as util]
-            ;todo: fix
+            ;todo: remove when replaced by rewriting
             ;[rewrite] 
              [operators]
              [operatorsrep]
@@ -38,16 +39,6 @@
 ;          newsnippet (document-as-snippet new-document)]
 ;      (copy-snippet snippet newsnippet))))
 
-    
-
-
-
-
-
-
-
-
-
 (defn
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
@@ -58,8 +49,8 @@
   query-by-snippet
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
-  (distinct (eval (querying/snippet-query snippet 'damp.ekeko/ekeko))))
-      
+  (eval (querying/snippet-query snippet 'damp.ekeko/ekeko)))
+
 (defn
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
@@ -72,15 +63,14 @@
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippetgroup."
   [snippetgroup]
-  (distinct (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko))))
+  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko)))
 
-(comment
 (defn
-  query-rewrite-by-snippetgroup
-  "Queries the Ekeko projects for rewriting for the given snippetgroup and snippetgrouprewrite."
-  [snippetgroup snippetgrouprewrite]
-  (print (eval (querying/snippetgroup-rewrite-query snippetgroup snippetgrouprewrite 'damp.ekeko/ekeko))))
-)
+  transform-by-snippetgroups
+  "Performs the program transformation defined by the lhs and rhs snippetgroups." 
+  [snippetgroup|lhs snippetgroup|rhs]
+  (eval (querying/transformation-query snippetgroup|lhs snippetgroup|rhs)))
+
 
 ;;for plugin purpose, result with header
 (defn
@@ -104,14 +94,6 @@
     (query-by-snippet snippet)))
 
 
-;;OTHER FUNCTIONS' NAME
-;;---------------------------
-
-(def query-by-templategroup query-by-snippetgroup)
-(def query-by-templategroup* query-by-snippetgroup*)
-;(def query-rewrite-by-templategroup query-rewrite-by-snippetgroup)
-
-
 (defn
   register-callbacks
   []
@@ -119,6 +101,9 @@
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP) query-by-snippetgroup*)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP_HEADER) query-by-snippetgroup-with-header)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET_HEADER) query-by-snippet-with-header)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_TRANSFORM_BY_SNIPPETGROUPS) transform-by-snippetgroups)
+  
+  
 
   )
 

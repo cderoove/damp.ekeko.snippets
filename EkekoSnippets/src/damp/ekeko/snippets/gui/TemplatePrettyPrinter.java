@@ -127,7 +127,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 
 
-	private void printVariableReplacement(Object replacementVar) {
+	protected void printVariableReplacement(Object replacementVar) {
 		int start = getCurrentCharacterIndex();
 		this.buffer.append(replacementVar);
 		styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));	

@@ -43,8 +43,16 @@ public class TemplateGroup {
 	public static IFn FN_PARSE_TO_NODES;
 	
 	public static IFn FN_UPDATE_SNIPPET_IN_SNIPPETGROUP;
+	
+	public static IFn FN_TRANSFORM_BY_SNIPPETGROUPS;
 
 	protected Object cljGroup;
+	
+
+	public static void transformBySnippetGroups(Object cljLHSGroup, Object cljRHSGroup) {
+		FN_TRANSFORM_BY_SNIPPETGROUPS.invoke(cljLHSGroup, cljRHSGroup);
+	}
+	
 	
 	//returns new snippet group
 	public static Object updateSnippetInSnippetGroup(Object cljGroup, Object cljSnippet, IFn updater) {
