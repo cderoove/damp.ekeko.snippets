@@ -1,5 +1,5 @@
 # Ekeko/X 
-Ekeko/X (*aka damp.ekeko.snippets*) s an Eclipse plugin for transforming Java programs. Its transformation specifications consist of a left-hand side and a right-hand side component. The left-hand side component identifies the subjects of the transformation, while the right-hand side component defines how each identified subject should be rewritten. 
+Ekeko/X (*aka damp.ekeko.snippets*) is an Eclipse plugin for transforming Java programs. Its transformation specifications consist of a left-hand side and a right-hand side component. The left-hand side component identifies the subjects of the transformation, while the right-hand side component defines how each identified subject should be rewritten. 
 
 Ekeko/X specifications are decidedly **template**-based. On the **left-hand side**, code templates are used to specify the structural (i.e., instructions and their organization) as well as the behavioral (i.e., the order in which instructions are executed at run-time and the values instructions operate on) characteristics of the intended transformation subjects. This requires a rich, inter-procedural matching semantics. On the **right-hand side**, code templates exemplify the changes to each subject. 
 
