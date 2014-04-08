@@ -48,7 +48,6 @@ public class TemplateTreeContentProvider implements ITreeContentProvider {
 		if (element == null)
 			return false;
 		return getChildren(element).length > 0;
-
 	}
 
 	public Object getGroup() {
