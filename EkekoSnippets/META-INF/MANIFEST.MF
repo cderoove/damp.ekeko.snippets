@@ -21,8 +21,7 @@ Export-Package: damp.ekeko,
    org.eclipse.swt.widgets,
    org.eclipse.jface.dialogs",
  org.eclipse.wb.swt;uses:="org.eclipse.jface.resource,org.eclipse.swt.graphics"
-Require-Bundle: damp.ekeko.plugin;bundle-version="1.0.3",
- org.eclipse.osgi.services;bundle-version="3.3.100",
+Require-Bundle: org.eclipse.osgi.services;bundle-version="3.3.100",
  org.eclipse.osgi.util;bundle-version="3.2.300",
  org.eclipse.ui,
  org.eclipse.core.runtime,
@@ -38,7 +37,8 @@ Require-Bundle: damp.ekeko.plugin;bundle-version="1.0.3",
  org.eclipse.ui.editors;bundle-version="3.8.100",
  org.eclipse.ui.ide;bundle-version="3.9.2",
  org.eclipse.text,
- org.eclipse.compare;bundle-version="3.5.401"
+ org.eclipse.compare;bundle-version="3.5.401",
+ damp.ekeko.plugin;bundle-version="2.0.9"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs
