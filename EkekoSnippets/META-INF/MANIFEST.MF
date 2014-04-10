@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: EkekoSnippets
 Bundle-SymbolicName: damp.ekeko.snippets.plugin;singleton:=true
-Bundle-Version: 1.0.4
+Bundle-Version: 1.0.4.qualifier
 Bundle-Activator: damp.ekeko.snippets.EkekoSnippetsPlugin
 Export-Package: damp.ekeko,
  damp.ekeko.snippets,

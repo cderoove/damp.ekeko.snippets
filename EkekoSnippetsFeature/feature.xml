@@ -2,7 +2,7 @@
 <feature
       id="damp.ekeko.snippets.feature"
       label="Ekeko Snippets"
-      version="1.0.4">
+      version="1.0.4.qualifier">
 
    <description>
       EkekoSnippets provides language and tool support for specifying
