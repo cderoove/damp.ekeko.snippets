@@ -1,0 +1,1 @@
+mvn -Pbuild-individual-bundles clean verify 

@@ -1,0 +1,8 @@
+language: java
+jdk:
+  - oraclejdk8
+script: build-individually
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+after_failure: "cat /home/travis/build/cderoove/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/target/work/data/.metadata/.log"

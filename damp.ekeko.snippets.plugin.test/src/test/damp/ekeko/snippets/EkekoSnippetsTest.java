@@ -21,7 +21,7 @@ public class EkekoSnippetsTest {
 
 	@BeforeClass
 	public static void ensureTestCasesExist() throws Exception {
-		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/TestCases/", "Ekeko-JDT");
+		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/TestCases/", "TestCase-Snippets-BasicMatching");
 	}
 
 	@Test
