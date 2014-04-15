@@ -11,6 +11,8 @@ damp.ekeko.snippets.querying
              [directives :as directives]
              [matching :as matching] 
              [rewriting :as rewriting]
+             [persistence :as persistence]
+             [runtime :as runtime]
              ]) 
   (:require 
     [damp.ekeko [logic :as el]]))
@@ -142,6 +144,41 @@ damp.ekeko.snippets.querying
 ;------------------------------------------
 
 
+(defn
+  newnode-from-template
+  [template]
+  (let [root
+        (snippet/snippet-root template)
+        
+        var-match 
+        (snippet/snippet-var-for-node template root)
+        
+        replacement-vars|strings
+        (matching/snippet-replacement-vars template) 
+        
+        replacement-vars|quotedstrings
+        (map matching/to-literal-string replacement-vars|strings)
+        
+        replacement-vars|symbols
+        (map symbol replacement-vars|strings)
+        stemplate
+        (persistence/snippet-as-persistent-string template)
+        runtime-template-var  
+        (util/gen-readable-lvar-for-value root)
+        ]
+    `((cl/fresh [~runtime-template-var] 
+                (cl/== ~runtime-template-var
+                           (persistence/snippet-from-persistent-string ~stemplate))
+                (cl/project [~runtime-template-var ~@replacement-vars|symbols]
+                            (cl/== ~var-match 
+                                   (parsing/parse-string-ast
+                                     (runtime/template-to-string|projected 
+                                       ~runtime-template-var
+                                       [~@replacement-vars|quotedstrings]
+                                       [~@replacement-vars|symbols])
+                                     )))
+                ))))
+
 
 
 
@@ -151,7 +188,7 @@ damp.ekeko.snippets.querying
   (let [root 
         (snippet/snippet-root snippet)
         conditions-codegeneration
-        (rewriting/newnode-from-template snippet)
+        (newnode-from-template snippet)
         ;rewrite directives only feature at the root of a template
         root-bounddirectives
         (filter 

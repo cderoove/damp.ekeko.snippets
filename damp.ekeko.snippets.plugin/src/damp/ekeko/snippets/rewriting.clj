@@ -10,48 +10,11 @@
              [util :as util]
              [parsing :as parsing]
              [runtime :as runtime]
-             [persistence :as persistence]
-             
              ])
   (:require 
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt [rewrites :as rewrites]]))
 
-
-(defn
-  newnode-from-template
-  [template]
-  (let [root
-        (snippet/snippet-root template)
-        
-        var-match 
-        (snippet/snippet-var-for-node template root)
-        
-        replacement-vars|strings
-        (matching/snippet-replacement-vars template) 
-        
-        replacement-vars|quotedstrings
-        (map matching/to-literal-string replacement-vars|strings)
-        
-        replacement-vars|symbols
-        (map symbol replacement-vars|strings)
-        stemplate
-        (persistence/snippet-as-persistent-string template)
-        runtime-template-var  
-        (util/gen-readable-lvar-for-value root)
-        ]
-    `((cl/fresh [~runtime-template-var] 
-                (cl/== ~runtime-template-var
-                           (persistence/snippet-from-persistent-string ~stemplate))
-                (cl/project [~runtime-template-var ~@replacement-vars|symbols]
-                            (cl/== ~var-match 
-                                   (parsing/parse-string-ast
-                                     (runtime/template-to-string|projected 
-                                       ~runtime-template-var
-                                       [~@replacement-vars|quotedstrings]
-                                       [~@replacement-vars|symbols])
-                                     )))
-                ))))
 
 (defn
   rewrite-replace
@@ -90,3 +53,13 @@
   (let [name (directives/directive-name directive)]
     (some #{name}
           (map directives/directive-name directives-rewriting))))
+
+
+(defn
+  registered-directive-for-name
+  [name]
+  (some
+    (fn [directive]
+      (when (= name (directives/directive-name directive))
+        directive))
+    (registered-directives)))

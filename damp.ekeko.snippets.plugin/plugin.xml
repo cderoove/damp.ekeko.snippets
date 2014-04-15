@@ -106,6 +106,7 @@
       </editor>
       <editor
             class="damp.ekeko.snippets.gui.TransformationEditor"
+            contributorClass="damp.ekeko.snippets.gui.TransformationEditorActionBarContributor"
             extensions="ekx"
             icon="icons/cog.png"
             id="damp.ekeko.snippets.gui.TransformationEditor"
@@ -117,6 +118,10 @@
       <factory
             class="damp.ekeko.snippets.gui.TemplateEditorPersistableElementFactory"
             id="damp.ekeko.snippets.gui.TemplateEditorPersistableElementFactory">
+      </factory>
+      <factory
+            class="damp.ekeko.snippets.gui.TransformationEditorPersistableElementFactory"
+            id="damp.ekeko.snippets.gui.TransformationEditorPersistableElementFactory">
       </factory>
    </extension>
 </plugin>

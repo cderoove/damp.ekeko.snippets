@@ -1,5 +1,7 @@
 package damp.ekeko.snippets.gui;
 
+import java.net.URI;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -24,6 +26,7 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
 
@@ -378,21 +381,11 @@ public class TemplateEditor extends EditorPart {
 	
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-		/*
-		 * todo: transform fileditorinput to mine?
-		 *
-		 *
-		if(getEditorInput() instanceof IFileEditorInput) {
-			IFile file = ((IFileEditorInput) getEditorInput()).getFile();
-			IPath fullPath = file.getFullPath();
-			absoluteFilePathString = fullPath.toString();
-		}
-		*/
 		IEditorInput input = getEditorInput();
 		if(!(input instanceof TemplateEditorInput))
 			return;
 		String absoluteFilePathString;	
-		TemplateEditorInput teinput = (TemplateEditorInput) input;
+		ClojureFileEditorInput teinput = (ClojureFileEditorInput) input;
 		if(!teinput.isAssociatedWithPersistentFile()) {
 			FileDialog fileDialog = new FileDialog(getSite().getShell(), SWT.SAVE);
 		    fileDialog.setFilterExtensions(new String[] { "*.ekxt" });
@@ -419,13 +412,26 @@ public class TemplateEditor extends EditorPart {
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 			setSite(site);
-
 			setPartName(input.getName());
 
-			if(input instanceof FileEditorInput) {
-				FileEditorInput fileInput = (FileEditorInput) input;
-				IFile ifile = fileInput.getFile();
-				String pathToFile = ifile.getLocation().toString();
+			if(input instanceof FileStoreEditorInput
+					|| input instanceof FileEditorInput) {
+				String pathToFile = "";
+				if(input instanceof FileStoreEditorInput) {
+					//outside workspace
+					FileStoreEditorInput fileInput = (FileStoreEditorInput) input;
+					URI uri = fileInput.getURI();
+					pathToFile = uri.getPath();
+				} else 
+				if(input instanceof FileEditorInput) {
+					//within workspace
+					FileEditorInput fileInput = (FileEditorInput) input;
+					IFile ifile = fileInput.getFile();
+					pathToFile = ifile.getLocation().toString();
+				} else {
+					setInput(new TemplateEditorInput());
+					return;
+				}
 				TemplateEditorInput actualInput = new TemplateEditorInput();
 				actualInput.setPathToPersistentFile(pathToFile);	
 				setInput(actualInput);
@@ -439,7 +445,7 @@ public class TemplateEditor extends EditorPart {
 			}
 			
 			if(input instanceof TemplateEditorInput) {
-				TemplateEditorInput actualInput = (TemplateEditorInput) input;
+				ClojureFileEditorInput actualInput = (ClojureFileEditorInput) input;
 				if(actualInput.associatedPersistentFileExists()) {
 					try {
 						Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(actualInput.getPathToPersistentFile());
@@ -476,7 +482,11 @@ public class TemplateEditor extends EditorPart {
 		isDirty = true;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
 	}
-
+	
+	public void becomeClean() {
+		isDirty = false;
+		firePropertyChange(IEditorPart.PROP_DIRTY); 
+	}
 	/*
 	@Override
 	public void saveState(IMemento memento) {

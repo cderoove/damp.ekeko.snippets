@@ -1,53 +1,68 @@
 package damp.ekeko.snippets.gui;
 
+import java.io.File;
+
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IPersistableElement;
 
-public class TransformationEditorInput implements IEditorInput {
+import damp.ekeko.snippets.EkekoSnippetsPlugin;
+
+public class TransformationEditorInput  extends ClojureFileEditorInput  implements IEditorInput,  IPersistableElement {
 
 	private TemplateEditorInput subjectsEditorInput;
 	private TemplateEditorInput rewritesEditorInput;
-
+	
 	public TransformationEditorInput() {
 		subjectsEditorInput = new TemplateEditorInput(); //marks as subjects?
 		rewritesEditorInput = new TemplateEditorInput(); //mark as rewrites?
 	}
-	
-	@Override
-	public Object getAdapter(Class adapter) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	@Override
 	public boolean exists() {
-		// TODO Auto-generated method stub
-		return false;
+		return associatedPersistentFileExists();	
 	}
 
 	@Override
 	public ImageDescriptor getImageDescriptor() {
-		// TODO Auto-generated method stub
-		return null;
+		return ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TRANSFORMATION);
 	}
 
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		if(!exists())
+			return "New Transformation";
+		File file = new File(getPathToPersistentFile());
+		return file.getName();
 	}
 
 	@Override
 	public IPersistableElement getPersistable() {
-		// TODO Auto-generated method stub
+		if(exists())
+			return this;
 		return null;
 	}
 
 	@Override
 	public String getToolTipText() {
-		// TODO Auto-generated method stub
-		return null;
+		if(!exists())
+			return getName();
+		return pathToFile;
+	}
+	
+	public final static String TRANSFORMATION_EDITORINPUT_MEMENTO_CHILD_ID = "Transformation";
+	public final static String TRANSFORMATION_EDITORINPUT_MEMENTO_FILEPATH_ID = "filePath";
+
+
+	@Override
+	public void saveState(IMemento memento) {
+		IMemento storedTemplate = memento.createChild(TRANSFORMATION_EDITORINPUT_MEMENTO_CHILD_ID);
+		storedTemplate.putString(TRANSFORMATION_EDITORINPUT_MEMENTO_FILEPATH_ID, getPathToPersistentFile());		
+	}
+
+	@Override
+	public String getFactoryId() {
+		return TransformationEditorPersistableElementFactory.ID;
 	}
 
 	public TemplateEditorInput getSubjectsEditorInput() {
@@ -57,6 +72,12 @@ public class TransformationEditorInput implements IEditorInput {
 	public TemplateEditorInput getRewritesEditorInput() {
 		return rewritesEditorInput;
 	}
+	@Override
+	public Object getAdapter(Class adapter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	
 
 }

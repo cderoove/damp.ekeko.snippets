@@ -1,59 +1,144 @@
 package damp.ekeko.snippets.gui;
 
+import java.net.URI;
+
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.ide.FileStoreEditorInput;
+import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
 
+import clojure.lang.IFn;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TransformationEditor extends MultiPageEditorPart {
+
+	public static IFn FN_SERIALIZE_TRANSFORMATION; 
+	public static IFn FN_DESERIALIZE_TRANSFORMATION;
+
+	public static IFn FN_MAKE_TRANSFORMATION;
+
+	public static IFn FN_TRANSFORMATION_LHS; 
+	public static IFn FN_TRANSFORMATION_RHS; 
+
+
+	//returns a fresh clojure representation of a transformation
+	//of which the lhs/rhs corresponds to the nested editors
+	//might have to be changed to a mutable Java class later on 
+	//(analogous to TemplateGroup)
+	public Object getTransformation() {
+		TemplateGroup lhsGroup = subjectsEditor.getGroup();
+		TemplateGroup rhsGroup = rewritesEditor.getGroup();
+		return FN_MAKE_TRANSFORMATION.invoke(lhsGroup.getGroup(), rhsGroup.getGroup());
+	}
+
+	public Object getLHSOfTransformation(Object cljTransformation) {
+		return FN_TRANSFORMATION_LHS.invoke(cljTransformation);
+	}
+
+	public Object getRHSOfTransformation(Object cljTransformation) {
+		return FN_TRANSFORMATION_RHS.invoke(cljTransformation);
+	}
+
+	public static void serializeClojureTransformation(Object transformation, String fullPathToFile) {
+		FN_SERIALIZE_TRANSFORMATION.invoke(fullPathToFile, transformation);
+	}
+
+	public static Object deserializeClojureTransformation(String fullPathToFile) {
+		return FN_DESERIALIZE_TRANSFORMATION.invoke(fullPathToFile);
+	}
+
 
 	public static final String ID = "damp.ekeko.snippets.gui.TransformationEditor"; //$NON-NLS-1$
 	private SubjectsTemplateEditor subjectsEditor;
 	private int subjectsEditorPageIndex;
 	private RewritesTemplateEditor rewritesEditor;
 	private int rewritesEditorPageIndex;
+	private TemplateGroup lhsTemplateGroup;
+	private TemplateGroup rhsTemplateGroup;
+
+
+	public void initSubInputsFromTransformationFile(String fullPath) {
+		Object cljTransformation = deserializeClojureTransformation(fullPath);
+		Object cljLHS = getLHSOfTransformation(cljTransformation);
+		Object cljRHS = getRHSOfTransformation(cljTransformation);
+		lhsTemplateGroup = TemplateGroup.newFromClojureGroup(cljLHS);
+		rhsTemplateGroup = TemplateGroup.newFromClojureGroup(cljRHS);
+		
+		//still null at this moment
+		//subjectsEditor.setGroup(lhsTemplateGroup);
+		//rewritesEditor.setGroup(rhsTemplateGroup);
+	}
 
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
-        if (!(input instanceof TransformationEditorInput))
-            throw new PartInitException("Invalid input for Ekeko/X Transformation editor: " + input);
-		super.init(site, input);
-		
-		
-		initActions();
-		
-		//extract input for sub-editors? 
-	}
-	
-	private void initActions() {
-		
-		
-		Action transformAction = new Action() {
-			public void run() {
-				onExecuteTransformation();
-			}
-		};
-		transformAction.setText("Execute transformation");
-		transformAction.setToolTipText("Applies the rewrite actions to all transformation subjects");
-		transformAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TRANSFORM));
-		
-		IToolBarManager toolbarManager = getEditorSite().getActionBars().getToolBarManager();
-		toolbarManager.add(transformAction);
+		setSite(site);
+		setPartName(input.getName());
 
-	}
+		lhsTemplateGroup = TemplateGroup.newFromGroupName("LHS");
+		rhsTemplateGroup = TemplateGroup.newFromGroupName("RHS");
+	
 		
+		
+		if(input instanceof FileStoreEditorInput
+				|| input instanceof FileEditorInput) {
+			String pathToFile = "";
+			if(input instanceof FileStoreEditorInput) {
+				//outside workspace
+				FileStoreEditorInput fileInput = (FileStoreEditorInput) input;
+				URI uri = fileInput.getURI();
+				pathToFile = uri.getPath();
+			} else 
+			if(input instanceof FileEditorInput) {
+				//within workspace
+				FileEditorInput fileInput = (FileEditorInput) input;
+				IFile ifile = fileInput.getFile();
+				pathToFile = ifile.getLocation().toString();
+			} else {
+				setInput(new TransformationEditorInput());
+				return;
+			}
+			TransformationEditorInput actualInput = new TransformationEditorInput();
+			actualInput.setPathToPersistentFile(pathToFile);	
+			setInput(actualInput);
+			try {
+				initSubInputsFromTransformationFile(pathToFile);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+
+		if(input instanceof TransformationEditorInput) {
+			ClojureFileEditorInput actualInput = (ClojureFileEditorInput) input;
+			if(actualInput.associatedPersistentFileExists()) {
+				try {
+					initSubInputsFromTransformationFile(actualInput.getPathToPersistentFile());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			setInput(input);
+			return;
+		}
+
+
+		throw new PartInitException("Unexpected input for TransformationEditor: " + input.toString());
+	}
+
+
+
 	protected void onExecuteTransformation() {
 		// CompareUI.openCompareDialog(input);
 		// TODO Auto-generated method stub
 		TemplateGroup.transformBySnippetGroups(subjectsEditor.getGroup().getGroup(), rewritesEditor.getGroup().getGroup());
-		
+
 	}
 
 	@Override
@@ -66,15 +151,15 @@ public class TransformationEditor extends MultiPageEditorPart {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public TransformationEditorInput getTransformationEditorInput() {
 		return (TransformationEditorInput) getEditorInput();
 	}
-	
+
 	public TemplateEditorInput getSubjectsEditorInput() {
 		return getTransformationEditorInput().getSubjectsEditorInput();
 	}
-	
+
 	public TemplateEditorInput getRewritesEditorInput() {
 		return getTransformationEditorInput().getRewritesEditorInput();
 	}
@@ -82,26 +167,47 @@ public class TransformationEditor extends MultiPageEditorPart {
 	private void createRewritesPage() throws PartInitException {
 		rewritesEditor = new RewritesTemplateEditor();
 		rewritesEditorPageIndex = addPage(rewritesEditor, getRewritesEditorInput());
-		setPageText(rewritesEditorPageIndex, "Rewrites");
+		rewritesEditor.setGroup(rhsTemplateGroup);
+		setPageText(rewritesEditorPageIndex, "RHS Change Actions");
 		setPageImage(rewritesEditorPageIndex, EkekoSnippetsPlugin.IMG_TRANSFORMATION);
 	}
 
 	private void createSubjectsPage() throws PartInitException {
 		subjectsEditor = new SubjectsTemplateEditor();
 		subjectsEditorPageIndex = addPage(subjectsEditor, getSubjectsEditorInput());
-		setPageText(subjectsEditorPageIndex, "Subjects");
+		subjectsEditor.setGroup(lhsTemplateGroup);
+		setPageText(subjectsEditorPageIndex, "LHS Change Subjects");
 		setPageImage(subjectsEditorPageIndex, EkekoSnippetsPlugin.IMG_TEMPLATE);
 	}
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-		// TODO Auto-generated method stub
+		IEditorInput input = getEditorInput();
+		if(!(input instanceof TransformationEditorInput))
+			return;
+		String absoluteFilePathString;	
+		ClojureFileEditorInput teinput = (ClojureFileEditorInput) input;
+		if(!teinput.isAssociatedWithPersistentFile()) {
+			FileDialog fileDialog = new FileDialog(getSite().getShell(), SWT.SAVE);
+		    fileDialog.setFilterExtensions(new String[] { "*.ekx" });
+		    fileDialog.setFilterNames(new String[] { "Ekeko/X transformation file (*.ekx)" });
+		    absoluteFilePathString = fileDialog.open();
+		    if(absoluteFilePathString == null)
+		    	return;   
+		    teinput.setPathToPersistentFile(absoluteFilePathString);
+		} else {
+			absoluteFilePathString = teinput.getPathToPersistentFile();
+		}
+		
+		Object transformation = getTransformation();
+		serializeClojureTransformation(transformation, absoluteFilePathString);		
+		subjectsEditor.becomeClean();
+		rewritesEditor.becomeClean();
 	}
 
 	@Override
 	public void doSaveAs() {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -109,5 +215,15 @@ public class TransformationEditor extends MultiPageEditorPart {
 		// TODO Auto-generated method stub
 		return false;
 	}
-		
+
+	@Override
+	protected void handlePropertyChange(int propertyId) {
+		if(propertyId == PROP_DIRTY) {
+			//one of the nested editors has become dirty
+			//could update our clojure representation of the corresponding transformation
+			//for now, simply recreating this representation on demand
+		}
+		super.handlePropertyChange(propertyId);
+	}
+
 }

@@ -10,6 +10,8 @@
      [snippetgroup :as snippetgroup]
      [parsing :as parsing]
      [matching :as matching]
+     [rewriting :as rewriting]
+     [transformation :as transformation]
      ])
   (:import [org.eclipse.jdt.core.dom 
             ASTNode
@@ -24,6 +26,8 @@
             SnippetGroup]
            [damp.ekeko.snippets.directives
             Directive DirectiveOperand]
+           [damp.ekeko.snippets.transformation 
+            Transformation]
            ))
 
 ;;TODO: dispatch on node type, call parse-string with correct node type
@@ -233,13 +237,22 @@
   (.write w (str  "#=" `(make-relative-identifier ~absolute ~property)))))
 
 
+(defn
+  registered-directive-for-name
+  [name]
+  (if-let
+    [directive (matching/registered-directive-for-name name)]
+    directive
+    (rewriting/registered-directive-for-name name)))
+    
+
 (defmethod 
   clojure.core/print-dup 
   Directive
   [d w]
   (let [name 
         (directives/directive-name d)]
-    (.write w (str  "#=" `(matching/registered-directive-for-name ~name)))))
+    (.write w (str  "#=" `(registered-directive-for-name ~name)))))
 
 
 (defmethod 
@@ -249,6 +262,15 @@
   (let [description 
         (directives/directive-description d)]
     (.write w (str  "#=" `(directives/make-directiveoperand ~description)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  Transformation
+  [t w]
+  (let [lhs (transformation/transformation-lhs t)
+        rhs (transformation/transformation-rhs t)]
+  (.write w (str  "#=" `(transformation/make-transformation ~lhs ~rhs)))))
 
 
 (defn
@@ -288,11 +310,22 @@
   slurp-snippet)
 
 
+(def
+  slurp-transformation
+  slurp-snippet)
+
+(def 
+  spit-transformation
+  spit-snippet)
+
+
 (defn
   register-callbacks
   []
-  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/serializeClojureTemplateGroup) spit-snippetgroup)
-  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/deserializeClojureTemplateGroup) slurp-snippetgroup)
+  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/FN_SERIALIZE_TEMPLATEGROUP) spit-snippetgroup)
+  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/FN_DESERIALIZE_TEMPLATEGROUP) slurp-snippetgroup)
+  (set! (damp.ekeko.snippets.gui.TransformationEditor/FN_SERIALIZE_TRANSFORMATION) spit-transformation)
+  (set! (damp.ekeko.snippets.gui.TransformationEditor/FN_DESERIALIZE_TRANSFORMATION) slurp-transformation)
   )
 
 (register-callbacks)

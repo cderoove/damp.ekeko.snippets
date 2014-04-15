@@ -19,6 +19,7 @@
              [querying]
              [gui]
              [runtime]
+             [transformation]
              ;todo: fix
              ;[searchspace]
              [public]

@@ -10,40 +10,18 @@ import org.eclipse.ui.IPersistableElement;
 import clojure.lang.IFn;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
-public class TemplateEditorInput implements IEditorInput, IPersistableElement {
+public class TemplateEditorInput extends ClojureFileEditorInput implements IEditorInput, IPersistableElement {
 
-	public static IFn serializeClojureTemplateGroup;
-	public static IFn deserializeClojureTemplateGroup;
-
-	private String pathToFile = null;
-
-	public String getPathToPersistentFile() {
-		return pathToFile;
-	}
-
-	public void setPathToPersistentFile(String path) {
-		pathToFile = path;
-	}
-
-	public boolean isAssociatedWithPersistentFile() {
-		return pathToFile != null;
-	}
-
-	public boolean associatedPersistentFileExists() {
-		if(!isAssociatedWithPersistentFile())
-			return false;
-		File file = new File(getPathToPersistentFile());
-		return file.exists();
-	}
+	public static IFn FN_SERIALIZE_TEMPLATEGROUP;
+	public static IFn FN_DESERIALIZE_TEMPLATEGROUP;
 
 	public static void serializeClojureTemplateGroup(Object cljTemplateGroup, String fullPathToFile) {
-		serializeClojureTemplateGroup.invoke(fullPathToFile, cljTemplateGroup);
+		FN_SERIALIZE_TEMPLATEGROUP.invoke(fullPathToFile, cljTemplateGroup);
 	}
 
 	public static Object deserializeClojureTemplateGroup(String fullPathToFile) {
-		return deserializeClojureTemplateGroup.invoke(fullPathToFile);
+		return FN_DESERIALIZE_TEMPLATEGROUP.invoke(fullPathToFile);
 	}
-
 
 	@Override
 	public Object getAdapter(Class adapter) {
@@ -83,7 +61,7 @@ public class TemplateEditorInput implements IEditorInput, IPersistableElement {
 		return pathToFile;
 	}
 	public final static String TEMPLATEEDITORINPUT_MEMENTO_CHILD_ID = "Template";
-	public final static String TEMPLATEEDITORINPUT_MEMENTO_FILEPATH_ID = "FilePath";
+	public final static String TEMPLATEEDITORINPUT_MEMENTO_FILEPATH_ID = "filePath";
 
 
 	@Override
