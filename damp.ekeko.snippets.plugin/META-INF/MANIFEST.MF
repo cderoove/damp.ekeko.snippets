@@ -38,7 +38,8 @@ Require-Bundle: org.eclipse.osgi.services;bundle-version="3.3.100",
  org.eclipse.text,
  org.eclipse.compare;bundle-version="3.5.401",
  damp.ekeko.plugin;bundle-version="2.0.9",
- damp.libs;bundle-version="2.0.9"
+ damp.libs;bundle-version="2.0.9",
+ org.eclipse.core.filesystem;bundle-version="1.4.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs

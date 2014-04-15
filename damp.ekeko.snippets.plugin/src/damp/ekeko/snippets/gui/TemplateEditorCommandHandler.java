@@ -20,9 +20,13 @@ public class TemplateEditorCommandHandler extends AbstractHandler {
 		try {
 
 			//copy selected text in current editor
+			String selectedText = "";
 			ITextEditor editor =  (ITextEditor) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-			ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();	
-			String selectedText = selection.getText();
+
+			if(editor != null) {
+				ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();	
+				selectedText = selection.getText();
+			}
 			
 			//window.getActivePage().showView(TemplateEditor.ID);
 			IEditorPart openedEditor = window.getActivePage().openEditor(new TemplateEditorInput(), TemplateEditor.ID);

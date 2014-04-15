@@ -20,6 +20,10 @@
             DirectiveOperandBinding]
            [damp.ekeko.snippets.snippet
             Snippet]
+           [damp.ekeko.snippets.snippetgroup
+            SnippetGroup]
+           [damp.ekeko.snippets.directives
+            Directive DirectiveOperand]
            ))
 
 ;;TODO: dispatch on node type, call parse-string with correct node type
@@ -87,21 +91,6 @@
 
 
 
-;if node:
-;find by range
-
-;if list:
-;find owner by range
-;take property
-
-;if primitive 
-;find owner by range
-;take property
-;unless also list element
-
-;could also record index in list
-
-
 (defrecord 
   AbsoluteIdentifier 
   [start 
@@ -114,13 +103,21 @@
 
 (defn
   make-absolute-identifier
-  [node]
-  (AbsoluteIdentifier. (.getStartPosition node) (.getLength node)))
+  ([node]
+    (make-absolute-identifier (.getStartPosition node) (.getLength node)))
+  ([start length]
+    (AbsoluteIdentifier. start length)))
 
 (defn
   make-relative-identifier
   [owner property]
-  (RelativeIdentifier. (make-absolute-identifier owner) property))
+  (cond 
+    (instance? ASTNode owner)
+    (RelativeIdentifier. (make-absolute-identifier owner) property)
+    (instance? AbsoluteIdentifier owner)
+    (RelativeIdentifier. owner property)
+    :else
+    (throw (Exception. (str "Unknown owner for relative identifier: " owner)))))
 
 
 
@@ -128,16 +125,17 @@
   snippet-value-identifier
   [snippet value]
   (cond 
-    (snippet/snippet-value-node? snippet value)
+    (astnode/ast? value)
     (make-absolute-identifier value)
     (or 
-      (snippet/snippet-value-list? snippet value)
-      (snippet/snippet-value-null? snippet value)
-      (snippet/snippet-value-primitive? snippet value))
-    (let [owner (snippet/snippet-node-owner snippet value)
-          owner-raw (snippet/snippet-value-node-unwrapped snippet owner)
+      (astnode/lstvalue? value)
+      (astnode/nilvalue? value)
+      (astnode/primitivevalue? value))
+    (let [owner (astnode/owner value)
           property (astnode/owner-property value)]
-      (make-relative-identifier owner-raw property))))  
+      (make-relative-identifier owner property))
+    :else
+    (throw (Exception. (str "Unknown value to create identifier for:" value)))))
 
 (defn
   snippet-value-corresponding-to-identifier
@@ -204,6 +202,54 @@
                           ~root
                           ~directives)))))
 
+(defmethod 
+  clojure.core/print-dup 
+  SnippetGroup
+  [snippetgroup w]
+  (let [name
+        (snippetgroup/snippetgroup-name snippetgroup)
+        snippets
+        (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+  (.write w (str  "#=" `(snippetgroup/make-snippetgroup 
+                          ~name 
+                          ~snippets)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  AbsoluteIdentifier
+  [identifier w]
+  (let [pos (:start identifier)
+        len (:length identifier)]
+  (.write w (str  "#=" `(make-absolute-identifier ~pos ~len)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  RelativeIdentifier
+  [identifier w]
+  (let [absolute (:ownerdata identifier)
+        property (:property identifier)]
+  (.write w (str  "#=" `(make-relative-identifier ~absolute ~property)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  Directive
+  [d w]
+  (let [name 
+        (directives/directive-name d)]
+    (.write w (str  "#=" `(matching/registered-directive-for-name ~name)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  DirectiveOperand
+  [d w]
+  (let [description 
+        (directives/directive-description d)]
+    (.write w (str  "#=" `(directives/make-directiveoperand ~description)))))
+
 
 (defn
   snippet-as-persistent-string
@@ -242,6 +288,14 @@
   slurp-snippet)
 
 
+(defn
+  register-callbacks
+  []
+  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/serializeClojureTemplateGroup) spit-snippetgroup)
+  (set! (damp.ekeko.snippets.gui.TemplateEditorInput/deserializeClojureTemplateGroup) slurp-snippetgroup)
+  )
+
+(register-callbacks)
 
 (comment
   

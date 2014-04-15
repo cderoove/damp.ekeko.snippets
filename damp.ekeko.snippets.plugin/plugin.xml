@@ -98,14 +98,14 @@
          point="org.eclipse.ui.editors">
       <editor
             class="damp.ekeko.snippets.gui.TemplateEditor"
-            extensions="ekekoxtemplate"
+            extensions="ekxt"
             icon="icons/notebooks.png"
             id="damp.ekeko.snippets.gui.TemplateEditor"
             name="Template Editor">
       </editor>
       <editor
             class="damp.ekeko.snippets.gui.TransformationEditor"
-            extensions="ekekoxtransformation"
+            extensions="ekx"
             icon="icons/cog.png"
             id="damp.ekeko.snippets.gui.TransformationEditor"
             name="Transformation Editor">

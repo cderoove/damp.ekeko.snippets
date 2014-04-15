@@ -3,6 +3,7 @@ package damp.ekeko.snippets.gui;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
@@ -19,9 +20,11 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
@@ -29,6 +32,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
+import org.eclipse.ui.part.FileEditorInput;
 
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
@@ -452,22 +456,72 @@ public class TemplateEditor extends EditorPart {
 	
 	@Override
 	public void doSave(IProgressMonitor monitor) {
-        //TODO
+		/*
+		 * todo: transform fileditorinput to mine?
+		 *
+		 *
+		if(getEditorInput() instanceof IFileEditorInput) {
+			IFile file = ((IFileEditorInput) getEditorInput()).getFile();
+			IPath fullPath = file.getFullPath();
+			absoluteFilePathString = fullPath.toString();
+		}
+		*/
+		IEditorInput input = getEditorInput();
+		if(!(input instanceof TemplateEditorInput))
+			return;
+		String absoluteFilePathString;	
+		TemplateEditorInput teinput = (TemplateEditorInput) input;
+		if(!teinput.isAssociatedWithPersistentFile()) {
+			FileDialog fileDialog = new FileDialog(getSite().getShell(), SWT.SAVE);
+		    fileDialog.setFilterExtensions(new String[] { "*.ekxt" });
+		    fileDialog.setFilterNames(new String[] { "Ekeko/X template file (*.ekxt)" });
+		    absoluteFilePathString = fileDialog.open();
+		    if(absoluteFilePathString == null)
+		    	return;   
+		    teinput.setPathToPersistentFile(absoluteFilePathString);
+		} else {
+			absoluteFilePathString = teinput.getPathToPersistentFile();
+		}
+		TemplateEditorInput.serializeClojureTemplateGroup(templateGroup.getGroup(), absoluteFilePathString);
+		isDirty = false;
+		firePropertyChange(IEditorPart.PROP_DIRTY); 
 	}
 
 	@Override
 	public void doSaveAs() {
 		// TODO Auto-generated method stub
-		
+		//SaveAsDialog dialog = new SaveAsDialog(getShell());
 	}
 
 
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
-			setInput(input);
 			setSite(site);
+		
+			if(input instanceof FileEditorInput) {
+				FileEditorInput fileInput = (FileEditorInput) input;
+				IFile ifile = fileInput.getFile();
+				String pathToFile = ifile.getLocation().toString();
+				TemplateEditorInput actualInput = new TemplateEditorInput();
+				actualInput.setPathToPersistentFile(pathToFile);	
+				setInput(actualInput);
+				try {
+					Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(pathToFile);
+					this.templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				return;
+			}
+			
+			if(input instanceof TemplateEditorInput) {
+				setInput(input);
+				return;
+			}
+			
+			throw new PartInitException("Unexpected input for TemplateEditor: " + input.toString());
 	}
-
+	
 	@Override
 	public boolean isDirty() {
 		return isDirty;
@@ -483,11 +537,8 @@ public class TemplateEditor extends EditorPart {
 	}
 	
 	public void becomeDirty() {
-		//TODO: temporarily disabled until persistence is implemented
-		/*
 		isDirty = true;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
-		*/
 	}
 	
 }

@@ -703,10 +703,6 @@
     "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
 
 
-
-
-
-
 (def 
   directive-replacedbyvariable
   (directives/make-directive
@@ -739,13 +735,17 @@
   directives-constraining
   [directive-exact
    directive-replacedbyvariable
-   directive-equals])
+   directive-equals
+   directive-size|atleast
+
+   ])
 
 (def
   directives-grounding
   [directive-child
    directive-offspring
    directive-member
+   
    ])
   
 (defn 
@@ -778,6 +778,16 @@
   []
   (concat (registered-grounding-directives) 
           (registered-constraining-directives)))
+
+
+(defn
+  registered-directive-for-name
+  [name]
+  (some
+    (fn [directive]
+      (when (= name (directives/directive-name directive))
+        directive))
+    (registered-directives)))
 
 
 ;; Constructing Snippet instances with default matching directives
