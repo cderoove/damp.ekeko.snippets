@@ -2,6 +2,7 @@ package damp.ekeko.snippets.gui;
 
 public class RewritesTemplateEditor extends TemplateEditor {
 	
+	/*
 	@Override
 	protected void createActions() {
 		//do not contribute actions
@@ -11,5 +12,6 @@ public class RewritesTemplateEditor extends TemplateEditor {
 	protected void initializeToolBar() {
 		//do not contribute actions
 	}
+	*/
 
 }

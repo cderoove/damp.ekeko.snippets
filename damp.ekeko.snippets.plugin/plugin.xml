@@ -98,6 +98,7 @@
          point="org.eclipse.ui.editors">
       <editor
             class="damp.ekeko.snippets.gui.TemplateEditor"
+            contributorClass="damp.ekeko.snippets.gui.TemplateEditorActionBarContributor"
             extensions="ekxt"
             icon="icons/notebooks.png"
             id="damp.ekeko.snippets.gui.TemplateEditor"

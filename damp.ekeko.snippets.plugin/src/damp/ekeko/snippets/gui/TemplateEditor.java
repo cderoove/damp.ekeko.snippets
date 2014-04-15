@@ -1,15 +1,8 @@
 package damp.ekeko.snippets.gui;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IMenuManager;
-import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.window.Window;
@@ -42,7 +35,6 @@ public class TemplateEditor extends EditorPart {
 	public static final String ID = "damp.ekeko.snippets.gui.TemplateEditor"; //$NON-NLS-1$
 	//private String viewID;
 
-	private List<Action> actions; 	
 	private TemplateGroup templateGroup;
 	private TemplateGroupViewer templateGroupViewer;
 	private TemplateTreeContentProvider contentProvider;
@@ -50,8 +42,6 @@ public class TemplateEditor extends EditorPart {
 	
 	//private BoundDirectivesViewer boundDirectivesViewer;
 	private String lastSelectedWorkspaceTextString;
-	protected Action matchTemplateAction;
-	protected Action inspectQueryAction;
 
 	private boolean isDirty = false;
 	
@@ -247,11 +237,7 @@ public class TemplateEditor extends EditorPart {
 		//but people might be using different editors (e.g., WindowBuilder)
 		getSite().getPage().addSelectionListener(sl);
 
-		
-	    createActions();
-		initializeToolBar();
-		//initializeMenu();
-		
+			
 		//does not work reliably, so reverting
 		//getSite().setSelectionProvider(templateGroupViewer);
 		
@@ -277,70 +263,6 @@ public class TemplateEditor extends EditorPart {
 		becomeDirty();
 	}
 
-	protected void createActions() {
-		// Create the actions
-		
-		actions = new LinkedList<Action>();
-				
-		matchTemplateAction = new Action("Match template") {
-			public void run() {
-				runQuery();
-			}
-		};
-		
-		matchTemplateAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_MATCH));
-		matchTemplateAction.setToolTipText("Match template");
-		actions.add(matchTemplateAction);
-		
-		inspectQueryAction = new Action("Inspect corresponding query") {
-			public void run() {
-				viewQuery();
-			}
-		};
-		//inspectQuery.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.ui", "/icons/full/eview16/new_persp.gif"));
-		inspectQueryAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
-		inspectQueryAction.setToolTipText("Inspect corresponding query");
-		actions.add(inspectQueryAction);
-		
-		/*
-		Action inspectMatches = new Action("Inspect matches") {
-			public void run() {
-				checkResult();
-			}
-		};
-		inspectMatches.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.pde.ui", "/icons/obj16/tsk_alert_obj.gif"));
-		inspectMatches.setToolTipText("Inspect matches");
-		actions.add(inspectMatches);
-
-*/
-		
-		/*
-		Action actTrans = new Action("Program Transformation") {			public void run() {
-				transformation();
-			}
-		};
-		actTrans.setImageDescriptor(ResourceManager.getPluginImageDescriptor("org.eclipse.egit.ui", "/icons/elcl16/filterresource.gif"));
-		actTrans.setToolTipText("Program Transformation");
-		*/
-	
-	}
-
-	/**
-	 * Initialize the toolbar.
-	 */
-	protected void initializeToolBar() {
-		IToolBarManager toolbarManager = getEditorSite().getActionBars().getToolBarManager();
-		for(Action action : actions) {
-			toolbarManager.add(action);
-		}
-	}
-
-	protected void initializeMenu() {
-		IMenuManager menuManager = getEditorSite().getActionBars().getMenuManager();
-		for(Action action : actions) {
-			menuManager.add(action);
-		}
-	}
 
 	@Override
 	public void setFocus() {
