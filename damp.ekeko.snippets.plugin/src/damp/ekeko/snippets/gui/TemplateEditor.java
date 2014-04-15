@@ -419,7 +419,9 @@ public class TemplateEditor extends EditorPart {
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 			setSite(site);
-		
+
+			setPartName(input.getName());
+
 			if(input instanceof FileEditorInput) {
 				FileEditorInput fileInput = (FileEditorInput) input;
 				IFile ifile = fileInput.getFile();
@@ -437,9 +439,21 @@ public class TemplateEditor extends EditorPart {
 			}
 			
 			if(input instanceof TemplateEditorInput) {
+				TemplateEditorInput actualInput = (TemplateEditorInput) input;
+				if(actualInput.associatedPersistentFileExists()) {
+					try {
+						Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(actualInput.getPathToPersistentFile());
+						this.templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				
 				setInput(input);
 				return;
 			}
+			
+			
 			
 			throw new PartInitException("Unexpected input for TemplateEditor: " + input.toString());
 	}
@@ -462,5 +476,21 @@ public class TemplateEditor extends EditorPart {
 		isDirty = true;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
 	}
+
+	/*
+	@Override
+	public void saveState(IMemento memento) {
+		TemplateEditorInput input = (TemplateEditorInput) getEditorInput(); 
+		IMemento storedTemplate = memento.createChild("Template");
+		storedTemplate.putString("TemplateFilePath", input.getPathToPersistentFile());
+	}
+
+	@Override
+	public void restoreState(IMemento memento) {
+		storedTemplate.putString("TemplateFilePath", input.getPathToPersistentFile());
+	}
+	*/
+	
+	
 	
 }

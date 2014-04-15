@@ -112,4 +112,11 @@
             name="Transformation Editor">
       </editor>
    </extension>
+   <extension
+         point="org.eclipse.ui.elementFactories">
+      <factory
+            class="damp.ekeko.snippets.gui.TemplateEditorPersistableElementFactory"
+            id="damp.ekeko.snippets.gui.TemplateEditorPersistableElementFactory">
+      </factory>
+   </extension>
 </plugin>
