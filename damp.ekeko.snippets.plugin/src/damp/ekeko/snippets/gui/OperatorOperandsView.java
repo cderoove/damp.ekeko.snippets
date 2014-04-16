@@ -31,7 +31,6 @@ public class OperatorOperandsView extends ViewPart {
 		parent.setLayout(new GridLayout(1, true));
 		
 		ToolBar snippetOperatorGroupToolbar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
-		snippetOperatorGroupToolbar.setOrientation(SWT.RIGHT_TO_LEFT);
 		snippetOperatorGroupToolbar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
 
 		ToolItem tltmApplyOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);

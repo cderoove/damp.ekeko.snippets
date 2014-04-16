@@ -73,7 +73,7 @@ public class TemplateEditor extends EditorPart {
 		parent.setLayout(new GridLayout(1, false));
 		
 		ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
-		toolBar.setOrientation(SWT.RIGHT_TO_LEFT);		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
 		tltmAdd.addSelectionListener(new SelectionAdapter() {
