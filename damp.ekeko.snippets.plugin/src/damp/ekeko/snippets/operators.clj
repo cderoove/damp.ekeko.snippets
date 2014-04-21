@@ -70,7 +70,6 @@ damp.ekeko.snippets.operators
                                    uservar)])))
 
 
-  
 
 (defn
   relax-size-to-atleast
@@ -113,6 +112,18 @@ damp.ekeko.snippets.operators
     value
     (directives/make-bounddirective matching/directive-offspring
                                     [(make-directiveoperandbinding-for-match value)])))
+
+
+(defn
+  restrict-scope-to-child
+  "Uses child/0 for grounding."
+  [template value]
+  (snippet/add-bounddirective 
+    (matching/remove-directives template value (matching/registered-grounding-directives))
+    value
+    (directives/make-bounddirective matching/directive-child
+                                    [(make-directiveoperandbinding-for-match value)])))
+
 
   
     

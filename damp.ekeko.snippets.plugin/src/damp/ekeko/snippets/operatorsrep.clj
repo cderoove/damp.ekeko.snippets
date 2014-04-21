@@ -245,6 +245,18 @@
      [])
    
    
+   (Operator. 
+     "restrict-scope-to-child"
+     operators/restrict-scope-to-child
+     :refinement
+     "Require matches to be the corresponding child of the parent match."
+     nil
+     "Matches are the corresponding child of the match for the parent."
+     [])
+
+   
+   
+   
 
    (Operator. 
      "replace-operand-by-template"
