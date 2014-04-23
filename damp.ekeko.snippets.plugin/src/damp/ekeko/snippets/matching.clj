@@ -3,7 +3,6 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.matching
   (:require [clojure.core.logic :as cl])
-  
   (:require [damp.ekeko.snippets 
              [directives :as directives]
              [util :as util]
@@ -18,6 +17,17 @@
      [ast :as ast]])
   (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
+
+(def ast `ast/ast)
+(def has `ast/has)
+(def value-raw `ast/value-raw)
+(def value|null `ast/value|null)
+(def to-modifier-keyword `runtime/to-modifier-keyword)
+(def to-primitive-type-code `runtime/to-primitive-type-code)
+(def to-assignment-operator `runtime/to-assignment-operator)
+(def to-infix-expression-operator `runtime/to-infix-expression-operator)
+(def to-prefix-expression-operator `runtime/to-prefix-expression-operator)
+(def to-postfix-expression-operator `runtime/to-postfix-expression-operator)
 
 
 
@@ -42,84 +52,6 @@
 
 (declare directive-child)
 
-;(defn 
-;  ground-relativetoparent-for-member
-;  "Returns a function that will generate grounding conditions for the given AST node of a code snippet:
-;   For AST node is the member of the list : condition depends on cf of list owner
-;       cf = exact    -> ((el/equals ~var-el (.get ~var-list ~idx-el)))
-;       cf = contains -> ((el/contains ~var-list ~var-el))"
-;  [snippet-ast]
-;  (fn [snippet] 
-;    (if 
-;      (= snippet-ast (:ast snippet))
-;      (let [snippet-ast-keyw (astnode/ekeko-keyword-for-class-of snippet-ast)
-;            var-match (snippet/snippet-var-for-node snippet snippet-ast)] 
-;        `((ast/ast ~snippet-ast-keyw ~var-match)))
-;      (let [bounddirectives (snippet/snippet-bounddirectives-for-node snippet snippet-ast)
-;            var-match       (snippet/snippet-var-for-node snippet snippet-ast) 
-
-            ;todo: check for parent directives that might require different grounding
-;            list-owner      (snippet/snippet-list-containing snippet snippet-ast)
-;            list-owner-directives (snippet/snippet-bounddirectives-for-node snippet list-owner)
-;            
-;            list-match       (snippet/snippet-var-for-node snippet list-owner)
-;            list-raw         (:value list-owner)
-;            list-match-raw   (util/gen-readable-lvar-for-value list-raw)
-;            index-match     (.indexOf list-raw snippet-ast)
-            
-;            cf-list-owner :toeliminate
-            
-;            foo 
-;            (do 
- ;             (println "bounddirectives " bounddirectives ) 
-  ;            (println "var-match " var-match)
-   ;           (println "list-owner " list-owner)
-    ;          (println "list-owner-directives " list-owner-directives)
-     ;         (println "list-match " list-match)
-      ;;        (println "list-raw " list-raw)
-        ;      (println "list-match-raw " list-match-raw)
-         ;     (println "index-match " index-match))
-              
-          ;  conditions 
-           ; (cond
-            ;  ;todo: put at bottom of cond, check for parent directives first
-             ; (directives/bounddirective-for-directive bounddirectives directive-parent)
-             ; `((el/equals ~var-match (.get ~list-match-raw ~index-match)))
-                  
-              ;todo: add variants of parent with arguments
-              
-	;             (or (= cf-list-owner :contains) 
-	 ;                (= cf-list-owner :contains-eq-size))
-	  ;           `((el/contains ~list-match-raw ~var-match))
-     ;         
-	    ;;         (= cf-list-owner :contains-eq-order)
-	      ;       (if (> index-match 0)
-	       ;        (let [prev-member    (.get list-raw (- index-match 1))
-	        ;             var-match-prev (snippet/snippet-var-for-node snippet prev-member)]
-	         ;        `((el/contains ~list-match-raw ~var-match)
-	          ;          (el/succeeds (> (.indexOf ~list-match-raw ~var-match) (.indexOf ~list-match-raw ~var-match-prev)))))
-	           ;    `((el/contains ~list-match-raw ~var-match)))
-              ;
-;	             (= cf-list-owner :contains-repetition)
- ;             (if (> index-match 0)
-	;               (let [element-conditions 
-	 ;                    (for [n  (take index-match (iterate inc 0))]
-	  ;                     (let [nth-member    (.get list-raw n)
-	   ;                          var-match-nth (snippet/snippet-var-for-node snippet nth-member)]
-	    ;                     `(el/fails (el/equals ~var-match ~var-match-nth))))]
-	     ;            (println element-conditions)
-	      ;;           `((el/contains ~list-match-raw ~var-match)
-          ;           ~@element-conditions))
-	         ;      `((el/contains ~list-match-raw ~var-match)))
-              
-;;              :default
-  ;            '())]
-;        `((cl/fresh [~list-match-raw] 
-   ;;                 (ast/value-raw ~list-match ~list-match-raw)
-     ;               ~@conditions))))))
-
-
-
 (defn 
   ground-relativetoparent
   [snippet-val]
@@ -131,7 +63,7 @@
         (root-of-snippet? snippet-val snippet)
         (let [snippet-ast-keyw
               (astnode/ekeko-keyword-for-class-of snippet-val)]
-          `((ast/ast ~snippet-ast-keyw ~var-match)))
+          `((~ast ~snippet-ast-keyw ~var-match)))
         ;member of list
         (value|listmember? snippet-val)
         (let [bounddirectives
@@ -150,7 +82,7 @@
               (.indexOf list-raw snippet-val)]
           ;todo: check for parent directives that might require different grounding
           `((cl/fresh [~list-match-raw] 
-                      (ast/value-raw ~list-match ~list-match-raw)
+                      (~value-raw ~list-match ~list-match-raw)
                       (el/equals ~var-match (.get ~list-match-raw ~index-match)))))
         (or 
           (astnode/ast? snippet-val)
@@ -165,7 +97,7 @@
               (astnode/owner-property snippet-val)
               owner-property-keyword
               (astnode/ekeko-keyword-for-property-descriptor owner-property)]
-          `((ast/has ~owner-property-keyword ~owner-match ~var-match) 
+          `((~has ~owner-property-keyword ~owner-match ~var-match) 
              ))
         ;constraining the parent has already ground primitive values
         :default
@@ -201,7 +133,7 @@
           list-match-raw
           (util/gen-readable-lvar-for-value (:value list))]
       `((cl/fresh [~list-match-raw] 
-                  (ast/value-raw ~list-match ~list-match-raw)
+                  (~value-raw ~list-match ~list-match-raw)
                   (el/contains ~list-match-raw ~match))))))
     
 
@@ -243,7 +175,7 @@
               (mapcat
                 (fn [[property-keyw retrievalf]]
                   (let [value     
-                        (retrievalf) 
+                        (retrievalf snippet-val) 
                         var-value
                         (snippet/snippet-var-for-node snippet value)
                         property-descriptor
@@ -253,7 +185,7 @@
                         (is-ignored-property? property-keyw)
                         (not (astnode/property-descriptor-simple? property-descriptor)))
                       `()
-                      `((ast/has ~property-keyw ~var-match ~var-value)))))
+                      `((~has ~property-keyw ~var-match ~var-value)))))
                 snippet-properties)]
           `(~@child-conditions))
         ;constrain lists
@@ -265,17 +197,17 @@
               var-match-raw (util/gen-readable-lvar-for-value lst)]
           `(;(ast/value|list ~var-match)
             (cl/fresh [~var-match-raw] 
-                      (ast/value-raw ~var-match ~var-match-raw)
+                      (~value-raw ~var-match ~var-match-raw)
                       (el/equals ~snippet-list-size (.size ~var-match-raw)))))
         ;constrain primitive values
         (astnode/primitivevalue? snippet-val)
         (let [exp 
               (ast-primitive-as-expression (:value snippet-val))]
           `(;(ast/value|primitive ~var-match)
-             (ast/value-raw ~var-match ~exp)))
+             (~value-raw ~var-match ~exp)))
         ;constrain null-values
         (astnode/nilvalue? snippet-val)
-        `((ast/value|null ~var-match))))))
+        `((~value|null ~var-match))))))
 
 (defn
   constrain-size|atleast
@@ -291,7 +223,7 @@
           var-match-raw (util/gen-readable-lvar-for-value lst)]
       `(;(ast/value|list ~var-match)
          (cl/fresh [~var-match-raw] 
-                   (ast/value-raw ~var-match ~var-match-raw)
+                   (~value-raw ~var-match ~var-match-raw)
                    (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
   
 
@@ -456,11 +388,11 @@
           child-conditions 
               (for [[property-keyw retrievalf] 
                     (seq snippet-properties)
-                    :let [value     (retrievalf) 
+                    :let [value     (retrievalf snippet-ast) 
                           var-value (snippet/snippet-var-for-node snippet value)]]
-                `(ast/has ~property-keyw ~var-node ~var-value))]
+                `(~has ~property-keyw ~var-node ~var-value))]
       `((cl/fresh [~var-node]
-         (ast/ast ~snippet-keyw ~var-node)
+         (~ast ~snippet-keyw ~var-node)
            ~@child-conditions
            (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
 
@@ -552,7 +484,7 @@
           child-conditions 
               (for [[property-keyw retrievalf] 
                     (seq snippet-properties)
-                    :let [value     (retrievalf) 
+                    :let [value     (retrievalf snippet-ast) 
                           var-value (snippet/snippet-var-for-node snippet value)]]
                 (if (and (not (is-ignored-property? property-keyw))
                          (not (= property-keyw :updaters))
@@ -651,17 +583,17 @@
         (number? primitive)
         primitive
         (instance? org.eclipse.jdt.core.dom.Modifier$ModifierKeyword primitive)
-        `(runtime/to-modifier-keyword ~(to-literal-string primitive))
+        `(~to-modifier-keyword ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PrimitiveType$Code primitive)
-        `(runtime/to-primitive-type-code ~(to-literal-string primitive))
+        `(~to-primitive-type-code ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.Assignment$Operator primitive)
-        `(runtime/to-assignment-operator ~(to-literal-string primitive))
+        `(~to-assignment-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.InfixExpression$Operator primitive)
-        `(runtime/to-infix-expression-operator ~(to-literal-string primitive))
+        `(~to-infix-expression-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PrefixExpression$Operator primitive)
-        `(runtime/to-prefix-expression-operator ~(to-literal-string primitive))
+        `(~to-prefix-expression-operator ~(to-literal-string primitive))
         (instance? org.eclipse.jdt.core.dom.PostfixExpression$Operator primitive)
-        `(runtime/to-postfix-expression-operator ~(to-literal-string primitive))
+        `(~to-postfix-expression-operator ~(to-literal-string primitive))
         (nil? primitive) 
         (throw (Exception. (str "Encountered a null-valued property value that should have been wrapped by Ekeko.")))
         :else (to-literal-string primitive)))
@@ -745,7 +677,6 @@
   [directive-child
    directive-offspring
    directive-member
-   
    ])
   
 (defn 

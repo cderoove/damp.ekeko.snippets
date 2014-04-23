@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.TreeItem;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
-public class  TemplateGroupViewer extends Composite {
+public class TemplateGroupViewer extends Composite {
 
 	private TextViewer textViewerSnippet;
 	private TreeViewer snippetTreeViewer;

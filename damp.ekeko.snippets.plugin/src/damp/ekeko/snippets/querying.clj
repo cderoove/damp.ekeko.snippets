@@ -13,6 +13,7 @@ damp.ekeko.snippets.querying
              [rewriting :as rewriting]
              [persistence :as persistence]
              [runtime :as runtime]
+             [parsing :as parsing]
              ]) 
   (:require 
     [damp.ekeko [logic :as el]]))
