@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="damp.ekeko.snippets.feature"
-      label="Ekeko Snippets"
+      label="Ekeko/X"
       version="1.0.4.qualifier">
 
    <description>
-      EkekoSnippets provides language and tool support for specifying
+      Ekeko/X provides language and tool support for specifying
 and performing program transformations in an incremental manner.
    </description>
 
