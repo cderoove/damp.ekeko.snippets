@@ -14,6 +14,7 @@
      [transformation :as transformation]
      ])
   (:import [org.eclipse.jdt.core.dom 
+            Expression Statement BodyDeclaration CompilationUnit ImportDeclaration
             ASTNode
             StructuralPropertyDescriptor
             Modifier$ModifierKeyword]
@@ -35,7 +36,20 @@
   clojure.core/print-dup 
   ASTNode
   [node w]
-  (.write w (str  "#=" `(parsing/parse-string-ast ~(str node)))))
+  (.write w (str "#="
+                 (cond 
+                   (instance? Expression node)
+                   `(parsing/parse-string-expression ~(str node))
+                   (instance? Statement node)
+                   `(parsing/parse-string-statement ~(str node))
+                   (instance? BodyDeclaration node)
+                   `(parsing/parse-string-declaration ~(str node))
+                   (instance? CompilationUnit node)
+                   `(parsing/parse-string-unit ~(str node))
+                   (instance? ImportDeclaration node)
+                   `(parsing/parse-string-importdeclaration ~(str node))
+                   :default 
+                   `(parsing/parse-string-ast ~(str node))))))
 
 (defn
   class-propertydescriptor-with-id
