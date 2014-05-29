@@ -18,19 +18,23 @@ public class TemplateEditorCommandHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
 		try {
+			ITextEditor textEditor = null;
+			ITextSelection selection = null;
 
 			//copy selected text in current editor
-			String selectedText = "";
+			//String selectedText = "";
 			IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
 			if(activeEditor instanceof  ITextEditor){
-				ITextEditor textEditor = (ITextEditor) activeEditor;
-				ITextSelection selection = (ITextSelection) textEditor.getSelectionProvider().getSelection();	
-				selectedText = selection.getText();
+				textEditor = (ITextEditor) activeEditor;
+				selection = (ITextSelection) textEditor.getSelectionProvider().getSelection();	
+				
+				
 			}
 			//window.getActivePage().showView(TemplateEditor.ID);
 			IEditorPart openedEditor = window.getActivePage().openEditor(new TemplateEditorInput(), TemplateEditor.ID);
 			TemplateEditor templateEditor = (TemplateEditor) openedEditor;
-			templateEditor.setSelectedText(selectedText);
+			if(selection != null)
+				templateEditor.currentWorkspaceSelection(textEditor, selection);
 			
 		} catch (PartInitException e) {
 			e.printStackTrace();

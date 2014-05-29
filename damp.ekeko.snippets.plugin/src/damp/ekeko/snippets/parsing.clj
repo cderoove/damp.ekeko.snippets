@@ -150,21 +150,6 @@
     (first 
       (filter (fn [x] (instance? ASTNode (first x))) (parse-string string)))))
 
-(defn 
-  parse-string-to-document
-  [string]
-  (let [doc (org.eclipse.jface.text.Document.)]
-    (.set doc string)
-    doc))             
-
-(defn 
-  parse-document
-  "Returns node, parsed from Document doc." 
-  [doc]
-  (first 
-    (first 
-      (filter (fn [x] (instance? ASTNode (first x))) (parse-string (.get doc))))))
-
 (defn
   make-variable-declaration-statement
   [modifiers type fragment]
@@ -179,8 +164,8 @@
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_DOC) parse-string-to-document)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_NODES) parse-string-to-document)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_NODES) parse-strings-to-nodes)
+
   
   )
 

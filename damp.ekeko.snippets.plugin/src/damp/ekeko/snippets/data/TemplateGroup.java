@@ -22,10 +22,10 @@ public class TemplateGroup {
 
 	public static IFn FN_SNIPPET_ROOT;
 	public static IFn FN_SNIPPET_USERQUERY;
-	//public static IFn FN_SNIPPET_FROMDOCUMENT;
 	
 	
 	public static IFn FN_SNIPPET_FROM_STRING;
+	public static IFn FN_SNIPPET_FROM_NODE;
 	
 	public static IFn FN_QUERY_BY_SNIPPET;
 	public static IFn FN_QUERY_BY_SNIPPETGROUP;
@@ -42,7 +42,6 @@ public class TemplateGroup {
 	
 	public static IFn FN_SEARCH;
 	
-	public static IFn FN_PARSE_TO_DOC;
 	public static IFn FN_PARSE_TO_NODES;
 	
 	public static IFn FN_UPDATE_SNIPPET_IN_SNIPPETGROUP;
@@ -50,6 +49,7 @@ public class TemplateGroup {
 	public static IFn FN_TRANSFORM_BY_SNIPPETGROUPS;
 
 	protected Object cljGroup;
+
 	
 
 	public static void transformBySnippetGroups(Object cljLHSGroup, Object cljRHSGroup) {
@@ -129,10 +129,13 @@ public class TemplateGroup {
 	
 	
 	public Object addSnippetCode(String code) {
-		//Object document = FN_PARSE_TO_DOC.invoke(code);
-		
-		//Object snippet = FN_SNIPPET_FROMDOCUMENT.invoke(document);
 		Object snippet = FN_SNIPPET_FROM_STRING.invoke(code);
+		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
+		return snippet;
+	}
+
+	public Object addSnippetCode(ASTNode node) {
+		Object snippet = FN_SNIPPET_FROM_NODE.invoke(node);
 		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
 		return snippet;
 	}

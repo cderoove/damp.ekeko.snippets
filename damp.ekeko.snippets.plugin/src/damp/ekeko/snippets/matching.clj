@@ -859,6 +859,11 @@
         normalized (parsing/parse-string-ast (str parsed))]
     (jdt-node-as-snippet normalized)
   ))
+
+
+(def
+  snippet-from-node
+  jdt-node-as-snippet)
   
   
 
@@ -878,6 +883,8 @@
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_STRING) snippet-from-string)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_NODE) snippet-from-node)
+
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES) nondefault-bounddirectives)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
   

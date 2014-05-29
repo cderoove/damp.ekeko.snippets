@@ -4,6 +4,12 @@ import java.net.URI;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.ITypeRoot;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -29,7 +35,9 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
+import org.eclipse.ui.texteditor.ITextEditor;
 
+import damp.ekeko.JavaProjectModel;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
@@ -44,9 +52,11 @@ public class TemplateEditor extends EditorPart {
 	//private OperatorOperandsViewer operatorOperandsViewer;
 	
 	//private BoundDirectivesViewer boundDirectivesViewer;
-	private String lastSelectedWorkspaceTextString;
+	//private String lastSelectedWorkspaceTextString;
+	private ASTNode lastSelectedWorkspaceASTNode;
 
 	private boolean isDirty = false;
+	
 	
 
 	public TemplateEditor() {
@@ -228,12 +238,17 @@ public class TemplateEditor extends EditorPart {
 		ISelectionListener sl = new ISelectionListener() {
 			@Override
 			public void selectionChanged(IWorkbenchPart part, ISelection sel) {
+				/*
 				if(sel instanceof ITextSelection) {
 					ITextSelection lastSelectedText = (ITextSelection) sel;
 					if(!lastSelectedText.isEmpty())
 						lastSelectedWorkspaceTextString = lastSelectedText.getText();
 				}
+				*/
+				
+				currentWorkspaceSelection(part, sel);
 			}
+
 		};
 
 		//code also listen for JavaEditor selections only (JavaUI.ID_CU_EDITOR),
@@ -254,6 +269,26 @@ public class TemplateEditor extends EditorPart {
 				
 	}
 
+	public void currentWorkspaceSelection(IWorkbenchPart part, ISelection sel) {
+		if(part instanceof IEditorPart) {
+			IEditorPart editorPart = (IEditorPart) part;
+			if(!(sel instanceof ITextSelection))
+				return;
+			ITextSelection selection = (ITextSelection) sel;
+			ITypeRoot typeRoot = JavaUI.getEditorInputTypeRoot(editorPart.getEditorInput());
+			if(typeRoot == null)
+				return;
+	        ICompilationUnit icu = (ICompilationUnit) typeRoot.getAdapter(ICompilationUnit.class);
+	        if(icu == null)
+	        	return;
+	        CompilationUnit cu = JavaProjectModel.parse(icu,null);
+	        if(cu == null)
+	        	return;
+	        NodeFinder finder = new NodeFinder(cu, selection.getOffset(), selection.getLength());
+	        lastSelectedWorkspaceASTNode = finder.getCoveringNode();
+
+		}
+	}
 
 	protected void onEditBoundDirectives(TemplateGroup oldTemplateGroup, Object selectedTemplate, Object selectedNode) {
 		
@@ -274,18 +309,6 @@ public class TemplateEditor extends EditorPart {
 
 	
 	
-	String getSelectedTextFromJavaEditor() {
-		
-		/*
-		 * can no longer use this snippet as we have become an editor ourselves, 
-		 * and are active at the moment the user calls this method
-		 * 
-		ITextEditor editor =  (ITextEditor) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-		ITextSelection selection = (ITextSelection) editor.getSelectionProvider().getSelection();	
-		return selection.getText();
-		*/
-		return lastSelectedWorkspaceTextString;
-	}
 			
 	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
@@ -298,10 +321,8 @@ public class TemplateEditor extends EditorPart {
 	*/
 				
 	public void addSnippet() {
-		String code = getSelectedTextFromJavaEditor();
-		if (code != null && !code.isEmpty()) {
-			//throws NPE when selected text cannot be parsed as the starting point for a template
-			templateGroup.addSnippetCode(code);
+		if (lastSelectedWorkspaceASTNode != null) {
+			templateGroup.addSnippetCode(lastSelectedWorkspaceASTNode);
 			templateGroupViewer.clearSelection();
 			refreshWidgets();
 		}
@@ -472,10 +493,6 @@ public class TemplateEditor extends EditorPart {
 	@Override
 	public boolean isSaveAsAllowed() {
 		return false;
-	}
-
-	public void setSelectedText(String selectedText) {
-		lastSelectedWorkspaceTextString = selectedText;
 	}
 	
 	public void becomeDirty() {
