@@ -2,6 +2,8 @@ package test.damp.ekeko.snippets;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
@@ -24,6 +26,12 @@ public class EkekoSnippetsTest {
 
 	}
 
+	
+	public static File getResourceFile(String relativePath) throws Exception {
+		return EkekoTestHelper.getFileFromBundle(myBundle, relativePath);
+	}
+	
+	
 	@BeforeClass
 	public static void ensureTestCasesExist() throws Exception {
 		EkekoTestHelper.ensureProjectImported(ekekoBundle, "/resources/TestCases/", "Ekeko-JDT");

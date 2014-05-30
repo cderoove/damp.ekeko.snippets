@@ -10,7 +10,9 @@
              [snippetgroup :as snippetgroup]
              [matching :as matching]
              [parsing :as parsing]
-             [util :as util]])
+             [util :as util]
+             [persistence :as persistence]
+             ])
   (:require [test.damp [ekeko :as test]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
@@ -20,6 +22,14 @@
              [logic :as el]
              [snippets :as snippets]])
   (:use clojure.test))
+
+
+
+(defn
+  snippetgroup-from-resource
+  [pathrelativetobundle]
+  (persistence/slurp-snippet (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+
 
 ;; Matching Strategy: defaults (exact)
 ;; -----------------------------------
@@ -38,14 +48,43 @@
       (is (some #{node} (map first (snippets/query-by-snippet snippet)))))))
     
 
+;; Persisted templates 
+(deftest 
+  ^{:doc "There are 11 class declarations in the project."}
+  match-persisted-anyclass
+  (let [snippet (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/anyclass.ekt")]
+    (is (= 11 (count (snippets/query-by-snippetgroup snippet))))))
+
+
+(deftest 
+  ^{:doc "THe anymethod.ekt template matches all non-constructor method declarations."}
+  match-persisted-anymethod
+  (let [ms-by-query 
+        (count (damp.ekeko/ekeko [?m] 
+                                 (l/fresh [?val]
+                                        (ast/ast :MethodDeclaration ?m)
+                                        (ast/has :constructor ?m ?val)
+                                        (ast/value-raw ?val false))))
+        snippet
+        (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/anymethod.ekt")
+        ms-by-snippet
+        (count (snippets/query-by-snippetgroup snippet))]
+    (is (= ms-by-query ms-by-snippet))))
+        
+        
+                  
 ;; Test suite
 ;; ----------
 
+
+
 (deftest
    test-suite 
-   
-   (test/against-project-named "TestCase-JDT-CompositeVisitor" false exactmatch-node)
-
+   (let [testproject "TestCase-JDT-CompositeVisitor"]
+     (test/against-project-named testproject false exactmatch-node)
+     (test/against-project-named testproject false match-persisted-anyclass)
+     (test/against-project-named testproject false match-persisted-anymethod)
+     )
    )
 
 (defn 
