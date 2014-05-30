@@ -56,6 +56,8 @@ public class TemplateEditor extends EditorPart {
 	private ASTNode lastSelectedWorkspaceASTNode;
 
 	private boolean isDirty = false;
+
+	protected ToolBar toolBar;
 	
 	
 
@@ -82,7 +84,7 @@ public class TemplateEditor extends EditorPart {
 				
 		parent.setLayout(new GridLayout(1, false));
 		
-		ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
+		toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
@@ -117,7 +119,7 @@ public class TemplateEditor extends EditorPart {
 				onEditBoundDirectives(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 			}
 		});
-		//tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_EDIT_TEMPLATE);
+		tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_EDIT);
 		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
 		tltmEditBoundDirectives.setEnabled(false);
 			
@@ -395,7 +397,7 @@ public class TemplateEditor extends EditorPart {
 	}
 	
 	
-	private void refreshWidgets() {
+	protected void refreshWidgets() {
 		updateTemplate();
 	}
 

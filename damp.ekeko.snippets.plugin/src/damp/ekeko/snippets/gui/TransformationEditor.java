@@ -34,13 +34,17 @@ public class TransformationEditor extends MultiPageEditorPart {
 	//(analogous to TemplateGroup)
 	public Object getTransformation() {
 		TemplateGroup lhsGroup = subjectsEditor.getGroup();
+		Object cljLHSGroup = lhsGroup.getGroup();
 		TemplateGroup rhsGroup = rewritesEditor.getGroup();
-		return FN_MAKE_TRANSFORMATION.invoke(lhsGroup.getGroup(), rhsGroup.getGroup());
+		Object cljRHSGroup =  rhsGroup.getGroup();
+		return FN_MAKE_TRANSFORMATION.invoke(cljLHSGroup, cljRHSGroup);
 	}
 
 	public Object getLHSOfTransformation(Object cljTransformation) {
 		return FN_TRANSFORMATION_LHS.invoke(cljTransformation);
 	}
+	
+	
 
 	public Object getRHSOfTransformation(Object cljTransformation) {
 		return FN_TRANSFORMATION_RHS.invoke(cljTransformation);
@@ -156,6 +160,15 @@ public class TransformationEditor extends MultiPageEditorPart {
 		return (TransformationEditorInput) getEditorInput();
 	}
 
+	
+	public TemplateEditor getSubjectsEditor() {
+		return subjectsEditor;
+	}
+	
+	public TemplateEditor getRewritesEditor() {
+		return rewritesEditor;
+	}
+	
 	public TemplateEditorInput getSubjectsEditorInput() {
 		return getTransformationEditorInput().getSubjectsEditorInput();
 	}
@@ -170,7 +183,9 @@ public class TransformationEditor extends MultiPageEditorPart {
 		rewritesEditor.setGroup(rhsTemplateGroup);
 		setPageText(rewritesEditorPageIndex, "RHS Change Actions");
 		setPageImage(rewritesEditorPageIndex, EkekoSnippetsPlugin.IMG_TRANSFORMATION);
+		rewritesEditor.setTransformationEditor(this);
 	}
+
 
 	private void createSubjectsPage() throws PartInitException {
 		subjectsEditor = new SubjectsTemplateEditor();

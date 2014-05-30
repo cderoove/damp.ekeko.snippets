@@ -23,6 +23,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	// The plug-in ID
 	public static final String PLUGIN_ID = "damp.ekeko.snippets.plugin"; //$NON-NLS-1$
 
+
 	// The shared instance
 	private static EkekoSnippetsPlugin plugin;
 	
@@ -78,7 +79,10 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	
 	public static Image IMG_TEMPLATE; 
 	public static Image IMG_TEMPLATE_ADD;   
+	public static Image IMG_TEMPLATE_EDIT;
 	public static Image IMG_TEMPLATE_DELETE; 
+	public static Image IMG_TEMPLATE_COPY_FROM_LHS; 
+
 
 	
 	
@@ -100,9 +104,12 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
 		
 		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
-		IMG_TEMPLATE_ADD= getImageDescriptor("icons/notebook--plus.png").createImage();
+		IMG_TEMPLATE_ADD = getImageDescriptor("icons/notebook--plus.png").createImage();
+		IMG_TEMPLATE_EDIT = getImageDescriptor("icons/notebook--pencil.png").createImage();
+
 		IMG_TEMPLATE_DELETE = getImageDescriptor("icons/notebook--minus.png").createImage();
-		
+		IMG_TEMPLATE_COPY_FROM_LHS = getImageDescriptor("icons/notebook--arrow.png").createImage();
+				
 		IMG_TEMPLATE_MATCH = getImageDescriptor("icons/occluder.png").createImage();
 		IMG_TEMPLATE_INSPECT = getImageDescriptor("icons/magnifier.png").createImage();
 		

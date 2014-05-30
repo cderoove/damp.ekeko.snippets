@@ -55,7 +55,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	private Stack listWrapperForWhichToIgnoreListDecorations;
 
 	@SuppressWarnings("rawtypes")
-	public TemplatePrettyPrinter (TemplateGroup group) {
+	public TemplatePrettyPrinter(TemplateGroup group) {
 		styleRanges = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
 		listWrapperForWhichToIgnoreListDecorations = new Stack();

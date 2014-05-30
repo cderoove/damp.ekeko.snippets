@@ -38,6 +38,11 @@ public class TemplateGroup {
 	public static IFn FN_APPLY_TO_SNIPPETGROUP;
 	
 	public static IFn FN_ADD_SNIPPET_TO_SNIPPETGROUP;
+
+	public static IFn FN_ADD_COPY_OF_SNIPPET_TO_SNIPPETGROUP;
+	public static IFn FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP;
+
+
 	public static IFn FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP;
 	
 	public static IFn FN_SEARCH;
@@ -49,6 +54,7 @@ public class TemplateGroup {
 	public static IFn FN_TRANSFORM_BY_SNIPPETGROUPS;
 
 	protected Object cljGroup;
+
 
 	
 
@@ -138,6 +144,15 @@ public class TemplateGroup {
 		Object snippet = FN_SNIPPET_FROM_NODE.invoke(node);
 		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
 		return snippet;
+	}
+	
+	
+	public void addCopyOfSnippet(Object snippet) {
+		cljGroup = FN_ADD_COPY_OF_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);
+	}
+
+	public void addCopyOfSnippetGroup(TemplateGroup snippetGroup) {
+		cljGroup = FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP.invoke(cljGroup, snippetGroup.getGroup());
 	}
 
 
