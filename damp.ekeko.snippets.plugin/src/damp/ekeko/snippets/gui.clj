@@ -29,7 +29,7 @@
 (defn
   snippet-node-parent|fortreeviewer
   [snippet c]
-  (let [ownerproperty (astnode/owner-property c)]
+  (if-let [ownerproperty (astnode/owner-property c)] ;owner of compilationunit = nil, parent = nil
     ;owner of list = node
     ;owner of node = parent
     ;owner of list element = node ... should look for list containing value insted
@@ -102,17 +102,17 @@
 (defn
   templatetreelabelprovider-property
   [snippet element]
-  (let [owner (astnode/owner element)
-        property (astnode/owner-property element)
-        id (astnode/property-descriptor-id property)
-        idwithowner (str id " of " (.getSimpleName (class owner)))]
-    (if 
-      (astnode/property-descriptor-list? property)
+  (if-let [owner (astnode/owner element)]  ;compilation unit
+    (let [property (astnode/owner-property element)
+          id (astnode/property-descriptor-id property)
+          idwithowner (str id " of " (.getSimpleName (class owner)))]
       (if 
-        (astnode/lstvalue? element)
-        (str idwithowner)
-        (str "element of " idwithowner))
-      idwithowner)))
+        (astnode/property-descriptor-list? property)
+        (if 
+          (astnode/lstvalue? element)
+          (str idwithowner)
+          (str "element of " idwithowner))
+        idwithowner))))
 
 (defn
   templatetreelabelprovider-directives

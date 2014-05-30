@@ -382,7 +382,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			Object value = getActualPrimitiveValueInTemplate(snippet, element);
 			if(hasNonDefaultDirectives(snippet, element)) {
 				printOpeningNode(element);
+			}
+			Object primReplacementVar = getUserVar(element);
+			if(primReplacementVar != null) {
+				printVariableReplacement(primReplacementVar);
+			} else { 
 				this.buffer.append(value.toString());
+			}
+			if(hasNonDefaultDirectives(snippet, element)) {
 				printClosingNode(element);
 			}
 			return getResult();
@@ -391,9 +398,16 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		if(isNullValueInTemplate(snippet, element)) {
 			if(hasNonDefaultDirectives(snippet, element)) {
 				printOpeningNode(element);
-				this.buffer.append("null");
-				printClosingNode(element);
 			}
+			Object nullReplacementVar = getUserVar(element);
+			if(nullReplacementVar != null) {
+				printVariableReplacement(nullReplacementVar);
+			} else {
+				this.buffer.append("null");	
+			}
+			if(hasNonDefaultDirectives(snippet, element)) {
+				printClosingNode(element);	
+			} 
 			return getResult();
 		} else
 			throw new RuntimeException("Unexpected value to be pretty-printed: " + element.toString());
