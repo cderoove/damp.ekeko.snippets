@@ -29,8 +29,6 @@ public class TemplateGroup {
 	
 	public static IFn FN_QUERY_BY_SNIPPET;
 	public static IFn FN_QUERY_BY_SNIPPETGROUP;
-	public static IFn FN_QUERY_BY_SNIPPETGROUP_HEADER;
-	public static IFn FN_QUERY_BY_SNIPPET_HEADER;
 
 	public static IFn FN_SNIPPETGROUP_QUERY;
 	public static IFn FN_SNIPPET_QUERY;
@@ -186,15 +184,6 @@ public class TemplateGroup {
 			}
 		};
 		job.schedule();
-	}
-
-	public Object[] getQueryResult(Object node) {
-		Object snippet = getSnippet(node);
-		if (snippet == null)		
-			return getArray(FN_QUERY_BY_SNIPPETGROUP_HEADER.invoke(getGroup())); 		
-		else 
-			return getArray(FN_QUERY_BY_SNIPPET_HEADER.invoke(snippet));
-			//return getArray(RT.var(ns_snippets,"query-by-snippet-in-group-with-header").invoke(snippet, getGroup()));
 	}
 	
 	public Object[] searchSpace(Object[] positiveExamples, Object[] negativeExamples) {

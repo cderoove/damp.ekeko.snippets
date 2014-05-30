@@ -349,7 +349,7 @@ public class TemplateEditor extends EditorPart {
 	}
 
 	public void viewQuery() {
-		String query = templateGroup.getQuery( templateGroupViewer.getSelectedSnippet());
+		String query = templateGroup.getQuery(templateGroupViewer.getSelectedSnippet());
 		QueryInspectorDialog dlg = new QueryInspectorDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
@@ -362,35 +362,6 @@ public class TemplateEditor extends EditorPart {
 		templateGroup.runQuery(templateGroupViewer.getSelectedSnippet());
 	}
 	
-	class QueryResultThread extends Thread {
-		Object selectedSnippet;
-		
-		public QueryResultThread (Object selectedSnippet) {
-			this.selectedSnippet = selectedSnippet;
-		}
-		
-        public void run() {
-        	//result check view only for group
-			final Object[] result = templateGroup.getQueryResult("Group");
-			
-    		Display.getDefault().syncExec(new Runnable() {    			
-    		    public void run() {
-    				try {
-    					ResultCheckView view = (ResultCheckView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("damp.ekeko.snippets.gui.ResultCheckView");
-    					view.setResult(result);
-    					view.setGroup(templateGroup);
-    					//view.setSnippet(snippetGroup.getSnippet(selectedSnippet));
-    					view.setSnippet(null);
-    					view.putData();
-    				} catch (PartInitException e) {
-    					e.printStackTrace();
-    				}
-    		    }
-    		});
-        }
-    }	
-		
-			
 	private void updateTemplate() {
 		templateGroupViewer.setInput(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
 		

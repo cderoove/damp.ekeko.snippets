@@ -9,19 +9,24 @@ import org.osgi.framework.FrameworkUtil;
 
 import test.damp.EkekoTestHelper;
 import ccw.util.osgi.ClojureOSGi;
+import damp.ekeko.EkekoPlugin;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
 public class EkekoSnippetsTest {
 
 	private static Bundle myBundle;
+	private static Bundle ekekoBundle;
+
 
 	static {
 		myBundle = FrameworkUtil.getBundle(EkekoSnippetsTest.class);
+		ekekoBundle = FrameworkUtil.getBundle(EkekoTestHelper.class);
+
 	}
 
 	@BeforeClass
 	public static void ensureTestCasesExist() throws Exception {
-		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/TestCases/", "TestCase-Snippets-BasicMatching");
+		EkekoTestHelper.ensureProjectImported(ekekoBundle, "/resources/TestCases/", "Ekeko-JDT");
 	}
 
 	@Test
@@ -30,8 +35,8 @@ public class EkekoSnippetsTest {
 	}
 
 	@Test 
-	public void testEkekoSnippetsSuite() {
-		//EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko");
+	public void testEkekoSnippetsMatching() {
+		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.matching");
 	}
 
 	@Test 
