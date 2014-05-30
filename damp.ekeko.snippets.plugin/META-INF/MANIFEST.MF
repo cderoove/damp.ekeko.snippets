@@ -41,7 +41,7 @@ Require-Bundle: org.eclipse.osgi.services;bundle-version="3.3.100",
  damp.libs;bundle-version="2.0.9",
  org.eclipse.core.filesystem;bundle-version="1.4.0"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs
 Bundle-ClassPath: .,
  lib/json-simple-1.1.1.jar,
