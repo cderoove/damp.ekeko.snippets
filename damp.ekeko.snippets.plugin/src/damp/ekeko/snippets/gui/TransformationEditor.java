@@ -7,6 +7,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.ide.FileStoreEditorInput;
@@ -239,6 +240,11 @@ public class TransformationEditor extends MultiPageEditorPart {
 			//for now, simply recreating this representation on demand
 		}
 		super.handlePropertyChange(propertyId);
+	}
+
+	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
+		subjectsEditor.setPreviouslyActiveEditor(activeEditor);
+		rewritesEditor.setPreviouslyActiveEditor(activeEditor);
 	}
 
 }

@@ -75,6 +75,8 @@ public class TemplateEditor extends EditorPart {
 	}
 	
 	
+	
+	
 	/**
 	 * Create contents of the view part.
 	 * @param parent
@@ -248,7 +250,7 @@ public class TemplateEditor extends EditorPart {
 				}
 				*/
 				
-				currentWorkspaceSelection(part, sel);
+				refreshWorkspaceSelection(part, sel);
 			}
 
 		};
@@ -267,11 +269,11 @@ public class TemplateEditor extends EditorPart {
 			operatorOperandsView.shouldRegisterAsListenerTo(templateGroupViewer);
 		} catch (PartInitException e1) {
 			e1.printStackTrace();
-		}
-				
+		}				
 	}
 
-	public void currentWorkspaceSelection(IWorkbenchPart part, ISelection sel) {
+	//called by workspace listener
+	protected void refreshWorkspaceSelection(IWorkbenchPart part, ISelection sel) {
 		if(part instanceof IEditorPart) {
 			IEditorPart editorPart = (IEditorPart) part;
 			if(!(sel instanceof ITextSelection))
@@ -280,15 +282,24 @@ public class TemplateEditor extends EditorPart {
 			ITypeRoot typeRoot = JavaUI.getEditorInputTypeRoot(editorPart.getEditorInput());
 			if(typeRoot == null)
 				return;
-	        ICompilationUnit icu = (ICompilationUnit) typeRoot.getAdapter(ICompilationUnit.class);
-	        if(icu == null)
-	        	return;
-	        CompilationUnit cu = JavaProjectModel.parse(icu,null);
-	        if(cu == null)
-	        	return;
-	        NodeFinder finder = new NodeFinder(cu, selection.getOffset(), selection.getLength());
-	        lastSelectedWorkspaceASTNode = finder.getCoveringNode();
-
+			ICompilationUnit icu = (ICompilationUnit) typeRoot.getAdapter(ICompilationUnit.class);
+			if(icu == null)
+				return;
+			CompilationUnit cu = JavaProjectModel.parse(icu,null);
+			if(cu == null)
+				return;
+			NodeFinder finder = new NodeFinder(cu, selection.getOffset(), selection.getLength());
+			lastSelectedWorkspaceASTNode = finder.getCoveringNode();
+		}
+	}
+	
+	//manually called when view is opened for the first time
+	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
+		if(activeEditor instanceof ITextEditor) {
+			ITextEditor textEditor = (ITextEditor) activeEditor;
+			ITextSelection selection = (ITextSelection) textEditor.getSelectionProvider().getSelection();	
+			if(selection != null)
+				refreshWorkspaceSelection(textEditor, selection);
 		}
 	}
 
