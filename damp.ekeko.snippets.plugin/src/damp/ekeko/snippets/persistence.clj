@@ -53,15 +53,18 @@
 
 (defn
   class-propertydescriptor-with-id
-  [ownerclasskeyword pdid]                
-  (some (fn [pd]
-          (when (= pdid
-                   (astnode/property-descriptor-id pd))
-            pd))
-        (astnode/nodeclass-property-descriptors 
-          (astnode/class-for-ekeko-keyword ownerclasskeyword)
-          )))
-
+  [ownerclasskeyword pdid]         
+  (let [found 
+        (some (fn [pd]
+                (when (= pdid
+                         (astnode/property-descriptor-id pd))
+                  pd))
+              (astnode/nodeclass-property-descriptors 
+                (astnode/class-for-ekeko-keyword ownerclasskeyword)))]
+    (if
+      (nil? found)
+      (throw (Exception. (str "When deserializing, could not find property descriptor: " ownerclasskeyword pdid)))
+      found)))
 
 (defmethod
   clojure.core/print-dup 
@@ -90,11 +93,12 @@
   [bd w]
   (let [directive 
         (directives/bounddirective-directive bd) 
+        name
+        (directives/directive-name directive)
         opbindings
         (directives/bounddirective-operandbindings bd)
         opbindings-without-implicit-operandbinding
-        (rest opbindings)
-        ]
+        (rest opbindings)]
     (.write w (str  "#=" `(directives/make-bounddirective ~directive ~opbindings-without-implicit-operandbinding)))))
 
 (defmethod 
@@ -111,7 +115,8 @@
 
 (defrecord 
   AbsoluteIdentifier 
-  [start 
+  [nodekind
+   start 
    length])
 
 (defrecord
@@ -122,9 +127,12 @@
 (defn
   make-absolute-identifier
   ([node]
-    (make-absolute-identifier (.getStartPosition node) (.getLength node)))
-  ([start length]
-    (AbsoluteIdentifier. start length)))
+    (make-absolute-identifier
+      (astnode/ekeko-keyword-for-class-of node)
+      (.getStartPosition node)
+      (.getLength node)))
+  ([nodekind start length]
+    (AbsoluteIdentifier. nodekind start length)))
 
 (defn
   make-relative-identifier
@@ -158,12 +166,17 @@
 (defn
   snippet-value-corresponding-to-identifier
   [snippet identifier]
-  (some 
-    (fn [value] 
-      (let [value-id (snippet-value-identifier snippet value)]
-        (when (= value-id identifier)
-          value)))
-    (snippet/snippet-nodes snippet)))
+  (let [found 
+        (some 
+          (fn [value] 
+            (let [value-id (snippet-value-identifier snippet value)]
+              (when (= value-id identifier)
+                value)))
+          (snippet/snippet-nodes snippet))]
+    (if
+      (nil? found)
+      (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
+      found)))  
 
 (defn
   snippet-persistable-directives
@@ -174,12 +187,18 @@
             (snippet/snippet-bounddirectives-for-node snippet value)            
             identifier
             (snippet-value-identifier snippet value)]
+        (when (contains? sofar identifier)
+          (throw (Exception. (str "While serializing snippet, encountered duplicate identifier among snippet values:" value identifier))))
+        (when 
+          (nil? bounddirectives)
+          (throw (Exception. (str "While serializing snippet, encountered invalid bound directives for snippet value:"  bounddirectives value snippet))))
+        (when 
+          (nil? identifier)
+          (throw (Exception. (str "While serializing snippet, encountered invalid identifier for snippet value:" value))))
         (assoc sofar identifier bounddirectives)))
     {}
     (snippet/snippet-nodes snippet)))
-
-
-
+ 
 (defn
   snippet-from-node-and-persisted-directives
   [node data]
@@ -237,9 +256,10 @@
   clojure.core/print-dup 
   AbsoluteIdentifier
   [identifier w]
-  (let [pos (:start identifier)
+  (let [kind (:nodekind identifier)
+        pos (:start identifier)
         len (:length identifier)]
-  (.write w (str  "#=" `(make-absolute-identifier ~pos ~len)))))
+  (.write w (str  "#=" `(make-absolute-identifier ~kind ~pos ~len)))))
 
 
 (defmethod 
@@ -255,9 +275,12 @@
   registered-directive-for-name
   [name]
   (if-let
-    [directive (matching/registered-directive-for-name name)]
-    directive
-    (rewriting/registered-directive-for-name name)))
+    [matching-directive (matching/registered-directive-for-name name)]
+    matching-directive
+    (if-let 
+      [rewriting-directive (rewriting/registered-directive-for-name name)]
+      rewriting-directive
+      (throw (Exception. (str "Could not find a matching, nor a rewriting directive for the given name: " name))))))
     
 
 (defmethod 
@@ -300,6 +323,35 @@
     (read-string string)))
 
 
+(defn
+  template-string
+  [snippet]
+  (let [grp (snippetgroup/make-snippetgroup "dummy" [snippet])
+        pp  (damp.ekeko.snippets.gui.TemplatePrettyPrinter. 
+              (damp.ekeko.snippets.data.TemplateGroup/newFromClojureGroup
+                grp))]
+    (.prettyPrintSnippet pp snippet)))
+
+
+(defn 
+  copy-snippet
+  "Duplicates the given snippet. 
+   No data is shared between the original and the copy."
+  [snippet]
+  ;(println "original: " (template-string snippet))
+  (let [s (snippet-as-persistent-string snippet)
+        copy (snippet-from-persistent-string s)]
+    ;(println "copy: " (template-string copy))
+    copy))
+  
+
+
+(def
+  copy-snippetgroup
+  "Duplicates the given snippet group. 
+   No data is shared between the original and the copy."
+  copy-snippet)
+  
 
 (defn
   spit-snippet
@@ -328,10 +380,24 @@
   slurp-transformation
   slurp-snippet)
 
-(def 
+(defn
   spit-transformation
-  spit-snippet)
+  [filename transformation]
+  (spit-snippet filename transformation))
+ 
+(defn
+  snippetgroup-add-copy-of-snippet
+  [snippetgroup snippet]
+  (snippetgroup/add-snippet snippetgroup (copy-snippet snippet)))
 
+(defn
+  snippetgroup-add-copy-of-snippetgroup
+  [snippetgroup tobecopied]
+  (reduce 
+    (fn [snippetgroupsofar snippet]
+      (snippetgroup/add-snippet snippetgroupsofar (copy-snippet snippet)))
+    snippetgroup
+    (snippetgroup/snippetgroup-snippetlist tobecopied)))
 
 (defn
   register-callbacks
@@ -340,6 +406,13 @@
   (set! (damp.ekeko.snippets.gui.TemplateEditorInput/FN_DESERIALIZE_TEMPLATEGROUP) slurp-snippetgroup)
   (set! (damp.ekeko.snippets.gui.TransformationEditor/FN_SERIALIZE_TRANSFORMATION) spit-transformation)
   (set! (damp.ekeko.snippets.gui.TransformationEditor/FN_DESERIALIZE_TRANSFORMATION) slurp-transformation)
+  
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPET_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippetgroup)
+
+  
+  
+  
   )
 
 (register-callbacks)

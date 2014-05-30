@@ -15,7 +15,9 @@
     [damp.ekeko.jdt 
      [astnode :as astnode]
      [ast :as ast]])
-  (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
+  (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
+            [org.eclipse.jdt.core.dom Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
+                          
 
 
 (def ast `ast/ast)
@@ -839,7 +841,7 @@
                   (default-bounddirectives snippet value))
         (assoc-in [:var2ast lvar] value))))
    
-  (let [snippet (atom (damp.ekeko.snippets.snippet.Snippet. n {} {} {} '() nil nil {} {}))]
+  (let [snippet (atom (snippet/make-snippet n))]
     (util/walk-jdt-node 
      n 
       (fn [astval] (swap! snippet assoc-snippet-value astval))
@@ -848,9 +850,6 @@
       (fn [primval]  (swap! snippet assoc-snippet-value primval))
       (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
     @snippet))
-
-
-
 
 (defn
   snippet-from-string
@@ -861,11 +860,25 @@
   ))
 
 
-(def
+(defn
   snippet-from-node
-  jdt-node-as-snippet)
-  
-  
+  [node]
+  (let [string (str node)] ;to normalize char indices to those produced by ast flattener, otherwise persistency fails
+    (jdt-node-as-snippet 
+      (cond 
+        (instance? Expression node)
+        (parsing/parse-string-expression string)
+        (instance? Statement node)
+        (parsing/parse-string-statement string)
+        (instance? BodyDeclaration node)
+        (parsing/parse-string-declaration string)
+        (instance? CompilationUnit node)
+        (parsing/parse-string-unit string)
+        (instance? ImportDeclaration node)
+        (parsing/parse-string-importdeclaration string)
+        :default 
+        (parsing/parse-string-ast string)))))
+    
 
 (comment
 (defn 
