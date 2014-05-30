@@ -48,13 +48,23 @@ damp.ekeko.snippets.snippet
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast  
-   userquery document rewrite track2ast ast2track]
+  [ast ast2var ast2bounddirectives var2ast userquery 
+   ;document rewrite track2ast ast2track
+   ]
   clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
   (-uninitialized [_]
     (Snippet. 
-      nil nil nil nil nil nil nil nil nil)))
-      
+      nil nil nil nil nil)))
+     
+
+
+(defn
+  make-snippet
+  "For internal use only. 
+   Consider matching/snippet-from-string or matching/snippet-from-node instead."
+  [node]
+  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} '()))
+  
 
 (defn 
   snippet-root 
@@ -142,6 +152,7 @@ damp.ekeko.snippets.snippet
       (= (astnode/owner value) node))
     (snippet-nodes snippet)))
 
+
 (defn 
   snippet-vars
   "Returns the logic variables that correspond to the AST nodes
@@ -179,30 +190,41 @@ damp.ekeko.snippets.snippet
     (fn [list el] (concat list (rest el))) 
     (rest (first (snippet-userquery snippet)))  
     (rest (snippet-userquery snippet))))  
-  
-(defn 
-  snippet-document
-  "Returns the document of source code of the given snippet."
-  [snippet]
-  (:document snippet))
 
-(defn 
-  snippet-rewrite
-  "Returns the ASTRewrite from the root of snippet."
-  [snippet]
-  (:rewrite snippet))
 
-(defn 
-  snippet-node-for-track 
-  "For the node track in document of the given snippet, returns the AST node."
-  [snippet track]
-  (get-in snippet [:track2ast track]))
-
-(defn 
-  snippet-track-for-node 
-  "Returns node track in document of the given snippet for the given AST node."
+(defn
+  snippet-corresponding-node
+  "Returns the node corresponding to the given one in the snippet. 
+   Correspondance is determined solely using the position and type of the node."
   [snippet node]
-  (get-in snippet [:ast2track node]))
+  )
+  
+
+;(defn 
+; snippet-document
+; "Returns the document of source code of the given snippet."
+; [snippet]
+; (:document snippet))
+
+;(defn 
+;  snippet-rewrite
+;  "Returns the ASTRewrite from the root of snippet."
+;  [snippet]
+;  (:rewrite snippet))
+
+;(defn 
+;  snippet-node-for-track 
+;  "For the node track in document of the given snippet, returns the AST node."
+;  [snippet track]
+;  (get-in snippet [:track2ast track]))
+
+;(defn 
+;  snippet-track-for-node 
+;  "Returns node track in document of the given snippet for the given AST node."
+;  [snippet node]
+;  (get-in snippet [:ast2track node]))
+
+
 
 (defn
   snippet-property-for-node
@@ -276,39 +298,13 @@ damp.ekeko.snippets.snippet
       (astnode/nilvalue? value))))
 
 
-;; Copying Snippet and Apply rewrite
-;; ---------------------------------
+;; Manipulating snippets
+;; ---------------------
 
 (defn
-  copy-snippet
-  "Copy all informations in oldsnippet to newsnippet, comparing each node with NodeTrackPosition of ASTRewrite."
-  [oldsnippet newsnippet]
-  (defn update-newsnippet-value [snippet value track]
-    (let [arrTrack [(util/class-simplename (class value))
-                    (snippet-property-for-node oldsnippet value) 
-                    (.getStartPosition track) 
-                    (.getLength track)]
-          newast (snippet-node-for-track snippet arrTrack)] 
-      (if (not (nil? newast))
-        (->
-          snippet
-          (update-in [:ast2var newast] (fn [x] (snippet-var-for-node oldsnippet value)))
-          (update-in [:ast2directives newast] (fn [x] (get-in oldsnippet [:ast2directives value])))
-          (util/dissoc-in [:var2ast (snippet-var-for-node snippet newast)])      ;new variable replaced by old variable 
-          (assoc-in  [:var2ast (snippet-var-for-node oldsnippet value)] newast))
-        snippet)))
-  (let [snippet (atom newsnippet)
-        rw (:rewrite oldsnippet)]
-    (util/walk-jdt-node 
-      (:ast oldsnippet)
-      (fn [astval]  (swap! snippet update-newsnippet-value astval (.track rw astval)))
-      (fn [lstval]  (swap! snippet update-newsnippet-value lstval (.track rw (:owner lstval))))
-      (fn [primval] (swap! snippet update-newsnippet-value primval (.track rw (:owner primval))))
-      (fn [nilval]  (swap! snippet update-newsnippet-value nilval (.track rw (:owner nilval)))))
-    (swap! snippet update-in [:var2uservar] (fn [x] (:var2uservar oldsnippet)))
-    (swap! snippet update-in [:userquery] (fn [x] (:userquery oldsnippet)))
-    @snippet))
-
+  copy-jdt-node
+  [^ASTNode node]
+  (.copySubtree (.getAST node) node))
 
 (defn
   update-bounddirectives
