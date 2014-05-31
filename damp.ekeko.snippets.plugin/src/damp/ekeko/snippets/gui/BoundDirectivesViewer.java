@@ -55,6 +55,9 @@ public class BoundDirectivesViewer extends Composite {
 		return (Collection) FN_BOUNDDIRECTIVES_FOR_NODE.invoke(template, node);
 	}
 	
+	
+	//bug: ipv een cljGroup wordt een TemplateGroup meegegeven
+	
 	public void removeBoundDirective(Object template, Object node, Object boundDirective) {
 		Object[] updated = (Object[]) FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE.invoke(cljGroup, template, node, boundDirective);
 		cljGroup = updated[0];

@@ -305,7 +305,7 @@ public class TemplateEditor extends EditorPart {
 
 	protected void onEditBoundDirectives(TemplateGroup oldTemplateGroup, Object selectedTemplate, Object selectedNode) {
 		
-		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), oldTemplateGroup, selectedTemplate, selectedNode);
+		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), oldTemplateGroup.getGroup(), selectedTemplate, selectedNode);
 		int open = dialog.open();
 		if(open == BoundDirectivesEditorDialog.CANCEL)
 			return;
