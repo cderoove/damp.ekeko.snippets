@@ -145,6 +145,14 @@ damp.ekeko.snippets.operators
 
     
 
+(defn
+  remove-node
+  "Removes node from snippet."
+  [template value]
+  (snippet/remove-node
+    template
+    value))
+  
   
 
 (comment

@@ -192,13 +192,41 @@ damp.ekeko.snippets.snippet
     (rest (snippet-userquery snippet))))  
 
 
-(defn
-  snippet-corresponding-node
-  "Returns the node corresponding to the given one in the snippet. 
-   Correspondance is determined solely using the position and type of the node."
-  [snippet node]
-  )
+;(defn
+;  snippet-corresponding-node
+;  "Returns the node corresponding to the given one in the snippet. 
+;   Correspondance is determined solely using the position and type of the node."
+;  [snippet node]
+; compare persistency identifiers
+;  )
   
+;(defn 
+;  make-rewrite-for-snippet
+;  "Returns a new ASTRewrite for the root of the snippet."
+;  [snippet] 
+;  (ASTRewrite. (.getAST (snippet-root))))
+
+;(defn
+;  apply-rewrite-to-snippet
+;  "Applies the given ASTRewrite to a snippet."
+;  [rewrite snippet]
+;  (let [trackedPositions 
+;        (reduce 
+;          (fn [sofar value]
+ ;           ;lukt alleen voor nodes
+            ;primitives en lijsten moeten opgezocht worden via hun relatieve id
+            ;vraag is of het niet simpeler is de ast destructief te updaten
+            
+ ;           )
+ ;         {}
+ ;         (snippet-nodes snippet)
+                
+  
+  ;apply rewrite to root ast
+  ;create new snippet based on output
+  ;copy directives of each node
+  ;use tracked positions
+;  )
 
 ;(defn 
 ; snippet-document
@@ -206,12 +234,7 @@ damp.ekeko.snippets.snippet
 ; [snippet]
 ; (:document snippet))
 
-;(defn 
-;  snippet-rewrite
-;  "Returns the ASTRewrite from the root of snippet."
-;  [snippet]
-;  (:rewrite snippet))
-
+  
 ;(defn 
 ;  snippet-node-for-track 
 ;  "For the node track in document of the given snippet, returns the AST node."
@@ -337,6 +360,36 @@ damp.ekeko.snippets.snippet
             [:var2uservar (snippet-var-for-node snippet node)]
             (symbol uservar)))
                              
+
+
+
+;todo: delete other kinds
+(defn 
+  remove-node
+  [snippet node]
+  (defn 
+    dissoc-snippet-value
+    [s value]
+    (->
+      (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
+      (update-in [:ast2var] dissoc value)
+      (update-in [:ast2bounddirectives] dissoc value)))
+  (let [newsnippet 
+        (atom (dissoc-snippet-value snippet node))] 
+    (.delete node) ;remove node
+    (util/walk-jdt-node ;dissoc children 
+      node 
+      (fn [astval] 
+        (swap! newsnippet dissoc-snippet-value astval))
+      (fn [lstval] 
+        (swap! newsnippet dissoc-snippet-value lstval))
+      (fn [primval]  
+        (swap! newsnippet dissoc-snippet-value primval))
+      (fn [nilval] 
+        (swap! newsnippet dissoc-snippet-value nilval)))
+    @newsnippet))
+  
+  
 
 (defn
   register-callbacks

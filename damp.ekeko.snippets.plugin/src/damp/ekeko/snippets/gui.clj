@@ -224,7 +224,9 @@
                            (operatorsrep/binding-group operandbinding)
                            (operatorsrep/binding-template operandbinding)
                            (operatorsrep/binding-value operandbinding))]
-              (.getValue (.open dialog)))))]
+              (.open dialog)
+              (.getValue dialog)
+              )))]
         editor))
 
 (defmethod 

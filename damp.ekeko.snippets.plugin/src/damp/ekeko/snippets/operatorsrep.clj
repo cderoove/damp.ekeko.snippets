@@ -176,6 +176,7 @@
      :refinement    "Refinement"
      :neutral       "Neutral"
      :other         "Other"
+     :destructive   "Destructive"
      :rewrite       "Rewriting"
   })
 
@@ -268,6 +269,18 @@
      [(make-operand "Variable (e.g., ?v)" opscope-variable nil)])
 
    
+
+   (Operator. 
+     "remode-node"
+     operators/remove-node
+     :destructive
+     "Removes its operand from the template."
+     nil
+     "Removes an element from the template."
+     [])
+   
+   
+    
 
    
    ])

@@ -38,11 +38,14 @@ public class TemplateGroupNodeSelectionDialog extends Dialog
 		 composite.setLayout(new GridLayout(1, false));
 
 		 templateGroupViewer = new TemplateGroupViewer(composite, SWT.NONE);
-		 GridLayout gridLayout = (GridLayout) templateGroupViewer.getLayout();
+		
+		 /*
+		 FillLayout gridLayout = (FillLayout) templateGroupViewer.getLayout();
 		 gridLayout.verticalSpacing = 0;
 		 gridLayout.marginWidth = 0;
 		 gridLayout.marginHeight = 0;
 		 gridLayout.horizontalSpacing = 0;
+		 */
 		 templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
 			@Override
 			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
@@ -56,6 +59,10 @@ public class TemplateGroupNodeSelectionDialog extends Dialog
 		templateGroupViewer.setInput(TemplateGroup.newFromClojureGroup(cljGroup), cljTemplate, cljNode);
 		
 		return composite;	
+	}
+	
+	public Object getValue() {
+		return templateGroupViewer.getSelectedSnippetNode();
 	}
 
 
