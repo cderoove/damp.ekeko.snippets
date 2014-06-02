@@ -4,9 +4,12 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 import clojure.lang.IFn;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class OperatorTreeContentProvider implements ITreeContentProvider {
 
+	private Object selectedSnippetGroup;
+	private Object selectedSnippet;
 	private Object selectedSnippetNode;
 	
 	public static IFn FN_ELEMENTS;
@@ -18,28 +21,35 @@ public class OperatorTreeContentProvider implements ITreeContentProvider {
 	
 	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		selectedSnippetNode = newInput;
+		if(newInput instanceof TemplateGroupTemplateElement) {
+			TemplateGroupTemplateElement inp = (TemplateGroupTemplateElement) newInput;
+			selectedSnippetGroup = inp.getGroup();
+			selectedSnippet = inp.getTemplate();
+			selectedSnippetNode = inp.getValue();	
+		} else {
+			throw new IllegalArgumentException("OperatorTreeContentProvider expects input of type TemplateGroupTemplateElement");
+		}
 	}
 
 	@Override
 	public Object[] getElements(Object inputElement) {
 		if (inputElement == null)
 			return null;
-		return (Object[]) FN_ELEMENTS.invoke(selectedSnippetNode, inputElement);
+		return (Object[]) FN_ELEMENTS.invoke(selectedSnippetGroup, selectedSnippet, selectedSnippetNode, inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement == null)
 			return null;
-		return (Object[]) FN_CHILDREN.invoke(selectedSnippetNode, parentElement);
+		return (Object[]) FN_CHILDREN.invoke(selectedSnippetGroup, selectedSnippet, selectedSnippetNode, parentElement);
 	}
 
 	@Override
 	public Object getParent(Object element) {
 		if (element == null)
 			return null;
-		return FN_PARENT.invoke(selectedSnippetNode, element);
+		return FN_PARENT.invoke(selectedSnippetGroup, selectedSnippet, selectedSnippetNode, element);
 	}
 
 	@Override

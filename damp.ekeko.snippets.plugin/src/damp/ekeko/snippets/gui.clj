@@ -125,22 +125,22 @@
 (defn- 
   operator-category?
   [operator-or-category]
-  (keyword?  operator-or-category))
+  (keyword? operator-or-category))
 
 (defn
   operatortreecontentprovider-children
-  [snippetnode operator-or-category]
+  [snippetgroup snippet snippetnode operator-or-category]
   ;treeview children of given treeview parent
   (to-array 
     (if
       (operator-category? operator-or-category)
-      (operatorsrep/applicable-operators-in-category snippetnode operator-or-category)
+      (operatorsrep/applicable-operators-in-category snippetgroup snippet snippetnode operator-or-category)
       [])))
       
  
 (defn
   operatortreecontentprovider-parent
-  [snippetnode operator-or-category]
+  [snippetgroup snippet snippetnode operator-or-category]
   (when-not
     (operator-category? operator-or-category)
     (operatorsrep/operator-category operator-or-category)))
@@ -148,11 +148,9 @@
     
 (defn
   operatortreecontentprovider-elements
-  [snippetnode input]
+  [snippetgroup snippet snippetnode input]
   ;roots of treeview
-  (when 
-    (= snippetnode input)
-    (to-array (operatorsrep/registered-categories))))
+  (to-array (operatorsrep/registered-categories)))
   
 
 ;; OperatorTreeLabelProvider

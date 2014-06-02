@@ -10,6 +10,7 @@ damp.ekeko.snippets.operatorsrep
              [ast :as ast]
              [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
+             [snippet :as snippet]
              [operators :as operators]
              [parsing :as parsing]
              [snippetgroup :as snippetgroup]
@@ -25,38 +26,58 @@ damp.ekeko.snippets.operatorsrep
 
 (defn
   applicability|always
-  [n] 
+  [snippetgroup snippet value] 
   true)
 
 (defn 
   applicability|node
-  [n]
-  (astnode/ast? n))
+  [snippetgroup snippet value]
+  (astnode/ast? value))
+
+(defn
+  applicability|nonroot
+  [snippetgroup snippet value]
+  (not= (snippet/snippet-root snippet) value))
 
 (defn 
+  applicability|node|nonroot
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (applicability|nonroot snippetgroup snippet value)))
+    
+(defn 
   applicability|lst
-  [l]
-  (astnode/lstvalue? l))
+  [snippetgroup snippet value]
+  (astnode/lstvalue? value))
 
 (defn 
   applicability|lstelement
-  [snippet-val]
+  [snippetgroup snippet value]
   (and 
-    (not (astnode/lstvalue? snippet-val))
-    (astnode/property-descriptor-list? (astnode/owner-property snippet-val))))
+    (not (astnode/lstvalue? value))
+    (astnode/property-descriptor-list? (astnode/owner-property value))))
+
+(defn 
+  applicability|lstelement|nonroot
+  [snippetgroup snippet value]
+  (and (applicability|node snippetgroup snippet value)
+       (applicability|nonroot snippetgroup snippet value)))
+
 
 (defn
   applicability|lstelement|node
-  [v]
-  (and (applicability|node v)
-       (applicability|lstelement v)))
+  [snippetgroup snippet value]
+  (and (applicability|node snippetgroup snippet value)
+       (applicability|lstelement snippetgroup snippet value)))
 
 (defn
   applicability|deleteable
-  [n]
+  [snippetgroup snippet value]
   (and
-    (astnode/ast? n) 
-    (let [ownerprop (astnode/owner-property n)]
+    (astnode/ast? value) 
+    (applicability|nonroot snippetgroup snippet value)
+    (let [ownerprop (astnode/owner-property value)]
       (or 
         (astnode/property-descriptor-list? ownerprop)
         (not (.isMandatory ownerprop))))))
@@ -332,7 +353,7 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Insert new node before."
      opscope-subject
-     applicability|lstelement|node 
+     applicability|lstelement|nonroot
      "Creates a new node and inserts it before the selection."
      [(make-operand "New node type" opscope-nodeclasskeyw applicability|always)])
    
@@ -384,29 +405,29 @@ damp.ekeko.snippets.operatorsrep
 (defn 
   applicable?
   "Returns true if preconditions for given operator are fulfilled by the node."
-  [operator node]
+  [snippetgroup snippet node operator]
   (let [opscope (operator-scope operator)
         validationf (operator-validation operator)]
     (when (not= opscope opscope-subject)
       (throw (Exception. (str "Unexpected operator scope:" operator opscope))))
-    (validationf node)))
+    (validationf snippetgroup snippet node)))
 
 
 (defn
   applicable-operators
   "Filters operators that are applicable to the given node."
-  [node]
+  [snippetgroup snippet node]
   (filter
     (fn [operator] 
-      (applicable? operator node))
+      (applicable? snippetgroup snippet node operator))
     (registered-operators)))
 
 (defn
   applicable-operators-in-category
-  [node cat]
+  [snippetgroup snippet node cat]
   (filter (fn [operator]
             (= (operator-category operator) cat))
-          (applicable-operators node)))
+          (applicable-operators  snippetgroup snippet node)))
 
 
 (comment 

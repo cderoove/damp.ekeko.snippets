@@ -129,7 +129,7 @@ public class OperatorOperandsViewer extends Composite {
 	}
 	
 	private void updateWidgets() {
-		operatorTreeViewer.setInput(cljSelectedSnippetNode);
+		operatorTreeViewer.setInput(new TemplateGroupTemplateElement(jGroup.getGroup(), cljSnippet, cljSelectedSnippetNode));
 		for(TreeColumn tc : operatorTree.getColumns())
                   tc.pack(); //resizes
         		
