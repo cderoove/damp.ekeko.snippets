@@ -15,7 +15,6 @@
              [persistence :as persistence]
              [operators]
              [operatorsrep]
-             [precondition]
              [querying]
              [gui]
              [runtime]

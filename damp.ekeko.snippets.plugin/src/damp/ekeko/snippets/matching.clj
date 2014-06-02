@@ -822,6 +822,26 @@
   [template value directive]
   (remove-directives template value [directive]))
   
+(defn 
+  remove-value-from-snippet
+  "Removes a single value from snippet, does not remove subvalues."
+  [s value]
+  (->
+    (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
+    (update-in [:ast2var] dissoc value)
+    (update-in [:ast2bounddirectives] dissoc value)))
+
+(defn 
+  add-value-to-snippet
+  "Adds a single value to snippet, does not add subvalues."
+  [snippet value]
+  (let [lvar (util/gen-readable-lvar-for-value value)]
+    (->
+      snippet
+      (assoc-in [:ast2var value] lvar)
+      (assoc-in [:ast2bounddirectives value] 
+                (default-bounddirectives snippet value))
+      (assoc-in [:var2ast lvar] value))))
 
 (defn 
   jdt-node-as-snippet
@@ -830,25 +850,14 @@
    for the values of its properties.
    note: Only used to test operators related binding."
   [n]
-  (defn 
-    assoc-snippet-value
-    [snippet value]
-    (let [lvar (util/gen-readable-lvar-for-value value)]
-      (->
-        snippet
-        (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2bounddirectives value] 
-                  (default-bounddirectives snippet value))
-        (assoc-in [:var2ast lvar] value))))
-   
   (let [snippet (atom (snippet/make-snippet n))]
     (util/walk-jdt-node 
      n 
-      (fn [astval] (swap! snippet assoc-snippet-value astval))
+      (fn [astval] (swap! snippet add-value-to-snippet astval))
       (fn [lstval] 
-        (swap! snippet assoc-snippet-value lstval))
-      (fn [primval]  (swap! snippet assoc-snippet-value primval))
-      (fn [nilval] (swap! snippet assoc-snippet-value nilval)))
+        (swap! snippet add-value-to-snippet lstval))
+      (fn [primval]  (swap! snippet add-value-to-snippet primval))
+      (fn [nilval] (swap! snippet add-value-to-snippet nilval)))
     @snippet))
 
 (defn

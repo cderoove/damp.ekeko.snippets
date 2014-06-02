@@ -25,32 +25,14 @@ damp.ekeko.snippets.snippet
 ; members of the Snippet datatype:
 ; - ast: complete AST for the original code snippet
 ; - ast2var: map from an AST node of the snippet to the logic variable that is to be bound to its match
-; - ast2groundf: map from an AST node of the snippet to a function that generates "grounding" conditions. 
-;   These will ground the corresponding logic variable to an AST node of the Java project
-;   format of the function is list (:type argument1 argument2 ..)
-; - ast2constrainf:  map from an AST node of the snippet to a function that generates "constraining" conditions. 
-;   These will constrain the bindings for the corresponding logic variable to an AST node of the Java project
-;   that actually matches the AST node of the snippet. 
-;   format of the function is list (:type argument1 argument2 ..)
-; - ast2userfs:  map from an AST node of the snippet to a user function. 
-;   format of the function is list of list ((fuction1 argument) (fuction2 argument) ..)
-;   generates query in group
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
 ; - var2uservar: map from logic variable to the user defined logic variable 
-; - userquery: user defined logic conditions 
-;   format in quote '((...)(....))
-; - document: java Document source code
-; - rewrite: ASTRewrite
-;   note: to use the Track, we should call the function track for each node before any modification of ASTRewrite
-; - track2ast: map from track (in original document) to node 
-;   {[property, start, length] ast}
-
+; - ast2bounddirectives: map from AST node to its matching/rewriting directives 
+; - userquery: TODO
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast userquery 
-   ;document rewrite track2ast ast2track
-   ]
+  [ast ast2var ast2bounddirectives var2ast userquery]
   clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
   (-uninitialized [_]
     (Snippet. 
@@ -359,37 +341,7 @@ damp.ekeko.snippets.snippet
   (assoc-in snippet
             [:var2uservar (snippet-var-for-node snippet node)]
             (symbol uservar)))
-                             
-
-
-
-;todo: delete other kinds
-(defn 
-  remove-node
-  [snippet node]
-  (defn 
-    dissoc-snippet-value
-    [s value]
-    (->
-      (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
-      (update-in [:ast2var] dissoc value)
-      (update-in [:ast2bounddirectives] dissoc value)))
-  (let [newsnippet 
-        (atom (dissoc-snippet-value snippet node))] 
-    (.delete node) ;remove node
-    (util/walk-jdt-node ;dissoc children 
-      node 
-      (fn [astval] 
-        (swap! newsnippet dissoc-snippet-value astval))
-      (fn [lstval] 
-        (swap! newsnippet dissoc-snippet-value lstval))
-      (fn [primval]  
-        (swap! newsnippet dissoc-snippet-value primval))
-      (fn [nilval] 
-        (swap! newsnippet dissoc-snippet-value nilval)))
-    @newsnippet))
-  
-  
+                               
 
 (defn
   register-callbacks

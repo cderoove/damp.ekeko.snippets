@@ -10,10 +10,11 @@ damp.ekeko.snippets.operators
              [matching :as matching]
              [directives :as directives]
              [rewriting :as rewriting]
+             [util :as util]
              ])
-  ;(:require [damp.ekeko.jdt 
-  ;           [astnode :as astnode]
-  ;           [ast :as ast]])
+  (:require [damp.ekeko.jdt 
+             [astnode :as astnode]
+             [ast :as ast]])
   )
 
 
@@ -143,17 +144,62 @@ damp.ekeko.snippets.operators
            (directives/make-directiveoperand "Variable to be replaced by template")
            uservar)]))))
 
-    
 
+
+
+
+;todo: delete template elements other than nodes
 (defn
   remove-node
-  "Removes node from snippet."
-  [template value]
-  (snippet/remove-node
-    template
-    value))
-  
-  
+  "Removes node from snippet. "
+  [snippet node]
+  (let [newsnippet 
+        (atom (matching/remove-value-from-snippet snippet node))] 
+    (.delete node) ;remove node
+    (util/walk-jdt-node ;dissoc children 
+      node 
+      (fn [astval] 
+        (swap! newsnippet matching/remove-value-from-snippet astval))
+      (fn [lstval] 
+        (swap! newsnippet matching/remove-value-from-snippet lstval))
+      (fn [primval]  
+        (swap! newsnippet matching/remove-value-from-snippet primval))
+      (fn [nilval] 
+        (swap! newsnippet matching/remove-value-from-snippet nilval)))
+    @newsnippet))
+
+
+(defn
+  insert-at
+  "Inserts node in list from snippet at the given index."
+  [snippet node lst idx]
+  (let [newsnippet 
+        (atom (matching/add-value-to-snippet snippet node))] ;update directives for new node
+    (.add lst idx node) ;destructive add
+    (util/walk-jdt-node ;add children 
+                        node 
+                        (fn [astval] 
+                          (swap! newsnippet matching/add-value-to-snippet astval))
+                        (fn [lstval] 
+                          (swap! newsnippet matching/add-value-to-snippet lstval))
+                        (fn [primval]  
+                          (swap! newsnippet matching/add-value-to-snippet primval))
+                        (fn [nilval] 
+                          (swap! newsnippet matching/add-value-to-snippet nilval)))
+    @newsnippet))
+
+
+(defn
+  insert-newnode-before
+  "Instantiates new node and inserts it before the given list element."
+  [snippet beforenode classkeyw]
+  (let [a (.getAST beforenode)
+        clazz (astnode/class-for-ekeko-keyword classkeyw)
+        newnode (.createInstance a clazz)
+        lst (snippet/snippet-list-containing snippet beforenode)
+        lst-raw (astnode/value-unwrapped lst)
+        idx (.indexOf lst-raw beforenode)]
+    (insert-at snippet newnode lst-raw idx)))
 
 (comment
   
@@ -246,36 +292,6 @@ damp.ekeko.snippets.operators
     (replace-node-no-apply-rewrite snippet node newnode)
     (snippet/apply-rewrite snippet)) 
   
-  (defn 
-    remove-node-no-apply-rewrite 
-    "Remove a given node from snippet, without apply rewrite."
-    [snippet node]
-    (let [list-container (snippet/snippet-list-containing snippet node)
-          rewrite (snippet/snippet-rewrite snippet)
-          list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
-      (.remove list-rewrite node (new org.eclipse.text.edits.TextEditGroup "snippet"))
-      snippet))
-  
-  (defn 
-    remove-node 
-    "Remove a given node from snippet."
-    [snippet node]
-    (remove-node-no-apply-rewrite snippet node)
-    (snippet/apply-rewrite snippet)) 
-  
-  (defn
-    remove-nodes
-    "Remove given nodes from snippet."
-    [snippet nodes]
-    (defn remove-nodes-rec [snippet nodes]
-      (if (empty? nodes)
-        snippet
-        (let [new-snippet (remove-node-no-apply-rewrite snippet (first nodes))]
-          (remove-nodes-rec
-            new-snippet
-            (rest nodes)))))
-    (snippet/apply-rewrite
-      (remove-nodes-rec snippet nodes)))
   
   (defn 
     add-node-no-apply-rewrite 

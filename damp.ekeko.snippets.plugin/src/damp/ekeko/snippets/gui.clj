@@ -205,7 +205,6 @@
   [shell group template node]
   (damp.ekeko.snippets.gui.TemplateGroupNodeSelectionDialog. shell group template node))
 
-
 (defmulti
   operandbinding-celleditor
   (fn [table operandbinding]
@@ -235,7 +234,55 @@
   [table operandbinding]
   (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
     editor))
+
+
+;;TODO: get node and template, invoke possible-values-for-operand
+;;to restrict classes to those deriving from property's value type
+
+(defmethod 
+  operandbinding-celleditor
+  operatorsrep/opscope-nodeclasskeyw
+  [table operandbinding]
+  (let [nodeclasses
+        (to-array (map astnode/ekeko-keyword-for-class astnode/node-classes))
+         
+       ; editor 
+       ; (proxy [org.eclipse.jface.viewers.DialogCellEditor] [table]
+       ;   (openDialogBox [window] 
+       ;     (let [shell (.getShell window)
+       ;           dialog 
+       ;           (org.eclipse.ui.dialogs.ListDialog.
+       ;             shell)]
+       ;       (doto 
+       ;         dialog
+       ;         (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
+       ;         (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
+       ;         (.setInput nodeclasses)
+       ;         (.open))
+       ;       (when-let [selection (.getResult dialog)]
+       ;         (first selection))
+       ;       )))]
     
+       editor 
+       (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
+    (doto editor
+      (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
+      (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
+      (.setInput nodeclasses))
+    editor))
+  
+  
+;  (let [nodeclasses
+;        (map astnode/ekeko-keyword-for-class (astnode/node-classes))
+;        contentprovider
+;        (org.eclipse.jface.viewers.ArrayContentProvider.)
+;        labelprovider
+;        (org.eclipse.jface.viewers.LabelProvider.)
+;        editor 
+;        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
+;    (.setInput editor (to-array nodeclasses))
+;    editor
+;    ))
   
 (defn
   operandbinding-labelprovider-descriptiontext
@@ -266,6 +313,10 @@
   :default
   [operandbinding]
   (str (operatorsrep/binding-value operandbinding)))
+
+
+
+
 
 
 

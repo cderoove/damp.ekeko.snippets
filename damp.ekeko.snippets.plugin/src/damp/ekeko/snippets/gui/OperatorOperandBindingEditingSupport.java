@@ -19,10 +19,13 @@ public class OperatorOperandBindingEditingSupport extends EditingSupport {
 		operandsTableViewer = viewer;
 	}
 
+	//NOTE: if the Eclipse GUI hangs, there is a Clojure error in the multi-method that is dispatched to
+	//such errors seem no to propagate outside of the event loop
 	@Override
 	protected CellEditor getCellEditor(Object element) {
 		Table table = operandsTableViewer.getTable();
-		return (CellEditor) FN_OPERANDBINDING_EDITOR.invoke(table, element);
+		Object returned = FN_OPERANDBINDING_EDITOR.invoke(table, element);
+		return (CellEditor) returned; 
 	}
 
 	@Override
