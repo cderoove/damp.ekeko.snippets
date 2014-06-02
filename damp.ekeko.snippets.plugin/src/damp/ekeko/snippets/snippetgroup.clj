@@ -70,33 +70,6 @@ damp.ekeko.snippets.snippetgroup
     (snippetgroup-snippetlist group)))
  
 
-(defn snippetgroup-snippet-for-var
-  [group var]
-  (defn find-snippet [listsnippet var]
-    (cond 
-      (= var nil) nil
-      (empty? listsnippet) nil
-      (contains? (:var2ast (first listsnippet)) var) (first listsnippet)
-      (.contains (snippet/snippet-uservars (first listsnippet)) var) (first listsnippet)
-      :else (find-snippet (rest listsnippet) var)))
-  (find-snippet (snippetgroup-snippetlist group) var))
-
-(defn snippetgroup-snippet-index
-  [group snippet]
-  (.indexOf (snippetgroup-snippetlist group) snippet))
-
-(defn snippetgroup-replace-snippet
-  [group oldsnippet newsnippet]
-  (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
-    (update-in group [:snippetlist] (fn [x] newlist))))
-
-
-;(defn
-;  snippetgroup-new-state
-;  [grp]
-;  (let [new-snippetlist (map snippet/snippet-new-state  (:snippetlist grp))] 
-;    (update-in grp [:snippetlist] (fn [x] new-snippetlist))))
-
 
 (defn 
   add-snippet
@@ -128,6 +101,13 @@ damp.ekeko.snippets.snippetgroup
                 (.indexOf (snippetgroup-snippetlist snippetgroup) snippet)
                 newsnippet))
        newsnippet])))
+
+(defn
+  snippetgroup-replace-snippet
+  [group oldsnippet newsnippet]
+  (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
+    (update-in group [:snippetlist] (fn [x] newlist))))
+
 
 
 (defn 

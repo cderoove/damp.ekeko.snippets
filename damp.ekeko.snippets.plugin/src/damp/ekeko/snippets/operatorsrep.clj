@@ -13,7 +13,9 @@ damp.ekeko.snippets.operatorsrep
              [snippet :as snippet]
              [operators :as operators]
              [parsing :as parsing]
+             [matching :as matching]
              [snippetgroup :as snippetgroup]
+             [util :as util]
              ]))
 
 ;; Operator information
@@ -259,18 +261,23 @@ damp.ekeko.snippets.operatorsrep
        (operator-operands operator)))
 
 (defn
-  operator-bindings-for-operands-and-subject
-  "Returns fresh bindings for the subject of an operator and its additional operands."
+  make-implicit-operandbinding-for-operator-subject
   [group template subject-template-node operator]
-  (cons 
-    (make-binding
+  (make-binding
       (make-operand "Subject" 
                     opscope-subject
                     validity|subject)
       group
       template
-      subject-template-node)
-    (operator-bindings-for-operands group template operator)))
+      subject-template-node))
+
+(defn
+  operator-bindings-for-operands-and-subject
+  "Returns fresh bindings for the subject of an operator and its additional operands."
+  [group template subject-template-node operator]
+  (cons 
+   (make-implicit-operandbinding-for-operator-subject group template subject-template-node operator)
+   (operator-bindings-for-operands group template operator)))
 
 ;; Registered operator types
 
@@ -499,9 +506,53 @@ damp.ekeko.snippets.operatorsrep
 
 
 
-;; Operand candidates
-;; ------------------
+;; Operand candidate values
+;; ------------------------
 
+(defmulti
+  possible-operand-values
+  (fn [snippetgroup snippet node operator operand]
+    (operand-scope operand)))
+
+(defmethod
+  possible-operand-values
+  opscope-subject
+  [snippetgroup snippet node operator operand]
+  ;(snippet/snippet-nodes snippet)
+  [node]) 
+
+(defmethod
+  possible-operand-values
+  opscope-variable
+  [snippetgroup snippet node operator operand]
+  (str 
+    (if
+      (= (operator-name operator) "add-directive-equals")
+      (conj
+        (map 
+          matching/snippet-vars-among-directivebindings
+          (snippetgroup/snippetgroup-snippetlist snippetgroup))
+        (util/gen-lvar))
+      [(util/gen-readable-lvar-for-value node)])))
+
+(defmethod
+  possible-operand-values
+  opscope-nodeclasskeyw
+  [snippetgroup snippet node operator operand]
+  (map astnode/ekeko-keyword-for-class astnode/node-classes))
+
+
+(defn
+  possible-operand-values|valid
+  [snippetgroup snippet node operator operand]
+  (let [validationf 
+        (operand-validation operand) 
+        candidates
+        (possible-operand-values snippetgroup snippet node operator operand)]
+    (filter
+      (fn [value]
+        (validationf snippetgroup snippet node value))
+      candidates)))
 
 
 (defn
@@ -530,5 +581,5 @@ damp.ekeko.snippets.operatorsrep
   )
 
 
-(register-callbacks)
+  (register-callbacks)
 

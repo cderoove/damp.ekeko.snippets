@@ -104,7 +104,7 @@ public class OperatorOperandsViewer extends Composite {
 		operandValueColCol.setText("Value");
 		
 		operandValueCol.setLabelProvider(new OperatorOperandBindingLabelProviderValue());
-		operandValueCol.setEditingSupport(new OperatorOperandBindingEditingSupport(operandsTableViewer));
+		operandValueCol.setEditingSupport(new OperatorOperandBindingEditingSupport(this));
 
 	}
 	
@@ -148,5 +148,22 @@ public class OperatorOperandsViewer extends Composite {
 	}
 		
 
+	public TableViewer getTableViewer() {
+		return operandsTableViewer;
+	}
+	
+
+	public Object getSnippet() {
+		return cljSnippet;
+	}
+	
+	
+	public Object getSelectedSnippetNode() {
+		return cljSelectedSnippetNode;
+	}
+
+	
+	
+	
 
 }

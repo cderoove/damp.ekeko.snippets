@@ -26,7 +26,6 @@ damp.ekeko.snippets.snippet
 ; - ast: complete AST for the original code snippet
 ; - ast2var: map from an AST node of the snippet to the logic variable that is to be bound to its match
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
-; - var2uservar: map from logic variable to the user defined logic variable 
 ; - ast2bounddirectives: map from AST node to its matching/rewriting directives 
 ; - userquery: TODO
 
@@ -143,18 +142,6 @@ damp.ekeko.snippets.snippet
   [snippet]
   (vals (:ast2var snippet)))
 
-(defn 
-  snippet-uservars
-  "Returns the logic variables defined by users of the given snippet."
-  [snippet]
-  (vals (:var2uservar snippet)))
-
-(defn 
-  snippet-uservars-for-information
-  "Returns the logic variables of node with matching strategy :exact-variable or :variable-info of the given snippet."
-  [snippet]
-  (snippet-uservars snippet))
-
 
 (defn 
   snippet-userquery
@@ -165,13 +152,6 @@ damp.ekeko.snippets.snippet
           '()
           query)))
 
-(defn
-  snippet-userquery-vars
-  [snippet]
-  (reduce 
-    (fn [list el] (concat list (rest el))) 
-    (rest (first (snippet-userquery snippet)))  
-    (rest (snippet-userquery snippet))))  
 
 
 ;(defn

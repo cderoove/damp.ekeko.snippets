@@ -12,19 +12,19 @@ public class OperatorOperandBindingEditingSupport extends EditingSupport {
 
 	public static IFn FN_OPERANDBINDING_EDITOR;
 	
-	TableViewer operandsTableViewer;
+	OperatorOperandsViewer operatorOperandsViewer;
 	
-	public OperatorOperandBindingEditingSupport(TableViewer viewer) {
-		super(viewer);
-		operandsTableViewer = viewer;
+	public OperatorOperandBindingEditingSupport(OperatorOperandsViewer operatorOperandsViewer) {
+		super(operatorOperandsViewer.getTableViewer());
+		this.operatorOperandsViewer = operatorOperandsViewer;
 	}
 
 	//NOTE: if the Eclipse GUI hangs, there is a Clojure error in the multi-method that is dispatched to
 	//such errors seem no to propagate outside of the event loop
 	@Override
 	protected CellEditor getCellEditor(Object element) {
-		Table table = operandsTableViewer.getTable();
-		Object returned = FN_OPERANDBINDING_EDITOR.invoke(table, element);
+		Table table = operatorOperandsViewer.getTableViewer().getTable();
+		Object returned = FN_OPERANDBINDING_EDITOR.invoke(table, operatorOperandsViewer, element);
 		return (CellEditor) returned; 
 	}
 
@@ -41,7 +41,7 @@ public class OperatorOperandBindingEditingSupport extends EditingSupport {
 	@Override
 	protected void setValue(Object element, Object value) {
 		((DirectiveOperandBinding) element).setValue(value);
-		operandsTableViewer.update(element, null);
+		operatorOperandsViewer.getTableViewer().update(element, null);
 	}
 
 }

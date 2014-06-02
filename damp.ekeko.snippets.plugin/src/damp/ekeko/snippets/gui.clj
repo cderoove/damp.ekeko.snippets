@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "GUI-related functionality of snippet-driven querying."
     :author "Coen De Roover, Siltvani"}
-  damp.ekeko.snippets.gui
+damp.ekeko.snippets.gui
   (:import 
     [org.eclipse.jdt.core.dom ASTNode CompilationUnit]
     [org.eclipse.jface.viewers TreeViewerColumn]
@@ -56,7 +56,7 @@
     (mapcat 
       (fn [snippet] (snippet-node-children|fortreeviewer snippet val))
       (snippetgroup/snippetgroup-snippetlist snippetgroup))))
- 
+
 (defn
   templatetreecontentprovider-parent
   [snippetgroup c]
@@ -64,7 +64,7 @@
   (some 
     (fn [snippet] (snippet-node-parent|fortreeviewer snippet c))
     (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-    
+
 (defn
   templatetreecontentprovider-elements
   [snippetgroup input]
@@ -72,7 +72,7 @@
   (when 
     (= input snippetgroup)
     (to-array (map snippet/snippet-root (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
-  
+
 
 ;; Callbacks for TemplateTreeLabelProvider
 ;; ---------------------------------------
@@ -136,22 +136,22 @@
       (operator-category? operator-or-category)
       (operatorsrep/applicable-operators-in-category snippetgroup snippet snippetnode operator-or-category)
       [])))
-      
- 
+
+
 (defn
   operatortreecontentprovider-parent
   [snippetgroup snippet snippetnode operator-or-category]
   (when-not
     (operator-category? operator-or-category)
     (operatorsrep/operator-category operator-or-category)))
-  
-    
+
+
 (defn
   operatortreecontentprovider-elements
   [snippetgroup snippet snippetnode input]
   ;roots of treeview
   (to-array (operatorsrep/registered-categories)))
-  
+
 
 ;; OperatorTreeLabelProvider
 ;; -----------------------------
@@ -163,8 +163,8 @@
     (operator-category? element)
     (operatorsrep/category-description element)
     (operatorsrep/operator-name element)))
-  
-  
+
+
 
 ;; Opening  TemplateView programmatically
 ;; --------------------------------------
@@ -205,13 +205,13 @@
 
 (defmulti
   operandbinding-celleditor
-  (fn [table operandbinding]
+  (fn [table opviewer operandbinding]
     (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
 
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-subject
-  [table operandbinding]
+  [table opviewer operandbinding]
   (let [editor 
         (proxy [org.eclipse.jface.viewers.DialogCellEditor] [table]
           (openDialogBox [window] 
@@ -224,12 +224,12 @@
               (.open dialog)
               (.getValue dialog)
               )))]
-        editor))
+    editor))
 
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-variable 
-  [table operandbinding]
+  [table opviewer operandbinding]
   (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
     editor))
 
@@ -240,48 +240,26 @@
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-nodeclasskeyw
-  [table operandbinding]
-  (let [nodeclasses
-        (to-array (map astnode/ekeko-keyword-for-class astnode/node-classes))
-         
-       ; editor 
-       ; (proxy [org.eclipse.jface.viewers.DialogCellEditor] [table]
-       ;   (openDialogBox [window] 
-       ;     (let [shell (.getShell window)
-       ;           dialog 
-       ;           (org.eclipse.ui.dialogs.ListDialog.
-       ;             shell)]
-       ;       (doto 
-       ;         dialog
-       ;         (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
-       ;         (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
-       ;         (.setInput nodeclasses)
-       ;         (.open))
-       ;       (when-let [selection (.getResult dialog)]
-       ;         (first selection))
-       ;       )))]
-    
-       editor 
-       (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
+  [table viewer binding]
+  (let [operator 
+        (.getSelectedOperator viewer)
+        subject 
+        (.getSelectedSnippetNode viewer)
+        ;could also be taken from viewer
+        
+        group (operatorsrep/binding-group binding)  
+        template (operatorsrep/binding-template binding)        
+        operand (operatorsrep/binding-operand binding)
+        values
+        (operatorsrep/possible-operand-values|valid group template subject operator operand) 
+        editor 
+        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
     (doto editor
       (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
       (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
-      (.setInput nodeclasses))
+      (.setInput (to-array values)))
     editor))
-  
-  
-;  (let [nodeclasses
-;        (map astnode/ekeko-keyword-for-class (astnode/node-classes))
-;        contentprovider
-;        (org.eclipse.jface.viewers.ArrayContentProvider.)
-;        labelprovider
-;        (org.eclipse.jface.viewers.LabelProvider.)
-;        editor 
-;        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
-;    (.setInput editor (to-array nodeclasses))
-;    editor
-;    ))
-  
+
 (defn
   operandbinding-labelprovider-descriptiontext
   [operandbinding]
@@ -328,19 +306,19 @@
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_KIND) templatetreelabelprovider-kind)
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_PROPERTY) templatetreelabelprovider-property)
   (set! (damp.ekeko.snippets.gui.TemplateTreeLabelProviders/FN_LABELPROVIDER_DIRECTIVES) templatetreelabelprovider-directives)
-
+  
   
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_ELEMENTS) operatortreecontentprovider-elements) 
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_CHILDREN) operatortreecontentprovider-children)
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_PARENT) operatortreecontentprovider-parent) 
   (set! (damp.ekeko.snippets.gui.OperatorTreeLabelProvider/FN_LABELPROVIDER_OPERATOR)  operatortreelabelprovider-operator)
-      
+  
   (set! (damp.ekeko.snippets.gui.OperatorOperandBindingEditingSupport/FN_OPERANDBINDING_EDITOR) operandbinding-celleditor)
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderDescription/FN_LABELPROVIDER_DESCRIPTION_TEXT) operandbinding-labelprovider-descriptiontext)
   (set! (damp.ekeko.snippets.gui.OperatorOperandBindingLabelProviderValue/FN_LABELPROVIDER_DESCRIPTION_VALUE) operandbinding-labelprovider-valuetext)
   
-
-
+  
+  
   
   )
 
@@ -348,6 +326,6 @@
 (configure-callbacks)
 
 
-  
-  
-  
+
+
+
