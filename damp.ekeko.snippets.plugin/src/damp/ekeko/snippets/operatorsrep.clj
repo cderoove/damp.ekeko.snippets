@@ -83,6 +83,43 @@ damp.ekeko.snippets.operatorsrep
         (not (.isMandatory ownerprop))))))
 
 
+(defn
+  validity|always
+  [snippetgroup snippet value operandvalue]
+  true)
+
+
+(defn
+  validity|subject
+  [snippetgroup snippet value operandvalue]
+  (= operandvalue value))
+
+
+(defn
+  validity|node
+  [snippetgroup snippet value operandvalue]
+  (astnode/ast? operandvalue))
+
+(defn
+  validity|variable
+  [snippetgroup snippet value operandvalue]
+  (and 
+    (string? operandvalue)
+    (= (first operandvalue) \?)))
+
+(defn
+  validity|subjectowninglisttype
+  [snippetgroup snippet value operandvalue]
+  (and 
+    (keyword? operandvalue)
+    (let [clazz 
+          (astnode/class-for-ekeko-keyword operandvalue)
+          lstpropdesc 
+          (astnode/owner-property value)
+          lstelementtype
+          (astnode/property-descriptor-element-node-class lstpropdesc)]
+      (.isAssignableFrom lstelementtype clazz))))
+        
 (defrecord 
   Operator
   [id operator category name scope validation description operands])
@@ -229,7 +266,7 @@ damp.ekeko.snippets.operatorsrep
     (make-binding
       (make-operand "Subject" 
                     opscope-subject
-                    (fn [value] (= subject-template-node value)))
+                    validity|subject)
       group
       template
       subject-template-node)
@@ -275,7 +312,7 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|always
      "Replaces selection by a variable."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable applicability|always)])
+     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
      "add-directive-equals"
@@ -285,7 +322,7 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|always
      "Adds matching directive equals/1 to selection."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable applicability|always)])
+     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
      "relax-scope-to-child+"
@@ -332,10 +369,10 @@ damp.ekeko.snippets.operatorsrep
      operators/replace-operand-by-template
      :rewrite
      "Replace operand by instantiated template."
-     opscope-subject
-     applicability|always
+     opscope-subject 
+     (complement applicability|nonroot) 
      "Rewrites the operand by replacing it with the code corresponding to the template."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable applicability|always)])
+     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
    
    (Operator. 
      "remove-node"
@@ -355,10 +392,9 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|lstelement|nonroot
      "Creates a new node and inserts it before the selection."
-     [(make-operand "New node type" opscope-nodeclasskeyw applicability|always)])
-   
-   
-   
+     [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
+
+
    ])
 
 
@@ -374,28 +410,6 @@ damp.ekeko.snippets.operatorsrep
   (filter (fn [operator]
             (= category (operator-category operator)))
           operators))
-
-
-
-(defn apply-operator
-  "Apply operator to snippet, returns new snippet."
-  [template operatorf subject args]
-  (apply operatorf template subject args))
-
-(defn 
-  apply-operator-to-snippetgroup
-  "Apply operator to snippetgroup."
-  [snippetgroup operator bindings]
-  (let [subject-binding 
-        (first bindings)
-        subject-template
-        (binding-template subject-binding)
-        subject-node
-        (binding-value subject-binding)]
-    (let [newsnippet 
-          (apply-operator subject-template (operator-operator operator) subject-node (map binding-value (rest bindings)))]
-      (snippetgroup/snippetgroup-replace-snippet snippetgroup subject-template newsnippet))))
-
 
 
 
@@ -430,121 +444,63 @@ damp.ekeko.snippets.operatorsrep
           (applicable-operators  snippetgroup snippet node)))
 
 
-(comment 
-
-;; Operand candidates
+;; Operand validation
 ;; ------------------
 
 
-(defn 
-  node-possible-nodes
-  "Returns list of possible nodes from given precondition and ast root (ASTNode)."
-  [ast precondition-id]
-  (let [root ast
-        pre-func (precondition-function precondition-id)
-        op-type  (precondition-type precondition-id)]
-    (case op-type 
-      ;check astnode : the root itself and all childs
-      :node     (concat (damp.ekeko/ekeko [?node] 
-                                          (el/equals root ?node)
-                                          (pre-func ?node))
-                        (damp.ekeko/ekeko [?node] 
-                                          (ast/child+ root ?node)
-                                          (pre-func ?node)))
-      ;check property value-raw of the root and all childs
-      :property (concat (damp.ekeko/ekeko [?property] 
-                                          (cl/fresh [?node ?keyword] 
-                                                    (el/equals root ?node)
-                                                    (ast/has ?keyword ?node ?property)
-                                                    (pre-func ?property)))
-                        (damp.ekeko/ekeko [?property] 
-                                          (cl/fresh [?node ?keyword] 
-                                                    (ast/child+ root ?node)
-                                                    (ast/has ?keyword ?node ?property)
-                                                    (pre-func ?property))))
-      ;others, return empty list
-      '()))) 
+(defn
+  validate-operandbindings
+  [snippetgroup snippet node operator bindings]
+  (doseq [binding bindings]
+    (let [group (binding-group binding)  
+          template (binding-template binding)
+          value (binding-value binding) 
+          operand (binding-operand binding)]
+      ;should not happen if bindings created normally
+      (when-not (= group snippetgroup)
+        (throw (IllegalArgumentException. (str "Operand group is not the template group the operator is being applied to:" group snippetgroup))))
+      ;should not happen if bindings created normally
+      (when-not (= template snippet)
+        (throw (IllegalArgumentException. (str "Operand template is not the template the operator is being applied to:" template snippet))))
+      (let [opscope (operand-scope operand)
+            opvalid (operand-validation operand)
+            opdesc (operand-description operand)]      
+        (when-not (opvalid group template node value)
+           (throw (IllegalArgumentException. (str "Value \"" value "\" for operand \"" opdesc "\" is invalid according to \"" opvalid "\""))))))))
+  
+
+;; Applying operators
+;; ------------------
+
+(defn-
+  apply-operator
+  "Apply operator to snippet, returns new snippet."
+  [template operatorf subject args]
+  (apply operatorf template subject args))
 
 (defn 
-  nodelist-possible-nodes
-  "Returns list of possible nodes from given precondition and ast root (nodelist)."
-  [ast precondition-id]
-  (let [list     (:value ast)
-        pre-func (precondition-function precondition-id)
-        op-type  (precondition-type precondition-id)]
-    (case op-type 
-      ;check astnode : the member of root and member of all childs
-      :node     (concat (damp.ekeko/ekeko [?node] 
-                                          (el/contains list ?node)
-                                          (pre-func ?node))
-                        (damp.ekeko/ekeko [?node] 
-                                          (cl/fresh [?member] 
-                                                    (el/contains list ?member)
-                                                    (ast/child+ ?member ?node)
-                                                    (pre-func ?node))))
-      ;check property value-raw of root it self, of property members and of property all childs
-      :property (concat (damp.ekeko/ekeko [?property] 
-                                          (el/equals ast ?property)
-                                          (pre-func ?property))
-                        (damp.ekeko/ekeko [?property] 
-                                          (cl/fresh [?node ?keyword] 
-                                                    (el/contains list ?node)
-                                                    (ast/has ?keyword ?node ?property)
-                                                    (pre-func ?property)))
-                        (damp.ekeko/ekeko [?property] 
-                                          (cl/fresh [?node ?keyword ?member] 
-                                                    (el/contains list ?member)
-                                                    (ast/child+ ?member ?node)
-                                                    (ast/has ?keyword ?node ?property)
-                                                    (pre-func ?property))))
-      ;others, return empty list
-      '()))) 
-
-(defn 
-  possible-nodes
-  "Returns list of possible nodes from given precondition."
-  [ast precondition-id]
-  (cond 
-    (astnode/ast? ast) (node-possible-nodes ast precondition-id)
-    (astnode/lstvalue? ast) (nodelist-possible-nodes ast precondition-id) 
-    :else nil))
-
-(defn 
-  possible-nodes-in-list
-  [ast precondition-id]
-  (map first (possible-nodes ast precondition-id)))
-
-(defn 
-  possible-nodes-in-group
-  [snippetgroup pre-id]
-  (mapcat (fn [x] (possible-nodes-in-list (:ast x) pre-id)) (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-
-(defn 
-  possible-nodes-for-operator
-  "Returns list of possible nodes to be applied on to given operator."
-  [ast op]
-  (possible-nodes-in-list ast (operator-scope op)))
-
-(defn 
-  possible-nodes-for-operator-argument
-  "Returns list of possible nodes as argument of given operator."
-  [ast op]
-  (possible-nodes-in-list ast (operand-scope (first (operator-operands op)))))
-
-(defn 
-  possible-nodes-for-operator-in-group
-  [snippetgroup op]
-  (possible-nodes-in-group snippetgroup (operand-scope (first (operator-operands op)))))
-
-(defn 
-  possible-nodes-for-operator-argument-in-group
-  [snippetgroup op]
-  (possible-nodes-in-group snippetgroup (operand-scope (first (operator-operands op)))))
+  apply-operator-to-snippetgroup
+  "Apply operator to snippetgroup."
+  ([snippetgroup operator bindings] ;called by UI
+     (let [subject-binding 
+           (first bindings)
+           subject-template
+           (binding-template subject-binding)
+           subject-node
+           (binding-value subject-binding)] 
+       (apply-operator-to-snippetgroup snippetgroup subject-template subject-node operator bindings)))
+  ([snippetgroup snippet value operator bindings] ;regular call 
+   (validate-operandbindings snippetgroup snippet value operator bindings) 
+   (let [newsnippet
+         (apply-operator snippet (operator-operator operator) value (map binding-value (rest bindings)))]
+     (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet))))
 
 
-)
 
 
+
+;; Operand candidates
+;; ------------------
 
 
 

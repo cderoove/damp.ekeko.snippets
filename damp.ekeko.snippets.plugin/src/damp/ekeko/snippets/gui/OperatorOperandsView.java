@@ -2,6 +2,10 @@ package damp.ekeko.snippets.gui;
 
 import java.util.LinkedList;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.MultiStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -90,7 +94,13 @@ public class OperatorOperandsView extends ViewPart {
 		TemplateGroup templateGroup = operatorOperandsViewer.getTemplateGroup();
 		if(operands == null || selectedOperator == null || templateGroup == null)
 			return;
-		templateGroup.applyOperator(selectedOperator, operands);
+		try {
+			templateGroup.applyOperator(selectedOperator, operands);
+		} catch(IllegalArgumentException e) {
+			ErrorDialog.openError(getSite().getShell(), "Could not apply operator", "An error occurred while applying the operator to the template.", new Status(IStatus.ERROR, EkekoSnippetsPlugin.PLUGIN_ID, e.getMessage(), e));
+
+		}
+		
 		for(TemplateGroupViewer viewer : selectionProviders) {
 			if(!viewer.isDisposed()) {
 				TemplateEditor parentTemplateEditor = viewer.getParentTemplateEditor();
