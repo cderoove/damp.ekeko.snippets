@@ -230,14 +230,20 @@ damp.ekeko.snippets.gui
 
 (defmethod 
   operandbinding-celleditor
-  operatorsrep/opscope-variable 
+  operatorsrep/opscope-string 
   [opviewer table group template subject operator operandbinding]
   (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
     editor))
 
 (defmethod 
   operandbinding-celleditor
-  operatorsrep/opscope-nodeclasskeyw
+  operatorsrep/opscope-variable 
+  [opviewer table group template subject operator operandbinding]
+  (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
+    editor))
+
+(defn-
+  make-comboviewcelleditor 
   [opviewer table group template subject operator operandbinding]
   (let [operand
         (operatorsrep/binding-operand operandbinding)
@@ -248,8 +254,26 @@ damp.ekeko.snippets.gui
     (doto editor
       (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
       (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
-      (.setInput (to-array values)))
+      (.setInput (to-array values))
+      (.setValue (first values))
+      )
     editor))
+  
+
+(defmethod 
+  operandbinding-celleditor
+  operatorsrep/opscope-nodeclasskeyw
+  [opviewer table group template subject operator operandbinding]
+  (make-comboviewcelleditor opviewer table group template subject operator operandbinding))
+
+(defmethod 
+  operandbinding-celleditor
+  operatorsrep/opscope-subjectlistidx
+  [opviewer table group template subject operator operandbinding]
+  (make-comboviewcelleditor opviewer table group template subject operator operandbinding))
+
+
+
 
 (defn
   make-celleditor-for-operandbinding

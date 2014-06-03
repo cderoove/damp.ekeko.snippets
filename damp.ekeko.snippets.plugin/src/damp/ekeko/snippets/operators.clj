@@ -11,6 +11,7 @@ damp.ekeko.snippets.operators
              [directives :as directives]
              [rewriting :as rewriting]
              [util :as util]
+             [parsing :as parsing]
              ])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
@@ -190,28 +191,84 @@ damp.ekeko.snippets.operators
 
 
 (defn-
+  newnode|classkeyword
+  [ast classkeyw]
+  (let [clazz (astnode/class-for-ekeko-keyword classkeyw)]
+    (.createInstance ast clazz)))
+
+(defn-
+  newnode|string
+  [string ast classkeyword]
+  (let [clazz (astnode/class-for-ekeko-keyword classkeyword)] ;todo: parsing also supports multiple declarations and statements
+    (cond 
+      (.isAssignableFrom org.eclipse.jdt.core.dom.Statement clazz)
+      (parsing/parse-string-statement string)
+      
+      (.isAssignableFrom org.eclipse.jdt.core.dom.Expression clazz)
+      (parsing/parse-string-expression string)
+      
+      (.isAssignableFrom org.eclipse.jdt.core.dom.BodyDeclaration clazz)
+      (parsing/parse-string-declaration string)
+      
+      (= org.eclipse.jdt.core.dom.Modifier clazz)
+      (let [trimmed (clojure.string/trim string)]
+        (.newModifier
+          ast 
+          (some 
+            (fn [keyword]
+                (when (= trimmed (.toString keyword))
+                  keyword))
+            parsing/jdt-modifier-keywords)))
+      
+      :default 
+      (throw (IllegalArgumentException. (str "Cannot create node from string " string " compatible with " classkeyword))))))
+
+
+          
+(defn-
   insert-newnode-relative
   "Instantiates new node and inserts it relative to the given list element."
-  [snippet relativenode classkeyw relativeindexf]
-  (let [a (.getAST relativenode)
-        clazz (astnode/class-for-ekeko-keyword classkeyw)
-        newnode (.createInstance a clazz)
-        lst (snippet/snippet-list-containing snippet relativenode)
+  [snippet relativenode classkeyw relativeindexf nodecreatorf]
+  (let [lst (snippet/snippet-list-containing snippet relativenode)
         lst-raw (astnode/value-unwrapped lst)
         idx (.indexOf lst-raw relativenode)]
-    (insert-at snippet newnode lst-raw (relativeindexf idx))))
+    (insert-at snippet  (nodecreatorf (.getAST relativenode) classkeyw) lst-raw (relativeindexf idx))))
 
 (defn
-  insert-newnode-before
+  insert-newnodefromclasskeyw-before
   "Instantiates new node and inserts it before the given list element."
   [snippet beforenode classkeyw]
-  (insert-newnode-relative snippet beforenode classkeyw identity))
+  (insert-newnode-relative snippet beforenode classkeyw identity newnode|classkeyword))
 
 (defn
-  insert-newnode-after
+  insert-newnodefromclasskeyw-after
   "Instantiates new node and inserts it after the given list element."
   [snippet afternode classkeyw]
-  (insert-newnode-relative snippet afternode classkeyw inc))
+  (insert-newnode-relative snippet afternode classkeyw inc newnode|classkeyword))
+
+(defn
+  insert-newnodefromstring-before
+  "Instantiates new node and inserts it before the given list element."
+  [snippet beforenode classkeyw string]
+  (insert-newnode-relative snippet beforenode classkeyw identity (partial newnode|string string)))
+
+(defn
+  insert-newnodefromstring-after
+  "Instantiates new node and inserts it after the given list element."
+  [snippet afternode classkeyw string]
+  (insert-newnode-relative snippet afternode classkeyw inc (partial newnode|string string)))
+
+
+(defn
+  insert-newnodefromclasskeyw-atindex
+  "Instantiates new node and inserts it at the given index."
+  [snippet lst classkeyw idx]
+  (let [lst-raw (astnode/value-unwrapped lst)
+        a (.getAST (snippet/snippet-root snippet))
+        newnode (newnode|classkeyword a classkeyw)]
+    (insert-at snippet newnode lst-raw idx)))
+
+
 
 
 (comment

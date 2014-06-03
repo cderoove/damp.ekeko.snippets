@@ -110,7 +110,7 @@
   "Parses the given string as a Java construct of the given kind
    (expression, statements, class body declarations, compilation unit)."
   [^String string string-kind]
-  (let [parser (ASTParser/newParser AST/JLS3)]                
+  (let [parser (ASTParser/newParser AST/JLS4)]                
     (.setSource parser (.toCharArray string))
     (.setKind parser string-kind)
     (.createAST parser nil)))
@@ -160,6 +160,25 @@
   parse-strings-to-nodes
   [arr-string]
   (map parse-string-ast (filter (fn [x] (not (nil? x))) arr-string)))
+
+
+
+(def
+  jdt-modifier-keywords
+  [org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/ABSTRACT_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/FINAL_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/NATIVE_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/PRIVATE_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/PROTECTED_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/PUBLIC_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/STATIC_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/STRICTFP_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/SYNCHRONIZED_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/TRANSIENT_KEYWORD
+   org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/VOLATILE_KEYWORD])
+
+
+
 
 (defn
   register-callbacks 

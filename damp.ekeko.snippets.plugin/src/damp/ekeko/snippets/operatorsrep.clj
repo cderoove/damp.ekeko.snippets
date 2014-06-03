@@ -26,6 +26,10 @@ damp.ekeko.snippets.operatorsrep
 
 (def opscope-nodeclasskeyw :nodeclasskeyw) ;operand scope for ekeko keyword for node class 
 
+(def opscope-string :string)
+(def opscope-subjectlistidx :subjectlistidx)
+
+
 (defn
   applicability|always
   [snippetgroup snippet value] 
@@ -88,14 +92,18 @@ damp.ekeko.snippets.operatorsrep
 
 (defn
   validity|always
-  [snippetgroup snippet value operandvalue]
+  [snippetgroup snippet subject operandvalue]
   true)
 
+(defn
+  validity|string
+  [snippetgroup snippet subject operandvalue]
+  (string? operandvalue))
 
 (defn
   validity|subject
-  [snippetgroup snippet value operandvalue]
-  (= operandvalue value))
+  [snippetgroup snippet subject operandvalue]
+  (= operandvalue subject))
 
 
 (defn
@@ -122,6 +130,22 @@ damp.ekeko.snippets.operatorsrep
           lstelementtype
           (astnode/property-descriptor-element-node-class lstpropdesc)]
       (.isAssignableFrom lstelementtype clazz))))
+
+
+(def
+  validity|subjectlisttype
+  validity|subjectowninglisttype)
+
+
+(defn
+  validity|subjectlistidx
+  [snippetgroup snippet value operandvalue]
+  (and 
+    (integer? operandvalue)
+    (let [lst-raw (astnode/value-unwrapped value)]
+      (and (>= operandvalue 0)
+           (< operandvalue (.size lst-raw))))))
+          
         
 (defrecord 
   Operator
@@ -394,24 +418,65 @@ damp.ekeko.snippets.operatorsrep
    
    (Operator. 
      "insert-node-before"
-     operators/insert-newnode-before
+     operators/insert-newnodefromclasskeyw-before
      :destructive
      "Insert new node before."
      opscope-subject
      applicability|lstelement|nonroot
      "Creates a new node and inserts it before the selection."
-     [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
+     [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
+   
+   ;disabled because difficult to use
+   ; (Operator. 
+   ;  "insert-text-before"
+   ;  operators/insert-newnodefromstring-before
+   ;  :destructive
+   ;  "Insert text before."
+   ;  opscope-subject
+   ;  applicability|lstelement|nonroot
+   ;  "Parses a string and inserts the resulting node before the selection."
+   ;  [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)
+   ;   (make-operand "String" opscope-string validity|string)])
    
    (Operator. 
      "insert-node-after"
-     operators/insert-newnode-after
+     operators/insert-newnodefromclasskeyw-after
      :destructive
      "Insert new node after."
      opscope-subject
      applicability|lstelement|nonroot
      "Creates a new node and inserts it after the selection."
-     [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
+     [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
+   
+   ;disabled because difficult to use
+   ;(Operator. 
+   ;  "insert-text-after"
+   ;  operators/insert-newnodefromstring-after
+   ;  :destructive
+   ;  "Insert text after."
+   ;  opscope-subject
+   ;  applicability|lstelement|nonroot
+   ;  "Parses a string and inserts the resulting node after the selection."
+   ;  [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)
+   ;   (make-operand "String" opscope-string validity|string)])
 
+   (Operator. 
+     "insert-node-at"
+     operators/insert-newnodefromclasskeyw-atindex
+     :destructive
+     "Insert new node at index."
+     opscope-subject
+     applicability|lst 
+     "Creates a new node and inserts it at the given index."
+     [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectlisttype)
+      (make-operand "List index" opscope-subjectlistidx validity|subjectlistidx)]
+     )
+   
+   
+
+   
+    
+   
    ])
 
 
@@ -571,6 +636,26 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   (map astnode/ekeko-keyword-for-class astnode/node-classes))
 
+(defmethod
+  possible-operand-values
+  opscope-string
+  [snippetgroup snippet node operator operand]
+  [""])
+
+
+(defmethod
+  possible-operand-values
+  opscope-string
+  [snippetgroup snippet node operator operand]
+  [""])
+
+(defmethod
+  possible-operand-values
+  opscope-subjectlistidx
+  [snippetgroup snippet subject operator operand]
+  (let [lst-raw (astnode/value-unwrapped subject)]
+    (range 0 (inc (.size lst-raw)))))
+  
 
 (defn
   possible-operand-values|valid
