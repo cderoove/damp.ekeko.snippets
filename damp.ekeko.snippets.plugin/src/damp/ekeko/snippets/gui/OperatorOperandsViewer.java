@@ -1,5 +1,7 @@
 package damp.ekeko.snippets.gui;
 
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
@@ -17,12 +19,19 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IEditorSite;
+import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchPartSite;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.HandlerUtil;
 
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class OperatorOperandsViewer extends Composite {
 
+	
 	private TreeViewer operatorTreeViewer;
 	private Tree operatorTree;
 	private TableViewer operandsTableViewer;
@@ -129,6 +138,9 @@ public class OperatorOperandsViewer extends Composite {
 	}
 	
 	private void updateWidgets() {
+		//clear errors from cell editor validators
+		updateWorkbenchStatusErrorLine("");
+		
 		operatorTreeViewer.setInput(new TemplateGroupTemplateElement(jGroup.getGroup(), cljSnippet, cljSelectedSnippetNode));
 		for(TreeColumn tc : operatorTree.getColumns())
                   tc.pack(); //resizes
@@ -145,6 +157,21 @@ public class OperatorOperandsViewer extends Composite {
 		operatorLabel.setText(SnippetOperator.getDescription(selectedOperator));
 		operandsTableViewer.setInput(SnippetOperator.getOperands(jGroup.getGroup(), cljSnippet, cljSelectedSnippetNode, selectedOperator));
 
+	}
+
+	public void updateWorkbenchStatusErrorLine(String message) {
+		IWorkbenchPartSite site = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePart().getSite();
+		//TODO: figure out nicer way to get to the site of the view in which this viewer is embedded
+		IActionBars actionBars;
+		if(site instanceof IViewSite) {
+			IViewSite viewSite = (IViewSite) site;
+			actionBars = viewSite.getActionBars();
+		} else {
+			IEditorSite editorSite = (IEditorSite) site;
+			actionBars = editorSite.getActionBars();
+		}
+		IStatusLineManager statusLineManager = actionBars.getStatusLineManager();
+		statusLineManager.setErrorMessage(message);
 	}
 		
 

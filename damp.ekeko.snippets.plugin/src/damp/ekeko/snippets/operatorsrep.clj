@@ -455,26 +455,46 @@ damp.ekeko.snippets.operatorsrep
 ;; ------------------
 
 
+
+(defn
+  validate-newvalue-for-operandbinding
+  [snippetgroup snippet node operator binding value]
+  (let [group (binding-group binding)  
+        template (binding-template binding)
+        operand (binding-operand binding)]
+    ;should not happen if bindings created normally
+    (when-not (= group snippetgroup)
+      (throw (IllegalArgumentException. (str "Operand group is not the template group the operator is being applied to:" group snippetgroup))))
+    ;should not happen if bindings created normally
+    (when-not (= template snippet)
+      (throw (IllegalArgumentException. (str "Operand template is not the template the operator is being applied to:" template snippet))))
+    (let [opscope (operand-scope operand)
+          opvalid (operand-validation operand)
+          opdesc (operand-description operand)]      
+      (when-not (opvalid group template node value)
+        (throw (IllegalArgumentException. (str "Value \"" value "\" for operand \"" opdesc "\" is invalid according to \"" opvalid "\"")))))))
+  
+
+(defn
+  validate-operandbinding
+  [snippetgroup snippet node operator binding]
+  (let [currentvalue (binding-value binding)]
+    validate-newvalue-for-operandbinding snippetgroup snippet node operator binding currentvalue))
+   
 (defn
   validate-operandbindings
   [snippetgroup snippet node operator bindings]
   (doseq [binding bindings]
-    (let [group (binding-group binding)  
-          template (binding-template binding)
-          value (binding-value binding) 
-          operand (binding-operand binding)]
-      ;should not happen if bindings created normally
-      (when-not (= group snippetgroup)
-        (throw (IllegalArgumentException. (str "Operand group is not the template group the operator is being applied to:" group snippetgroup))))
-      ;should not happen if bindings created normally
-      (when-not (= template snippet)
-        (throw (IllegalArgumentException. (str "Operand template is not the template the operator is being applied to:" template snippet))))
-      (let [opscope (operand-scope operand)
-            opvalid (operand-validation operand)
-            opdesc (operand-description operand)]      
-        (when-not (opvalid group template node value)
-           (throw (IllegalArgumentException. (str "Value \"" value "\" for operand \"" opdesc "\" is invalid according to \"" opvalid "\""))))))))
-  
+    (validate-operandbinding snippetgroup snippet node operator binding)))
+
+
+(defn
+  operandbinding|valid?
+  [snippetgroup snippet node operator binding]
+  (try 
+    (validate-operandbinding snippetgroup snippet node operator binding)
+    true
+    (catch IllegalArgumentException e false)))
 
 ;; Applying operators
 ;; ------------------
@@ -553,6 +573,7 @@ damp.ekeko.snippets.operatorsrep
       (fn [value]
         (validationf snippetgroup snippet node value))
       candidates)))
+
 
 
 (defn

@@ -133,5 +133,5 @@ public class OperatorOperandsView extends ViewPart {
 		templateGroupViewer.addNodeSelectionListener(listener);
 		selectionProviders.add(templateGroupViewer);
 	}
-
+	
 }

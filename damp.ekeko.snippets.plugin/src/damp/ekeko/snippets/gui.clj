@@ -203,15 +203,17 @@ damp.ekeko.snippets.gui
   [shell group template node]
   (damp.ekeko.snippets.gui.TemplateGroupNodeSelectionDialog. shell group template node))
 
+    
+
 (defmulti
   operandbinding-celleditor
-  (fn [table opviewer operandbinding]
+  (fn [opviewer table group template subject operator operandbinding]
     (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
 
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-subject
-  [table opviewer operandbinding]
+  [opviewer table group template subject operator operandbinding]
   (let [editor 
         (proxy [org.eclipse.jface.viewers.DialogCellEditor] [table]
           (openDialogBox [window] 
@@ -229,36 +231,67 @@ damp.ekeko.snippets.gui
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-variable 
-  [table opviewer operandbinding]
+  [opviewer table group template subject operator operandbinding]
   (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
     editor))
-
-
-;;TODO: get node and template, invoke possible-values-for-operand
-;;to restrict classes to those deriving from property's value type
 
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-nodeclasskeyw
-  [table viewer binding]
-  (let [operator 
-        (.getSelectedOperator viewer)
-        subject 
-        (.getSelectedSnippetNode viewer)
-        ;could also be taken from viewer
-        
-        group (operatorsrep/binding-group binding)  
-        template (operatorsrep/binding-template binding)        
-        operand (operatorsrep/binding-operand binding)
+  [opviewer table group template subject operator operandbinding]
+  (let [operand
+        (operatorsrep/binding-operand operandbinding)
         values
         (operatorsrep/possible-operand-values|valid group template subject operator operand) 
         editor 
-        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table)]
+        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table org.eclipse.swt.SWT/READ_ONLY)]
     (doto editor
       (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
       (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
       (.setInput (to-array values)))
     editor))
+
+(defn
+  make-celleditor-for-operandbinding
+  [table opviewer operandbinding]
+  (let [operator 
+        (.getSelectedOperator opviewer)
+        subject 
+        (.getSelectedSnippetNode opviewer)
+        ;could also be taken from viewer
+        group (operatorsrep/binding-group operandbinding)  
+        template (operatorsrep/binding-template operandbinding)]
+    (let [editor 
+          (operandbinding-celleditor opviewer table group template subject operator operandbinding)
+          operand
+          (operatorsrep/binding-operand operandbinding)]
+      (doto 
+        editor
+        (.setValidator 
+          (proxy [org.eclipse.jface.viewers.ICellEditorValidator] []
+            (isValid [value]
+              (try 
+                (operatorsrep/validate-newvalue-for-operandbinding
+                  group template subject operator operandbinding value)
+                nil ;indicates absence of error message
+                (catch IllegalArgumentException e (.getMessage e))))))
+        (.addListener
+          (proxy [org.eclipse.jface.viewers.ICellEditorListener] []
+            (applyEditorValue [])
+            (cancelEditor []
+              (damp.ekeko.gui/eclipse-uithread-do
+                (fn [] (.updateWorkbenchStatusErrorLine opviewer ""))))
+            (editorValueChanged [oldStateValid newStateValid]
+              (damp.ekeko.gui/eclipse-uithread-do
+                (fn []
+                  (if
+                    newStateValid
+                    (.updateWorkbenchStatusErrorLine opviewer "")
+                    (.updateWorkbenchStatusErrorLine opviewer (.getErrorMessage editor)))))))
+              ))
+      editor)))
+           
+
 
 (defn
   operandbinding-labelprovider-descriptiontext
@@ -313,7 +346,7 @@ damp.ekeko.snippets.gui
   (set! (damp.ekeko.snippets.gui.OperatorTreeContentProvider/FN_PARENT) operatortreecontentprovider-parent) 
   (set! (damp.ekeko.snippets.gui.OperatorTreeLabelProvider/FN_LABELPROVIDER_OPERATOR)  operatortreelabelprovider-operator)
   
-  (set! (damp.ekeko.snippets.gui.OperatorOperandBindingEditingSupport/FN_OPERANDBINDING_EDITOR) operandbinding-celleditor)
+  (set! (damp.ekeko.snippets.gui.OperatorOperandBindingEditingSupport/FN_OPERANDBINDING_EDITOR) make-celleditor-for-operandbinding)
   (set! (damp.ekeko.snippets.gui.OperandBindingLabelProviderDescription/FN_LABELPROVIDER_DESCRIPTION_TEXT) operandbinding-labelprovider-descriptiontext)
   (set! (damp.ekeko.snippets.gui.OperatorOperandBindingLabelProviderValue/FN_LABELPROVIDER_DESCRIPTION_VALUE) operandbinding-labelprovider-valuetext)
   
