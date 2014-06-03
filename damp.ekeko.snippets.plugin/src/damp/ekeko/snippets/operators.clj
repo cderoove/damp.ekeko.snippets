@@ -189,17 +189,30 @@ damp.ekeko.snippets.operators
     @newsnippet))
 
 
+(defn-
+  insert-newnode-relative
+  "Instantiates new node and inserts it relative to the given list element."
+  [snippet relativenode classkeyw relativeindexf]
+  (let [a (.getAST relativenode)
+        clazz (astnode/class-for-ekeko-keyword classkeyw)
+        newnode (.createInstance a clazz)
+        lst (snippet/snippet-list-containing snippet relativenode)
+        lst-raw (astnode/value-unwrapped lst)
+        idx (.indexOf lst-raw relativenode)]
+    (insert-at snippet newnode lst-raw (relativeindexf idx))))
+
 (defn
   insert-newnode-before
   "Instantiates new node and inserts it before the given list element."
   [snippet beforenode classkeyw]
-  (let [a (.getAST beforenode)
-        clazz (astnode/class-for-ekeko-keyword classkeyw)
-        newnode (.createInstance a clazz)
-        lst (snippet/snippet-list-containing snippet beforenode)
-        lst-raw (astnode/value-unwrapped lst)
-        idx (.indexOf lst-raw beforenode)]
-    (insert-at snippet newnode lst-raw idx)))
+  (insert-newnode-relative snippet beforenode classkeyw identity))
+
+(defn
+  insert-newnode-after
+  "Instantiates new node and inserts it after the given list element."
+  [snippet afternode classkeyw]
+  (insert-newnode-relative snippet afternode classkeyw inc))
+
 
 (comment
   

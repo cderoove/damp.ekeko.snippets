@@ -57,15 +57,16 @@ damp.ekeko.snippets.operatorsrep
   applicability|lstelement
   [snippetgroup snippet value]
   (and 
+    (not (nil? value))
     (not (astnode/lstvalue? value))
     (astnode/property-descriptor-list? (astnode/owner-property value))))
 
 (defn 
   applicability|lstelement|nonroot
   [snippetgroup snippet value]
-  (and (applicability|node snippetgroup snippet value)
-       (applicability|nonroot snippetgroup snippet value)))
-
+  (and 
+    (applicability|nonroot snippetgroup snippet value)
+    (applicability|lstelement snippetgroup snippet value)))
 
 (defn
   applicability|lstelement|node
@@ -400,7 +401,16 @@ damp.ekeko.snippets.operatorsrep
      applicability|lstelement|nonroot
      "Creates a new node and inserts it before the selection."
      [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
-
+   
+   (Operator. 
+     "insert-node-after"
+     operators/insert-newnode-after
+     :destructive
+     "Insert new node after."
+     opscope-subject
+     applicability|lstelement|nonroot
+     "Creates a new node and inserts it after the selection."
+     [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)])
 
    ])
 
