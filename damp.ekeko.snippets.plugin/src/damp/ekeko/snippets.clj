@@ -68,6 +68,16 @@
     (rewrites/apply-and-reset-rewrites)))
 
 (defn
+  snippetgroup-from-editor
+  "Returns the snippetgroup in the currently active editor."
+  []
+  (damp.ekeko.gui/eclipse-uithread-return 
+    (fn []
+      (let [editor (damp.ekeko.gui/workbench-editor)]
+        (when (instance? damp.ekeko.snippets.gui.TemplateEditor editor)
+          (.getGroup (.getGroup editor)))))))
+
+(defn
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET) query-by-snippet*)
