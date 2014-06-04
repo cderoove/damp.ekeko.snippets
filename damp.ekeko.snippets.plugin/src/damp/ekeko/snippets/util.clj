@@ -52,29 +52,31 @@
   walk-jdt-node
   "Recursive descent through a JDT node, applying given functions to the encountered 
    ASTNode instances and Ekeko wrappers for their property values."
-  [n node-f list-f primitive-f null-f]
-  (loop
-    [nodes (list n)]
-    (when-not (empty? nodes)
-      (let [val (first nodes)
-            others (rest nodes)]
-        (cond 
-          (astnode/ast? val)
-          (do
-            (node-f val)
-            (recur (concat (filtered-node-propertyvalues val) others)))
-          (astnode/lstvalue? val)
-          (do 
-            (list-f val)
-            (recur (concat (:value val) others)))
-          (astnode/primitivevalue? val)
-          (do
-            (primitive-f val)
-            (recur others))
-          (astnode/nilvalue? val)
-          (do
-            (null-f val)
-            (recur others)))))))
+  ([n f]
+    (walk-jdt-node n f f f f))
+  ([n node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list n)]
+      (when-not (empty? nodes)
+        (let [val (first nodes)
+              others (rest nodes)]
+          (cond 
+            (astnode/ast? val)
+            (do
+              (node-f val)
+              (recur (concat (filtered-node-propertyvalues val) others)))
+            (astnode/lstvalue? val)
+            (do 
+              (list-f val)
+              (recur (concat (:value val) others)))
+            (astnode/primitivevalue? val)
+            (do
+              (primitive-f val)
+              (recur others))
+            (astnode/nilvalue? val)
+            (do
+              (null-f val)
+              (recur others))))))))
 
 (defn dissoc-in [tmap keys]
   (let [newmap (dissoc ((first keys) tmap) (fnext keys))]

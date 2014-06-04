@@ -31,6 +31,7 @@ damp.ekeko.snippets.operatorsrep
 (def opscope-incsubjectlistidx :incsubjectlistidx);0 till size inclusive
 
 
+
 (defn
   applicability|always
   [snippetgroup snippet value] 
@@ -57,6 +58,15 @@ damp.ekeko.snippets.operatorsrep
   applicability|lst
   [snippetgroup snippet value]
   (astnode/lstvalue? value))
+
+(defn
+  applicability|simplepropertyvalue
+  [snippetgroup snippet value] 
+  (and 
+    (not (nil? value))
+    (let [property (astnode/owner-property value)]
+      (astnode/property-descriptor-simple? property))))
+    
 
 (defn 
   applicability|lstelement
@@ -119,20 +129,28 @@ damp.ekeko.snippets.operatorsrep
     (string? operandvalue)
     (= (first operandvalue) \?)))
 
+
+(defn
+  instance-of-classkeyword-assignable-to-property?
+  [classkeyword propertydescriptor]
+  (and 
+    (keyword? classkeyword)
+    (let [clazz 
+          (astnode/class-for-ekeko-keyword classkeyword)
+          propertyvaluetype
+          (cond 
+            (astnode/property-descriptor-child? propertydescriptor)
+            (astnode/property-descriptor-child-node-class propertydescriptor)
+            (astnode/property-descriptor-list? propertydescriptor)
+            (astnode/property-descriptor-element-node-class propertydescriptor))]
+      (.isAssignableFrom propertyvaluetype clazz))))
+
 (defn
   validity|subjectowninglisttype
-  [snippetgroup snippet value operandvalue]
-  (and 
-    (keyword? operandvalue)
-    (let [clazz 
-          (astnode/class-for-ekeko-keyword operandvalue)
-          lstpropdesc 
-          (astnode/owner-property value)
-          lstelementtype
-          (astnode/property-descriptor-element-node-class lstpropdesc)]
-      (.isAssignableFrom lstelementtype clazz))))
-
-
+  [snippetgroup snippet value classkeyword]
+  (let [propertydescriptor (astnode/owner-property value)]
+    (instance-of-classkeyword-assignable-to-property? classkeyword propertydescriptor))) 
+  
 (def
   validity|subjectlisttype
   validity|subjectowninglisttype)
@@ -156,7 +174,14 @@ damp.ekeko.snippets.operatorsrep
     (let [lst-raw (astnode/value-unwrapped value)]
       (and (>= operandvalue 0)
            (<= operandvalue (.size lst-raw))))))
-          
+
+
+
+
+(def
+  validity|subjectownerpropertytype 
+  validity|subjectowninglisttype)
+  
 
         
 (defrecord 
@@ -485,9 +510,30 @@ damp.ekeko.snippets.operatorsrep
      )
    
    
-
+   (Operator. 
+     "replace-node"
+     operators/replace-node
+     :destructive
+     "Replace subject by new node."
+     opscope-subject
+     applicability|node|nonroot
+     "Replaces selection by newly created node."
+     [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectownerpropertytype)]
+     )
    
-    
+   (Operator. 
+     "replace-value"
+     operators/replace-value
+     :destructive
+     "Replace by value."
+     opscope-subject
+     applicability|simplepropertyvalue
+     "Replaces selection by given textual value."
+     [(make-operand "Value text" opscope-string validity|string)]
+     )
+   
+   
+       
    
    ])
 
@@ -632,15 +678,14 @@ damp.ekeko.snippets.operatorsrep
   possible-operand-values
   opscope-variable
   [snippetgroup snippet node operator operand]
-  (str 
-    (if
-      (= (operator-name operator) "add-directive-equals")
-      (conj
-        (map 
-          matching/snippet-vars-among-directivebindings
-          (snippetgroup/snippetgroup-snippetlist snippetgroup))
-        (util/gen-lvar))
-      [(util/gen-readable-lvar-for-value node)])))
+  (if
+    (= (operator-name operator) "add-directive-equals")
+    (conj
+      (map 
+        matching/snippet-vars-among-directivebindings
+        (snippetgroup/snippetgroup-snippetlist snippetgroup))
+      (str (util/gen-lvar)))
+    [(str (util/gen-readable-lvar-for-value node))]))
 
 (defmethod
   possible-operand-values

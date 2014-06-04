@@ -159,14 +159,8 @@ damp.ekeko.snippets.operators
     (.delete node) ;remove node
     (util/walk-jdt-node ;dissoc children 
       node 
-      (fn [astval] 
-        (swap! newsnippet matching/remove-value-from-snippet astval))
-      (fn [lstval] 
-        (swap! newsnippet matching/remove-value-from-snippet lstval))
-      (fn [primval]  
-        (swap! newsnippet matching/remove-value-from-snippet primval))
-      (fn [nilval] 
-        (swap! newsnippet matching/remove-value-from-snippet nilval)))
+      (fn [val] 
+        (swap! newsnippet matching/remove-value-from-snippet val)))
     @newsnippet))
 
 
@@ -179,14 +173,8 @@ damp.ekeko.snippets.operators
     (.add lst idx node) ;destructive add
     (util/walk-jdt-node ;add children 
                         node 
-                        (fn [astval] 
-                          (swap! newsnippet matching/add-value-to-snippet astval))
-                        (fn [lstval] 
-                          (swap! newsnippet matching/add-value-to-snippet lstval))
-                        (fn [primval]  
-                          (swap! newsnippet matching/add-value-to-snippet primval))
-                        (fn [nilval] 
-                          (swap! newsnippet matching/add-value-to-snippet nilval)))
+                        (fn [val] 
+                          (swap! newsnippet matching/add-value-to-snippet val)))
     @newsnippet))
 
 
@@ -195,6 +183,16 @@ damp.ekeko.snippets.operators
   [ast classkeyw]
   (let [clazz (astnode/class-for-ekeko-keyword classkeyw)]
     (.createInstance ast clazz)))
+
+(defn
+  modifierkeyword-from-string
+  [string]
+  (let [trimmed (clojure.string/trim string)]
+    (some 
+      (fn [keyword]
+          (when (= trimmed (.toString keyword))
+            keyword))
+      parsing/jdt-modifier-keywords)))
 
 (defn-
   newnode|string
@@ -211,14 +209,9 @@ damp.ekeko.snippets.operators
       (parsing/parse-string-declaration string)
       
       (= org.eclipse.jdt.core.dom.Modifier clazz)
-      (let [trimmed (clojure.string/trim string)]
-        (.newModifier
-          ast 
-          (some 
-            (fn [keyword]
-                (when (= trimmed (.toString keyword))
-                  keyword))
-            parsing/jdt-modifier-keywords)))
+      (.newModifier
+        ast 
+        (modifierkeyword-from-string string))
       
       :default 
       (throw (IllegalArgumentException. (str "Cannot create node from string " string " compatible with " classkeyword))))))
@@ -268,9 +261,77 @@ damp.ekeko.snippets.operators
         newnode (newnode|classkeyword a classkeyw)]
     (insert-at snippet newnode lst-raw idx)))
 
+(defn
+  replace-node
+  "Replaces subject by new instance of the given classkeyw."
+  [snippet value classkeyw]
+  (let [newnode 
+        (newnode|classkeyword (.getAST value) classkeyw)
+        property
+        (astnode/owner-property value)]
+    (let [newsnippet 
+          (atom (matching/remove-value-from-snippet snippet value))] 
+      ;dissoc children 
+      (util/walk-jdt-node 
+        value 
+        (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
+      ;perform replace
+      (cond 
+        (astnode/property-descriptor-child? property)
+        (let [parent (astnode/owner value)]
+          (.setStructuralProperty parent property newnode))
+        (astnode/property-descriptor-list? property)
+        (let [lst (snippet/snippet-list-containing snippet value)
+              lst-raw (astnode/value-unwrapped lst)
+              idx (.indexOf lst-raw value)]
+          (.set lst-raw idx newnode))
+        :default
+        (throw (IllegalArgumentException. "Unexpected property descriptor.")))
+      ;assoc node and children
+      (util/walk-jdt-node 
+        newnode 
+        (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+      @newsnippet)))
 
+(defn
+  newvalue|string
+  [valuetype string]
+  (condp = valuetype
+    java.lang.Integer/TYPE
+    (java.lang.Integer/parseInt string)
+    java.lang.Boolean/TYPE
+    (java.lang.Boolean/valueOf string)
+    java.lang.String
+    string
+    org.eclipse.jdt.core.dom.Modifier$ModifierKeyword 
+    (modifierkeyword-from-string string)))
 
+(defn
+  replace-value
+  [snippet value string]
+   (let [
+        property
+        (astnode/owner-property value)
+        parent
+        (astnode/owner value)
+        clazz
+        (astnode/property-descriptor-value-class property)
+        newvalue 
+        (newvalue|string clazz string)]
+     (let [newsnippet (atom snippet)] 
+       ;dissoc parent and all of its children, including value
+       (util/walk-jdt-node 
+         parent 
+         (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
+       (.setStructuralProperty parent property newvalue)
+       ;re-add parent such that correct reifier is used for its new property value
+       (util/walk-jdt-node 
+         parent 
+         (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+       @newsnippet)))
 
+     
+     
 (comment
   
   (defn
@@ -288,19 +349,7 @@ damp.ekeko.snippets.operators
         :relax-loop)
       (snippet/update-cf snippet node :relax-loop)))
   
-  (defn
-    contains-deep 
-    "Allows elements of given node as child+ of given node."
-    [snippet node]
-    (defn change-gf-elements [snippet alist]
-      (if (empty? alist)
-        snippet
-        (let [snippet-node (snippet/update-gf snippet (first alist) :child+)]
-          (change-gf-elements snippet-node (next alist)))))
-    (let [list-raw (:value node)
-          new-gf-snippet (change-gf-elements snippet list-raw)]
-      (snippet/update-cf new-gf-snippet node :child+)))
-  
+
   (defn
     contains-elements-with-same-size 
     "Contains all elements in a given nodelist (listval), and list has to be the same size."
@@ -332,63 +381,7 @@ damp.ekeko.snippets.operators
     [snippet node]
     (snippet/update-cf snippet node :contains-repetition))
   
-  (defn 
-    replace-node-no-apply-rewrite 
-    "Replace a node with new node in snippet."
-    [snippet node newnode]
-    (let [rewrite (snippet/snippet-rewrite snippet)]
-      (.replace rewrite node newnode (new org.eclipse.text.edits.TextEditGroup "snippet"))
-      snippet))
-  
-  (defn 
-    change-property-node-no-apply-rewrite 
-    "Change property of given node in snippet."
-    [snippet node value]
-    (let [rewrite (snippet/snippet-rewrite snippet)]
-      (.set rewrite (:owner node) (:property node) value)
-      snippet))
-  
-  (defn 
-    change-property-node 
-    "Change property of given node in snippet."
-    [snippet node value]
-    (change-property-node-no-apply-rewrite snippet node value)
-    (snippet/apply-rewrite snippet)) 
-  
-  (defn 
-    replace-node 
-    "Replace a node with new node in snippet."
-    [snippet node newnode]
-    (replace-node-no-apply-rewrite snippet node newnode)
-    (snippet/apply-rewrite snippet)) 
-  
-  
-  (defn 
-    add-node-no-apply-rewrite 
-    "Add a given node in given idx inside the lst (listval) in snippet."
-    [snippet list-container node idx]
-    (let [rewrite (snippet/snippet-rewrite snippet)
-          list-rewrite (.getListRewrite rewrite (:owner list-container) (:property list-container))]
-      (.insertAt list-rewrite node idx (new org.eclipse.text.edits.TextEditGroup "snippet"))
-      snippet))
-  
-  (defn 
-    add-node 
-    "Add a given node in given idx inside the lst (listval) in snippet."
-    [snippet list-container node idx]
-    (add-node-no-apply-rewrite snippet list-container node idx)
-    (snippet/apply-rewrite snippet)) 
-  
-  (defn
-    add-nodes 
-    "Add nodes (list of node) to list lst (listval) with index starting from idx in the given snippet."
-    [snippet lst nodes idx]
-    (defn add-nodes-rec [snippet lst nodes idx]
-      (if (empty? nodes)
-        snippet
-        (let [newsnippet (add-node-no-apply-rewrite snippet lst (first nodes) idx)]
-          (add-nodes-rec newsnippet lst (rest nodes) (+ idx 1)))))
-    (snippet/apply-rewrite (add-nodes-rec snippet lst nodes idx))) 
+
   
   (defn
     split-variable-declaration-fragments 

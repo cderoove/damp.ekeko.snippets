@@ -208,8 +208,9 @@ damp.ekeko.snippets.gui
   (fn [opviewer table group template subject operator operandbinding]
     (let [scope (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))
           scope2method (methods operandbinding-celleditor)]
-      (when-not
+      (if 
         (get scope2method scope)
+        scope
         :default))))
 
 (defn-
