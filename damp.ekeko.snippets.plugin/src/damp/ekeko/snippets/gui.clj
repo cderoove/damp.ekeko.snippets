@@ -203,13 +203,39 @@ damp.ekeko.snippets.gui
   [shell group template node]
   (damp.ekeko.snippets.gui.TemplateGroupNodeSelectionDialog. shell group template node))
 
-    
-
 (defmulti
   operandbinding-celleditor
   (fn [opviewer table group template subject operator operandbinding]
-    (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))))
+    (let [scope (operatorsrep/operand-scope (operatorsrep/binding-operand operandbinding))
+          scope2method (methods operandbinding-celleditor)]
+      (when-not
+        (get scope2method scope)
+        :default))))
 
+(defn-
+  make-comboviewcelleditor 
+  [opviewer table group template subject operator operandbinding]
+  (let [operand
+        (operatorsrep/binding-operand operandbinding)
+        values
+        (operatorsrep/possible-operand-values|valid group template subject operator operand) 
+        editor 
+        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table org.eclipse.swt.SWT/READ_ONLY)]
+    (doto editor
+      (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
+      (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
+      (.setInput (to-array values))
+      (.setValue (first values))
+      )
+    editor))
+
+(defmethod 
+  operandbinding-celleditor
+  :default
+  [opviewer table group template subject operator operandbinding]
+  (make-comboviewcelleditor opviewer table group template subject operator operandbinding))
+  
+      
 (defmethod 
   operandbinding-celleditor
   operatorsrep/opscope-subject
@@ -241,37 +267,6 @@ damp.ekeko.snippets.gui
   [opviewer table group template subject operator operandbinding]
   (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
     editor))
-
-(defn-
-  make-comboviewcelleditor 
-  [opviewer table group template subject operator operandbinding]
-  (let [operand
-        (operatorsrep/binding-operand operandbinding)
-        values
-        (operatorsrep/possible-operand-values|valid group template subject operator operand) 
-        editor 
-        (org.eclipse.jface.viewers.ComboBoxViewerCellEditor. table org.eclipse.swt.SWT/READ_ONLY)]
-    (doto editor
-      (.setContentProvider (org.eclipse.jface.viewers.ArrayContentProvider.))
-      (.setLabelProvider (org.eclipse.jface.viewers.LabelProvider.))
-      (.setInput (to-array values))
-      (.setValue (first values))
-      )
-    editor))
-  
-
-(defmethod 
-  operandbinding-celleditor
-  operatorsrep/opscope-nodeclasskeyw
-  [opviewer table group template subject operator operandbinding]
-  (make-comboviewcelleditor opviewer table group template subject operator operandbinding))
-
-(defmethod 
-  operandbinding-celleditor
-  operatorsrep/opscope-subjectlistidx
-  [opviewer table group template subject operator operandbinding]
-  (make-comboviewcelleditor opviewer table group template subject operator operandbinding))
-
 
 
 
