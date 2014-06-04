@@ -514,7 +514,7 @@ damp.ekeko.snippets.operatorsrep
      "replace-node"
      operators/replace-node
      :destructive
-     "Replace subject by new node."
+     "Replace by new node."
      opscope-subject
      applicability|node|nonroot
      "Replaces selection by newly created node."
@@ -531,6 +531,18 @@ damp.ekeko.snippets.operatorsrep
      "Replaces selection by given textual value."
      [(make-operand "Value text" opscope-string validity|string)]
      )
+   
+   ;;has heisenbug .. works in debugger, not outside
+   ;(Operator. 
+   ;  "erase-list"
+   ;  operators/erase-list
+   ;  :destructive
+   ;  "Erase list."
+   ;  opscope-subject
+   ;  applicability|lst
+   ; "Deletes all elements from the list."
+   ;  []
+   ;  )
    
    
        

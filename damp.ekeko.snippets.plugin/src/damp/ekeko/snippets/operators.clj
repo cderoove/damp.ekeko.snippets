@@ -155,7 +155,7 @@ damp.ekeko.snippets.operators
   "Removes node from snippet. "
   [snippet node]
   (let [newsnippet 
-        (atom (matching/remove-value-from-snippet snippet node))] 
+        (atom snippet)] 
     (.delete node) ;remove node
     (util/walk-jdt-node ;dissoc children 
       node 
@@ -169,9 +169,9 @@ damp.ekeko.snippets.operators
   "Inserts node in list from snippet at the given index."
   [snippet node lst idx]
   (let [newsnippet 
-        (atom (matching/add-value-to-snippet snippet node))] ;update directives for new node
+        (atom snippet)]
     (.add lst idx node) ;destructive add
-    (util/walk-jdt-node ;add children 
+    (util/walk-jdt-node ;add cvalue hildren 
                         node 
                         (fn [val] 
                           (swap! newsnippet matching/add-value-to-snippet val)))
@@ -270,7 +270,7 @@ damp.ekeko.snippets.operators
         property
         (astnode/owner-property value)]
     (let [newsnippet 
-          (atom (matching/remove-value-from-snippet snippet value))] 
+          (atom snippet)] 
       ;dissoc children 
       (util/walk-jdt-node 
         value 
@@ -308,9 +308,9 @@ damp.ekeko.snippets.operators
 
 (defn
   replace-value
+  "Replaces a primitive value with the value correspondign to the given string."
   [snippet value string]
-   (let [
-        property
+  (let [property
         (astnode/owner-property value)
         parent
         (astnode/owner value)
@@ -318,19 +318,30 @@ damp.ekeko.snippets.operators
         (astnode/property-descriptor-value-class property)
         newvalue 
         (newvalue|string clazz string)]
-     (let [newsnippet (atom snippet)] 
-       ;dissoc parent and all of its children, including value
-       (util/walk-jdt-node 
-         parent 
-         (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
-       (.setStructuralProperty parent property newvalue)
-       ;re-add parent such that correct reifier is used for its new property value
-       (util/walk-jdt-node 
-         parent 
-         (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
-       @newsnippet)))
+    (let [newsnippet (atom snippet)] 
+      ;dissoc parent and all of its children, including value
+      (util/walk-jdt-node 
+        parent 
+        (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
+      (.setStructuralProperty parent property newvalue)
+      ;re-add parent such that correct reifier is used for its new property value
+      (util/walk-jdt-node 
+        parent 
+        (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+      @newsnippet)))
 
-     
+
+(defn
+  erase-list
+  "Removes all elements of a list."
+  [snippet value]
+ ;todo: figure out why only the first child gets deleted
+ (reduce 
+   (fn [newsnippet child]
+     (remove-node newsnippet child))
+   snippet
+   (astnode/value-unwrapped value)))
+
      
 (comment
   
