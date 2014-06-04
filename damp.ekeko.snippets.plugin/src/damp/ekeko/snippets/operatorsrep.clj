@@ -27,7 +27,8 @@ damp.ekeko.snippets.operatorsrep
 (def opscope-nodeclasskeyw :nodeclasskeyw) ;operand scope for ekeko keyword for node class 
 
 (def opscope-string :string)
-(def opscope-subjectlistidx :subjectlistidx)
+(def opscope-subjectlistidx :subjectlistidx) ;0 till size exclusive
+(def opscope-incsubjectlistidx :incsubjectlistidx);0 till size inclusive
 
 
 (defn
@@ -146,6 +147,17 @@ damp.ekeko.snippets.operatorsrep
       (and (>= operandvalue 0)
            (< operandvalue (.size lst-raw))))))
           
+
+(defn
+  validity|incsubjectlistidx
+  [snippetgroup snippet value operandvalue]
+  (and 
+    (integer? operandvalue)
+    (let [lst-raw (astnode/value-unwrapped value)]
+      (and (>= operandvalue 0)
+           (<= operandvalue (.size lst-raw))))))
+          
+
         
 (defrecord 
   Operator
@@ -469,7 +481,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|lst 
      "Creates a new node and inserts it at the given index."
      [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectlisttype)
-      (make-operand "List index" opscope-subjectlistidx validity|subjectlistidx)]
+      (make-operand "List index" opscope-incsubjectlistidx validity|incsubjectlistidx)]
      )
    
    
@@ -653,9 +665,18 @@ damp.ekeko.snippets.operatorsrep
   possible-operand-values
   opscope-subjectlistidx
   [snippetgroup snippet subject operator operand]
+  (let [lst-raw (astnode/value-unwrapped subject)
+        siz (.size lst-raw)]
+    (range 0 (inc siz))))
+
+
+(defmethod
+  possible-operand-values
+  opscope-incsubjectlistidx
+  [snippetgroup snippet subject operator operand]
   (let [lst-raw (astnode/value-unwrapped subject)]
-    (range 0 (inc (.size lst-raw)))))
-  
+    (range 0 (+ 2 (.size lst-raw)))))
+
 
 (defn
   possible-operand-values|valid

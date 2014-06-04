@@ -78,6 +78,13 @@
           (.getGroup (.getGroup editor)))))))
 
 (defn
+  snippetgroup-from-file
+  "Returns the snippetgroup persisted in the given file."
+  [file]
+  (damp.ekeko.snippets.persistence/slurp-snippetgroup file))
+
+
+(defn
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET) query-by-snippet*)
