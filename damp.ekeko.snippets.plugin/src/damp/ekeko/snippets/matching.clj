@@ -82,7 +82,8 @@
               (util/gen-readable-lvar-for-value list-raw)
               index-match     
               (.indexOf list-raw snippet-val)]
-          ;todo: check for parent directives that might require different grounding
+          ;could check for parent list directives that might already have ground the element
+          ;but for now rely on operators to switch correctly between directives (and e.g., remove ground-relative-to-parent from all list elements)
           `((cl/fresh [~list-match-raw] 
                       (~value-raw ~list-match ~list-match-raw)
                       (el/equals ~var-match (.get ~list-match-raw ~index-match)))))
@@ -137,6 +138,8 @@
       `((cl/fresh [~list-match-raw] 
                   (~value-raw ~list-match ~list-match-raw)
                   (el/contains ~list-match-raw ~match))))))
+
+
     
 
 
@@ -160,6 +163,8 @@
   is-ignored-property?
   [property-keyw]
   (= property-keyw :javadoc))
+
+
 
 ;todo: er is geen ast-conditie meer om type te checken, die moet er wel komen voor variabelen
 (defn 
@@ -210,6 +215,64 @@
         ;constrain null-values
         (astnode/nilvalue? snippet-val)
         `((~value|null ~var-match))))))
+
+
+
+(defn
+  constrain-lst|regexp 
+  "Requires candidate matches to match a regular expresison. 
+   Will ground elements. Therefore, elements should no longer have a grounding directive.
+   Constraining conditions of elements will be feature as conditions inside the regular expression."
+  [val]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var-match-qwalgraph
+          (util/gen-lvar 'qgraph)
+          var-match-qwalgraph-start
+          (util/gen-lvar 'qgraphstart)
+          var-match-qwalgraph-end
+          (util/gen-lvar 'qgraphend)
+          
+          element-conditions
+          
+          (interpose 
+            damp.qwal/q=>
+            (map
+              (fn [element]
+                (let [var-elmatch                    
+                      (snippet/snippet-var-for-node template element)
+                      elmatchidx
+                      (gensym 'elmatchidx)
+                      elmatch 
+                      (gensym 'elmatch)]
+                ;;todo: variants of qcurrent  for multiplicity operand  * + among grounding directives of child
+                
+               
+               
+                 `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
+                                      (cl/== ~var-elmatch ~elmatch) 
+                                      ;todo: put constraining directives for child here.. will be quicker
+                                      )
+                  
+                  ))
+              (astnode/value-unwrapped val)))
+          ]
+      `((cl/fresh 
+          [~var-match-qwalgraph ~var-match-qwalgraph-start ~var-match-qwalgraph-end]
+          (damp.ekeko.snippets.runtime/value|list-qwal-start-end
+            ~var-match
+            ~var-match-qwalgraph
+            ~var-match-qwalgraph-start
+            ~var-match-qwalgraph-end)
+          (damp.qwal/qwal   
+            ~var-match-qwalgraph
+            ~var-match-qwalgraph-start
+            ~var-match-qwalgraph-end
+            [] 
+            ~@element-conditions))))))
+         
+           
 
 (defn
   constrain-size|atleast
@@ -314,6 +377,14 @@
 
 
 (defn
+  constrain-replacedbywildcard
+  [snippet-val]
+  (fn [snippet]
+    `()))
+    
+
+
+(defn
   constrain-equals
   "Constraining directive that will unify the node's match with the given variable."
   [snippet-ast var-string]
@@ -346,6 +417,23 @@
 ;         (concat 
 ;           ((gf-node-exact snippet-val) snippet)
 ;           ((cf-variable snippet-val) snippet))))))
+
+
+;; Functions involving wildcards
+
+
+(declare directive-replacedbywildcard)
+
+(defn 
+  snippet-node-replaced-by-wilcard?
+  [snippet node]
+  (let [bds
+        (snippet/snippet-bounddirectives-for-node snippet node)]
+    (boolean
+      (directives/bounddirective-for-directive 
+        bds
+        directive-replacedbywildcard))))
+  
 
 (comment
   
@@ -664,22 +752,55 @@
     ground-element
     "Match is a member of the match for the parent list."))
 
+(def 
+  directive-replacedbywildcard
+  (directives/make-directive
+    "replaced-by-wildcard"
+    []
+    constrain-replacedbywildcard
+    "Match is unconstrained."))
+
+
+(def 
+  directive-consider-as-regexp|lst
+  (directives/make-directive
+    "regexp|lst"
+    []
+    constrain-lst|regexp
+    "Considers the list as a regexp for element matches."))
+
+
+(def
+  directives-constraining|mutuallyexclusive
+  [;mutually exclusive ones
+   directive-exact
+   directive-replacedbyvariable
+   directive-replacedbywildcard])
+
+
+(def 
+  directives-constraining|optional
+  [;can be added to the above
+   directive-size|atleast
+   directive-equals
+   directive-consider-as-regexp|lst
+   ])
+
 
 (def 
   directives-constraining
-  [directive-exact
-   directive-replacedbyvariable
-   directive-equals
-   directive-size|atleast
+  (concat directives-constraining|mutuallyexclusive directives-constraining|optional))
 
-   ])
 
 (def
   directives-grounding
   [directive-child
    directive-offspring
    directive-member
+   
    ])
+
+
   
 (defn 
   registered-constraining-directives
@@ -728,7 +849,9 @@
 
 (def default-directives [directive-exact 
                          directive-child 
-                         directive-replacedbyvariable ;ensures these aren't pretty-printed
+                         ;ensures these aren't pretty-printed
+                         directive-replacedbyvariable 
+                         directive-replacedbywildcard
                          ])
 
 (defn
@@ -775,14 +898,8 @@
   (let [snippet (atom template)]
     (util/walk-jdt-node 
       value
-      (fn [astval]
-        (swap! snippet remove-all-directives astval))
-      (fn [lstval] 
-        (swap! snippet remove-all-directives lstval))
-      (fn [primval]
-        (swap! snippet remove-all-directives primval))
-      (fn [nilval]
-        (swap! snippet remove-all-directives nilval)))
+      (fn [val]
+        (swap! snippet remove-all-directives val)))
     @snippet))
 
 (defn
@@ -791,18 +908,9 @@
   (let [snippet (atom template)]
     (util/walk-jdt-node 
       value
-      (fn [astval]
-        (when (not= astval value)
-          (swap! snippet remove-all-directives astval)))
-      (fn [lstval] 
-        (when (not= lstval value)
-          (swap! snippet remove-all-directives lstval)))
-      (fn [primval]
-        (when (not= primval value)
-          (swap! snippet remove-all-directives primval)))
-      (fn [nilval]
-        (when (not= nilval value)
-          (swap! snippet remove-all-directives nilval))))
+      (fn [val]
+        (when (not= val value)
+          (swap! snippet remove-all-directives val))))
     @snippet))
 
 (defn
@@ -853,11 +961,7 @@
   (let [snippet (atom (snippet/make-snippet n))]
     (util/walk-jdt-node 
      n 
-      (fn [astval] (swap! snippet add-value-to-snippet astval))
-      (fn [lstval] 
-        (swap! snippet add-value-to-snippet lstval))
-      (fn [primval]  (swap! snippet add-value-to-snippet primval))
-      (fn [nilval] (swap! snippet add-value-to-snippet nilval)))
+     (fn [val] (swap! snippet add-value-to-snippet val)))
     @snippet))
 
 (defn
@@ -912,6 +1016,8 @@
   
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-replacement-var-for-node)
+
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD) snippet-node-replaced-by-wilcard?)
 
   
   (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_REGISTERED_DIRECTIVES) registered-directives)

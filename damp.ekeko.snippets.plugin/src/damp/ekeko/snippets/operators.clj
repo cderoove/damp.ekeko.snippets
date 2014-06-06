@@ -39,6 +39,9 @@ damp.ekeko.snippets.operators
     (make-directiveoperand-for-match)
     node))
 
+;note: cannot phyisically delete the node's children, as some might be mandatory which is checked by the AST delete operations
+;could replace mandatories by newly created nodes (of which missing information will show up as MISSNG when printed),
+;but there is no benefit over keeping the original nodes
 (defn 
   replace-by-variable 
   "Replace snippet AST node by a logic variable."
@@ -46,17 +49,40 @@ damp.ekeko.snippets.operators
   (let [purged-of-children ;remove all directives for children
         (matching/remove-all-directives+ snippet node)
         purged 
-        ;remove constraining directives for node, keep grounding directives
-        ;(TODO: perhaps only remove the default constraining directive?)
-        (matching/remove-directives purged-of-children node (matching/registered-constraining-directives))]
-    (snippet/add-bounddirective purged
-                                node 
-                                (directives/make-bounddirective 
-                                  matching/directive-replacedbyvariable
-                                  [(make-directiveoperandbinding-for-match node)
-                                   (directives/make-directiveoperand-binding
-                                     (directives/make-directiveoperand "Variable replacing template node")
-                                     uservar)]))))
+        ;remove incompatible constraining directives for node, keep grounding directives
+        (matching/remove-directives 
+          purged-of-children
+          node 
+          matching/directives-constraining|mutuallyexclusive)]                          
+    (snippet/add-bounddirective
+      purged
+      node 
+      (directives/make-bounddirective 
+        matching/directive-replacedbyvariable
+        [(make-directiveoperandbinding-for-match node)
+         (directives/make-directiveoperand-binding
+           (directives/make-directiveoperand "Variable replacing template node")
+           uservar)]))))
+
+
+(defn 
+  replace-by-wildcard 
+  "Replace snippet AST node by a wildcard."
+  [snippet node]
+  (let [purged-of-children
+        (matching/remove-all-directives+ snippet node)
+        purged 
+        (matching/remove-directives
+          purged-of-children
+          node
+           matching/directives-constraining|mutuallyexclusive)]
+    (snippet/add-bounddirective
+      purged
+      node 
+      (directives/make-bounddirective 
+        matching/directive-replacedbywildcard
+        [(make-directiveoperandbinding-for-match node)]))))
+
 
 (defn 
   add-directive-equals 
@@ -78,7 +104,7 @@ damp.ekeko.snippets.operators
   "Uses match-size|atleast/0 for constraining match candidates for a template list."
   [template lst]
   (snippet/add-bounddirective 
-    (matching/remove-directives template lst (matching/registered-constraining-directives))
+    (matching/remove-directives template lst [matching/directive-exact])
     lst
     (directives/make-bounddirective matching/directive-size|atleast
                                     [(make-directiveoperandbinding-for-match lst)])))
@@ -342,6 +368,22 @@ damp.ekeko.snippets.operators
    snippet
    (astnode/value-unwrapped value)))
 
+(defn
+  consider-regexp|list
+  "Considers list as regular expression for matching elements."
+  [snippet value]
+  ;add regexp directive to lst
+  (snippet/add-bounddirective
+    ;remove grounding directives from elements 
+    (reduce
+      (fn [newsnippet lstel]
+        (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
+      snippet
+      (astnode/value-unwrapped value))
+    value 
+    (directives/make-bounddirective 
+      matching/directive-consider-as-regexp|lst
+      [(make-directiveoperandbinding-for-match value)])))
      
 (comment
   

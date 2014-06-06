@@ -50,7 +50,8 @@
 
 (defn 
   walk-jdt-node
-  "Recursive descent through a JDT node, applying given functions to the encountered 
+  "Recursive descent through a JDT node (or JDT lst / primitive property value),
+   applying given functions to the encountered 
    ASTNode instances and Ekeko wrappers for their property values."
   ([n f]
     (walk-jdt-node n f f f f))

@@ -40,6 +40,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static IFn FN_SNIPPET_ELEMENT_LIST;
 	public static IFn FN_SNIPPET_ELEMENT_NODE;
 
+	public static IFn FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD;
 
 
 
@@ -123,6 +124,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static StyleRange styleRangeForDirectives(int start, int length) {
 		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_GRAY), null);
 	}
+	
+	public static StyleRange styleRangeForWildcard(int start, int length) {
+		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN), null);
+	}
+
 
 
 
@@ -150,6 +156,16 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 						return false; //do not print node itself because list has been replaced
 					}
 				}
+
+				if(hasBeenReplacedByWildcard(nodeListWrapper)) {
+					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+						printWildcardReplacement();
+						return false;
+					}	
+				}
+				
+				
 			}
 		}
 		Object replacementVar = getUserVar(node);
@@ -157,10 +173,22 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			printVariableReplacement(replacementVar);
 			return false;//do not print node itself because node has been replace
 		} 
+		
+		if(hasBeenReplacedByWildcard(node)) {
+			printWildcardReplacement();
+			return false;
+		}
+		
 		return true;
 	}
 
 
+	protected void printWildcardReplacement() {
+		int start = getCurrentCharacterIndex();
+		this.buffer.append("...");
+		styleRanges.add(styleRangeForWildcard(start, getCurrentCharacterIndex() - start));	
+	}
+	
 	static boolean isElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if(parent == null)
@@ -329,6 +357,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static Boolean isNullValueInTemplate(Object template, Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_ISNULL.invoke(template, element);
 	}
+	
+	public Boolean hasBeenReplacedByWildcard(Object element) {
+		return (Boolean) FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD.invoke(snippet, element);
+	}
 
 	//called by labelproviders to pretty print an individual template value
 	public String prettyPrintElement(Object snippet, Object element) {
@@ -350,14 +382,22 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		} 
 
 		if(isListValueInTemplate(snippet, element)) {
-
+			printOpeningNode(element);
+			
 			Object listReplacementVar = getUserVar(element);
 			if(listReplacementVar != null) {
 				printVariableReplacement(listReplacementVar);
+				printClosingNode(element);
+				return getResult();
+			}
+			
+			if(hasBeenReplacedByWildcard(element)) {
+				printWildcardReplacement();
+				printClosingNode(element);
 				return getResult();
 			}
 
-			printOpeningNode(element);
+			
 			listWrapperForWhichToIgnoreListDecorations.push(element);
 
 			@SuppressWarnings("rawtypes")
@@ -380,34 +420,28 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 		if(isPrimitiveValueInTemplate(snippet, element)) {
 			Object value = getActualPrimitiveValueInTemplate(snippet, element);
-			if(hasNonDefaultDirectives(snippet, element)) {
-				printOpeningNode(element);
-			}
+			printOpeningNode(element);
 			Object primReplacementVar = getUserVar(element);
 			if(primReplacementVar != null) {
 				printVariableReplacement(primReplacementVar);
+			} else if(hasBeenReplacedByWildcard(element)) {
+				printWildcardReplacement();
 			} else { 
 				this.buffer.append(value.toString());
 			}
-			if(hasNonDefaultDirectives(snippet, element)) {
-				printClosingNode(element);
-			}
+			printClosingNode(element);
 			return getResult();
 		} 
 
 		if(isNullValueInTemplate(snippet, element)) {
-			if(hasNonDefaultDirectives(snippet, element)) {
-				printOpeningNode(element);
-			}
+			printOpeningNode(element);
 			Object nullReplacementVar = getUserVar(element);
 			if(nullReplacementVar != null) {
 				printVariableReplacement(nullReplacementVar);
 			} else {
 				this.buffer.append("null");	
 			}
-			if(hasNonDefaultDirectives(snippet, element)) {
-				printClosingNode(element);	
-			} 
+			printClosingNode(element);	
 			return getResult();
 		} else
 			throw new RuntimeException("Unexpected value to be pretty-printed: " + element.toString());

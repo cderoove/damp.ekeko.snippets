@@ -545,6 +545,40 @@ damp.ekeko.snippets.operatorsrep
    ;  )
    
    
+   (Operator. 
+     "replace-by-wildcard"
+     operators/replace-by-wildcard
+     :generalization
+     "Replace by wildcard."
+     opscope-subject
+     applicability|always
+     "Replaces selection by wildcard."
+     []
+     )
+   
+   
+   
+   ;todo: operator to rever to normal constraining of list elements
+   ;needs to re-add ground-relative-to-parent
+     
+   (Operator. 
+     "consider-regexp|list"
+     operators/consider-regexp|list
+     :generalization
+     "Consider list as regular expression."
+     opscope-subject
+     applicability|lst
+     "Considers list as regular expression when matching."
+     []
+     )
+   
+  
+   
+   
+   
+   
+   
+   
        
    
    ])

@@ -282,6 +282,80 @@
         generator 
         (TemplateCodeGenerator. jtemplategroup var2value)]
     (.prettyPrintSnippet generator template)))
+
+
+
+(defn
+  qwal-graph-from-list
+  [^java.util.List jdt-lst]
+  (let
+    [length
+     (.size jdt-lst)]
+    {:nodes 
+     (map-indexed vector jdt-lst)
+     :predecessors
+     (fn 
+       [?from ?to]
+       (cl/all
+         (cl/project [?from]
+                     (cl/== ?to
+                            (let [idx (nth ?from 0)
+                                  nidx (dec idx)]
+                              (if 
+                                (> idx 0) 
+                                [[nidx (.get jdt-lst nidx)]])
+                                [])))))
+     :successors
+     (fn 
+       [?from ?to]
+       (cl/all
+         (cl/project [?from]
+           (cl/== ?to
+                  (let [idx (nth ?from 0)
+                        nidx (inc idx)]
+                    (if 
+                      (< nidx length)
+                      [[nidx (.get jdt-lst nidx)]]
+                      []
+                      ))))))
+     
+     }))
+
+
+(defn
+  value|list-qwal-start-end
+  "Used in list matching using regular expresisons.
+
+  (damp.ekeko/ekeko [?block ?el]
+           (cl/fresh [?nodes ?start ?end ?lst ?q]
+                  (ast/ast :Block ?block)
+                  (ast/has :statements ?block ?lst)
+                  (damp.ekeko.snippets.runtime/value|list-qwal-start-end ?lst ?q ?start ?end)
+                  (damp.qwal/qwal ?q ?start ?end
+                                  [] 
+                                  (damp.qwal/q=>*)
+                                  (damp.qwal/qcurrent [[idx el]]
+                                                      (el/equals ?el el)
+                                                      (ast/ast :ReturnStatement ?el)
+                                                      )
+                                  (damp.qwal/q=>*)
+                                  )                           
+                  ))"
+  [?lst ?qwal ?start ?end]
+  (cl/fresh [?raw ?nodes]
+         (ast/value|list ?lst)
+         (ast/value-raw ?lst ?raw)
+         (el/succeeds (not (.isEmpty ?raw)))
+         (el/equals ?qwal (qwal-graph-from-list ?raw))
+         (el/equals ?nodes (:nodes ?qwal))
+         (el/equals ?start (first ?nodes))
+         (el/equals ?end (last ?nodes))))
+
+
+
+
+ 
+
     
     
         
