@@ -393,8 +393,8 @@ public class TemplateEditor extends EditorPart {
 		ClojureFileEditorInput teinput = (ClojureFileEditorInput) input;
 		if(!teinput.isAssociatedWithPersistentFile()) {
 			FileDialog fileDialog = new FileDialog(getSite().getShell(), SWT.SAVE);
-		    fileDialog.setFilterExtensions(new String[] { "*.ekxt" });
-		    fileDialog.setFilterNames(new String[] { "Ekeko/X template file (*.ekxt)" });
+		    fileDialog.setFilterExtensions(new String[] { "*.ekt" });
+		    fileDialog.setFilterNames(new String[] { "Ekeko/X template file (*.ekt)" });
 		    absoluteFilePathString = fileDialog.open();
 		    if(absoluteFilePathString == null)
 		    	return;   
