@@ -114,54 +114,72 @@
 
 
 (defrecord 
-  AbsoluteIdentifier 
-  [nodekind
-   start 
-   length])
+  RootIdentifier []) 
 
 (defrecord
-  RelativeIdentifier
-  [ownerdata
+  RelativePropertyValueIdentifier
+  [ownerid
    property])
 
-(defn
-  make-absolute-identifier
-  ([node]
-    (make-absolute-identifier
-      (astnode/ekeko-keyword-for-class-of node)
-      (.getStartPosition node)
-      (.getLength node)))
-  ([nodekind start length]
-    (AbsoluteIdentifier. nodekind start length)))
+(defrecord
+  RelativeListElementIdentifier
+  [listid
+   index
+   ])
 
 (defn
-  make-relative-identifier
-  [owner property]
-  (cond 
-    (instance? ASTNode owner)
-    (RelativeIdentifier. (make-absolute-identifier owner) property)
-    (instance? AbsoluteIdentifier owner)
-    (RelativeIdentifier. owner property)
-    :else
-    (throw (Exception. (str "Unknown owner for relative identifier: " owner)))))
+  make-root-identifier
+  []
+  (RootIdentifier.))
 
+(defn
+  make-property-value-identifier
+  [ownerid property]
+  (RelativePropertyValueIdentifier. ownerid property))
 
+(defn
+  make-list-element-identifier
+  [listid index]
+  (RelativeListElementIdentifier. listid index))
 
+;memoize?
 (defn
   snippet-value-identifier
   [snippet value]
+  (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
+        property (astnode/owner-property value)]
   (cond 
-    (astnode/ast? value)
-    (make-absolute-identifier value)
+    ;root
+    (= value (snippet/snippet-root snippet))
+    (make-root-identifier)
+    
+    ;lists (keep before next clause, do not merge with before-last clause)
+    (astnode/lstvalue? value)
+    (make-property-value-identifier 
+      (snippet-value-identifier snippet owner)
+      property)
+    
+    ;list members
+    (astnode/property-descriptor-list? property)
+    (let [lst (snippet/snippet-list-containing snippet value)
+          lst-raw (astnode/value-unwrapped lst)]
+      (make-list-element-identifier 
+        (snippet-value-identifier 
+          snippet
+          lst)
+        (.indexOf lst-raw value)))
+    
+    ;non-list members
     (or 
-      (astnode/lstvalue? value)
+      (astnode/ast? value)
       (astnode/nilvalue? value)
       (astnode/primitivevalue? value))
-    (let [owner (astnode/owner value)
-          property (astnode/owner-property value)]
-      (make-relative-identifier owner property))
+    (make-property-value-identifier
+      (snippet-value-identifier snippet owner)
+      property)
+    
     :else
-    (throw (Exception. (str "Unknown value to create identifier for:" value)))))
+    (throw (Exception. (str "Unknown value to create identifier for:" value))))))
 
 (defn
   snippet-value-corresponding-to-identifier
@@ -181,7 +199,7 @@
 (defn
   snippet-persistable-directives
   [snippet]
-  (reduce
+  (reduce 
     (fn [sofar value] 
       (let [bounddirectives
             (snippet/snippet-bounddirectives-for-node snippet value)            
@@ -254,21 +272,27 @@
 
 (defmethod 
   clojure.core/print-dup 
-  AbsoluteIdentifier
+  RootIdentifier
   [identifier w]
-  (let [kind (:nodekind identifier)
-        pos (:start identifier)
-        len (:length identifier)]
-  (.write w (str  "#=" `(make-absolute-identifier ~kind ~pos ~len)))))
+  (.write w (str  "#=" `(make-root-identifier))))
 
 
 (defmethod 
   clojure.core/print-dup 
-  RelativeIdentifier
+  RelativePropertyValueIdentifier
   [identifier w]
-  (let [absolute (:ownerdata identifier)
+  (let [ownerid (:ownerid identifier)
         property (:property identifier)]
-  (.write w (str  "#=" `(make-relative-identifier ~absolute ~property)))))
+  (.write w (str  "#=" `(make-property-value-identifier ~ownerid ~property)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  RelativeListElementIdentifier
+  [identifier w]
+  (let [listid (:listid identifier)
+        index (:index identifier)]
+  (.write w (str  "#=" `(make-list-element-identifier ~listid ~index)))))
 
 
 (defn

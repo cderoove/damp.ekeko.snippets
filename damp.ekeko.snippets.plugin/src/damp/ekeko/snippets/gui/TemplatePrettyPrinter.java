@@ -450,6 +450,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			}
 			printClosingNode(element);	
 			return getResult();
+		} 
+		
+		if(element == null) {
+			this.buffer.append("null");	
+			return getResult();
 		} else
 			throw new RuntimeException("Unexpected value to be pretty-printed: " + element.toString());
 

@@ -57,7 +57,7 @@
 
 
 (deftest 
-  ^{:doc "THe anymethod.ekt template matches all non-constructor method declarations."}
+  ^{:doc "The anymethod.ekt template matches all non-constructor method declarations."}
   match-persisted-anymethod
   (let [ms-by-query 
         (count (damp.ekeko/ekeko [?m] 
