@@ -30,15 +30,7 @@ damp.ekeko.snippets.querying
 (defn
   snippet-value-conditions-already-generated?
   [snippet value]
-  (when
-    (astnode/valuelistmember? value)
-    (let [owninglst (snippet/snippet-list-containing snippet value)
-          owninglstbds (snippet/snippet-bounddirectives-for-node snippet owninglst)
-          ]
-      (directives/bounddirective-for-directive 
-        owninglstbds
-        matching/directive-consider-as-regexp|lst)
-      )))
+  (matching/snippet-value-regexp-element? snippet value))
       
 
 (defn-

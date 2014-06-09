@@ -368,6 +368,8 @@ damp.ekeko.snippets.operators
    snippet
    (astnode/value-unwrapped value)))
 
+
+;TODO:operator to undo effect on children
 (defn
   consider-regexp|list
   "Considers list as regular expression for matching elements."
@@ -384,6 +386,26 @@ damp.ekeko.snippets.operators
     (directives/make-bounddirective 
       matching/directive-consider-as-regexp|lst
       [(make-directiveoperandbinding-for-match value)])))
+
+
+
+(defn
+  update-multiplicity
+  "Associates given regexp matching multiplicity (n,'+,'*) with subject."
+  [snippet subject multiplicity]
+  (snippet/add-bounddirective
+    ;remove pre-existing regexp multiplicities
+    (matching/remove-directives snippet subject [matching/directive-multiplicity]);also directive-member?  
+    subject
+    (directives/make-bounddirective 
+      matching/directive-multiplicity
+      [(make-directiveoperandbinding-for-match subject)
+       (directives/make-directiveoperand-binding
+           (directives/make-directiveoperand "Multiplicity")
+           multiplicity)
+       ])))
+     
+
      
 (comment
   

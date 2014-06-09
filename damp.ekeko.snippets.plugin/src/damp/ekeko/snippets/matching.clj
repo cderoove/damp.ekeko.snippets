@@ -209,7 +209,7 @@
         (astnode/nilvalue? snippet-val)
         `((~value|null ~var-match))))))
 
-
+(declare snippet-value-multiplicity)
 
 (defn
   constrain-lst|regexp 
@@ -227,34 +227,58 @@
           var-match-qwalgraph-end
           (util/gen-lvar 'qgraphend)
           
-          element-conditions
+          elements 
+          (astnode/value-unwrapped val)
           
-          (interpose 
-            `damp.qwal/q=>
-            (map
-              (fn [element]
-                (let [var-elmatch                    
-                      (snippet/snippet-var-for-node template element)
-                      elmatchidx
-                      (gensym 'elmatchidx)
-                      elmatch 
-                      (gensym 'elmatch)
-                      elconditions 
-                      (mapcat 
-                        (fn [bounddirective]
-                          (directives/snippet-bounddirective-conditions template bounddirective))
-                        (snippet/snippet-bounddirectives-for-node template element))]
-                ;;todo: variants of qcurrent  for multiplicity operand  * + among grounding directives of child
-                
-                
-                 `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
-                                      (cl/== ~var-elmatch ~elmatch) 
-                                      ~@elconditions ;these conditions no longer need to be included in the query 
-                                      )
-                  
-                  ))
-              (astnode/value-unwrapped val)))
-          ]
+          idx-last 
+          (dec (.size elements))
+          
+          element-conditions
+          (apply concat
+               (map-indexed
+                 (fn [idx element]
+                   (let [var-elmatch                    
+                         (snippet/snippet-var-for-node template element)
+                         elmatchidx
+                         (gensym 'elmatchidx)
+                         elmatch 
+                         (gensym 'elmatch)
+                         ;these conditions no longer need to be included in the query 
+                         elconditions 
+                         (mapcat 
+                           (fn [bounddirective]
+                             (directives/snippet-bounddirective-conditions template bounddirective))
+                           (snippet/snippet-bounddirectives-for-node template element))
+                         qcurrentconditions
+                         `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
+                                              (cl/== ~var-elmatch ~elmatch) 
+                                              ~@elconditions)
+                         multiplicity
+                         (snippet-value-multiplicity template element)
+                         ]
+                     (condp = multiplicity
+                       "1" 
+                       (if 
+                         (= idx idx-last) 
+                         `(~qcurrentconditions)
+                         `(~qcurrentconditions damp.qwal/q=>))
+                       "+"
+                       (if 
+                         (= idx idx-last) 
+                         `((damp.qwal/q+ 
+                            ~qcurrentconditions))
+                         `((damp.qwal/q+ 
+                            ~qcurrentconditions
+                            damp.qwal/q=>)))
+                       "*" 
+                       (if 
+                         (= idx idx-last) 
+                         `((damp.qwal/q* 
+                            ~qcurrentconditions))
+                         `((damp.qwal/q* 
+                             ~qcurrentconditions
+                             damp.qwal/q=>))))))
+                 elements))]
       `((cl/fresh 
           [~var-match-qwalgraph ~var-match-qwalgraph-start ~var-match-qwalgraph-end]
           (damp.ekeko.snippets.runtime/value|list-qwal-start-end
@@ -379,6 +403,13 @@
   (fn [snippet]
     `()))
     
+
+;constraining/grounding will be done by parent regexp in which snippet-val resides
+(defn
+  constrain-multiplicity|regexp
+  [snippet-val multiplicity]
+  (fn [snippet]
+    `()))
 
 
 (defn
@@ -766,6 +797,13 @@
     constrain-lst|regexp
     "Considers the list as a regexp for element matches."))
 
+(def
+  directive-multiplicity
+  (directives/make-directive
+    "multiplicity"
+    []
+    constrain-multiplicity|regexp
+    "Determines multiplicity of matches."))
 
 (def
   directives-constraining|mutuallyexclusive
@@ -781,6 +819,7 @@
    directive-size|atleast
    directive-equals
    directive-consider-as-regexp|lst
+   directive-multiplicity
    ])
 
 
@@ -796,8 +835,6 @@
    directive-member
    
    ])
-
-
   
 (defn 
   registered-constraining-directives
@@ -839,6 +876,34 @@
       (when (= name (directives/directive-name directive))
         directive))
     (registered-directives)))
+
+
+
+;; Auxiliary functions related to regular expression matching
+;; ---------------------------------------------------------------
+
+(defn
+  snippet-value-regexp-element?
+  [snippet value]
+  (when
+    (astnode/valuelistmember? value)
+    (let [owninglst (snippet/snippet-list-containing snippet value)
+          owninglstbds (snippet/snippet-bounddirectives-for-node snippet owninglst)]
+      (directives/bounddirective-for-directive 
+        owninglstbds
+        directive-consider-as-regexp|lst))))
+
+(defn
+  snippet-value-multiplicity
+  [snippet value]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
+    (if-let [mbd (directives/bounddirective-for-directive 
+                   bds
+                   directive-multiplicity)]
+      (directives/directiveoperandbinding-value 
+        (nth (directives/bounddirective-operandbindings mbd) 1))
+      "1")))
+    
 
 
 ;; Constructing Snippet instances with default matching directives

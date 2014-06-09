@@ -29,7 +29,7 @@ damp.ekeko.snippets.operatorsrep
 (def opscope-string :string)
 (def opscope-subjectlistidx :subjectlistidx) ;0 till size exclusive
 (def opscope-incsubjectlistidx :incsubjectlistidx);0 till size inclusive
-
+(def opscope-multiplicity :multiplicity) ;match multiplicity (int, *, +)
 
 
 (defn
@@ -99,6 +99,11 @@ damp.ekeko.snippets.operatorsrep
       (or 
         (astnode/property-descriptor-list? ownerprop)
         (not (.isMandatory ownerprop))))))
+
+(defn
+  applicability|multiplicity
+  [snippetgroup snippet value]
+  (matching/snippet-value-regexp-element? snippet value))
 
 
 (defn
@@ -182,7 +187,13 @@ damp.ekeko.snippets.operatorsrep
   validity|subjectownerpropertytype 
   validity|subjectowninglisttype)
   
-
+(defn
+  validity|multiplicity
+  [snippetgroup snippet value operandvalue]
+  (or
+    (= "1" operandvalue)
+    (= "+" operandvalue)
+    (= "*" operandvalue)))
         
 (defrecord 
   Operator
@@ -572,6 +583,19 @@ damp.ekeko.snippets.operatorsrep
      []
      )
    
+   
+   
+   (Operator. 
+     "update-multiplicity"
+     operators/update-multiplicity
+     :generalization
+     "Update multiplicity."
+     opscope-subject
+     applicability|node|nonroot
+     "Updates multiplicity of match."
+     [(make-operand "Multiplicity" opscope-multiplicity validity|multiplicity)]
+     )
+   
   
    
    
@@ -719,6 +743,12 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   ;(snippet/snippet-nodes snippet)
   [node]) 
+
+(defmethod
+  possible-operand-values
+  opscope-multiplicity
+  [snippetgroup snippet node operator operand]
+  ["1" "+" "*"]) 
 
 (defmethod
   possible-operand-values
