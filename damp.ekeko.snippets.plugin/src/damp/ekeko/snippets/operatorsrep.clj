@@ -64,7 +64,7 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value] 
   (and 
     (not (nil? value))
-    (let [property (astnode/owner-property value)]
+    (when-let [property (astnode/owner-property value)]
       (astnode/property-descriptor-simple? property))))
     
 
@@ -74,7 +74,8 @@ damp.ekeko.snippets.operatorsrep
   (and 
     (not (nil? value))
     (not (astnode/lstvalue? value))
-    (astnode/property-descriptor-list? (astnode/owner-property value))))
+    (when-let [property (astnode/owner-property value)]
+      (astnode/property-descriptor-list? property))))
 
 (defn 
   applicability|lstelement|nonroot
@@ -95,7 +96,7 @@ damp.ekeko.snippets.operatorsrep
   (and
     (astnode/ast? value) 
     (applicability|nonroot snippetgroup snippet value)
-    (let [ownerprop (astnode/owner-property value)]
+    (when-let [ownerprop (astnode/owner-property value)]
       (or 
         (astnode/property-descriptor-list? ownerprop)
         (not (.isMandatory ownerprop))))))
