@@ -152,7 +152,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 				if(listReplacementVar != null) {
 					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
 							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-						printVariableReplacement(listReplacementVar);
+						
+						if(isFirstElementOfList(node))
+							printVariableReplacement(listReplacementVar);
+						
+						
 						return false; //do not print node itself because list has been replaced
 					}
 				}
@@ -160,7 +164,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 				if(hasBeenReplacedByWildcard(nodeListWrapper)) {
 					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
 							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-						printWildcardReplacement();
+
+						if(isFirstElementOfList(node))
+								printWildcardReplacement();
+						
 						return false;
 					}	
 				}
