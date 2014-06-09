@@ -38,13 +38,6 @@
   [value snippet]
   (= (snippet/snippet-root snippet) value))
 
-(defn
-  value|listmember? 
-  "Checks whether value is a member of a list."
-  [snippet-val]
-  (and (not (astnode/lstvalue? snippet-val))
-       (astnode/property-descriptor-list? (astnode/owner-property snippet-val))))
-
 (declare ast-primitive-as-expression)
 
 
@@ -67,7 +60,7 @@
               (astnode/ekeko-keyword-for-class-of snippet-val)]
           `((~ast ~snippet-ast-keyw ~var-match)))
         ;member of list
-        (value|listmember? snippet-val)
+        (astnode/valuelistmember? snippet-val)
         (let [bounddirectives
               (snippet/snippet-bounddirectives-for-node snippet snippet-val)
               list-owner      
@@ -237,7 +230,7 @@
           element-conditions
           
           (interpose 
-            damp.qwal/q=>
+            `damp.qwal/q=>
             (map
               (fn [element]
                 (let [var-elmatch                    
@@ -245,14 +238,18 @@
                       elmatchidx
                       (gensym 'elmatchidx)
                       elmatch 
-                      (gensym 'elmatch)]
+                      (gensym 'elmatch)
+                      elconditions 
+                      (mapcat 
+                        (fn [bounddirective]
+                          (directives/snippet-bounddirective-conditions template bounddirective))
+                        (snippet/snippet-bounddirectives-for-node template element))]
                 ;;todo: variants of qcurrent  for multiplicity operand  * + among grounding directives of child
                 
-               
-               
+                
                  `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
                                       (cl/== ~var-elmatch ~elmatch) 
-                                      ;todo: put constraining directives for child here.. will be quicker
+                                      ~@elconditions ;these conditions no longer need to be included in the query 
                                       )
                   
                   ))

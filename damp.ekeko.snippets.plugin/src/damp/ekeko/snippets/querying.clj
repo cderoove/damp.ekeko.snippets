@@ -16,11 +16,30 @@ damp.ekeko.snippets.querying
              [parsing :as parsing]
              ]) 
   (:require 
-    [damp.ekeko [logic :as el]]))
+    [damp.ekeko 
+     [logic :as el]]
+    [damp.ekeko.jdt
+     [astnode :as astnode]]
+
+    ))
 
 ;; Converting a snippet to a query
 ;; -------------------------------
 
+
+(defn
+  snippet-value-conditions-already-generated?
+  [snippet value]
+  (when
+    (astnode/valuelistmember? value)
+    (let [owninglst (snippet/snippet-list-containing snippet value)
+          owninglstbds (snippet/snippet-bounddirectives-for-node snippet owninglst)
+          ]
+      (directives/bounddirective-for-directive 
+        owninglstbds
+        matching/directive-consider-as-regexp|lst)
+      )))
+      
 
 (defn-
   snippet-conditions
@@ -29,36 +48,36 @@ damp.ekeko.snippets.querying
   (defn 
     conditions
     [ast-or-list]
-    (let [bounddirectives
-          (snippet/snippet-bounddirectives-for-node snippet ast-or-list)
-          bounddirectives-grounding
-          (filter (fn [bounddirective]
-                    (matching/registered-grounding-directive? (directives/bounddirective-directive bounddirective)))
-                  bounddirectives)
-          bounddirectives-constraining
-          (filter (fn [bounddirective]
-                    (matching/registered-constraining-directive? (directives/bounddirective-directive bounddirective)))
-                  bounddirectives)
-          conditions-grounding
-          (mapcat
-            (fn [bounddirective]
-              (directives/snippet-bounddirective-conditions snippet bounddirective))
-            bounddirectives-grounding)
-          conditions-constraining
-          (mapcat
-            (fn [bounddirective]
-              (directives/snippet-bounddirective-conditions snippet bounddirective))
-            bounddirectives-constraining)]
-      (concat conditions-grounding conditions-constraining)))
+    (if 
+      (snippet-value-conditions-already-generated? snippet ast-or-list)
+      '()
+      (let [bounddirectives
+            (snippet/snippet-bounddirectives-for-node snippet ast-or-list)
+            bounddirectives-grounding
+            (filter (fn [bounddirective]
+                      (matching/registered-grounding-directive? (directives/bounddirective-directive bounddirective)))
+                    bounddirectives)
+            bounddirectives-constraining
+            (filter (fn [bounddirective]
+                      (matching/registered-constraining-directive? (directives/bounddirective-directive bounddirective)))
+                    bounddirectives)
+            conditions-grounding
+            (mapcat
+              (fn [bounddirective]
+                (directives/snippet-bounddirective-conditions snippet bounddirective))
+              bounddirectives-grounding)
+            conditions-constraining
+            (mapcat
+              (fn [bounddirective]
+                (directives/snippet-bounddirective-conditions snippet bounddirective))
+              bounddirectives-constraining)]
+        (concat conditions-grounding conditions-constraining))))
   (let [ast (snippet/snippet-root snippet)
         query (atom '())]
     (util/walk-jdt-node 
       ast
-      (fn [astval]  (swap! query concat (conditions astval)))
-      (fn [lstval] (swap! query concat (conditions lstval)))
-      (fn [primval] (swap! query concat (conditions primval)))
-      (fn [nilval] (swap! query concat (conditions nilval))))
-    @query))
+      (fn [val] (swap! query concat (conditions val))))
+      @query))
 
 
 

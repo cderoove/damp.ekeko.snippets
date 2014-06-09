@@ -130,7 +130,7 @@ damp.ekeko.snippets.operators
       ; because prefer to keep all operators as atomic as possible
       ; in order to derive mutation patterns
       ;(if 
-      ;  (matching/value|listmember? value)
+      ;  (astnode/valuelistmember? value)
       ;  (let [lst (snippet/snippet-list-containing template value)]
       ;    (relax-size-to-atleast template lst))
       ;  template)
