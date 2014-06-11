@@ -108,6 +108,23 @@ damp.ekeko.snippets.operatorsrep
 
 
 (defn
+  applicability|wildcard
+  "Verifies that value is not a list with regexp matching enabled."
+  [snippetgroup snippet value]
+  (not
+   (and
+     (astnode/lstvalue? value)
+     (matching/snippet-list-regexp? snippet value))))
+
+(defn
+  applicability|regexplst
+  "Verifies that value is a list, but has not been replaced by a wildcard."
+  [snippetgroup snippet value]
+  (and 
+    (astnode/lstvalue? value)
+    (not (matching/snippet-node-replaced-by-wilcard? snippet value))))
+
+(defn
   validity|always
   [snippetgroup snippet subject operandvalue]
   true)
@@ -563,7 +580,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by wildcard."
      opscope-subject
-     applicability|always
+     applicability|wildcard
      "Replaces selection by wildcard."
      []
      )
@@ -579,7 +596,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Consider list as regular expression."
      opscope-subject
-     applicability|lst
+     applicability|regexplst
      "Considers list as regular expression when matching."
      []
      )
@@ -592,7 +609,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Update multiplicity."
      opscope-subject
-     applicability|node|nonroot
+     applicability|multiplicity
      "Updates multiplicity of match."
      [(make-operand "Multiplicity" opscope-multiplicity validity|multiplicity)]
      )

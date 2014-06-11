@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "Matching directives for template-based program transformation."
     :author "Coen De Roover, Siltvani"}
-  damp.ekeko.snippets.matching
+damp.ekeko.snippets.matching
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko.snippets 
              [directives :as directives]
@@ -17,13 +17,50 @@
      [ast :as ast]])
   (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
             [org.eclipse.jdt.core.dom Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
-                          
+
+
+;;These expose flaws in the query generation process
+(defn
+  nongrounding-value-raw
+  [?value ?raw]
+  (el/equals ?raw (astnode/value-unwrapped ?value)))
+
+(defn
+  nongrounding-value|null
+  [?value]
+  (el/equals nil (astnode/value-unwrapped ?value)))
+
+
+(defn
+  nongrounding-has
+  [?keyw ?owner ?value]
+  (cl/conda 
+    [(el/v- ?owner)
+     (el/perform (throw (Exception. "Generated query should have already ground the owner of the property.")))]
+    [(el/v+ ?owner)
+     (ast/has ?keyw ?owner ?value)]))
+
+
+
+
 
 
 (def ast `ast/ast)
-(def has `ast/has)
-(def value-raw `ast/value-raw)
-(def value|null `ast/value|null)
+
+
+;These can be safely replaced once query generation is completely sound.
+;(def has `ast/has)
+(def has `nongrounding-has)
+
+
+;(def value-raw `ast/value-raw)
+(def value-raw `nongrounding-value-raw)
+
+
+;(def value|null `ast/value|null)
+(def value|null `nongrounding-value|null)
+
+
 (def to-modifier-keyword `runtime/to-modifier-keyword)
 (def to-primitive-type-code `runtime/to-primitive-type-code)
 (def to-assignment-operator `runtime/to-assignment-operator)
@@ -77,20 +114,11 @@
               (.indexOf list-raw snippet-val)]
           ;could check for parent list directives that might already have ground the element
           ;but for now rely on operators to switch correctly between directives (and e.g., remove ground-relative-to-parent from all list elements)
-          
-          `((runtime/list-nth-element ~list-match ~index-match ~var-match))
-          ;`((cl/fresh [~list-match-raw] 
-          ;            (~value-raw ~list-match ~list-match-raw)
-          ;            (el/equals ~var-match (.get ~list-match-raw ~index-match))))
-          
-          )
-        
-        
+          `((runtime/list-nth-element ~list-match ~index-match ~var-match)))
         (or 
           (astnode/ast? snippet-val)
           (astnode/lstvalue? snippet-val)
-          (astnode/nilvalue? snippet-val)
-          )
+          (astnode/nilvalue? snippet-val))
         (let [owner 
               (astnode/owner snippet-val)
               owner-match
@@ -101,9 +129,10 @@
               (astnode/ekeko-keyword-for-property-descriptor owner-property)]
           `((~has ~owner-property-keyword ~owner-match ~var-match) 
              ))
-        ;constraining the parent has already ground primitive values
+        (astnode/primitivevalue? snippet-val)
+        `() ;constraining the parent has already ground primitive values
         :default
-        `()))))
+        (throw (Exception. (str "Unexpected snippet element to create constraining conditions for." snippet-val)))))))
 
 
 (defn
@@ -139,18 +168,18 @@
                   (el/contains ~list-match-raw ~match))))))
 
 
-    
 
 
- 
-  ;(;arity 1: reside within arbitraty depth of given variable binding (should be ancestor)
-  ;  [snippet-val ancestorvar]
-  ;  (fn [snippet]
-  ;    (let [var-match (snippet/snippet-var-for-node snippet snippet-val)
-  ;          var (symbol ancestorvar)
-  ;          var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
-  ;      `((runtime/ground-relativetoparent+|match-ownermatch-userarg  ~var-match ~var-match-owner ~var))))))
-    
+
+
+;(;arity 1: reside within arbitraty depth of given variable binding (should be ancestor)
+;  [snippet-val ancestorvar]
+;  (fn [snippet]
+;    (let [var-match (snippet/snippet-var-for-node snippet snippet-val)
+;          var (symbol ancestorvar)
+;          var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
+;      `((runtime/ground-relativetoparent+|match-ownermatch-userarg  ~var-match ~var-match-owner ~var))))))
+
 
 ;; Constraining Functions
 ;; ----------------------
@@ -202,12 +231,12 @@
               (.size lst)
               var-match-raw (util/gen-readable-lvar-for-value lst)]
           `(; (cl/fresh [~var-match-raw] 
-            ;           (~value-raw ~var-match ~var-match-raw)
-            ;           (el/equals ~snippet-list-size (.size ~var-match-raw))))
-          
-            (runtime/list-size ~var-match ~snippet-list-size)
-          
-          ))
+             ;           (~value-raw ~var-match ~var-match-raw)
+             ;           (el/equals ~snippet-list-size (.size ~var-match-raw))))
+             
+             (runtime/list-size ~var-match ~snippet-list-size)
+             
+             ))
         
         
         ;constrain primitive values
@@ -227,9 +256,9 @@
   conditions-variables
   [conditions]
   (filter string-represents-variable? (flatten conditions)))
-                 
+
 (declare snippet-value-multiplicity)
-  
+
 (defn
   constrain-lst|regexp 
   "Requires candidate matches to match a regular expresison. 
@@ -253,56 +282,56 @@
           (dec (.size elements))
           
           element-conditions
-           ;to skip to the first real element of the list
-           (apply concat
-               (map-indexed
-                 (fn [idx element]
-                   (let [var-elmatch                    
-                         (snippet/snippet-var-for-node template element)
-                         elmatchidx
-                         (gensym 'elmatchidx)
-                         elmatch 
-                         (gensym 'elmatch)
-                         
-                         multiplicity
-                         (snippet-value-multiplicity template element)
-                         
-                         ;these conditions no longer need to be included in the query 
-                         elconditions 
-                         (mapcat 
-                           (fn [bounddirective]
-                             (directives/snippet-bounddirective-conditions template bounddirective))
-                           (snippet/snippet-bounddirectives-for-node template element))
-                         
-                         elconditionsvars
-                         (conj (conditions-variables elconditions)
-                               var-elmatch)
-
-                         qcurrentcondition
-                         (if 
-                           (= "1" multiplicity)
-                          `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
-                                               (cl/== ~var-elmatch ~elmatch) 
-                                               ~@elconditions)
-                          `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
-                                               (cl/fresh [~@elconditionsvars] ;perhaps not include uservars
-                                                      (cl/== ~var-elmatch ~elmatch) 
-                                                      ~@elconditions)))]
-                     (condp = multiplicity
-                       "1" 
-                      `(~qcurrentcondition damp.qwal/q=>)
-                       "+"
-                       `((damp.qwal/q+ 
-                         ~qcurrentcondition
-                         damp.qwal/q=>
-                         ))
-                       "*"
-                       `((damp.qwal/q* 
-                          ~qcurrentcondition
-                           damp.qwal/q=>
-                          ))
-                       )))
-                 elements))]
+          ;to skip to the first real element of the list
+          (apply concat
+                 (map-indexed
+                   (fn [idx element]
+                     (let [var-elmatch                    
+                           (snippet/snippet-var-for-node template element)
+                           elmatchidx
+                           (gensym 'elmatchidx)
+                           elmatch 
+                           (gensym 'elmatch)
+                           
+                           multiplicity
+                           (snippet-value-multiplicity template element)
+                           
+                           ;these conditions no longer need to be included in the query 
+                           elconditions 
+                           (mapcat 
+                             (fn [bounddirective]
+                               (directives/snippet-bounddirective-conditions template bounddirective))
+                             (snippet/snippet-bounddirectives-for-node template element))
+                           
+                           elconditionsvars
+                           (conj (conditions-variables elconditions)
+                                 var-elmatch)
+                           
+                           qcurrentcondition
+                           (if 
+                             (= "1" multiplicity)
+                             `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
+                                                  (cl/== ~var-elmatch ~elmatch) 
+                                                  ~@elconditions)
+                             `(damp.qwal/qcurrent [[~elmatchidx ~elmatch]]
+                                                  (cl/fresh [~@elconditionsvars] ;perhaps not include uservars
+                                                            (cl/== ~var-elmatch ~elmatch) 
+                                                            ~@elconditions)))]
+                       (condp = multiplicity
+                         "1" 
+                         `(~qcurrentcondition damp.qwal/q=>)
+                         "+"
+                         `((damp.qwal/q+ 
+                             ~qcurrentcondition
+                             damp.qwal/q=>
+                             ))
+                         "*"
+                         `((damp.qwal/q* 
+                             ~qcurrentcondition
+                             damp.qwal/q=>
+                             ))
+                         )))
+                   elements))]
       `((cl/fresh 
           [~var-match-qwalgraph ~var-match-qwalgraph-start ~var-match-qwalgraph-end]
           (damp.ekeko.snippets.runtime/value|list-qwal-start-end
@@ -317,266 +346,266 @@
             [] 
             damp.qwal/q=> ;to jump inside list 
             ~@element-conditions))))))
-         
-           
 
-  (defn
-    constrain-size|atleast
-    "Requires candidate matches to have at least as many elements as the template list."
-    [val]
-    (fn [template]
-      (let [var-match
-            (snippet/snippet-var-for-node template val)
-            lst
-            (:value val)
-            template-list-size 
-            (.size lst)
-            var-match-raw (util/gen-readable-lvar-for-value lst)]
-        `(;(ast/value|list ~var-match)
-           (cl/fresh [~var-match-raw] 
-                     (~value-raw ~var-match ~var-match-raw)
-                     (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
-  
 
-  ;; Functions related to nodes that have been replaced by logic variable
-  ;; --------------------------------------------------------------------
 
-  (declare directive-replacedbyvariable)
+(defn
+  constrain-size|atleast
+  "Requires candidate matches to have at least as many elements as the template list."
+  [val]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          lst
+          (:value val)
+          template-list-size 
+          (.size lst)
+          var-match-raw (util/gen-readable-lvar-for-value lst)]
+      `(;(ast/value|list ~var-match)
+         (cl/fresh [~var-match-raw] 
+                   (~value-raw ~var-match ~var-match-raw)
+                   (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
 
-  (defn 
-    snippet-replacement-var-for-node 
-    "For the given AST node of the given snippet, returns the name of the user logic
+
+;; Functions related to nodes that have been replaced by logic variable
+;; --------------------------------------------------------------------
+
+(declare directive-replacedbyvariable)
+
+(defn 
+  snippet-replacement-var-for-node 
+  "For the given AST node of the given snippet, returns the name of the user logic
    variable that will be bound to a matching AST node from the Java project."
-    [snippet node]
-    (let [bds
-          (snippet/snippet-bounddirectives-for-node snippet node)]
+  [snippet node]
+  (let [bds
+        (snippet/snippet-bounddirectives-for-node snippet node)]
     (if-let [replaced-bd 
              (directives/bounddirective-for-directive 
                bds
                directive-replacedbyvariable)]
       (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1))))))
 
-  (defn 
-    snippet-node-replaced-by-var?
-    [snippet node]
-    (boolean (snippet-replacement-var-for-node snippet node))) 
+(defn 
+  snippet-node-replaced-by-var?
+  [snippet node]
+  (boolean (snippet-replacement-var-for-node snippet node))) 
 
-  (defn
-    snippet-replacement-vars
-    [snippet] 
-    (distinct
-      (remove nil? 
-              (map
-                (fn [node] 
-                  (snippet-replacement-var-for-node snippet node))
-                (snippet/snippet-nodes snippet)))))
-  
-  (defn
-    string-represents-variable?
-    [string]
-    (@#'el/ekeko-lvar-sym? string))
+(defn
+  snippet-replacement-vars
+  [snippet] 
+  (distinct
+    (remove nil? 
+            (map
+              (fn [node] 
+                (snippet-replacement-var-for-node snippet node))
+              (snippet/snippet-nodes snippet)))))
 
-  (defn
-    snippet-vars-among-directivebindings-for-node
-    "Returns all variables that feature as the binding for a directive operand of the node.
+(defn
+  string-represents-variable?
+  [string]
+  (@#'el/ekeko-lvar-sym? string))
+
+(defn
+  snippet-vars-among-directivebindings-for-node
+  "Returns all variables that feature as the binding for a directive operand of the node.
    Includes replacement vars."
-    [snippet node]
-    (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
-      (mapcat
-        (fn [bounddirective]
-          (map symbol
-               (filter string-represents-variable?
-                       (map directives/directiveoperandbinding-value 
-                            (directives/bounddirective-operandbindings bounddirective)))))
-        bds)))
-
-  (defn
-    snippet-vars-among-directivebindings
-    "Returns all variables that feature as the binding for a directive operand of the snippet.
-   Includes replacement vars."
-    [snippet]
+  [snippet node]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
     (mapcat
-      (fn [node]
-        (snippet-vars-among-directivebindings-for-node snippet node))
-      (snippet/snippet-nodes snippet)))
+      (fn [bounddirective]
+        (map symbol
+             (filter string-represents-variable?
+                     (map directives/directiveoperandbinding-value 
+                          (directives/bounddirective-operandbindings bounddirective)))))
+      bds)))
 
-
-
-  (defn
-    snippetgroup-vars-among-directivebindings
-    "Returns all variables that feature as the binding for a directive operand among the snippets in the snippet group.
+(defn
+  snippet-vars-among-directivebindings
+  "Returns all variables that feature as the binding for a directive operand of the snippet.
    Includes replacement vars."
-    [snippetgroup]
-    (mapcat snippet-vars-among-directivebindings (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+  [snippet]
+  (mapcat
+    (fn [node]
+      (snippet-vars-among-directivebindings-for-node snippet node))
+    (snippet/snippet-nodes snippet)))
 
-  
 
 
-  (defn
+(defn
+  snippetgroup-vars-among-directivebindings
+  "Returns all variables that feature as the binding for a directive operand among the snippets in the snippet group.
+   Includes replacement vars."
+  [snippetgroup]
+  (mapcat snippet-vars-among-directivebindings (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
+
+
+
+(defn
   constrain-replacedbyvariable
   "Constraining directive for nodes that have been replaced by a variable."
   [snippet-ast replacement-var-string]
   (fn [snippet]
-     (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
-             replacement-var (symbol replacement-var-string)]
-         `((cl/== ~replacement-var ~var-match)))))
+    (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
+          replacement-var (symbol replacement-var-string)]
+      `((cl/== ~replacement-var ~var-match)))))
 
 
+(defn
+  constrain-replacedbywildcard
+  [snippet-val]
+  (fn [snippet]
+    `()))
+
+
+;constraining/grounding will be done by parent regexp in which snippet-val resides
+(defn
+  constrain-multiplicity|regexp
+  [snippet-val multiplicity]
+  (fn [snippet]
+    `()))
+
+
+(defn
+  constrain-equals
+  "Constraining directive that will unify the node's match with the given variable."
+  [snippet-ast var-string]
+  (fn [snippet]
+    (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
+          var (symbol var-string)]
+      `((cl/== ~var ~var-match)))))
+
+
+
+;(defn
+;  snippetgroup-uservars-for-information
+;  [snippetgroup]
+;  (mapcat snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
+
+
+
+
+
+;(defn
+;  cf-epsilon-with-variable
+;  [snippet-val]
+;  (fn [snippet] 
+;     (let [var-match 
+;           (snippet/snippet-var-for-node snippet snippet-val)
+;           var-userprovided
+;           (snippet/snippet-uservar-for-var snippet var-match)]
+;       (if (nil? var-userprovided)
+;         ((make-epsilon-function snippet-val) snippet)
+;         (concat 
+;           ((gf-node-exact snippet-val) snippet)
+;           ((cf-variable snippet-val) snippet))))))
+
+
+;; Functions involving wildcards
+
+
+(declare directive-replacedbywildcard)
+
+(defn 
+  snippet-node-replaced-by-wilcard?
+  [snippet node]
+  (let [bds
+        (snippet/snippet-bounddirectives-for-node snippet node)]
+    (boolean
+      (directives/bounddirective-for-directive 
+        bds
+        directive-replacedbywildcard))))
+
+
+(comment
+  
   (defn
-    constrain-replacedbywildcard
+    cf-exact-with-variable
     [snippet-val]
-    (fn [snippet]
-      `()))
-    
-
-  ;constraining/grounding will be done by parent regexp in which snippet-val resides
-  (defn
-    constrain-multiplicity|regexp
-    [snippet-val multiplicity]
-    (fn [snippet]
-      `()))
-
-
-  (defn
-    constrain-equals
-    "Constraining directive that will unify the node's match with the given variable."
-    [snippet-ast var-string]
-    (fn [snippet]
-       (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
-             var (symbol var-string)]
-         `((cl/== ~var ~var-match)))))
-
-
-
-  ;(defn
-  ;  snippetgroup-uservars-for-information
-  ;  [snippetgroup]
-  ;  (mapcat snippet/snippet-uservars-for-information (snippetgroup-snippetlist snippetgroup)))
-
-    
-
-
-
-  ;(defn
-  ;  cf-epsilon-with-variable
-  ;  [snippet-val]
-  ;  (fn [snippet] 
-  ;     (let [var-match 
-  ;           (snippet/snippet-var-for-node snippet snippet-val)
-  ;           var-userprovided
-  ;           (snippet/snippet-uservar-for-var snippet var-match)]
-  ;       (if (nil? var-userprovided)
-  ;         ((make-epsilon-function snippet-val) snippet)
-  ;         (concat 
-  ;           ((gf-node-exact snippet-val) snippet)
-  ;           ((cf-variable snippet-val) snippet))))))
-
-
-  ;; Functions involving wildcards
-
-
-  (declare directive-replacedbywildcard)
-
-  (defn 
-    snippet-node-replaced-by-wilcard?
-    [snippet node]
-    (let [bds
-          (snippet/snippet-bounddirectives-for-node snippet node)]
-      (boolean
-        (directives/bounddirective-for-directive 
-          bds
-          directive-replacedbywildcard))))
+    (fn [snippet] 
+      (concat 
+        ((cf-exact snippet-val) snippet)
+        ((cf-variable snippet-val) snippet))))
   
-
-  (comment
-    
-(defn
-  cf-exact-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-exact snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
-
-(defn
-  cf-list-relax-size
-  "Returns a function that will generate constraining conditions for the given property value of a code snippet.
+  (defn
+    cf-list-relax-size
+    "Returns a function that will generate constraining conditions for the given property value of a code snippet.
    Conditions : - size of list no need to be the same"
-  [snippet-val]
-  (fn [snippet] 
-    (internal-cf-list snippet snippet-val :notsamesize))) 
+    [snippet-val]
+    (fn [snippet] 
+      (internal-cf-list snippet snippet-val :notsamesize))) 
   
   (defn
-  cf-list-relax-size-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-list-relax-size snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
-
+    cf-list-relax-size-with-variable
+    [snippet-val]
+    (fn [snippet] 
+      (concat 
+        ((cf-list-relax-size snippet-val) snippet)
+        ((cf-variable snippet-val) snippet))))
+  
   (defn 
-  cf-subtype
+    cf-subtype
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
      For ASTNode instances: ((type-subtypematch-logictype :kind-of-node ?var-for-node ?var-for-node-match)
                                (ast :kind-of-node ?var-for-node)  
                                (has :property1 ?var-for-node ''primitive-valued-child-as-string''))
                                ....
      ?var-for-node is new logic variable."
-  [snippet-ast]
-  (fn [snippet]
-    (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
-          snippet-properties (astnode/node-ekeko-properties snippet-ast)
-          var-match          (snippet/snippet-var-for-node snippet snippet-ast)
-          var-node           (util/gen-lvar)
-          child-conditions 
-              (for [[property-keyw retrievalf] 
-                    (seq snippet-properties)
-                    :let [value     (retrievalf snippet-ast) 
-                          var-value (snippet/snippet-var-for-node snippet value)]]
-                `(~has ~property-keyw ~var-node ~var-value))]
-      `((cl/fresh [~var-node]
-           (~ast ~snippet-keyw ~var-node)
-           ~@child-conditions
-             (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
-
+    [snippet-ast]
+    (fn [snippet]
+      (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
+            snippet-properties (astnode/node-ekeko-properties snippet-ast)
+            var-match          (snippet/snippet-var-for-node snippet snippet-ast)
+            var-node           (util/gen-lvar)
+            child-conditions 
+            (for [[property-keyw retrievalf] 
+                  (seq snippet-properties)
+                  :let [value     (retrievalf snippet-ast) 
+                        var-value (snippet/snippet-var-for-node snippet value)]]
+              `(~has ~property-keyw ~var-node ~var-value))]
+        `((cl/fresh [~var-node]
+                    (~ast ~snippet-keyw ~var-node)
+                    ~@child-conditions
+                    (runtime/type-relaxmatch-subtype ~snippet-keyw ~var-node ~var-match))))))
+  
   (defn
-  cf-subtype-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-subtype snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
-
+    cf-subtype-with-variable
+    [snippet-val]
+    (fn [snippet] 
+      (concat 
+        ((cf-subtype snippet-val) snippet)
+        ((cf-variable snippet-val) snippet))))
+  
   (defn
-  cf-relax-typeoftype
-  [snippet-val]
-  (fn [snippet]
+    cf-relax-typeoftype
+    [snippet-val]
+    (fn [snippet]
       (let [cond-exact ((cf-exact snippet-val) snippet)
             snippet-var (snippet/snippet-var-for-node snippet snippet-val)
             type-var (snippet/snippet-var-for-node snippet (.getType snippet-val))]
-      `((cl/conde 
+        `((cl/conde 
             [~@cond-exact]
-          [(el/equals ~snippet-var ~type-var)])))))
-
+            [(el/equals ~snippet-var ~type-var)])))))
+  
   (defn 
-  cf-variable-declaration-with-initializer
+    cf-variable-declaration-with-initializer
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
      For ASTNode instances: (assignment-relaxmatch-variable-declaration ?var-for-node-match ?var-left ?var-right)"
-  [snippet-ast]
-  (fn [snippet]
-    (let [var-match    (snippet/snippet-var-for-node snippet snippet-ast)
+    [snippet-ast]
+    (fn [snippet]
+      (let [var-match    (snippet/snippet-var-for-node snippet snippet-ast)
             var-left     (snippet/snippet-var-for-node snippet (.getLeftHandSide (.getExpression snippet-ast)))
             var-right    (snippet/snippet-var-for-node snippet (.getRightHandSide (.getExpression snippet-ast)))]
-      `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
-
+        `((runtime/assignment-relaxmatch-variable-declaration ~var-match ~var-left ~var-right)))))
+  
   (defn
-  cf-variable-declaration-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-variable-declaration-with-initializer snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
-
+    cf-variable-declaration-with-variable
+    [snippet-val]
+    (fn [snippet] 
+      (concat 
+        ((cf-variable-declaration-with-initializer snippet-val) snippet)
+        ((cf-variable snippet-val) snippet))))
+  
   ;(defn 
   ;  ast-conditions
   ;  "Returns a list of logic conditions that will retrieve matches for the given snippet-ast in snippet."
@@ -594,7 +623,7 @@
   ;      (fn [primval] (swap! query concat (conditions primval)))
   ;      (fn [nilval] (swap! query concat (conditions nilval))))
   ;    @query))
-
+  
   ;(defn 
   ;  cf-negated
   ;    "Returns a function that will generate constraining conditions for the given property value of a code snippet:
@@ -603,7 +632,7 @@
   ;  (fn [snippet]
   ;    (let [conditions-of-ast (ast-conditions snippet snippet-ast)]
   ;      `((el/fails (cl/all ~@conditions-of-ast))))))
-
+  
   ;(defn
   ;  cf-negated-with-variable
   ;  [snippet-val]
@@ -611,117 +640,56 @@
   ;    (concat 
   ;      ((cf-negated snippet-val) snippet)
   ;      ((cf-variable snippet-val) snippet))))
-
+  
   (defn 
-  cf-relax-loop
+    cf-relax-loop
     "Returns a function that will generate constraining conditions for the given property value of a code snippet:
      For ASTNode instances: ((ast :ForStatement/WhileStatement/DoStatement ?var-for-node-match)  
                                (has :property1 ?var-for-node-match ?var-for-child1-match)
                                (has :property2 ?var-for-node-match ''primitive-valued-child-as-string''))
                                ...."
-  [snippet-ast]
-  (fn [snippet]
-    (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
-          snippet-properties (astnode/node-ekeko-properties snippet-ast)
-          var-match          (snippet/snippet-var-for-node snippet snippet-ast)
-          child-conditions 
-              (for [[property-keyw retrievalf] 
-                    (seq snippet-properties)
-                    :let [value     (retrievalf snippet-ast) 
-                          var-value (snippet/snippet-var-for-node snippet value)]]
-                (if (and (not (is-ignored-property? property-keyw))
-                           (not (= property-keyw :updaters))
-                           (not (= property-keyw :initializers)))
-                  `(ast/has ~property-keyw ~var-match ~var-value)))]
-      `((cl/conde [(ast/ast :ForStatement ~var-match)]
-                  [(ast/ast :WhileStatement ~var-match)]
-                  [(ast/ast :DoStatement ~var-match)])
-         ~@child-conditions))))
-
+    [snippet-ast]
+    (fn [snippet]
+      (let [snippet-keyw       (astnode/ekeko-keyword-for-class-of snippet-ast)
+            snippet-properties (astnode/node-ekeko-properties snippet-ast)
+            var-match          (snippet/snippet-var-for-node snippet snippet-ast)
+            child-conditions 
+            (for [[property-keyw retrievalf] 
+                  (seq snippet-properties)
+                  :let [value     (retrievalf snippet-ast) 
+                        var-value (snippet/snippet-var-for-node snippet value)]]
+              (if (and (not (is-ignored-property? property-keyw))
+                       (not (= property-keyw :updaters))
+                       (not (= property-keyw :initializers)))
+                `(ast/has ~property-keyw ~var-match ~var-value)))]
+        `((cl/conde [(ast/ast :ForStatement ~var-match)]
+                    [(ast/ast :WhileStatement ~var-match)]
+                    [(ast/ast :DoStatement ~var-match)])
+           ~@child-conditions))))
+  
   (defn
-  cf-relax-loop-with-variable
-  [snippet-val]
-  (fn [snippet] 
-    (concat 
-      ((cf-relax-loop snippet-val) snippet)
-      ((cf-variable snippet-val) snippet))))
-
-
-)
-
-
-  (comment
-
-  (defn
-  make-constraining-function
-  [type]
-    (cond
-      (= type :variable)
-      cf-variable
-    
-      ;below has not been checked
-      (= type :exact)
-    cf-exact-with-variable
-    (= type :any)
-    cf-epsilon-with-variable
-    (= type :child+)
-    cf-list-relax-size-with-variable
-    (= type :contains)
-    cf-list-relax-size-with-variable
-    (= type :contains-eq-size)
-    cf-exact-with-variable
-    (= type :contains-eq-order)
-    cf-list-relax-size-with-variable
-    (= type :contains-repetition)
-    cf-list-relax-size-with-variable
-    (= type :exact-variable)
-    cf-exact-with-variable
-    (= type :relax-type)
-    cf-subtype-with-variable
-    (= type :relax-typeoftype)
-    cf-relax-typeoftype
-    (= type :relax-assign)
-    cf-variable-declaration-with-variable
-    (= type :relax-branch)
-    cf-exact-with-variable
-    (= type :negated)
-    cf-negated-with-variable
-    (= type :relax-loop)
     cf-relax-loop-with-variable
-    (= type :method-dec)
-    cf-exact-with-variable
-    (= type :var-dec)
-    cf-exact-with-variable
-    (= type :var-binding)
-    cf-exact-with-variable
-    (= type :var-type)
-    cf-exact-with-variable
-    (= type :var-qname)
-    cf-exact-with-variable
-    (= type :type-qname)
-    cf-exact-with-variable
-    (= type :epsilon)
-    cf-epsilon-with-variable
-    :default
-    (throw (Exception. (str "Unknown constraining function type: " type))))) 
+    [snippet-val]
+    (fn [snippet] 
+      (concat 
+        ((cf-relax-loop snippet-val) snippet)
+        ((cf-variable snippet-val) snippet))))
+  
+  
+  )
 
-)
+(defn
+  to-literal-string
+  [value]
+  (let [qstr (.toString value)]
+    `~qstr))
 
-
-
-
-  (defn
-    to-literal-string
-    [value]
-    (let [qstr (.toString value)]
-      `~qstr))
-
-  (defn 
+(defn 
   ast-primitive-as-expression
   "Returns the string representation of a primitive-valued JDT node (e.g., instances of Modifier.ModifierKeyword)."
   [primitive]
   ;could dispatch on this as well
-    (cond (or (true? primitive) (false? primitive))
+  (cond (or (true? primitive) (false? primitive))
         primitive
         (number? primitive)
         primitive
@@ -742,345 +710,352 @@
         :else (to-literal-string primitive)))
 
 
-  ;;Registering directives
-  ;;----------------------
+;;Registering directives
+;;----------------------
 
-  (def
-    directive-exact
-    (directives/make-directive
-      "match"
-      []
-      constrain-exact 
-      "Type and properties match exactly."))
-
-  (def 
-    directive-child
-    (directives/make-directive
-      "child"
-      []
-      ground-relativetoparent
-      "Child of match for parent."))
-
-  (def 
-    directive-offspring
-    (directives/make-directive
-      "anydepth"
-      []
-      ground-relativetoparent+ ;arity 0
-      "Finds match candidates among the offspring of the match for the parent."))
-
-  (def 
-    directive-size|atleast
-    (directives/make-directive
-      "orlarger"
-      []
-      constrain-size|atleast 
-      "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
-
-
-  (def 
-    directive-replacedbyvariable
-    (directives/make-directive
-      "replaced-by-variable"
-      [(directives/make-directiveoperand "Variable")]
-      constrain-replacedbyvariable
-      "Node and children have been replaced by a variable."
-      ))
-
-  (def 
-    directive-equals
-    (directives/make-directive
-      "equals"
-      [(directives/make-directiveoperand "Variable")]
-      constrain-equals
-      "Match unifies with variable."
-      ))
-
-
-  (def 
-    directive-member
-    (directives/make-directive
-      "anyindex"
-      []
-      ground-element
-      "Match is a member of the match for the parent list."))
-
-  (def 
-    directive-replacedbywildcard
-    (directives/make-directive
-      "replaced-by-wildcard"
-      []
-      constrain-replacedbywildcard
-      "Match is unconstrained."))
-
-
-  (def 
-    directive-consider-as-regexp|lst
-    (directives/make-directive
-      "regexp|lst"
-      []
-      constrain-lst|regexp
-      "Considers the list as a regexp for element matches."))
-
-  (def
-    directive-multiplicity
-    (directives/make-directive
-      "multiplicity"
-      []
-      constrain-multiplicity|regexp
-      "Determines multiplicity of matches."))
-
-  (def
-    directives-constraining|mutuallyexclusive
-    [;mutually exclusive ones
-     directive-exact
-     directive-replacedbyvariable
-     directive-replacedbywildcard])
-
-
-  (def 
-    directives-constraining|optional
-    [;can be added to the above
-     directive-size|atleast
-     directive-equals
-     directive-consider-as-regexp|lst
-     directive-multiplicity
-     ])
-
-
-  (def 
-    directives-constraining
-    (concat directives-constraining|mutuallyexclusive directives-constraining|optional))
-
-
-  (def
-    directives-grounding
-    [directive-child
-     directive-offspring
-     directive-member
-   
-     ])
-  
-  (defn 
-    registered-constraining-directives
-    "Returns collection of registered constraining directives."
+(def
+  directive-exact
+  (directives/make-directive
+    "match"
     []
-    directives-constraining)
+    constrain-exact 
+    "Type and properties match exactly."))
 
-  (defn 
-    registered-grounding-directives
-    "Returns collection of registered grounding directives."
+(def 
+  directive-child
+  (directives/make-directive
+    "child"
     []
-    directives-grounding)
+    ground-relativetoparent
+    "Child of match for parent."))
 
-  (defn
-    registered-grounding-directive?
-    "Succeeds for registered directives that are grounding."
-    [directive]
-    (some #{directive} directives-grounding))
-
-  (defn
-    registered-constraining-directive?
-    "Succeeds for registered directives that are constraining."
-    [directive]
-    (some #{directive} directives-constraining))
-
-
-  (defn 
-    registered-directives
+(def 
+  directive-offspring
+  (directives/make-directive
+    "anydepth"
     []
-    (concat (registered-grounding-directives) 
-            (registered-constraining-directives)))
+    ground-relativetoparent+ ;arity 0
+    "Finds match candidates among the offspring of the match for the parent."))
+
+(def 
+  directive-size|atleast
+  (directives/make-directive
+    "orlarger"
+    []
+    constrain-size|atleast 
+    "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
 
 
-  (defn
-    registered-directive-for-name
-    [name]
-    (some
-      (fn [directive]
-        (when (= name (directives/directive-name directive))
-          directive))
-      (registered-directives)))
+(def 
+  directive-replacedbyvariable
+  (directives/make-directive
+    "replaced-by-variable"
+    [(directives/make-directiveoperand "Variable")]
+    constrain-replacedbyvariable
+    "Node and children have been replaced by a variable."
+    ))
 
-
-
-  ;; Auxiliary functions related to regular expression matching
-  ;; ---------------------------------------------------------------
-
-  (defn
-    snippet-value-regexp-element?
-    [snippet value]
-    (when
-      (astnode/valuelistmember? value)
-      (let [owninglst (snippet/snippet-list-containing snippet value)
-            owninglstbds (snippet/snippet-bounddirectives-for-node snippet owninglst)]
-        (directives/bounddirective-for-directive 
-          owninglstbds
-          directive-consider-as-regexp|lst))))
-
-  (defn
-    snippet-value-multiplicity
-    [snippet value]
-    (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
-      (if-let [mbd (directives/bounddirective-for-directive 
-                     bds
-                     directive-multiplicity)]
-        (directives/directiveoperandbinding-value 
-          (nth (directives/bounddirective-operandbindings mbd) 1))
-        "1")))
-    
-
-
-  ;; Constructing Snippet instances with default matching directives
-  ;; ---------------------------------------------------------------
-
-  (def default-directives [directive-exact 
-                           directive-child 
-                           ;ensures these aren't pretty-printed
-                           directive-replacedbyvariable 
-                           directive-replacedbywildcard
-                           ])
-
-  (defn
-    default-directive?
-    [directive]
-    (some #{directive} default-directives))
-
-  (defn
-    default-bounddirectives
-    "Returns default matching directives for given snippet and element of the snippet element."
-    [snippet value]
-    (list 
-      (directives/bind-directive-with-defaults directive-exact snippet value)
-      (directives/bind-directive-with-defaults directive-child snippet value)))
-
-  (defn
-    nondefault-bounddirectives
-    [snippet value]
-    (remove 
-      (fn [bounddirective] 
-        (default-directive? (directives/bounddirective-directive bounddirective)))
-      (snippet/snippet-bounddirectives-for-node snippet value)))
-
-  (defn
-    has-nondefault-bounddirectives?
-    [snippet value]
-    (boolean (not-empty (nondefault-bounddirectives snippet value))))
-
-  (defn
-    snippet-nondefault-bounddirectives-string-for-node
-    [snippet node]
-    (let [bounddirectives (nondefault-bounddirectives snippet node)]
-      ;todo: incorporate arguments
-      (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
-
-  (defn
-    remove-all-directives
-    [template value]
-    (snippet/update-bounddirectives template value []))
-
-  (defn
-    remove-all-directives*
-    [template value]
-    (let [snippet (atom template)]
-      (util/walk-jdt-node 
-        value
-        (fn [val]
-          (swap! snippet remove-all-directives val)))
-      @snippet))
-
-  (defn
-    remove-all-directives+
-    [template value]
-    (let [snippet (atom template)]
-      (util/walk-jdt-node 
-        value
-        (fn [val]
-          (when (not= val value)
-            (swap! snippet remove-all-directives val))))
-      @snippet))
-
-  (defn
-    remove-directives 
-    [template value directives]
-    (let [bounddirectives 
-          (snippet/snippet-bounddirectives-for-node template value)
-          remainingbounddirectives
-          (remove (fn [bounddirective]
-                    (some #{(directives/bounddirective-directive bounddirective)}
-                          directives))
-                  bounddirectives)]
-      (snippet/update-bounddirectives template value remainingbounddirectives)))
-
-  (defn
-    remove-directive
-    [template value directive]
-    (remove-directives template value [directive]))
-  
-  (defn 
-    remove-value-from-snippet
-    "Removes a single value from snippet, does not remove subvalues."
-    [s value]
-    (->
-      (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
-      (update-in [:ast2var] dissoc value)
-      (update-in [:ast2bounddirectives] dissoc value)))
-
-  (defn 
-    add-value-to-snippet
-    "Adds a single value to snippet, does not add subvalues."
-    [snippet value]
-    (let [lvar (util/gen-readable-lvar-for-value value)]
-      (->
-        snippet
-        (assoc-in [:ast2var value] lvar)
-        (assoc-in [:ast2bounddirectives value] 
-                  (default-bounddirectives snippet value))
-        (assoc-in [:var2ast lvar] value))))
-
-  (defn 
-    jdt-node-as-snippet
-    "Interpretes the given JDT ASTNode as a snippet with default matching 
-   strategies (i.e., grounding=:exact, constaining=:exact)
-   for the values of its properties.
-   note: Only used to test operators related binding."
-    [n]
-    (let [snippet (atom (snippet/make-snippet n))]
-      (util/walk-jdt-node 
-       n 
-       (fn [val] (swap! snippet add-value-to-snippet val)))
-      @snippet))
-
-  (defn
-    snippet-from-string
-    [string]
-    (let [parsed (parsing/parse-string-ast string)
-          normalized (parsing/parse-string-ast (str parsed))]
-      (jdt-node-as-snippet normalized)
+(def 
+  directive-equals
+  (directives/make-directive
+    "equals"
+    [(directives/make-directiveoperand "Variable")]
+    constrain-equals
+    "Match unifies with variable."
     ))
 
 
-  (defn
-    snippet-from-node
-    [node]
-    (let [string (str node)] ;to normalize char indices to those produced by ast flattener, otherwise persistency fails
-      (jdt-node-as-snippet 
-        (cond 
-          (instance? Expression node)
-          (parsing/parse-string-expression string)
-          (instance? Statement node)
-          (parsing/parse-string-statement string)
-          (instance? BodyDeclaration node)
-          (parsing/parse-string-declaration string)
-          (instance? CompilationUnit node)
-          (parsing/parse-string-unit string)
-          (instance? ImportDeclaration node)
-          (parsing/parse-string-importdeclaration string)
-          :default 
-          (parsing/parse-string-ast string)))))
-    
+(def 
+  directive-member
+  (directives/make-directive
+    "anyindex"
+    []
+    ground-element
+    "Match is a member of the match for the parent list."))
 
-  (comment
+(def 
+  directive-replacedbywildcard
+  (directives/make-directive
+    "replaced-by-wildcard"
+    []
+    constrain-replacedbywildcard
+    "Match is unconstrained."))
+
+
+(def 
+  directive-consider-as-regexp|lst
+  (directives/make-directive
+    "match|regexp"
+    []
+    constrain-lst|regexp
+    "Considers the list as a regexp for element matches."))
+
+(def
+  directive-multiplicity
+  (directives/make-directive
+    "multiplicity"
+    []
+    constrain-multiplicity|regexp
+    "Determines multiplicity of matches."))
+
+(def
+  directives-constraining|mutuallyexclusive
+  [;mutually exclusive ones
+   directive-exact
+   directive-replacedbyvariable
+   directive-replacedbywildcard])
+
+
+(def 
+  directives-constraining|optional
+  [;can be added to the above
+   directive-size|atleast
+   directive-equals
+   directive-consider-as-regexp|lst
+   directive-multiplicity
+   ])
+
+
+(def 
+  directives-constraining
+  (concat directives-constraining|mutuallyexclusive directives-constraining|optional))
+
+
+(def
+  directives-grounding
+  [directive-child
+   directive-offspring
+   directive-member
+   
+   ])
+
+(defn 
+  registered-constraining-directives
+  "Returns collection of registered constraining directives."
+  []
+  directives-constraining)
+
+(defn 
+  registered-grounding-directives
+  "Returns collection of registered grounding directives."
+  []
+  directives-grounding)
+
+(defn
+  registered-grounding-directive?
+  "Succeeds for registered directives that are grounding."
+  [directive]
+  (some #{directive} directives-grounding))
+
+(defn
+  registered-constraining-directive?
+  "Succeeds for registered directives that are constraining."
+  [directive]
+  (some #{directive} directives-constraining))
+
+
+(defn 
+  registered-directives
+  []
+  (concat (registered-grounding-directives) 
+          (registered-constraining-directives)))
+
+
+(defn
+  registered-directive-for-name
+  [name]
+  (some
+    (fn [directive]
+      (when (= name (directives/directive-name directive))
+        directive))
+    (registered-directives)))
+
+
+
+;; Auxiliary functions related to regular expression matching
+;; ---------------------------------------------------------------
+
+
+(defn
+  snippet-list-regexp?
+  "Returns true for lists that have regexp matching enabled."
+  [snippet value]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
+    (directives/bounddirective-for-directive 
+      bds
+      directive-consider-as-regexp|lst)))
+
+(defn
+  snippet-value-regexp-element?
+  [snippet value]
+  (when
+    (astnode/valuelistmember? value)
+    (let [owninglst (snippet/snippet-list-containing snippet value)]
+      (snippet-list-regexp? snippet owninglst))))    
+
+(defn
+  snippet-value-multiplicity
+  [snippet value]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
+    (if-let [mbd (directives/bounddirective-for-directive 
+                   bds
+                   directive-multiplicity)]
+      (directives/directiveoperandbinding-value 
+        (nth (directives/bounddirective-operandbindings mbd) 1))
+      "1")))
+
+
+
+;; Constructing Snippet instances with default matching directives
+;; ---------------------------------------------------------------
+
+(def default-directives [directive-exact 
+                         directive-child 
+                         ;ensures these aren't pretty-printed
+                         directive-replacedbyvariable 
+                         directive-replacedbywildcard
+                         ])
+
+(defn
+  default-directive?
+  [directive]
+  (some #{directive} default-directives))
+
+(defn
+  default-bounddirectives
+  "Returns default matching directives for given snippet and element of the snippet element."
+  [snippet value]
+  (list 
+    (directives/bind-directive-with-defaults directive-exact snippet value)
+    (directives/bind-directive-with-defaults directive-child snippet value)))
+
+(defn
+  nondefault-bounddirectives
+  [snippet value]
+  (remove 
+    (fn [bounddirective] 
+      (default-directive? (directives/bounddirective-directive bounddirective)))
+    (snippet/snippet-bounddirectives-for-node snippet value)))
+
+(defn
+  has-nondefault-bounddirectives?
+  [snippet value]
+  (boolean (not-empty (nondefault-bounddirectives snippet value))))
+
+(defn
+  snippet-nondefault-bounddirectives-string-for-node
+  [snippet node]
+  (let [bounddirectives (nondefault-bounddirectives snippet node)]
+    ;todo: incorporate arguments
+    (clojure.string/join " " (map directives/bounddirective-string bounddirectives)))) 
+
+(defn
+  remove-all-directives
+  [template value]
+  (snippet/update-bounddirectives template value []))
+
+(defn
+  remove-all-directives*
+  [template value]
+  (let [snippet (atom template)]
+    (util/walk-jdt-node 
+      value
+      (fn [val]
+        (swap! snippet remove-all-directives val)))
+    @snippet))
+
+(defn
+  remove-all-directives+
+  [template value]
+  (let [snippet (atom template)]
+    (util/walk-jdt-node 
+      value
+      (fn [val]
+        (when (not= val value)
+          (swap! snippet remove-all-directives val))))
+    @snippet))
+
+(defn
+  remove-directives 
+  [template value directives]
+  (let [bounddirectives 
+        (snippet/snippet-bounddirectives-for-node template value)
+        remainingbounddirectives
+        (remove (fn [bounddirective]
+                  (some #{(directives/bounddirective-directive bounddirective)}
+                        directives))
+                bounddirectives)]
+    (snippet/update-bounddirectives template value remainingbounddirectives)))
+
+(defn
+  remove-directive
+  [template value directive]
+  (remove-directives template value [directive]))
+
+(defn 
+  remove-value-from-snippet
+  "Removes a single value from snippet, does not remove subvalues."
+  [s value]
+  (->
+    (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
+    (update-in [:ast2var] dissoc value)
+    (update-in [:ast2bounddirectives] dissoc value)))
+
+(defn 
+  add-value-to-snippet
+  "Adds a single value to snippet, does not add subvalues."
+  [snippet value]
+  (let [lvar (util/gen-readable-lvar-for-value value)]
+    (->
+      snippet
+      (assoc-in [:ast2var value] lvar)
+      (assoc-in [:ast2bounddirectives value] 
+                (default-bounddirectives snippet value))
+      (assoc-in [:var2ast lvar] value))))
+
+(defn 
+  jdt-node-as-snippet
+  "Interpretes the given JDT ASTNode as a snippet with default matching 
+   strategies (i.e., grounding=:exact, constaining=:exact)
+   for the values of its properties.
+   note: Only used to test operators related binding."
+  [n]
+  (let [snippet (atom (snippet/make-snippet n))]
+    (util/walk-jdt-node 
+      n 
+      (fn [val] (swap! snippet add-value-to-snippet val)))
+    @snippet))
+
+(defn
+  snippet-from-string
+  [string]
+  (let [parsed (parsing/parse-string-ast string)
+        normalized (parsing/parse-string-ast (str parsed))]
+    (jdt-node-as-snippet normalized)
+    ))
+
+
+(defn
+  snippet-from-node
+  [node]
+  (let [string (str node)] ;to normalize char indices to those produced by ast flattener, otherwise persistency fails
+    (jdt-node-as-snippet 
+      (cond 
+        (instance? Expression node)
+        (parsing/parse-string-expression string)
+        (instance? Statement node)
+        (parsing/parse-string-statement string)
+        (instance? BodyDeclaration node)
+        (parsing/parse-string-declaration string)
+        (instance? CompilationUnit node)
+        (parsing/parse-string-unit string)
+        (instance? ImportDeclaration node)
+        (parsing/parse-string-importdeclaration string)
+        :default 
+        (parsing/parse-string-ast string)))))
+
+
+(comment
   (defn 
     apply-rewrite 
     "Apply rewrite to snippet."
@@ -1090,28 +1065,27 @@
       (.apply (.rewriteAST rewrite document nil) document)
       (let [newsnippet (document-as-snippet document)]
         (snippet/copy-snippet snippet newsnippet)))) 
-)
+  )
 
-  (defn
-    register-callbacks
-    []
-    (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_STRING) snippet-from-string)
-    (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_NODE) snippet-from-node)
-
-    (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES) nondefault-bounddirectives)
-    (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
+(defn
+  register-callbacks
+  []
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_STRING) snippet-from-string)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_FROM_NODE) snippet-from-node)
   
-    (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
-    (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-replacement-var-for-node)
-
-    (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD) snippet-node-replaced-by-wilcard?)
-
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES) nondefault-bounddirectives)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_HAS_NONDEFAULT_BOUNDDIRECTIVES) has-nondefault-bounddirectives?)
   
-    (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_REGISTERED_DIRECTIVES) registered-directives)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_BOUNDDIRECTIVES_STRING) snippet-nondefault-bounddirectives-string-for-node)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_USERVAR_FOR_NODE) snippet-replacement-var-for-node)
   
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD) snippet-node-replaced-by-wilcard?)
+  
+  
+  (set! (damp.ekeko.snippets.gui.DirectiveSelectionDialog/FN_REGISTERED_DIRECTIVES) registered-directives)
+  
+  
+  )
 
-    )
-  
-  (register-callbacks)
+(register-callbacks)
 
-  
