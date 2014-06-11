@@ -29,47 +29,25 @@ damp.ekeko.snippets.querying
 
 (defn
   snippet-value-conditions-already-generated?
+  "Regexp matching of list elements will already have generated conditions for all their offspring
+   (inside the corresponding qwal query)."
   [snippet value]
-  (matching/snippet-value-regexp-element? snippet value))
+  (matching/snippet-value-regexp-offspring? snippet value))
       
 
 (defn-
   snippet-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
   [snippet]
-  (defn 
-    conditions
-    [ast-or-list]
-    (if 
-      (snippet-value-conditions-already-generated? snippet ast-or-list)
-      '()
-      (let [bounddirectives
-            (snippet/snippet-bounddirectives-for-node snippet ast-or-list)
-            bounddirectives-grounding
-            (filter (fn [bounddirective]
-                      (matching/registered-grounding-directive? (directives/bounddirective-directive bounddirective)))
-                    bounddirectives)
-            bounddirectives-constraining
-            (filter (fn [bounddirective]
-                      (matching/registered-constraining-directive? (directives/bounddirective-directive bounddirective)))
-                    bounddirectives)
-            conditions-grounding
-            (mapcat
-              (fn [bounddirective]
-                (directives/snippet-bounddirective-conditions snippet bounddirective))
-              bounddirectives-grounding)
-            conditions-constraining
-            (mapcat
-              (fn [bounddirective]
-                (directives/snippet-bounddirective-conditions snippet bounddirective))
-              bounddirectives-constraining)]
-        (concat conditions-grounding conditions-constraining))))
   (let [ast (snippet/snippet-root snippet)
         query (atom '())]
     (util/walk-jdt-node 
       ast
-      (fn [val] (swap! query concat (conditions val))))
-      @query))
+      (fn [val]
+        (when-not 
+          (snippet-value-conditions-already-generated? snippet val)
+          (swap! query concat (matching/snippet-node-conditions snippet val)))))
+    @query))
 
 
 
