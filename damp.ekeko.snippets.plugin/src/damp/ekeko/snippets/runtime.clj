@@ -292,33 +292,31 @@
     [length
      (.size jdt-lst)]
     {:nodes 
-     (map-indexed vector jdt-lst)
+     (concat
+       (map-indexed vector jdt-lst)
+       [[-1 nil] ;before first element
+        [length nil] ;after last element
+        ])
      :predecessors
+     (fn 
+       [?from ?to]
+       (cl/all 
+         (el/perform (throw (Exception. "Backwards traversal not supported."))))) ;skipping because not needed by snippets
+     :successors
      (fn 
        [?from ?to]
        (cl/all
          (cl/project [?from]
                      (cl/== ?to
                             (let [idx (nth ?from 0)
-                                  nidx (dec idx)]
-                              (if 
-                                (> idx 0) 
-                                [[nidx (.get jdt-lst nidx)]])
-                                [])))))
-     :successors
-     (fn 
-       [?from ?to]
-       (cl/all
-         (cl/project [?from]
-           (cl/== ?to
-                  (let [idx (nth ?from 0)
-                        nidx (inc idx)]
-                    (if 
-                      (< nidx length)
-                      [[nidx (.get jdt-lst nidx)]]
-                      []
-                      ))))))
-     
+                                  nidx (inc idx)]
+                              (cond
+                                (< nidx length)
+                                [[nidx (.get jdt-lst nidx)]]
+                                (= nidx length)
+                                [[nidx nil]]
+                                (> nidx length)
+                                []))))))
      }))
 
 
@@ -342,19 +340,40 @@
                                   )                           
                   ))"
   [?lst ?qwal ?start ?end]
-  (cl/fresh [?raw ?nodes]
+  (cl/fresh [?raw]
          (ast/value|list ?lst)
          (ast/value-raw ?lst ?raw)
-         (el/succeeds (not (.isEmpty ?raw)))
          (el/equals ?qwal (qwal-graph-from-list ?raw))
-         (el/equals ?nodes (:nodes ?qwal))
-         (el/equals ?start (first ?nodes))
-         (el/equals ?end (last ?nodes))))
+         (el/equals ?start [-1 nil])
+         (el/equals ?end [(.size ?raw) nil])))
 
 
 
+(defn
+  list-nth-element
+  [?lstval ?nth ?element]
+  ;on purpose not using value-raw because it will bind lstval when unbound, 
+  ;while an unbound lstval indicates an error in the generated query
+  (cl/fresh [?raw]
+         (el/equals ?raw (:value ?lstval))
+         (el/equals ?element (.get ?raw ?nth))))
 
- 
+
+(defn
+  list-size
+  [?lstval ?size]
+  ;on purpose not using value-raw because it will bind lstval when unbound, 
+  ;while an unbound lstval indicates an error in the generated query
+  (cl/fresh [?raw]
+         (el/equals ?raw (:value ?lstval))
+         (el/equals ?size (.size ?raw))))
+  
+  
+  
+  
+
+
+
 
     
     

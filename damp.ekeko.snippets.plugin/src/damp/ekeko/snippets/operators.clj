@@ -380,13 +380,13 @@ damp.ekeko.snippets.operators
     (reduce
       (fn [newsnippet lstel]
         (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
-      snippet
+      ;remove exact match directive from list itself
+      (matching/remove-directives snippet value [matching/directive-exact])
       (astnode/value-unwrapped value))
     value 
     (directives/make-bounddirective 
       matching/directive-consider-as-regexp|lst
       [(make-directiveoperandbinding-for-match value)])))
-
 
 
 (defn
