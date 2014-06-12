@@ -72,11 +72,28 @@
     (is (= ms-by-query ms-by-snippet))))
         
         
-                  
+;; Matching Strategy: regexp
+;; -------------------------
+
+
+(deftest 
+  match-regexp-oneormore
+  ^{:doc 
+    "Contains an [?unbound.addComponent(...);]@[(multiplicity +)] invocation, of which there is only a sequence
+     in method TestCase.runTest from the CompositeVisitor project."}
+  (let [results
+        (snippets/query-by-snippetgroup 
+          (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/regexp_oneormore.ekt"))]
+    (is (= 1 (count results)))))
+
+
+
+
+
+
+                    
 ;; Test suite
-;; ----------
-
-
+  ;; ----------
 
 (deftest
    test-suite 
@@ -84,6 +101,8 @@
      (test/against-project-named testproject false exactmatch-node)
      (test/against-project-named testproject false match-persisted-anyclass)
      (test/against-project-named testproject false match-persisted-anymethod)
+     (test/against-project-named testproject false match-regexp-oneormore)
+
      )
    )
 
