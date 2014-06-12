@@ -561,17 +561,16 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Value text" opscope-string validity|string)]
      )
    
-   ;;has heisenbug .. works in debugger, not outside
-   ;(Operator. 
-   ;  "erase-list"
-   ;  operators/erase-list
-   ;  :destructive
-   ;  "Erase list."
-   ;  opscope-subject
-   ;  applicability|lst
-   ; "Deletes all elements from the list."
-   ;  []
-   ;  )
+   (Operator. 
+     "erase-list"
+     operators/erase-list
+     :destructive
+     "Erase list."
+     opscope-subject
+     applicability|lst
+    "Deletes all elements of the list."
+     []
+     )
    
    
    (Operator. 

@@ -182,12 +182,13 @@ damp.ekeko.snippets.operators
   [snippet node]
   (let [newsnippet 
         (atom snippet)] 
-    (.delete node) ;remove node
-    (snippet/walk-snippet-element ;dissoc children 
-      snippet
-      node 
-      (fn [val] 
-        (swap! newsnippet matching/remove-value-from-snippet val)))
+    (do 
+      (snippet/walk-snippet-element ;dissoc children 
+                                    snippet
+                                    node 
+                                    (fn [val] 
+                                      (swap! newsnippet matching/remove-value-from-snippet val)))
+      (.delete node))   ;remove node
     @newsnippet))
 
 
@@ -197,12 +198,13 @@ damp.ekeko.snippets.operators
   [snippet node lst idx]
   (let [newsnippet 
         (atom snippet)]
-    (.add lst idx node) ;destructive add
-    (util/walk-jdt-node
-      ;add cvalue hildren 
-      node 
-      (fn [val] 
-        (swap! newsnippet matching/add-value-to-snippet val)))
+    (do 
+      (util/walk-jdt-node
+        ;add cvalue hildren 
+        node 
+        (fn [val] 
+          (swap! newsnippet matching/add-value-to-snippet val)))
+      (.add lst idx node)) ;destructive add
     @newsnippet))
 
 
@@ -420,12 +422,12 @@ damp.ekeko.snippets.operators
   erase-list
   "Removes all elements of a list."
   [snippet value]
- ;todo: figure out why only the first child gets deleted
- (reduce 
-   (fn [newsnippet child]
-     (remove-node newsnippet child))
-   snippet
-   (astnode/value-unwrapped value)))
+  (reduce 
+    (fn [newsnippet child]
+      (println "Removing:" child)
+      (remove-node newsnippet child))
+    snippet
+    (snippet/snippet-node-children|conceptually snippet value)))
 
 
 ;TODO:operator to undo effect on children

@@ -942,13 +942,20 @@ damp.ekeko.snippets.matching
   [directive]
   (some #{directive} default-directives))
 
+(declare snippet-value-regexp-element?)
+
 (defn
   default-bounddirectives
-  "Returns default matching directives for given snippet and element of the snippet element."
+  "Returns default matching directives for given snippet and element of the snippet element.
+   These are directive-exact and directive-child, or directive-exact when the value resides within a regular expression."
   [snippet value]
-  (list 
-    (directives/bind-directive-with-defaults directive-exact snippet value)
-    (directives/bind-directive-with-defaults directive-child snippet value)))
+  (if
+    (snippet-value-regexp-element? snippet value)
+    (list 
+      (directives/bind-directive-with-defaults directive-exact snippet value))
+    (list 
+      (directives/bind-directive-with-defaults directive-exact snippet value)
+      (directives/bind-directive-with-defaults directive-child snippet value))))
 
 (defn
   nondefault-bounddirectives
@@ -1038,14 +1045,14 @@ damp.ekeko.snippets.matching
 
 (defn 
   jdt-node-as-snippet
-  "Interpretes the given JDT ASTNode as a snippet with default matching 
+  "Interpretes a copy of the given ASTNode as a snippet with default matching 
    strategies (i.e., grounding=:exact, constaining=:exact)
-   for the values of its properties.
-   note: Only used to test operators related binding."
+   for the values of its properties."
   [n]
-  (let [snippet (atom (snippet/make-snippet n))]
+  (let [copy (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST n) n)
+        snippet (atom (snippet/make-snippet copy))]
     (util/walk-jdt-node 
-      n 
+      copy
       (fn [val] (swap! snippet add-value-to-snippet val)))
     @snippet))
 
@@ -1058,25 +1065,10 @@ damp.ekeko.snippets.matching
     ))
 
 
-(defn
+(def
   snippet-from-node
-  [node]
-  (let [string (str node)] ;to normalize char indices to those produced by ast flattener, otherwise persistency fails
-    (jdt-node-as-snippet 
-      (cond 
-        (instance? Expression node)
-        (parsing/parse-string-expression string)
-        (instance? Statement node)
-        (parsing/parse-string-statement string)
-        (instance? BodyDeclaration node)
-        (parsing/parse-string-declaration string)
-        (instance? CompilationUnit node)
-        (parsing/parse-string-unit string)
-        (instance? ImportDeclaration node)
-        (parsing/parse-string-importdeclaration string)
-        :default 
-        (parsing/parse-string-ast string)))))
-
+  jdt-node-as-snippet)
+ 
 
 
 (defn 

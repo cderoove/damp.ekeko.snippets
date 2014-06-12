@@ -85,12 +85,6 @@
         (snippets/query-by-snippetgroup 
           (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/regexp_oneormore.ekt"))]
     (is (= 1 (count results)))))
-
-
-
-
-
-
                     
 ;; Test suite
   ;; ----------
