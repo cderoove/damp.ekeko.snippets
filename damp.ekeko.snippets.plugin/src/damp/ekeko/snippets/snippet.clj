@@ -321,6 +321,73 @@ damp.ekeko.snippets.snippet
   (assoc-in snippet
             [:var2uservar (snippet-var-for-node snippet node)]
             (symbol uservar)))
+
+(defn
+  snippet-node-parent|conceptually
+  "Returns conceptual parent of this snippet element 
+   (as it would be displayed in the tree viewer of the template editor)."
+  [snippet c]
+  (if-let [ownerproperty (astnode/owner-property c)] 
+    ;owner of compilationunit = nil, parent = nil
+    ;owner of list = node
+    ;owner of node = parent
+    ;owner of list element = node ... should look for list containing value insted
+    (if
+      (and 
+        (astnode/property-descriptor-list? ownerproperty)
+        (not (astnode/lstvalue? c)))
+      (snippet-list-containing snippet c)
+      (snippet-node-owner snippet c))))
+
+(defn
+  snippet-node-children|conceptually
+  "Returns conceptual children of this snippet element 
+   (as they would be displayed in the tree viewer of the template editor)."
+  [snippet node]
+  (filter 
+    (fn [child]
+      (=  node (snippet-node-parent|conceptually snippet child)))
+    (snippet-nodes snippet)))
+
+(defn 
+  walk-snippet-element
+  "Performs a recursive descent through a particular snippet element.
+   Takes snippet changes into account that might not be reflected 
+   in the snippets' root ASTNode. Parent and children of AST nodes are
+   looked up in snippet, rather than taken from node itself."
+  ([snippet element f]
+    (walk-snippet-element snippet element f f f f))
+  ([snippet element node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list element)]
+      (when-not (empty? nodes)
+        (let [val (first nodes)
+              others (rest nodes)]
+          (cond 
+            (astnode/ast? val)
+            (do
+              (node-f val)
+              (recur 
+                (concat 
+                  (snippet-node-children|conceptually snippet val)
+                  others)))
+            (astnode/lstvalue? val)
+            (do 
+              (list-f val)
+              (recur (concat 
+                       (snippet-node-children|conceptually snippet val)
+                       others)))
+            (astnode/primitivevalue? val)
+            (do
+              (primitive-f val)
+              (recur others))
+            (astnode/nilvalue? val)
+            (do
+              (null-f val)
+              (recur others))
+            :default
+            (throw (Exception. "Don't know how to walk this value."))
+            ))))))
                                
 
 (defn

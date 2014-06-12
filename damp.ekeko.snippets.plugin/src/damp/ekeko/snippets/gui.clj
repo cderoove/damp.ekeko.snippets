@@ -9,8 +9,8 @@ damp.ekeko.snippets.gui
     [org.eclipse.ui IWorkbench PlatformUI IWorkbenchPage IWorkingSet IWorkingSetManager]
     [org.eclipse.swt.widgets Display])
   (:require [damp.ekeko.snippets 
-             [util :as util]
              [snippet :as snippet]
+             [util :as util]
              [snippetgroup :as snippetgroup]
              [operatorsrep :as operatorsrep]
              [directives :as directives]
@@ -26,27 +26,14 @@ damp.ekeko.snippets.gui
 
 ;(remove (fn [x] (astnode/primitivevalue? x))
 
-(defn
+(def
   snippet-node-parent|fortreeviewer
-  [snippet c]
-  (if-let [ownerproperty (astnode/owner-property c)] ;owner of compilationunit = nil, parent = nil
-    ;owner of list = node
-    ;owner of node = parent
-    ;owner of list element = node ... should look for list containing value insted
-    (if
-      (and 
-        (astnode/property-descriptor-list? ownerproperty)
-        (not (astnode/lstvalue? c)))
-      (snippet/snippet-list-containing snippet c)
-      (snippet/snippet-node-owner snippet c))))
+  snippet/snippet-node-parent|conceptually)
 
-(defn
+(def
   snippet-node-children|fortreeviewer
-  [snippet node]
-  (filter 
-    (fn [child]
-      (=  node (snippet-node-parent|fortreeviewer snippet child)))
-    (snippet/snippet-nodes snippet)))
+  snippet/snippet-node-children|conceptually)
+  
 
 (defn
   templatetreecontentprovider-children

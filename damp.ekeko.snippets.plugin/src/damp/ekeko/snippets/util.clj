@@ -52,7 +52,9 @@
   walk-jdt-node
   "Recursive descent through a JDT node (or JDT lst / primitive property value),
    applying given functions to the encountered 
-   ASTNode instances and Ekeko wrappers for their property values."
+   ASTNode instances and Ekeko wrappers for their property values.
+
+   Consider using snippet/walk-snippet-element instead."
   ([n f]
     (walk-jdt-node n f f f f))
   ([n node-f list-f primitive-f null-f]
@@ -77,7 +79,10 @@
             (astnode/nilvalue? val)
             (do
               (null-f val)
-              (recur others))))))))
+              (recur others))
+            :default
+            (throw (Exception. "Don't know how to walk this value."))
+            ))))))
 
 (defn dissoc-in [tmap keys]
   (let [newmap (dissoc ((first keys) tmap) (fnext keys))]

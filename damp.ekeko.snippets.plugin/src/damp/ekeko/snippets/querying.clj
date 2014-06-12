@@ -35,17 +35,21 @@ damp.ekeko.snippets.querying
   (matching/snippet-value-regexp-offspring? snippet value))
       
 
-(defn-
+(defn
   snippet-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
   [snippet]
   (let [ast (snippet/snippet-root snippet)
         query (atom '())]
-    (util/walk-jdt-node 
+    (snippet/walk-snippet-element
+      snippet
       ast
       (fn [val]
         (when-not 
           (snippet-value-conditions-already-generated? snippet val)
+          (when 
+            (astnode/lstvalue? val)
+            (println "newping: " (astnode/property-descriptor-id (astnode/owner-property val))))
           (swap! query concat (matching/snippet-node-conditions snippet val)))))
     @query))
 
