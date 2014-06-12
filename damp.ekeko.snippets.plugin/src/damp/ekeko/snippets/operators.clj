@@ -259,15 +259,7 @@ damp.ekeko.snippets.operators
     (let [bds-before 
           (snippet/snippet-bounddirectives-for-node snippet lst)
           result (insert-at snippet  (nodecreatorf (.getAST relativenode) classkeyw) lst-raw (relativeindexf idx))]
-
-      (println "bds-before:"  bds-before)
-      (println "bds-after:"  (snippet/snippet-bounddirectives-for-node result lst))
-      (println "bds-owninglist-after:"
-               (snippet/snippet-bounddirectives-for-node result 
-                                                         (snippet/snippet-list-containing result relativenode)))         
-
-      result
-      )))
+      result)))
 
 (defn
   insert-newnodefromclasskeyw-before
@@ -301,48 +293,7 @@ damp.ekeko.snippets.operators
   (let [lst-raw (astnode/value-unwrapped lst)
         a (.getAST (snippet/snippet-root snippet))
        newnode (newnode|classkeyword a classkeyw)]
-    (let [bds-before 
-          (snippet/snippet-bounddirectives-for-node snippet lst)
-          result 
-          (insert-at snippet newnode lst-raw idx)]
-      (println "bds-before:"  bds-before)
-      (println "bds-after:"  (snippet/snippet-bounddirectives-for-node result lst))
-      (println "bds-owninglist-after:"
-               (snippet/snippet-bounddirectives-for-node result 
-                                                         (snippet/snippet-list-containing result newnode)))
-      (println "node count before: " (count (snippet/snippet-nodes snippet)))
-      (println "node count after: " (count (snippet/snippet-nodes result)))
-      (println "ast2bounddirectives count before: " (count (:ast2bounddirectives snippet)))
-      (println "ast2bounddirectives count after: " (count (:ast2bounddirectives result)))
-      
-      ;(println "contains old lst as key?: " (contains? lst (:ast2bounddirectives result)))
-      (println "contains old lst as key2?: " (some #{lst} (keys (:ast2bounddirectives result))))
-      (println "bound-directives for old list: " (get (:ast2bounddirectives result) lst))
-      
-      (println "old list among snippet-nodes?" (some #{lst}  (snippet/snippet-nodes result)))
-      
-      (println "lookup of bs for old list among snippet nodes:" (get (:ast2bounddirectives result) 
-                                                                     (some #{lst} (snippet/snippet-nodes result))))
-      
-      
-      (println "convential lookup:" (snippet/snippet-bounddirectives-for-node result lst))
-      
-      (println "convential lookup of owning list:" (snippet/snippet-bounddirectives-for-node result (snippet/snippet-list-containing result newnode)))
-
-      
-      (println "conditions:" (matching/snippet-node-conditions result lst))
-      
-      (println "conditions+:" (matching/snippet-node-conditions+ result lst))
-      
-      (println "conditions for root:" (matching/snippet-node-conditions+ result (snippet/snippet-root result)))
-      
-      (let [strr (apply str (mapcat (fn [n] (matching/snippet-node-conditions result n))  (snippet/snippet-nodes result)))]
-        (println "mapcatted conditions:" strr))
-      
-        ;(damp.ekeko.snippets/query-by-snippet* result)
-        result
-        )))
-    
+    (insert-at snippet newnode lst-raw idx)))  
     
      
 
@@ -424,7 +375,6 @@ damp.ekeko.snippets.operators
   [snippet value]
   (reduce 
     (fn [newsnippet child]
-      (println "Removing:" child)
       (remove-node newsnippet child))
     snippet
     (snippet/snippet-node-children|conceptually snippet value)))

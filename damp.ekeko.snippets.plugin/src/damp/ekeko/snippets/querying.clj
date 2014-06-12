@@ -47,9 +47,6 @@ damp.ekeko.snippets.querying
       (fn [val]
         (when-not 
           (snippet-value-conditions-already-generated? snippet val)
-          (when 
-            (astnode/lstvalue? val)
-            (println "newping: " (astnode/property-descriptor-id (astnode/owner-property val))))
           (swap! query concat (matching/snippet-node-conditions snippet val)))))
     @query))
 

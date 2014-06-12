@@ -1,6 +1,6 @@
 (ns 
   ^{:doc "Test suite for matching strategies of snippets."
-    :author "Siltvani, Coen De Roover"}
+    :author "Coen De Roover"}
   test.damp.ekeko.snippets.matching
   (:refer-clojure :exclude [== type declare record?])
   (:require  [clojure.core.logic :exclude [is] :as l])

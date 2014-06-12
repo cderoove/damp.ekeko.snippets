@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "Test suite for snippet operators."
-    :author "Siltvani, Coen De Roover"}
-  test.damp.ekeko.snippets.opperators
+    :author "Coen De Roover"}
+  test.damp.ekeko.snippets.operators
   (:refer-clojure :exclude [== type declare record?])
   (:require  [clojure.core.logic :exclude [is] :as l])
   (:require [damp.ekeko.snippets 
@@ -40,8 +40,12 @@
         (= propertyidstr (astnode/property-descriptor-id ownerprop))))
     (snippet/snippet-nodes snippet)))
   
-(deftest
-  test-opsequence-eraselist|insertemptystatement|replacebywildcard
+(deftest 
+  ^{:doc "Any method should match with the corresponding snippet, using regexp matching over statements, 
+          where a statement has first been inserted,
+          and then been replaced by a wildcard with multiplicity * (e.g., {...* return;} for a singleton
+          statements list and {...*} for an empty statements list."}
+  test-operatorsequence-regexp1
   (for [[method] 
         (damp.ekeko/ekeko [?m] 
                           (l/fresh [?block ?statements ?raw]
@@ -65,9 +69,11 @@
             (operators/erase-list snippet-lst) 
             (operators/insert-newnodefromclasskeyw-atindex snippet-lst :EmptyStatement 0)
             (operators/replace-by-wildcard (.get (astnode/value-unwrapped snippet-lst) 0))
-            (operators/update-multiplicity (.get (astnode/value-unwrapped snippet-lst) "*"))
-            )]
-      (snippets/query-by-snippet newsnippet))))
+            (operators/consider-regexp|list snippet-lst)
+            (operators/update-multiplicity (.get (astnode/value-unwrapped snippet-lst) 0) "*"))
+            ]
+      (is true (some #{method}
+                     (map first (snippets/query-by-snippet newsnippet)))))))
       
     
 ;; Test suite
@@ -75,9 +81,8 @@
 (deftest
    test-suite 
    (let [testproject "TestCase-JDT-CompositeVisitor"]
-;     (test/against-project-named testproject false operator-eraselist)
-
-   ))
+     (test/against-project-named testproject false test-operatorsequence-regexp1)
+     ))
 
 (defn 
   test-ns-hook 

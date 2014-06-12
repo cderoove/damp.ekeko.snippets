@@ -46,6 +46,11 @@ public class EkekoSnippetsTest {
 	public void testEkekoSnippetsMatching() {
 		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.matching");
 	}
+	
+	@Test 
+	public void testEkekoSnippetsOperators() {
+		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.operators");
+	}
 
 	@Test 
 	public void testRequireEkekoSnippets() {

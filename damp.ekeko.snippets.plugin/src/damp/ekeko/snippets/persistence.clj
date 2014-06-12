@@ -362,10 +362,8 @@
   "Duplicates the given snippet. 
    No data is shared between the original and the copy."
   [snippet]
-  ;(println "original: " (template-string snippet))
   (let [s (snippet-as-persistent-string snippet)
         copy (snippet-from-persistent-string s)]
-    ;(println "copy: " (template-string copy))
     copy))
   
 
