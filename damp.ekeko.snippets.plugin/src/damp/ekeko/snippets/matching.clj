@@ -194,7 +194,7 @@ damp.ekeko.snippets.matching
 
 
 
-;todo: er is geen ast-conditie meer om type te checken, die moet er wel komen voor variabelen
+;todo: er is geen ast-conditie meer om type te checken, moet die er wel nog komen voor variabelen?
 (defn 
   constrain-exact
   [snippet-val]
@@ -230,15 +230,7 @@ damp.ekeko.snippets.matching
               snippet-list-size 
               (.size lst)
               var-match-raw (util/gen-readable-lvar-for-value lst)]
-          `(; (cl/fresh [~var-match-raw] 
-             ;           (~value-raw ~var-match ~var-match-raw)
-             ;           (el/equals ~snippet-list-size (.size ~var-match-raw))))
-             
-             (runtime/list-size ~var-match ~snippet-list-size)
-             
-             ))
-        
-        
+          `((runtime/list-size ~var-match ~snippet-list-size)))
         ;constrain primitive values
         (astnode/primitivevalue? snippet-val)
         (let [exp 
@@ -260,6 +252,8 @@ damp.ekeko.snippets.matching
 (declare  snippet-node-conditions+)
   
 (declare snippet-value-multiplicity)
+
+   
 
 (defn
   constrain-lst|regexp 
@@ -284,7 +278,6 @@ damp.ekeko.snippets.matching
           (dec (.size elements))
           
           element-conditions
-          ;to skip to the first real element of the list
           (apply concat
                  (map-indexed
                    (fn [idx element]
@@ -299,7 +292,8 @@ damp.ekeko.snippets.matching
                            (snippet-value-multiplicity template element)
                            
                            ;these conditions no longer need to be included in the query 
-                           
+                           ;querying/snippet-conditions takes care of this
+                           ;using snippet-value-conditions-already-generated? predicate
                            elconditions 
                            (snippet-node-conditions+ template element)
                            
@@ -348,6 +342,103 @@ damp.ekeko.snippets.matching
             [] 
             damp.qwal/q=> ;to jump inside list 
             ~@element-conditions))))))
+
+
+;todo: eliminate code duplication
+(defn
+  constrain-lst|cfgregexp 
+  "Requires control flow graph of this statement list to to match a regular expression. 
+   Will ground elements. Therefore, elements should no longer have a grounding directive.
+   Constraining conditions of elements will be feature as conditions inside the regular expression."
+  [val]
+  (fn [template]
+    (let [block
+          (snippet/snippet-node-parent|conceptually template val)
+          method 
+          (snippet/snippet-node-parent|conceptually template block)
+          var-method
+          (snippet/snippet-var-for-node template method)
+          
+          var-match
+          (snippet/snippet-var-for-node template val)
+          var-match-qwalgraph
+          (util/gen-lvar 'qgraph)
+          var-match-qwalgraph-start
+          (util/gen-lvar 'qgraphstart)
+          var-match-qwalgraph-end
+          (util/gen-lvar 'qgraphend)
+          
+          elements 
+          (astnode/value-unwrapped val)
+          
+          cfgnode
+          (gensym 'cfgnode)
+          
+          element-conditions
+          (mapcat
+            (fn [element]
+              (let [var-elmatch                    
+                    (snippet/snippet-var-for-node template element)
+                    
+                    elmatch 
+                    (gensym 'elmatch)
+                           
+                    multiplicity
+                    (snippet-value-multiplicity template element)
+                           
+                    ;these conditions no longer need to be included in the query 
+                    elconditions 
+                    (snippet-node-conditions+ template element)
+                           
+                    elconditionsvars
+                    (conj (conditions-variables elconditions)
+                          var-elmatch)
+                    
+                    cfgnode
+                    (gensym 'cfgnode)
+                           
+                    qcurrentcondition
+                    (if 
+                      (= "1" multiplicity)
+                      `(damp.qwal/qcurrent [~elmatch]
+                                           (ast/node|cfg-node|ast ~elmatch ~var-elmatch)
+                                           ~@elconditions)
+                      `(damp.qwal/qcurrent [~elmatch]
+                                           ;same var cannot match different elements multiple times, hence fresh
+                                           (cl/fresh [~@elconditionsvars] ;perhaps not include uservars
+                                                     (ast/node|cfg-node|ast ~elmatch ~var-elmatch)
+                                                     ~@elconditions)))]
+                (condp = multiplicity
+                  "1" 
+                  `(~qcurrentcondition 
+                     damp.qwal/q=>  ;to prepare for matching of next template element
+                     (damp.qwal/q? (damp.qwal/qcurrent [~cfgnode] (ast/node|cfg|syntethic ~cfgnode)) damp.qwal/q=>)) ;also skip possible synthetic nodes
+                  "+"
+                  `((damp.qwal/q+ 
+                      ~qcurrentcondition
+                      damp.qwal/q=>  ;to prepare for matching of next template element
+                      (damp.qwal/q? (damp.qwal/qcurrent [~cfgnode] (ast/node|cfg|syntethic ~cfgnode)) damp.qwal/q=>))) ;also skip possible synthetic nodes
+                  "*"
+                  `((damp.qwal/q* 
+                      ~qcurrentcondition
+                      damp.qwal/q=>  ;to prepare for matching of next template element
+                      (damp.qwal/q? (damp.qwal/qcurrent [~cfgnode] (ast/node|cfg|syntethic ~cfgnode)) damp.qwal/q=>))) ;also skip possible synthetic nodes
+                  )))
+            elements)]
+      `((cl/fresh 
+          [~var-match-qwalgraph ~var-match-qwalgraph-start ~var-match-qwalgraph-end]
+          (ast/method-cfg-entry-exit ~var-method ~var-match-qwalgraph ~var-match-qwalgraph-start ~var-match-qwalgraph-end)
+          (damp.qwal/qwal   
+            ~var-match-qwalgraph
+            ~var-match-qwalgraph-start
+            ~var-match-qwalgraph-end
+            [] 
+            ;damp.qwal/q=> ;for now, not jumping inside cfg  ... (although this will cause ..* to match incorrectly)
+            ~@element-conditions
+            (damp.qwal/qcurrent [~cfgnode] (ast/node|cfg|syntethic ~cfgnode))  ;before-last node is a synthetic uber-return or throws 
+            damp.qwal/q=> ;to skip to the actual last node
+            ))))))
+
 
 
 
@@ -792,6 +883,14 @@ damp.ekeko.snippets.matching
     constrain-lst|regexp
     "Considers the list as a regexp for element matches."))
 
+(def 
+  directive-consider-as-regexp|cfglst
+  (directives/make-directive
+    "match|regexp-cfg"
+    []
+    constrain-lst|cfgregexp
+    "Considers the list as a regexp for control flow graph matches."))
+
 (def
   directive-multiplicity
   (directives/make-directive
@@ -814,6 +913,7 @@ damp.ekeko.snippets.matching
    directive-size|atleast
    directive-equals
    directive-consider-as-regexp|lst
+   directive-consider-as-regexp|cfglst
    directive-multiplicity
    ])
 
@@ -880,12 +980,16 @@ damp.ekeko.snippets.matching
 
 (defn
   snippet-list-regexp?
-  "Returns true for lists that have regexp matching enabled."
+  "Returns true for lists that have list or cfg regexp matching enabled."
   [snippet value]
   (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
-    (directives/bounddirective-for-directive 
-      bds
-      directive-consider-as-regexp|lst)))
+    (or (directives/bounddirective-for-directive 
+          bds
+          directive-consider-as-regexp|lst)
+        (directives/bounddirective-for-directive 
+          bds
+          directive-consider-as-regexp|cfglst)
+        )))
 
 (defn
   snippet-value-regexp-element?

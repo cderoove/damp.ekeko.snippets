@@ -392,13 +392,30 @@ damp.ekeko.snippets.operators
       (fn [newsnippet lstel]
         (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
       ;remove exact match directive from list itself
-      (matching/remove-directives snippet value [matching/directive-exact])
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|cfglst])
       (astnode/value-unwrapped value))
     value 
     (directives/make-bounddirective 
       matching/directive-consider-as-regexp|lst
       [(make-directiveoperandbinding-for-match value)])))
 
+(defn
+  consider-regexp|cfglist
+  "Considers list as regular expression for control flow graph matching."
+  [snippet value]
+  ;add regexp directive to lst
+  (snippet/add-bounddirective
+    ;remove grounding directives from elements 
+    (reduce
+      (fn [newsnippet lstel]
+        (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
+      ;remove exact match directive from list itself
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst])
+      (astnode/value-unwrapped value))
+    value 
+    (directives/make-bounddirective 
+      matching/directive-consider-as-regexp|cfglst
+      [(make-directiveoperandbinding-for-match value)])))
 
 (defn
   update-multiplicity

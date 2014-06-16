@@ -388,7 +388,6 @@ damp.ekeko.snippets.snippet
             :default
             (throw (Exception. "Don't know how to walk this value."))
             ))))))
-                               
 
 (defn
   register-callbacks

@@ -125,6 +125,15 @@ damp.ekeko.snippets.operatorsrep
     (not (matching/snippet-node-replaced-by-wilcard? snippet value))))
 
 (defn
+  applicability|regexpcfglst
+  "As applicability|regexplst, but also verifies that lst is a statements list."
+  [snippetgroup snippet value]
+  (and 
+    (applicability|regexplst snippetgroup snippet value)
+    (when-let [ownerprop (astnode/owner-property value)]
+      (= "statements" (astnode/property-descriptor-id ownerprop)))))
+  
+(defn
   validity|always
   [snippetgroup snippet subject operandvalue]
   true)
@@ -597,6 +606,18 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|regexplst
      "Considers list as regular expression when matching."
+     []
+     )
+   
+     
+   (Operator. 
+     "consider-regexp|cfglist"
+     operators/consider-regexp|cfglist
+     :generalization
+     "Consider list as control flow regular expression."
+     opscope-subject
+     applicability|regexpcfglst
+     "Considers list as regular expression over control flow."
      []
      )
    
