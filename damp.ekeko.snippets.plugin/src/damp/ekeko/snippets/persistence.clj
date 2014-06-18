@@ -14,10 +14,21 @@
      [transformation :as transformation]
      ])
   (:import [org.eclipse.jdt.core.dom 
+            AST
             Expression Statement BodyDeclaration CompilationUnit ImportDeclaration
             ASTNode
+            ASTNode$NodeList
             StructuralPropertyDescriptor
-            Modifier$ModifierKeyword]
+            Modifier$ModifierKeyword
+            PrimitiveType
+            PrimitiveType$Code  
+            InfixExpression$Operator
+            InfixExpression
+            PrefixExpression$Operator
+            PrefixExpression
+            Assignment$Operator
+            Assignment            
+            ]
            [damp.ekeko.snippets
             BoundDirective
             DirectiveOperandBinding]
@@ -32,24 +43,85 @@
            ))
 
 ;;TODO: dispatch on node type, call parse-string with correct node type
+;(defmethod 
+;  clojure.core/print-dup 
+;;  ASTNode
+;  [node w]
+;  (.write w (str "#="
+;                 (cond 
+;                   (instance? Expression node)
+;                   `(parsing/parse-string-expression ~(str node))
+;                   (instance? Statement node)
+;                   `(parsing/parse-string-statement ~(str node))
+;                   (instance? BodyDeclaration node)
+;                   `(parsing/parse-string-declaration ~(str node))
+;                   (instance? CompilationUnit node)
+;                   `(parsing/parse-string-unit ~(str node))
+;                   (instance? ImportDeclaration node)
+ ;                  `(parsing/parse-string-importdeclaration ~(str node))
+;                   :default 
+;                   `(parsing/parse-string-ast ~(str node))))))
+
+
+(def 
+  ast-for-newlycreatednodes
+  (AST/newAST AST/JLS4))
+
+(defn
+  newnode 
+  ([ekekokeyword]
+    (newnode ast-for-newlycreatednodes ekekokeyword))
+  ([ast ekekokeyword]
+    (let [nodeclass
+          (astnode/class-for-ekeko-keyword ekekokeyword)]
+      (.createInstance ast nodeclass))))
+    
+  
+(defn
+  set-property!
+  [^ASTNode node ^StructuralPropertyDescriptor propertydescriptor value]
+  (.setStructuralProperty node propertydescriptor value))
+  
+(defn
+  set-lst-index!
+  [^ASTNode$NodeList lst idx value]
+  (.set lst idx value))
+
+(defn
+  newnode-propertyvalues
+  [nodekeyword propertyvalues]
+  (let [node (newnode nodekeyword)]
+    (doseq [[property value] propertyvalues]
+      (if
+        (astnode/property-descriptor-list? property)
+        (let [lst
+              (astnode/node-property-value node property)]
+          (loop [col lst
+                 idx 0]
+            (when (seq col)
+              (set-lst-index! lst idx (first col))
+              (recur (rest col) (inc idx)))))
+        (set-property! node property value)))
+    node))
+
 (defmethod 
   clojure.core/print-dup 
   ASTNode
   [node w]
-  (.write w (str "#="
-                 (cond 
-                   (instance? Expression node)
-                   `(parsing/parse-string-expression ~(str node))
-                   (instance? Statement node)
-                   `(parsing/parse-string-statement ~(str node))
-                   (instance? BodyDeclaration node)
-                   `(parsing/parse-string-declaration ~(str node))
-                   (instance? CompilationUnit node)
-                   `(parsing/parse-string-unit ~(str node))
-                   (instance? ImportDeclaration node)
-                   `(parsing/parse-string-importdeclaration ~(str node))
-                   :default 
-                   `(parsing/parse-string-ast ~(str node))))))
+  (let [nodeclass
+        (class node)
+        nodeclasskeyword
+        (astnode/ekeko-keyword-for-class nodeclass)]
+    (let [propertyvalues
+          (for [property (astnode/node-property-descriptors node)]
+            (let [value (astnode/node-property-value node property)]
+              [property
+               (if
+                 (astnode/property-descriptor-list? property)
+                 (seq value)
+                 value)]))]
+      (.write w (str "#="
+                     `(newnode-propertyvalues ~nodeclasskeyword ~propertyvalues))))))
 
 (defn
   class-propertydescriptor-with-id
@@ -85,6 +157,35 @@
   [node w]
   (let [flagvlue (.toFlagValue node)]
     (.write w (str  "#=" `(Modifier$ModifierKeyword/fromFlagValue ~flagvlue)))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  PrimitiveType$Code  
+  [node w]
+  (let [codestr (.toString node)]
+    (.write w (str  "#=" `(PrimitiveType/toCode ~codestr)))))
+
+(defmethod 
+  clojure.core/print-dup 
+  InfixExpression$Operator
+  [node w]
+  (let [codestr (.toString node)]
+    (.write w (str  "#=" `(InfixExpression$Operator/toOperator ~codestr)))))
+
+(defmethod 
+  clojure.core/print-dup 
+  Assignment$Operator
+  [node w]
+  (let [codestr (.toString node)]
+    (.write w (str  "#=" `(Assignment$Operator/toOperator ~codestr)))))
+
+(defmethod 
+  clojure.core/print-dup 
+  PrefixExpression$Operator
+  [node w]
+  (let [codestr (.toString node)]
+    (.write w (str  "#=" `(PrefixExpression$Operator/toOperator ~codestr)))))
 
 
 (defmethod 
