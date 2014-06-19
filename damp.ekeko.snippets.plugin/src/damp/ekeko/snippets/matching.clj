@@ -493,6 +493,20 @@ damp.ekeko.snippets.matching
                 (snippet-replacement-var-for-node snippet node))
               (snippet/snippet-nodes snippet)))))
 
+
+(defn
+  snippet-replacement-node2var
+  [snippet]
+  (reduce
+    (fn [sofar node]
+      (if-let [var (snippet-replacement-var-for-node snippet node)]
+        (assoc sofar node var)
+        sofar))
+    {}
+    (snippet/snippet-nodes snippet)))
+  
+  
+
 (defn
   string-represents-variable?
   [string]

@@ -134,6 +134,28 @@ damp.ekeko.snippets.querying
 ; Converting snippet group to rewrite query
 ;------------------------------------------
 
+(defn
+  template-root|projected 
+  [template variables values]
+  (let [var2value
+        (zipmap variables values)
+        node2var
+        (damp.ekeko.snippets.matching/snippet-replacement-node2var template)
+        projected
+        (snippet/snippet-root template)]
+    (doseq [[node var] node2var]
+      (let [value 
+            (get var2value (str var)) ;todo: complain when key not found
+            compatiblevalue 
+            (cond 
+              (astnode/ast? value)
+              (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) value)
+              :else 
+              value)]
+        (damp.ekeko.snippets.operators/snippet-jdt-replace template node compatiblevalue)))
+    projected
+    ))
+
 
 (defn
   newnode-from-template
@@ -152,22 +174,25 @@ damp.ekeko.snippets.querying
         
         replacement-vars|symbols
         (map symbol replacement-vars|strings)
+        
         stemplate
         (persistence/snippet-as-persistent-string template)
+        
         runtime-template-var  
         (util/gen-readable-lvar-for-value root)
         ]
     `((cl/fresh [~runtime-template-var] 
                 (cl/== ~runtime-template-var
                            (persistence/snippet-from-persistent-string ~stemplate))
+                
+                ;(cl/== ~runtime-template-var ~template)
                 (cl/project [~runtime-template-var ~@replacement-vars|symbols]
                             (cl/== ~var-match 
-                                   (parsing/parse-string-ast
-                                     (runtime/template-to-string|projected 
-                                       ~runtime-template-var
-                                       [~@replacement-vars|quotedstrings]
-                                       [~@replacement-vars|symbols])
-                                     )))
+                                   (template-root|projected 
+                                     ~runtime-template-var
+                                     [~@replacement-vars|quotedstrings]
+                                     [~@replacement-vars|symbols])
+                                     ))
                 ))))
 
 
@@ -201,6 +226,9 @@ damp.ekeko.snippets.querying
   [snippetgroup]
   (mapcat snippet-conditions|rewrite (snippetgroup/snippetgroup-snippetlist snippetgroup)))
   
+
+
+
 (defn
   transformation-query
   [snippetgroup|lhs snippetgroup|rhs]

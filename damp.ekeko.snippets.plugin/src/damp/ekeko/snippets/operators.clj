@@ -292,19 +292,32 @@ damp.ekeko.snippets.operators
   [snippet lst classkeyw idx]
   (let [lst-raw (astnode/value-unwrapped lst)
         a (.getAST (snippet/snippet-root snippet))
-       newnode (newnode|classkeyword a classkeyw)]
+        newnode (newnode|classkeyword a classkeyw)]
     (insert-at snippet newnode lst-raw idx)))  
     
      
+(defn
+  snippet-jdt-replace
+  [snippet value newnode]
+  (let [property (astnode/owner-property value)]
+    (cond 
+      (astnode/property-descriptor-child? property)
+      (let [parent (astnode/owner value)]
+        (.setStructuralProperty parent property newnode))
+      (astnode/property-descriptor-list? property)
+      (let [lst (snippet/snippet-list-containing snippet value)
+            lst-raw (astnode/value-unwrapped lst)
+            idx (.indexOf lst-raw value)]
+        (.set lst-raw idx newnode))
+      :default
+      (throw (IllegalArgumentException. "Unexpected property descriptor.")))))
 
 (defn
   replace-node
   "Replaces subject by new instance of the given classkeyw."
   [snippet value classkeyw]
   (let [newnode 
-        (newnode|classkeyword (.getAST value) classkeyw)
-        property
-        (astnode/owner-property value)]
+        (newnode|classkeyword (.getAST value) classkeyw)]
     (let [newsnippet 
           (atom snippet)] 
       ;dissoc children 
@@ -313,17 +326,10 @@ damp.ekeko.snippets.operators
         value 
         (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
       ;perform replace
-      (cond 
-        (astnode/property-descriptor-child? property)
-        (let [parent (astnode/owner value)]
-          (.setStructuralProperty parent property newnode))
-        (astnode/property-descriptor-list? property)
-        (let [lst (snippet/snippet-list-containing snippet value)
-              lst-raw (astnode/value-unwrapped lst)
-              idx (.indexOf lst-raw value)]
-          (.set lst-raw idx newnode))
-        :default
-        (throw (IllegalArgumentException. "Unexpected property descriptor.")))
+      (snippet-jdt-replace  
+        snippet
+        value 
+        newnode)
       ;assoc node and children
       (util/walk-jdt-node 
         newnode 

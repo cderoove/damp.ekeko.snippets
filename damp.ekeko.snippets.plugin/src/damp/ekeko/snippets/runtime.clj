@@ -14,6 +14,12 @@
              ]
             [damp.ekeko.snippets 
              [snippetgroup :as snippetgroup]
+             [snippet :as snippet]
+            
+             ;cyclic load dependencies, hardcoding reference
+             ;[matching :as matching]
+             ;[persistence :as persistence]
+             ;[operators :as operators]
              ]
 
             )
@@ -368,6 +374,10 @@
          (el/equals ?raw (:value ?lstval))
          (el/equals ?size (.size ?raw))))
   
+
+      
+    
+    
   
   
   
