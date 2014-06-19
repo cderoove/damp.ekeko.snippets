@@ -26,6 +26,8 @@
             InfixExpression$Operator
             InfixExpression
             PrefixExpression$Operator
+            PostfixExpression$Operator
+            PostfixExpression
             PrefixExpression
             Assignment$Operator
             Assignment            
@@ -207,6 +209,20 @@
   [node w]
   (let [codestr (.toString node)]
     (.write w (str  "#=" `(prefixexpressionoperator-for-string ~codestr)))))
+
+
+(defn
+  postfixexpressionoperator-for-string
+  [opstring]
+  (PostfixExpression$Operator/toOperator opstring))
+
+(defmethod 
+  clojure.core/print-dup 
+  PostfixExpression$Operator
+  [node w]
+  (let [codestr (.toString node)]
+    (.write w (str  "#=" `(postfixexpressionoperator-for-string ~codestr)))))
+
 
 
 (defmethod 
