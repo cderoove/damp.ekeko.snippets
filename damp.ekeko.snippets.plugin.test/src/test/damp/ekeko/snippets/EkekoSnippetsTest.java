@@ -56,6 +56,12 @@ public class EkekoSnippetsTest {
 	public void testRequireEkekoSnippets() {
 		ClojureOSGi.require(myBundle, "damp.ekeko.snippets");
 	}
+	
+	@Test 
+	public void testPersistence() {
+		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.persistence");
+	}
+
 
 	/*
 	//disabled because exception is not caught by junit 

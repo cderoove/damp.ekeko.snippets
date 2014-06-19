@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "Test suite for persistence of snippets."
     :author "Coen De Roover"}
-  test.damp.ekeko.snippets.persistence
+  test.damp.ekeko.snippets.matching
   (:refer-clojure :exclude [== type declare record?])
   (:require  [clojure.core.logic :exclude [is] :as l])
   (:require [damp.ekeko.snippets 
