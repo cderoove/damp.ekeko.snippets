@@ -3,7 +3,9 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.parsing
   (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
-            CompilationUnit TypeDeclaration Block Expression]))
+            CompilationUnit TypeDeclaration Block Expression]
+           [damp.ekeko JavaProjectModel]
+           ))
 
 (defn 
   jdt-node-malformed?
@@ -110,7 +112,7 @@
   "Parses the given string as a Java construct of the given kind
    (expression, statements, class body declarations, compilation unit)."
   [^String string string-kind]
-  (let [parser (ASTParser/newParser AST/JLS4)]                
+  (let [parser (ASTParser/newParser JavaProjectModel/JLS)]                
     (.setSource parser (.toCharArray string))
     (.setKind parser string-kind)
     (.createAST parser nil)))

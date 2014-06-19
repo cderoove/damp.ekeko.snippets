@@ -124,7 +124,7 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_EDIT);
 		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
 		tltmEditBoundDirectives.setEnabled(false);
-			
+		
 		
 		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);
 		templateGroupViewer.setParentTemplateEditor(this);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);

@@ -19,6 +19,7 @@
             ASTNode
             ASTNode$NodeList
             StructuralPropertyDescriptor
+            Modifier
             Modifier$ModifierKeyword
             PrimitiveType
             PrimitiveType$Code  
@@ -40,6 +41,7 @@
             Directive DirectiveOperand]
            [damp.ekeko.snippets.transformation 
             Transformation]
+           [damp.ekeko JavaProjectModel]
            ))
 
 ;;TODO: dispatch on node type, call parse-string with correct node type
@@ -65,7 +67,7 @@
 
 (def 
   ast-for-newlycreatednodes
-  (AST/newAST AST/JLS4))
+  (AST/newAST JavaProjectModel/JLS))
 
 (defn
   newnode 
@@ -76,17 +78,11 @@
           (astnode/class-for-ekeko-keyword ekekokeyword)]
       (.createInstance ast nodeclass))))
     
-  
 (defn
   set-property!
   [^ASTNode node ^StructuralPropertyDescriptor propertydescriptor value]
   (.setStructuralProperty node propertydescriptor value))
   
-(defn
-  set-lst-index!
-  [^ASTNode$NodeList lst idx value]
-  (.set lst idx value))
-
 (defn
   newnode-propertyvalues
   [nodekeyword propertyvalues]
@@ -96,11 +92,7 @@
         (astnode/property-descriptor-list? property)
         (let [lst
               (astnode/node-property-value node property)]
-          (loop [col lst
-                 idx 0]
-            (when (seq col)
-              (set-lst-index! lst idx (first col))
-              (recur (rest col) (inc idx)))))
+          (.addAll lst value))
         (set-property! node property value)))
     node))
 
@@ -118,7 +110,7 @@
               [property
                (if
                  (astnode/property-descriptor-list? property)
-                 (seq value)
+                 (into [] value)
                  value)]))]
       (.write w (str "#="
                      `(newnode-propertyvalues ~nodeclasskeyword ~propertyvalues))))))
@@ -151,41 +143,70 @@
         ]
     (.write w (str  "#=" `(class-propertydescriptor-with-id ~ownerclass-keyword ~id)))))
 
+
+(defn
+  modifierkeyword-for-flagvalue
+  [flagvalue]
+  (Modifier$ModifierKeyword/fromFlagValue flagvalue))
+
+
 (defmethod 
   clojure.core/print-dup 
   Modifier$ModifierKeyword
   [node w]
   (let [flagvlue (.toFlagValue node)]
-    (.write w (str  "#=" `(Modifier$ModifierKeyword/fromFlagValue ~flagvlue)))))
+    (.write w (str  "#=" `(modifierkeyword-for-flagvalue ~flagvlue)))))
 
+
+(defn
+  primitivetypecode-for-string
+  [codestr]
+  (PrimitiveType/toCode codestr))
 
 (defmethod 
   clojure.core/print-dup 
   PrimitiveType$Code  
   [node w]
   (let [codestr (.toString node)]
-    (.write w (str  "#=" `(PrimitiveType/toCode ~codestr)))))
+    (.write w (str  "#=" `(primitivetypecode-for-string ~codestr)))))
+
+(defn
+  infixexpressionoperator-for-string
+  [opstr]
+  (InfixExpression$Operator/toOperator opstr))
+
 
 (defmethod 
   clojure.core/print-dup 
   InfixExpression$Operator
   [node w]
   (let [codestr (.toString node)]
-    (.write w (str  "#=" `(InfixExpression$Operator/toOperator ~codestr)))))
+    (.write w (str  "#=" `(infixexpressionoperator-for-string ~codestr)))))
+
+(defn
+  assignmentoperator-for-string
+  [opstring]
+  (Assignment$Operator/toOperator opstring))
 
 (defmethod 
   clojure.core/print-dup 
   Assignment$Operator
   [node w]
   (let [codestr (.toString node)]
-    (.write w (str  "#=" `(Assignment$Operator/toOperator ~codestr)))))
+    (.write w (str  "#=" `(assignmentoperator-for-string ~codestr)))))
+
+
+(defn
+  prefixexpressionoperator-for-string
+  [opstring]
+  (PrefixExpression$Operator/toOperator opstring))
 
 (defmethod 
   clojure.core/print-dup 
   PrefixExpression$Operator
   [node w]
   (let [codestr (.toString node)]
-    (.write w (str  "#=" `(PrefixExpression$Operator/toOperator ~codestr)))))
+    (.write w (str  "#=" `(prefixexpressionoperator-for-string ~codestr)))))
 
 
 (defmethod 
