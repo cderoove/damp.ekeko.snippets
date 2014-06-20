@@ -42,6 +42,7 @@
   [?referring ?referred]
   (cl/conde 
     [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
+    [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
     ;todo: names referring to parameter
     ))
             

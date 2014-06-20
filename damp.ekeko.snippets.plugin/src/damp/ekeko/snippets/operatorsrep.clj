@@ -614,7 +614,7 @@ damp.ekeko.snippets.operatorsrep
      "consider-regexp|list"
      operators/consider-regexp|list
      :generalization
-     "Use regexp matching for elements.."
+     "Use regexp matching for elements."
      opscope-subject
      applicability|regexplst
      "Considers list as regular expression when matching."
