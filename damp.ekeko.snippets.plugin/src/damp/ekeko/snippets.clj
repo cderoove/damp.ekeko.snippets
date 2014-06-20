@@ -36,20 +36,20 @@
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]
-  (eval (querying/snippet-query snippet 'damp.ekeko/ekeko*)))
+  (eval (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko*)))
 
 (defn
   query-by-snippet
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
-  (eval (querying/snippet-query snippet 'damp.ekeko/ekeko)))
+  (eval (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko)))
 
 
 (defn
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (let [q (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko*)]
+  (let [q (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko*)]
     (println q)
     (eval q)))
 
@@ -57,14 +57,14 @@
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippetgroup."
   [snippetgroup]
-  (eval (querying/snippetgroup-query snippetgroup 'damp.ekeko/ekeko)))
+  (eval (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko)))
 
 (defn
   transform-by-snippetgroups
   "Performs the program transformation defined by the lhs and rhs snippetgroups." 
   [snippetgroup|lhs snippetgroup|rhs]
   (do 
-    (eval (querying/transformation-query snippetgroup|lhs snippetgroup|rhs))
+    (eval (querying/transformation-query|usingpredicates snippetgroup|lhs snippetgroup|rhs))
     (rewrites/apply-and-reset-rewrites)))
 
 (defn

@@ -386,7 +386,7 @@ damp.ekeko.snippets.snippet
               (null-f val)
               (recur others))
             :default
-            (throw (Exception. "Don't know how to walk this value."))
+            (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
 (defn

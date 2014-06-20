@@ -40,10 +40,8 @@
 (defn
   refersto
   [?referring ?referred]
-  (cl/conda 
-    [(cl/fresh [?key]
-            (ast/ast|fieldaccess ?key ?referring))
-     (aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
+  (cl/conde 
+    [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
     ;todo: names referring to parameter
     ))
             
