@@ -30,7 +30,9 @@
   "Regexp matching of list elements will already have generated conditions for all their offspring
    (inside the corresponding qwal query)."
   [snippet value]
-  (matching/snippet-value-regexp-offspring? snippet value))
+  (or
+    (matching/snippet-value-regexp-offspring? snippet value)
+    (matching/snippet-value-setmatch-offspring? snippet value)))
 
 
 (defn

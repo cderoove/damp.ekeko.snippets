@@ -614,7 +614,7 @@ damp.ekeko.snippets.operatorsrep
      "consider-regexp|list"
      operators/consider-regexp|list
      :generalization
-     "Consider list as regular expression."
+     "Use regexp matching for elements.."
      opscope-subject
      applicability|regexplst
      "Considers list as regular expression when matching."
@@ -626,13 +626,12 @@ damp.ekeko.snippets.operatorsrep
      "consider-regexp|cfglist"
      operators/consider-regexp|cfglist
      :generalization
-     "Consider list as control flow regular expression."
+     "Use regexp matching over control flow graph for elements."
      opscope-subject
      applicability|regexpcfglst
-     "Considers list as regular expression over control flow."
+     "Regular expression over control flow graph of method."
      []
      )
-   
    
    
    (Operator. 
@@ -645,6 +644,19 @@ damp.ekeko.snippets.operatorsrep
      "Updates multiplicity of match."
      [(make-operand "Multiplicity" opscope-multiplicity validity|multiplicity)]
      )
+   
+   
+   (Operator. 
+     "consider-set|lst"
+     operators/consider-set|list
+     :generalization
+     "Use set matching for elements."
+     opscope-subject
+     applicability|lst
+     "Set matching will be used for elements of list."
+     []
+     )
+
    
    
    

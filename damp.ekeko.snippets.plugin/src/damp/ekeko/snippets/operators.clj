@@ -412,7 +412,7 @@ damp.ekeko.snippets.operators
       (fn [newsnippet lstel]
         (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
       ;remove exact match directive from list itself
-      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|cfglst])
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst matching/directive-consider-as-regexp|cfglst])
       (astnode/value-unwrapped value))
     value 
     (directives/make-bounddirective 
@@ -430,7 +430,7 @@ damp.ekeko.snippets.operators
       (fn [newsnippet lstel]
         (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
       ;remove exact match directive from list itself
-      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst])
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst matching/directive-consider-as-regexp|cfglst])
       (astnode/value-unwrapped value))
     value 
     (directives/make-bounddirective 
@@ -443,7 +443,7 @@ damp.ekeko.snippets.operators
   [snippet subject multiplicity]
   (snippet/add-bounddirective
     ;remove pre-existing regexp multiplicities
-    (matching/remove-directives snippet subject [matching/directive-multiplicity]);also directive-member?  
+    (matching/remove-directives snippet subject [matching/directive-multiplicity];also directive-member?  
     subject
     (directives/make-bounddirective 
       matching/directive-multiplicity
@@ -451,8 +451,25 @@ damp.ekeko.snippets.operators
        (directives/make-directiveoperand-binding
            (directives/make-directiveoperand "Multiplicity")
            multiplicity)
-       ])))
+       ]))))
 
+
+(defn
+  consider-set|list
+  "Considers list as set from which elements are matched."
+  [snippet value]
+  (snippet/add-bounddirective
+    ;remove grounding directives from elements 
+    (reduce
+      (fn [newsnippet lstel]
+        (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
+      ;remove exact match directive from list itself
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst matching/directive-consider-as-regexp|cfglst])
+      (astnode/value-unwrapped value))
+    value 
+    (directives/make-bounddirective 
+      matching/directive-consider-as-set|lst
+      [(make-directiveoperandbinding-for-match value)])))
 
      
 

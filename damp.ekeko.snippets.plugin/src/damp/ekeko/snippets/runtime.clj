@@ -385,9 +385,16 @@
   (cl/fresh [?raw]
          (el/equals ?raw (:value ?lstval))
          (el/equals ?size (.size ?raw))))
- 
-  
-  
+
+
+(defn
+  rawlist-element-remaining 
+  [?lst ?el ?rem]
+  (cl/all
+    (el/contains ?lst ?el) 
+    (cl/project [?el ?lst]
+                (cl/== ?rem (remove (fn [e] (identical? e ?el)) ?lst)))))
+              
     
   
   

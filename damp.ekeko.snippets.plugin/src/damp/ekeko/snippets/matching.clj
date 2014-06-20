@@ -440,6 +440,45 @@ damp.ekeko.snippets.matching
             ))))))
 
 
+;todo: allow additional operand that determines where the list comes from
+;e.g. super declarations
+
+(defn
+  constrain-lst|set
+  "Considers candidate matches as a set in which elements are matched.
+   Once an element from the list has been matched, remaining template elements cannot match it anymore.
+   Will ground elements. Therefore, elements should no longer have a grounding directive.
+   Constraining conditions of elements will feature as conditions for the set matching."
+  [val]
+  (fn [template]
+    (let [lstvar
+          (snippet/snippet-var-for-node template val)
+          elements 
+          (astnode/value-unwrapped val)
+          listrawvar
+          (util/gen-readable-lvar-for-value elements)]
+      (defn
+        generate
+        [lstvar elements]
+        (if 
+          (empty? elements)
+          `()
+          (let [element (first elements)
+                ;these conditions no longer need to be included in the query 
+                ;querying/snippet-conditions takes care of this
+                ;using snippet-value-conditions-already-generated? predicate
+                elconditions 
+                (snippet-node-conditions+ template element)
+                elmatch                    
+                (snippet/snippet-var-for-node template element)
+                remaininglstvar (gensym "remaining")]
+            `((cl/fresh [~remaininglstvar]
+                        (runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar)
+                        ~@elconditions
+                        ~@(generate remaininglstvar (rest elements)))))))
+      `((cl/fresh [~listrawvar]
+                  (~value-raw ~lstvar ~listrawvar)
+                  ~@(generate listrawvar elements))))))
 
 
 (defn
@@ -914,12 +953,20 @@ damp.ekeko.snippets.matching
 
 
 (def 
+  directive-consider-as-set|lst
+  (directives/make-directive
+    "match|set"
+    []
+    constrain-lst|set
+    "Use set matching for list elements."))
+
+(def 
   directive-consider-as-regexp|lst
   (directives/make-directive
     "match|regexp"
     []
     constrain-lst|regexp
-    "Considers the list as a regexp for element matches."))
+    "Use regexp matching for list elements."))
 
 (def 
   directive-consider-as-regexp|cfglst
@@ -927,7 +974,7 @@ damp.ekeko.snippets.matching
     "match|regexp-cfg"
     []
     constrain-lst|cfgregexp
-    "Considers the list as a regexp for control flow graph matches."))
+    "Use regexp matching over control flow graph for list matching."))
 
 (def
   directive-multiplicity
@@ -952,6 +999,7 @@ damp.ekeko.snippets.matching
    directive-equals
    directive-consider-as-regexp|lst
    directive-consider-as-regexp|cfglst
+   directive-consider-as-set|lst
    directive-multiplicity
    directive-refersto
    ])
@@ -1017,6 +1065,7 @@ damp.ekeko.snippets.matching
 ;; ---------------------------------------------------------------
 
 
+
 (defn
   snippet-list-regexp?
   "Returns true for lists that have list or cfg regexp matching enabled."
@@ -1027,30 +1076,62 @@ damp.ekeko.snippets.matching
           directive-consider-as-regexp|lst)
         (directives/bounddirective-for-directive 
           bds
-          directive-consider-as-regexp|cfglst)
-        )))
+          directive-consider-as-regexp|cfglst))))
+
+
+(defn
+  snippet-list-setmatch?
+  "Returns true for lists that have set matching enabled."
+  [snippet value]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
+    (directives/bounddirective-for-directive 
+      bds
+      directive-consider-as-set|lst)))
+    
+
+(defn
+  snippet-value-element-of-list-satisfying?
+  [snippet value satisfyingf]
+  (and
+    (astnode/valuelistmember? value)
+    (let [owninglst (snippet/snippet-list-containing snippet value)]
+      (satisfyingf snippet owninglst))))
+
 
 (defn
   snippet-value-regexp-element?
   [snippet value]
-  (and
-    (astnode/valuelistmember? value)
-    (let [owninglst (snippet/snippet-list-containing snippet value)]
-      (snippet-list-regexp? snippet owninglst))))    
+  (snippet-value-element-of-list-satisfying? snippet value snippet-list-regexp?))
+
+
 
 (defn
-  snippet-value-regexp-offspring?
-  [snippet value]
+  snippet-value-regexp-offspring-of-list-satisfying?
+  [snippet value satisfyingf]
   (loop [val value]
     (cond
       (= val (snippet/snippet-root snippet))
       false
-      (snippet-value-regexp-element? snippet val)
+      (snippet-value-element-of-list-satisfying? snippet val satisfyingf)
       true
       ;owner will skip list in which elements reside, which is why the above is to be checked first
       :default
       (let [owner (astnode/owner val)]
         (recur owner)))))
+
+
+(defn
+  snippet-value-regexp-offspring?
+  [snippet value]
+  (snippet-value-regexp-offspring-of-list-satisfying? snippet value snippet-list-regexp?))
+
+
+(defn
+  snippet-value-setmatch-offspring?
+  [snippet value]
+  (snippet-value-regexp-offspring-of-list-satisfying? snippet value snippet-list-setmatch?))
+
+
 
 (defn
   snippet-value-multiplicity
