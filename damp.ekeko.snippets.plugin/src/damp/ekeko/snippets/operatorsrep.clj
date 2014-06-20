@@ -432,6 +432,18 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
+     "add-directive-refersto"
+     operators/add-directive-refersto
+     :refinement
+     "Require match to refer to match for variable."
+     opscope-subject
+     applicability|always
+     "Adds matching directive equals/1 to selection."
+     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
+
+   
+   
+   (Operator. 
      "relax-scope-to-child+"
      operators/relax-scope-to-offspring
      :generalization
@@ -633,6 +645,8 @@ damp.ekeko.snippets.operatorsrep
      "Updates multiplicity of match."
      [(make-operand "Multiplicity" opscope-multiplicity validity|multiplicity)]
      )
+   
+   
    
   
    

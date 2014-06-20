@@ -32,6 +32,26 @@
 
     ))
 
+
+;; Following have been verified 
+
+
+;referring must be ground, referred to not necessarily
+(defn
+  refersto
+  [?referring ?referred]
+  (cl/conda 
+    [(cl/fresh [?key]
+            (ast/ast|fieldaccess ?key ?referring))
+     (aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
+    ;todo: names referring to parameter
+    ))
+            
+
+;; end verif
+
+
+
 (defn to-primitive-type-code
   [string]
   (PrimitiveType/toCode string)) 
@@ -102,13 +122,7 @@
             (astbindings/ast|fieldaccess-binding|variable ?k-var ?var1 ?b)
             (astbindings/ast|fieldaccess-binding|variable ?k-var ?var2 ?b)))
 
-(defn
-  ast-fieldaccess-declaration
-   "Relation between ASTNode fieldaccess with it's declaration."
-  [?var ?dec]
-  (cl/fresh [?k-var ?k-dec ?b]
-            (astbindings/ast|fieldaccess-binding|variable ?k-var ?var ?b)
-            (astbindings/ast|declaration-binding ?k-dec ?dec ?b)))
+
 
 (defn
   ast-variable-binding
@@ -373,10 +387,9 @@
   (cl/fresh [?raw]
          (el/equals ?raw (:value ?lstval))
          (el/equals ?size (.size ?raw))))
+ 
   
-
-      
-    
+  
     
   
   

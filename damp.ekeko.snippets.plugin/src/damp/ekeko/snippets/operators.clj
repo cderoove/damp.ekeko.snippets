@@ -98,6 +98,20 @@ damp.ekeko.snippets.operators
                                    uservar)])))
 
 
+(defn 
+  add-directive-refersto
+  "Adds directive-refersto to node."
+  [snippet node uservar]
+  (snippet/add-bounddirective snippet
+                              node 
+                              (directives/make-bounddirective 
+                                matching/directive-refersto
+                                [(make-directiveoperandbinding-for-match node)
+                                 (directives/make-directiveoperand-binding
+                                   (directives/make-directiveoperand "Referred variable")
+                                   uservar)])))
+
+
 
 (defn
   relax-size-to-atleast
@@ -438,6 +452,8 @@ damp.ekeko.snippets.operators
            (directives/make-directiveoperand "Multiplicity")
            multiplicity)
        ])))
+
+
      
 
      

@@ -460,6 +460,21 @@ damp.ekeko.snippets.matching
                    (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
 
 
+(defn
+  constrain-refersto
+  "Requires candidate matches to have at least as many elements as the template list."
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)]
+      `((runtime/refersto ~var-match ~var)))))
+        
+
+      
+
+
 ;; Functions related to nodes that have been replaced by logic variable
 ;; --------------------------------------------------------------------
 
@@ -890,6 +905,15 @@ damp.ekeko.snippets.matching
 
 
 (def 
+  directive-refersto
+  (directives/make-directive
+    "refers-to"
+    []
+    constrain-refersto
+    "Match refers to the match for the variable."))
+
+
+(def 
   directive-consider-as-regexp|lst
   (directives/make-directive
     "match|regexp"
@@ -929,6 +953,7 @@ damp.ekeko.snippets.matching
    directive-consider-as-regexp|lst
    directive-consider-as-regexp|cfglst
    directive-multiplicity
+   directive-refersto
    ])
 
 
