@@ -78,7 +78,7 @@
           One modifier replaced by wildcard.
           There should only be one solution, as the match for the non-wilcad modifier 
           leaves only one remaining modifier to be matched against."}
-  match-persisted-anyclass
+  match-setmatchedmodifiers
   (let [snippet (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/setmatchedmodifiers.ekt")]
     (is (= 1 (count (snippets/query-by-snippetgroup snippet))))))
 
@@ -109,6 +109,7 @@
      (test/against-project-named testproject false match-persisted-anyclass)
      (test/against-project-named testproject false match-persisted-anymethod)
      (test/against-project-named testproject false match-regexp-oneormore)
+     (test/against-project-named testproject false match-setmatchedmodifiers)
 
      )
    )
