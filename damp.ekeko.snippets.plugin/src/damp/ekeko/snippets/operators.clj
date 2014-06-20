@@ -383,9 +383,13 @@ damp.ekeko.snippets.operators
         (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
       (.setStructuralProperty parent property newvalue)
       ;re-add parent such that correct reifier is used for its new property value
+      ;TODO: this is incorrect, old directives are lost
+      ;should restore those of parent and all children, new child should get directives from old child
+      ;perhaps by recording them in a map from  persistent identifier to directives
       (util/walk-jdt-node 
         parent 
-        (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+        (fn [val] 
+          (swap! newsnippet matching/add-value-to-snippet val))) 
       @newsnippet)))
 
 
