@@ -14,7 +14,9 @@ damp.ekeko.snippets.matching
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
      [astnode :as astnode]
-     [ast :as ast]])
+     [ast :as ast]
+     [structure :as structure]
+     ])
   (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
             [org.eclipse.jdt.core.dom Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
@@ -530,7 +532,7 @@ damp.ekeko.snippets.matching
 
 (defn
   constrain-refersto
-  "Requires candidate matches to have at least as many elements as the template list."
+  "Requires candidate matches to refer to the given variable."
   [val var-string]
   (fn [template]
     (let [var-match
@@ -539,6 +541,37 @@ damp.ekeko.snippets.matching
           (symbol var-string)]
       `((runtime/refersto ~var-match ~var)))))
         
+;todo: een refersto voor types en type declarations (die bindt aan ast nodes)
+;todo: een var analoog aan type (die bindt aan de ivariablebinding) 
+
+(defn
+  constrain-type
+  "Requires candidate matches to resolve to the binding for the given variable (an IType)."
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)]
+      `((runtime/type ~var-match ~var)))))
+
+
+;todo: could also provide a binary one that binds ?itype
+(defn
+  constrain-type|qname
+  "Requires candidate matches to resolve to an IType with the given qualifiedname."
+  [val qnamestring]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var-type
+          (util/gen-lvar "itype")]
+      `((cl/fresh [~var-type]
+                  (runtime/type ~var-match ~var-type)
+                  (structure/type-name|qualified|string ~var-type ~qnamestring)
+                  )))))
+
+
 
       
 
@@ -963,7 +996,7 @@ damp.ekeko.snippets.matching
   directive-replacedbyvariable
   (directives/make-directive
     "replaced-by-variable"
-    [(directives/make-directiveoperand "Variable")]
+    [(directives/make-directiveoperand "Meta-variable")]
     constrain-replacedbyvariable
     "Node and children have been replaced by a variable."
     ))
@@ -972,7 +1005,7 @@ damp.ekeko.snippets.matching
   directive-equals
   (directives/make-directive
     "equals"
-    [(directives/make-directiveoperand "Variable")]
+    [(directives/make-directiveoperand "Meta-variable")]
     constrain-equals
     "Match unifies with variable."
     ))
@@ -999,9 +1032,25 @@ damp.ekeko.snippets.matching
   directive-refersto
   (directives/make-directive
     "refers-to"
-    []
+    [(directives/make-directiveoperand "Meta-variable")]
     constrain-refersto
-    "Match refers to the match for the variable."))
+    "Match refers to a variable, which is the binding for the meta-variable."))
+
+(def 
+  directive-type
+  (directives/make-directive
+    "type"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-type
+    "Match resolves to a type, which is the binding for the meta-varibale."))
+
+(def 
+  directive-type|qname
+  (directives/make-directive
+    "type|qname"
+    [(directives/make-directiveoperand "Qualified name")]
+    constrain-type|qname
+    "Match resolves to a type with the given string as qualified name."))
 
 
 (def 
@@ -1054,6 +1103,8 @@ damp.ekeko.snippets.matching
    directive-consider-as-set|lst
    directive-multiplicity
    directive-refersto
+   directive-type
+   directive-type|qname
    ])
 
 

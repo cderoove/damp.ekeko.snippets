@@ -2,6 +2,7 @@
   ^{:doc "Runtime predicates for snippet-driven querying."
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.runtime
+  (:refer-clojure :exclude [type])
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko [logic :as el]]
             [damp.ekeko.jdt
@@ -10,41 +11,46 @@
              [structure :as structure]
              [astbindings :as astbindings]
              [rewrites :as rewrites]
-             ;[soot :as soot]
              ]
             [damp.ekeko.snippets 
              [snippetgroup :as snippetgroup]
-             [snippet :as snippet]
-            
-             ;cyclic load dependencies, hardcoding reference
-             ;[matching :as matching]
-             ;[persistence :as persistence]
-             ;[operators :as operators]
-             ]
-
-            )
+             [snippet :as snippet]])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
      SimpleName VariableDeclarationFragment Type MethodDeclaration]
     [damp.ekeko.snippets.gui TemplateCodeGenerator]
-    [damp.ekeko.snippets.data TemplateGroup]
-
-    ))
+    [damp.ekeko.snippets.data TemplateGroup]))
 
 
 ;; Following have been verified 
 
 
-;referring must be ground, referred to not necessarily
+;referring has to be bound, referred to not necessarily
 (defn
   refersto
   [?referring ?referred]
-  (cl/conde 
-    [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
-    [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
-    ;todo: names referring to parameter
-    ))
+  (cl/all
+    (el/v+ ?referring)
+    (cl/conde 
+      [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
+      [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
+      )))
+
+;ast has to be bound
+(defn
+  type
+  [?ast ?itype]
+  (cl/all
+    (el/v+ ?ast)
+    (cl/conde 
+      [(aststructure/ast|type-type ?ast ?itype)]
+      [(aststructure/ast|annotation-type ?ast ?itype)]
+      [(aststructure/ast|expression-type ?ast ?itype)]
+      ;perhaps not the declarations?
+      ;[(aststructure/typedeclaration-type ?ast ?itype)]
+      )))
+
             
 
 ;; end verif

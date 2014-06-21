@@ -84,33 +84,43 @@ damp.ekeko.snippets.operators
         [(make-directiveoperandbinding-for-match node)]))))
 
 
+(defn
+  add-unary-directive-opname-opvalue
+  [snippet node directive opname opvalue]
+  (snippet/add-bounddirective snippet
+                              node 
+                              (directives/make-bounddirective 
+                                directive 
+                                [(make-directiveoperandbinding-for-match node)
+                                 (directives/make-directiveoperand-binding
+                                   (directives/make-directiveoperand opname)
+                                   opvalue)])))
+
+
+
 (defn 
   add-directive-equals 
   "Adds directive-equals to node."
   [snippet node uservar]
-  (snippet/add-bounddirective snippet
-                              node 
-                              (directives/make-bounddirective 
-                                matching/directive-equals
-                                [(make-directiveoperandbinding-for-match node)
-                                 (directives/make-directiveoperand-binding
-                                   (directives/make-directiveoperand "Variable equals to template node")
-                                   uservar)])))
-
+  (add-unary-directive-opname-opvalue snippet node matching/directive-equals "Meta-variable" uservar))
 
 (defn 
   add-directive-refersto
   "Adds directive-refersto to node."
   [snippet node uservar]
-  (snippet/add-bounddirective snippet
-                              node 
-                              (directives/make-bounddirective 
-                                matching/directive-refersto
-                                [(make-directiveoperandbinding-for-match node)
-                                 (directives/make-directiveoperand-binding
-                                   (directives/make-directiveoperand "Referred variable")
-                                   uservar)])))
+  (add-unary-directive-opname-opvalue snippet node matching/directive-refersto "Meta-variable" uservar))
 
+(defn 
+  add-directive-type
+  "Adds directive-type to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-type "Meta-variable" uservar))
+
+(defn 
+  add-directive-type|qname
+  "Adds directive-type|qname to node."
+  [snippet node qnamestring]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-type|qname "Qualified name" qnamestring))
 
 
 (defn
@@ -485,7 +495,7 @@ damp.ekeko.snippets.operators
   [snippet subject multiplicity]
   (snippet/add-bounddirective
     ;remove pre-existing regexp multiplicities
-    (matching/remove-directives snippet subject [matching/directive-multiplicity];also directive-member?  
+    (matching/remove-directives snippet subject [matching/directive-multiplicity]);also directive-member?  
     subject
     (directives/make-bounddirective 
       matching/directive-multiplicity
@@ -493,7 +503,7 @@ damp.ekeko.snippets.operators
        (directives/make-directiveoperand-binding
            (directives/make-directiveoperand "Multiplicity")
            multiplicity)
-       ]))))
+       ])))
 
 
 (defn

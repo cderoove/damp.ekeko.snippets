@@ -415,32 +415,53 @@ damp.ekeko.snippets.operatorsrep
      "replace-by-variable"  
      operators/replace-by-variable
      :generalization
-     "Replace by variable."
+     "Replace by meta-variable."
      opscope-subject
      applicability|always
-     "Replaces selection by a variable."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
+     "Replaces selection by a meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
      "add-directive-equals"
      operators/add-directive-equals
      :neutral
-     "Require match to unify with variable."
+     "Add directive equals."
      opscope-subject
      applicability|always
-     "Adds matching directive equals/1 to selection."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
+     "Requires match to unify with meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
      "add-directive-refersto"
      operators/add-directive-refersto
      :refinement
-     "Require match to refer to match for variable."
+     "Add directive refers-to."
      opscope-subject
      applicability|always
-     "Adds matching directive equals/1 to selection."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
+     "Requires matches to lexically refer to the binding for the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
 
+   (Operator. 
+     "add-directive-type"
+     operators/add-directive-type
+     :refinement
+     "Add directive type."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a type, given by meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+
+   (Operator. 
+     "add-directive-type|qname"
+     operators/add-directive-type|qname
+     :refinement
+     "Add directive type|qname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a type with the given qualified name."
+     [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)])
+   
+   
    (Operator. 
      "restrict-scope-to-child"
      operators/restrict-scope-to-child
@@ -448,24 +469,24 @@ damp.ekeko.snippets.operatorsrep
      "Use child as matching scope."
      opscope-subject
      applicability|always
-     "Matches are the corresponding child of the match for the parent."
+     "Match is the corresponding child of the match for the parent."
      [])
 
    (Operator. 
      "relax-scope-to-child+"
      operators/relax-scope-to-child+
      :generalization
-     "Use child+ as matching scope."
+     "Use child as matching scope."
      opscope-subject
      (complement applicability|lst)
-     "Matches are nested within the corresponding child of the parent match."
+     "Match is nested within the corresponding child of the parent match."
      [])
 
    (Operator. 
      "relax-scope-to-child*"
      operators/relax-scope-to-child*
      :generalization
-     "Use child* as matching scope (child or child+)."
+     "Use child as matching scope (child or child+)."
      opscope-subject
      (complement applicability|lst)
      "Matches are the corresponding child of the parent match, or nested within it."
@@ -476,7 +497,7 @@ damp.ekeko.snippets.operatorsrep
      "relax-size-to-atleast"
      operators/relax-size-to-atleast
      :generalization
-     "Allow matches to be larger."
+     "Add directive orlarger."
      opscope-subject
      applicability|lst
      "Matches are lists with at least as many elements as the selection."
@@ -498,11 +519,11 @@ damp.ekeko.snippets.operatorsrep
      "replace-operand-by-template"
      operators/replace-operand-by-template
      :rewrite
-     "Replace operand by instantiated template."
+     "Add directive replace."
      opscope-subject 
      (complement applicability|nonroot) 
      "Rewrites the operand by replacing it with the code corresponding to the template."
-     [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
    
    (Operator. 
      "remove-node"
