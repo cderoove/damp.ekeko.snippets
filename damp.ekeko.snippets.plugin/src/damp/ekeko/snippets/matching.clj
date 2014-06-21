@@ -134,21 +134,50 @@ damp.ekeko.snippets.matching
         :default
         (throw (Exception. (str "Unexpected snippet element to create constraining conditions for." snippet-val)))))))
 
-
+;child+
 (defn
   ground-relativetoparent+ 
-  (;arity 0: reside within arbitraty depth for the match for their parent
-    [snippet-val]
-    (fn [snippet]
-      (let [var-match (snippet/snippet-var-for-node snippet snippet-val)]
-        ;ignore for root, as these are ground independent of a context
-        (if 
-          (root-of-snippet? snippet-val snippet)
-          `(())
-          (let [var-match-owner (snippet/snippet-var-for-node snippet (astnode/owner snippet-val))]
-            `((ast/astorvalue-offspring+ ~var-match-owner ~var-match))))))))
+  ;arity 0: reside within arbitraty depth for their normal ground-relativetoparent match
+  [val]
+  (fn [snippet]
+    (if 
+      (root-of-snippet? val snippet)
+      ;ignore for root, as these are ground independent of a context
+      `(())
+      (let [var-match (snippet/snippet-var-for-node snippet val)
+            conditions-regular ((ground-relativetoparent val) snippet)
+            var-match-regular (util/gen-lvar "nonTranMatch")]
+        ;these conditions will refer to var-match, therefore shadow var-match
+        ;such that is is completely fresh
+        `((cl/fresh [~var-match-regular]
+                   (cl/fresh [~var-match] 
+                            ~@conditions-regular
+                            (cl/== ~var-match ~var-match-regular))
+                   (ast/astorvalue-offspring+ ~var-match-regular ~var-match)))))))
 
+;child* 
+(defn
+  ground-relativetoparent*
+  [val]
+  (fn [snippet]
+    (if 
+      (root-of-snippet? val snippet)
+      ;ignore for root, as these are ground independent of a context
+      `(())
+      (let [var-match (snippet/snippet-var-for-node snippet val)
+            conditions-regular ((ground-relativetoparent val) snippet)
+            var-match-regular (util/gen-lvar "nonTranMatch")]
+        ;these conditions will refer to var-match, therefore shadow var-match
+        ;such that is is completely fresh
+        `((cl/fresh [~var-match-regular]
+                   (cl/fresh [~var-match] 
+                            ~@conditions-regular
+                            (cl/== ~var-match ~var-match-regular))
+                   (cl/conde 
+                     [(cl/== ~var-match-regular ~var-match)]
+                     [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)])))))))
 
+  
 
 
 (defn
@@ -888,15 +917,38 @@ damp.ekeko.snippets.matching
     "child"
     []
     ground-relativetoparent
-    "Child of match for parent."))
+    "Match is the corresponding child for the parent match."))
 
-(def 
-  directive-offspring
+
+
+;(def 
+;  directive-offspring
+;  (directives/make-directive
+;    "anydepth"
+;    []
+;    ground-relativetoparent+ ;arity 0
+;    "Finds match candidates among the offspring of the match for the parent."))
+
+
+(def
+  directive-child+
   (directives/make-directive
-    "anydepth"
+    "child+" ; or "nested" because child is not shown either
     []
-    ground-relativetoparent+ ;arity 0
-    "Finds match candidates among the offspring of the match for the parent."))
+    ground-relativetoparent+
+    "Match is nested within the corresponding child for the parent match."))
+
+(def
+  directive-child*
+  (directives/make-directive
+    "child*" ; or "nested*" because child is not shown either
+    []
+    ground-relativetoparent*
+    "Match is the corresponding child for the parent match, or nested therein."))
+
+
+
+    
 
 (def 
   directive-size|atleast
@@ -1013,7 +1065,8 @@ damp.ekeko.snippets.matching
 (def
   directives-grounding
   [directive-child
-   directive-offspring
+   directive-child+
+   directive-child*
    directive-member
    
    ])

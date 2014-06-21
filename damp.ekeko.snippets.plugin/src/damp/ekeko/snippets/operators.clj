@@ -135,24 +135,29 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match value)])))
 
 (defn
-  relax-scope-to-offspring
-  "Uses scope|offspring/0 for grounding."
+  relax-scope-to-child+
+  "Uses child+/0 for grounding."
   [template value]
   (snippet/add-bounddirective 
     (matching/remove-directives 
-      ; No longer doing: "If member of list, list should relax it's size requirement."
-      ; because prefer to keep all operators as atomic as possible
-      ; in order to derive mutation patterns
-      ;(if 
-      ;  (astnode/valuelistmember? value)
-      ;  (let [lst (snippet/snippet-list-containing template value)]
-      ;    (relax-size-to-atleast template lst))
-      ;  template)
       template
       value 
       (matching/registered-grounding-directives))
     value
-    (directives/make-bounddirective matching/directive-offspring
+    (directives/make-bounddirective matching/directive-child+
+                                    [(make-directiveoperandbinding-for-match value)])))
+
+(defn
+  relax-scope-to-child*
+  "Uses child*/0 for grounding."
+  [template value]
+  (snippet/add-bounddirective 
+    (matching/remove-directives 
+      template
+      value 
+      (matching/registered-grounding-directives))
+    value
+    (directives/make-bounddirective matching/directive-child*
                                     [(make-directiveoperandbinding-for-match value)])))
 
 

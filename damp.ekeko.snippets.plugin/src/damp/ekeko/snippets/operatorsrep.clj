@@ -441,17 +441,36 @@ damp.ekeko.snippets.operatorsrep
      "Adds matching directive equals/1 to selection."
      [(make-operand "Variable (e.g., ?v)" opscope-variable validity|variable)])
 
-   
-   
+   (Operator. 
+     "restrict-scope-to-child"
+     operators/restrict-scope-to-child
+     :refinement
+     "Use child as matching scope."
+     opscope-subject
+     applicability|always
+     "Matches are the corresponding child of the match for the parent."
+     [])
+
    (Operator. 
      "relax-scope-to-child+"
-     operators/relax-scope-to-offspring
+     operators/relax-scope-to-child+
      :generalization
-     "Restrict match to any offspring of parent match."
+     "Use child+ as matching scope."
      opscope-subject
      (complement applicability|lst)
-     "Matches can reside at an arbitrary depth within the match for the parent."
+     "Matches are nested within the corresponding child of the parent match."
      [])
+
+   (Operator. 
+     "relax-scope-to-child*"
+     operators/relax-scope-to-child*
+     :generalization
+     "Use child* as matching scope (child or child+)."
+     opscope-subject
+     (complement applicability|lst)
+     "Matches are the corresponding child of the parent match, or nested within it."
+     [])
+
    
    (Operator. 
      "relax-size-to-atleast"
@@ -463,6 +482,7 @@ damp.ekeko.snippets.operatorsrep
      "Matches are lists with at least as many elements as the selection."
      [])
    
+   ;prefer set matching on owner of list element
    (Operator. 
      "relax-scope-to-member"
      operators/relax-scope-to-member
@@ -473,15 +493,6 @@ damp.ekeko.snippets.operatorsrep
      "Matches can reside at any index within the parent list."
      [])
    
-   (Operator. 
-     "restrict-scope-to-child"
-     operators/restrict-scope-to-child
-     :refinement
-     "Restrict match to corresponding child of the parent match."
-     opscope-subject
-     applicability|always
-     "Matches are the corresponding child of the match for the parent."
-     [])
    
    (Operator. 
      "replace-operand-by-template"
