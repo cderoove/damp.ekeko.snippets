@@ -235,6 +235,8 @@
 
 (defn
   template-root|projected 
+  "Projects a template replacing each of its variables by a clone of their binding.
+   All variables have to be bound."
   [template variables values]
   (let [var2value
         (zipmap variables values)
@@ -243,18 +245,34 @@
         projected
         (snippet/snippet-root template)]
     (doseq [[node var] node2var]
-      (let [value 
-            (get var2value (str var)) ;todo: complain when key not found
-            compatiblevalue 
-            (cond 
-              (astnode/ast? value)
-              (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) value)
-              :else ;todo: when copying a list: should clone its elements
-              value)]
-        (damp.ekeko.snippets.operators/snippet-jdt-replace template node compatiblevalue)))
-    projected
-    ))
-
+      (let [varstr (str var)]
+        (when-not (contains? var2value varstr)
+          (throw (IllegalArgumentException. (str "While projecting template variables, encountered unbound variable: " varstr))))
+        (let [value (get var2value varstr)]
+          (cond 
+            (astnode/ast? value)
+            (damp.ekeko.snippets.operators/snippet-jdt-replace 
+              template
+              node 
+              (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) 
+                                                            value))
+            (astnode/lstvalue? value)
+            (damp.ekeko.snippets.operators/snippet-jdtlist-replace 
+              template
+              node 
+              (org.eclipse.jdt.core.dom.ASTNode/copySubtrees (.getAST projected)
+                                                             (astnode/value-unwrapped value)))
+            (or 
+              (astnode/primitivevalue? value)
+              (astnode/nilvalue? value))
+            (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
+                                                                    node
+                                                                    value)
+            :else
+            (throw (IllegalArgumentException.
+                     (str "While projecting template variables, encountered illegal binding for variable: " varstr "->" value)))))))
+    projected))
+          
 
 (defn
   newnode-from-template

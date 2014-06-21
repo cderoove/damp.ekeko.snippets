@@ -308,11 +308,44 @@ damp.ekeko.snippets.operators
         a (.getAST (snippet/snippet-root snippet))
         newnode (newnode|classkeyword a classkeyw)]
     (insert-at snippet newnode lst-raw idx)))  
-    
-     
+
+
+;only does the jdt work, nothing else to snippet, only to be used for side effects on root astnode  
+(defn
+  snippet-jdtvalue-replace
+  [snippet value newvalue]
+  (when-not (or (astnode/nilvalue? value)
+                (astnode/primitivevalue? value))
+    (throw (IllegalArgumentException. (str "Can only replace wrappers for JDT nil or primitive values, given: " value))))
+  (when-not (or (astnode/nilvalue? newvalue)
+                (astnode/primitivevalue? newvalue))
+    (throw (IllegalArgumentException. (str "Only wrappers for JDT nil or primitive values can be used as replacement for such a value, given: " newvalue))))
+  (let [property
+        (astnode/owner-property value)
+        parent
+        (astnode/owner value)]
+    (.setStructuralProperty parent property newvalue)))
+
+;only does the jdt work, nothing else to snippet, only to be used for side effects on root astnode  
+(defn
+  snippet-jdtlist-replace
+  [snippet lstval newrawlst]
+  (when-not (astnode/lstvalue? lstval)
+    (throw (IllegalArgumentException. (str "Can only replace wrapper for JDT ASTNode$NodeList, given: " lstval))))
+  (when-not (instance? java.util.List newrawlst)
+    (throw (IllegalArgumentException. (str "Wrapper for JDT ASTNode$NodeList can only be replaced by an unwrapped ASTNode$NodeList, given: " newrawlst))))
+  (let [lst (astnode/value-unwrapped lstval)]
+    (.clear lst)
+    (.addAll lst newrawlst)))
+
+;only does the jdt work, nothing else to snippet, only to be used for side effects on root astnode  
 (defn
   snippet-jdt-replace
   [snippet value newnode]
+  (when-not (astnode/ast? value)
+    (throw (IllegalArgumentException. (str "Can only replace JDT ASTNode, given: " value))))
+  (when-not (astnode/ast? newnode)
+    (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode))))
   (let [property (astnode/owner-property value)]
     (cond 
       (astnode/property-descriptor-child? property)
