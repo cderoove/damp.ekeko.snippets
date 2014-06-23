@@ -23,8 +23,17 @@
     (let [var-generatedcode (snippet/snippet-var-for-node snippet root-ast)
           var (symbol replacement-var-string)]
       `((el/perform 
-          (rewrites/replace-node ~var ~var-generatedcode)
-          )))))
+          (rewrites/replace-node ~var ~var-generatedcode))))))
+
+
+(defn
+  rewrite-add-element
+  [root-ast target-list-var-string]
+  (fn [snippet]
+    (let [var-generatedcode (snippet/snippet-var-for-node snippet root-ast)
+          var (symbol target-list-var-string)]
+      `((el/perform 
+          (rewrites/add-element ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
 
 
 (def
@@ -33,12 +42,23 @@
     "replace"
     [(directives/make-directiveoperand "Replacement")]
     rewrite-replace 
-    "Replaces its operand by the template."))
+    "Replaces its operand by the instantiated template."))
+
+
+(def
+  directive-add-element
+  (directives/make-directive
+    "add-element"
+    [(directives/make-directiveoperand "Target list")]
+    rewrite-add-element
+    "Adds the instantiated template to the list operand."))
+
 
 
 (def 
   directives-rewriting
-  [directive-replace])
+  [directive-replace
+   directive-add-element])
 
 
 (defn 

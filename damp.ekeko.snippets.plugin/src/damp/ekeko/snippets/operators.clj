@@ -149,6 +149,28 @@ damp.ekeko.snippets.operators
   (add-unary-directive-opname-opvalue snippet node matching/directive-subtype+|sname "Simple name" uservar))
 
 
+(defn 
+  add-directive-subtype*
+  "Adds directive-subtype* to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype* "Meta-variable" uservar))
+
+
+(defn 
+  add-directive-subtype*|qname
+  "Adds directive-subtype*|qname to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype*|qname "Qualified name" uservar))
+
+
+(defn 
+  add-directive-subtype*|sname
+  "Adds directive-subtype*|sname to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype*|sname "Simple name" uservar))
+
+
+
 (defn
   relax-size-to-atleast
   "Uses match-size|atleast/0 for constraining match candidates for a template list."
@@ -209,25 +231,28 @@ damp.ekeko.snippets.operators
 
 
   
+
+(defn
+  add-unary-directive-opname-opvalue|rewriting
+  [snippet subjectshouldberoot directive uservar]
+  (let [root (snippet/snippet-root snippet)]
+    (when-not (= root subjectshouldberoot)
+      (throw (IllegalArgumentException. "Rewriting operators are only valid for template roots.")))
+    (add-unary-directive-opname-opvalue snippet root directive "Rewrite target" uservar)))
+    
+
+
     
 (defn 
-  replace-operand-by-template
-  ""
-  [snippet value-to-be-ignored uservar]
-  (let
-    [root (snippet/snippet-root snippet)]
-    (snippet/add-bounddirective
-      snippet
-      root 
-      (directives/make-bounddirective 
-        rewriting/directive-replace
-        [(make-directiveoperandbinding-for-match root)
-         (directives/make-directiveoperand-binding
-           (directives/make-directiveoperand "Variable to be replaced by template")
-           uservar)]))))
-
-
-
+  add-directive-replace
+  [snippet subject uservar]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))        
+    
+(defn 
+  add-directive-add-element
+  [snippet subject uservar]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))        
+  
 
 
 ;todo: delete template elements other than nodes

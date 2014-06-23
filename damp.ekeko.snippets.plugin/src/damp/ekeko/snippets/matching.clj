@@ -188,8 +188,6 @@ damp.ekeko.snippets.matching
                      [(cl/== ~var-match-regular ~var-match)]
                      [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)])))))))
 
-  
-
 
 (defn
   ground-element
@@ -627,6 +625,22 @@ damp.ekeko.snippets.matching
          )))
     itypeconstrainf))
 
+(defn
+  generic-constrain-subtype*
+  [val uservarorstring itypeconstrainf]
+  (generic-constrain-type
+    val
+    uservarorstring
+    (fn [var-match var-type] 
+      (let [var-match-type
+            (util/gen-lvar 'matchtype)]
+      `((cl/fresh [~var-match-type]
+         (runtime/type ~var-match ~var-match-type)
+         (cl/conde [(cl/== ~var-match-type ~var-type)]
+                   [(structure/type-type|super+ ~var-match-type ~var-type)])
+         ))))
+    itypeconstrainf))
+
 
 ;todo: add non-transitive variant of subtype+, for an immediate subtype
 
@@ -635,6 +649,16 @@ damp.ekeko.snippets.matching
   "Requires candidate matches to resolve to a subtype of the binding for the given variable (an IType)."
   [val uservarorstring]
   (generic-constrain-subtype+
+    val
+    uservarorstring
+    (fn [var-type resolveduservarorstring]
+      `((cl/== ~var-type ~resolveduservarorstring)))))
+
+(defn
+  constrain-subtype*
+  "Requires candidate matches to resolve to a subtype or the type of the binding for the given variable (an IType)."
+  [val uservarorstring]
+  (generic-constrain-subtype*
     val
     uservarorstring
     (fn [var-type resolveduservarorstring]
@@ -652,6 +676,17 @@ damp.ekeko.snippets.matching
       `((structure/type-name|qualified|string ~var-type ~resolvedstringorvar)))))
 
 (defn
+  constrain-subtype*|qname
+  "Requires candidate matches to resolve to the type or a subtype of the type with the given name."
+  [val uservarorstring]
+  (generic-constrain-subtype*
+    val
+    uservarorstring
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|qualified|string ~var-type ~resolvedstringorvar)))))
+
+
+(defn
   constrain-subtype+|sname
   "Requires candidate matches to resolve to a subtype of the type with the given name."
   [val uservarorstring]
@@ -660,6 +695,17 @@ damp.ekeko.snippets.matching
     uservarorstring
     (fn [var-type resolvedstringorvar]
       `((structure/type-name|simple|string ~var-type ~resolvedstringorvar)))))
+
+(defn
+  constrain-subtype*|sname
+  "Requires candidate matches to resolve to the type or a subtype of the type with the given name."
+  [val uservarorstring]
+  (generic-constrain-subtype*
+    val
+    uservarorstring
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|simple|string ~var-type ~resolvedstringorvar)))))
+
 
 
 ;(defn
@@ -1187,6 +1233,31 @@ damp.ekeko.snippets.matching
 
 
 (def 
+  directive-subtype*
+  (directives/make-directive
+    "subtype*"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-subtype*
+    "Match resolves to the type or a transitive subtype of the binding for the meta-variable."))
+
+(def 
+  directive-subtype*|qname
+  (directives/make-directive
+    "subtype*|qname"
+    [(directives/make-directiveoperand "Qualified name")]
+    constrain-subtype*|qname
+    "Match resolves to the type or a transitive subtype with the given string as qualified name."))
+
+(def 
+  directive-subtype*|sname
+  (directives/make-directive
+    "subtype*|sname"
+    [(directives/make-directiveoperand "Simple name")]
+    constrain-subtype*|sname
+    "Match resolves to the type or a transitive subtype with the given string as simple name."))
+
+
+(def 
   directive-consider-as-set|lst
   (directives/make-directive
     "match|set"
@@ -1242,6 +1313,10 @@ damp.ekeko.snippets.matching
    directive-subtype+
    directive-subtype+|qname
    directive-subtype+|sname
+   directive-subtype*
+   directive-subtype*|qname
+   directive-subtype*|sname
+
    ])
 
 

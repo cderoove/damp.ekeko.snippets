@@ -7,7 +7,6 @@
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [matching :as matching]
-             [rewriting :as rewriting]
              [querying :as querying]
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]

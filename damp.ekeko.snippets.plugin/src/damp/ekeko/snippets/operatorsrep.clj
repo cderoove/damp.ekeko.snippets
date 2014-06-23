@@ -502,6 +502,36 @@ damp.ekeko.snippets.operatorsrep
      "Match should resolve to a transitive subtype with the given string as simlpe name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
 
+   (Operator. 
+     "add-directive-subtype*"
+     operators/add-directive-subtype*
+     :refinement
+     "Add directive subtype*."
+     opscope-subject
+     applicability|always
+     "Match should resolve to the type or a transitive subtype of the binding for the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+
+   (Operator. 
+     "add-directive-subtype*|qname"
+     operators/add-directive-subtype*|qname
+     :refinement
+     "Add directive subtype*|qname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to the type or a transitive subtype with the given string as qualified name."
+     [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)])
+   
+   (Operator. 
+     "add-directive-subtype*|sname"
+     operators/add-directive-subtype*|sname
+     :refinement
+     "Add directive subtype*|sname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to the type or a transitive subtype with the given string as simlpe name."
+     [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
+
    
    (Operator. 
      "restrict-scope-to-child"
@@ -557,14 +587,26 @@ damp.ekeko.snippets.operatorsrep
    
    
    (Operator. 
-     "replace-operand-by-template"
-     operators/replace-operand-by-template
+     "add-directive-replace"
+     operators/add-directive-replace
      :rewrite
      "Add directive replace."
      opscope-subject 
      (complement applicability|nonroot) 
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
+   
+   
+   (Operator. 
+     "add-directive-add-element"
+     operators/add-directive-add-element
+     :rewrite
+     "Add directive add-element."
+     opscope-subject 
+     (complement applicability|nonroot) 
+     "Adds the instantiated template to its list operand."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
+   
    
    (Operator. 
      "remove-node"
