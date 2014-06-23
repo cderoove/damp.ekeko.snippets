@@ -122,6 +122,32 @@ damp.ekeko.snippets.operators
   [snippet node qnamestring]
   (add-unary-directive-opname-opvalue snippet node matching/directive-type|qname "Qualified name" qnamestring))
 
+(defn 
+  add-directive-type|sname
+  "Adds directive-type|sname to node."
+  [snippet node snamestring]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-type|sname "Simple name" snamestring))
+
+(defn 
+  add-directive-subtype+
+  "Adds directive-subtype+ to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype+ "Meta-variable" uservar))
+
+
+(defn 
+  add-directive-subtype+|qname
+  "Adds directive-subtype+|qname to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype+|qname "Qualified name" uservar))
+
+
+(defn 
+  add-directive-subtype+|sname
+  "Adds directive-subtype+|sname to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-subtype+|sname "Simple name" uservar))
+
 
 (defn
   relax-size-to-atleast

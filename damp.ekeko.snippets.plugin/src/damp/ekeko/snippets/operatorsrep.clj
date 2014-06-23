@@ -460,7 +460,48 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to a type with the given qualified name."
      [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)])
+
+   (Operator. 
+     "add-directive-type|sname"
+     operators/add-directive-type|sname
+     :refinement
+     "Add directive type|sname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a type with the given simple name."
+     [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
    
+   
+   (Operator. 
+     "add-directive-subtype+"
+     operators/add-directive-subtype+
+     :refinement
+     "Add directive subtype+."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a transitive subtype of the binding for the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+
+   (Operator. 
+     "add-directive-subtype+|qname"
+     operators/add-directive-subtype+|qname
+     :refinement
+     "Add directive subtype+|qname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a transitive subtype with the given string as qualified name."
+     [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)])
+   
+   (Operator. 
+     "add-directive-subtype+|sname"
+     operators/add-directive-subtype+|sname
+     :refinement
+     "Add directive subtype+|sname."
+     opscope-subject
+     applicability|always
+     "Match should resolve to a transitive subtype with the given string as simlpe name."
+     [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
+
    
    (Operator. 
      "restrict-scope-to-child"

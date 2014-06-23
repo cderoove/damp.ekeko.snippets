@@ -71,13 +71,22 @@ damp.ekeko.snippets.matching
 (def to-postfix-expression-operator `runtime/to-postfix-expression-operator)
 
 
+(declare ast-primitive-as-expression)
+
+;; Aux
+;; ---
 
 (defn
   root-of-snippet?
   [value snippet]
   (= (snippet/snippet-root snippet) value))
 
-(declare ast-primitive-as-expression)
+
+
+(defn
+  string-represents-variable?
+  [string]
+  (@#'el/ekeko-lvar-sym? string))
 
 
 ;; Grounding Functions
@@ -544,33 +553,131 @@ damp.ekeko.snippets.matching
 ;todo: een refersto voor types en type declarations (die bindt aan ast nodes)
 ;todo: een var analoog aan type (die bindt aan de ivariablebinding) 
 
+
+;todo: could also provide a binary one that binds ?itype
+
+(defn
+  generic-constrain-type
+  ([val stringorvar itypeconstrainerf]
+    (generic-constrain-type val
+                            stringorvar
+                            (fn [var-match var-type] 
+                              `((runtime/type ~var-match ~var-type)))
+                            itypeconstrainerf))
+  ([val stringorvar itypegrounderf itypeconstrainerf]
+    (fn [template]
+      (let [var-match
+            (snippet/snippet-var-for-node template val)
+            var-type
+            (util/gen-lvar "itype")
+            resolvedstringorvar
+            (if 
+              (string-represents-variable? stringorvar)
+              (symbol stringorvar)
+              stringorvar)]
+        `((cl/fresh [~var-type]
+                    ~@(itypegrounderf var-match var-type)
+                    ~@(itypeconstrainerf var-type resolvedstringorvar)))))))
+
+
+
 (defn
   constrain-type
   "Requires candidate matches to resolve to the binding for the given variable (an IType)."
-  [val var-string]
-  (fn [template]
-    (let [var-match
-          (snippet/snippet-var-for-node template val)
-          var
-          (symbol var-string)]
-      `((runtime/type ~var-match ~var)))))
+  [val uservarstring]
+  (generic-constrain-type  val
+                           uservarstring
+                           (fn [var-type uservar]
+                             `((cl/== ~var-type ~uservar)))))
 
-
-;todo: could also provide a binary one that binds ?itype
 (defn
   constrain-type|qname
   "Requires candidate matches to resolve to an IType with the given qualifiedname."
-  [val qnamestring]
-  (fn [template]
-    (let [var-match
-          (snippet/snippet-var-for-node template val)
-          var-type
-          (util/gen-lvar "itype")]
-      `((cl/fresh [~var-type]
-                  (runtime/type ~var-match ~var-type)
-                  (structure/type-name|qualified|string ~var-type ~qnamestring)
-                  )))))
+  [val stringorvar]
+  (generic-constrain-type
+    val
+    stringorvar
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|qualified|string ~var-type ~resolvedstringorvar)))))
+  
 
+(defn
+  constrain-type|sname
+  "Requires candidate matches to resolve to an IType with the given simple name."
+  [val stringorvar]
+  (generic-constrain-type
+    val
+    stringorvar
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|simple|string ~var-type ~resolvedstringorvar)))))
+
+
+(defn
+  generic-constrain-subtype+
+  [val uservarorstring itypeconstrainf]
+  (generic-constrain-type
+    val
+    uservarorstring
+    (fn [var-match var-type] 
+      (let [var-match-type
+            (util/gen-lvar 'matchtype)]
+      `((cl/fresh [~var-match-type]
+         (runtime/type ~var-match ~var-match-type)
+         (structure/type-type|super+ ~var-match-type ~var-type))
+         )))
+    itypeconstrainf))
+
+
+;todo: add non-transitive variant of subtype+, for an immediate subtype
+
+(defn
+  constrain-subtype+
+  "Requires candidate matches to resolve to a subtype of the binding for the given variable (an IType)."
+  [val uservarorstring]
+  (generic-constrain-subtype+
+    val
+    uservarorstring
+    (fn [var-type resolveduservarorstring]
+      `((cl/== ~var-type ~resolveduservarorstring)))))
+
+
+(defn
+  constrain-subtype+|qname
+  "Requires candidate matches to resolve to a subtype of the type with the given name."
+  [val uservarorstring]
+  (generic-constrain-subtype+
+    val
+    uservarorstring
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|qualified|string ~var-type ~resolvedstringorvar)))))
+
+(defn
+  constrain-subtype+|sname
+  "Requires candidate matches to resolve to a subtype of the type with the given name."
+  [val uservarorstring]
+  (generic-constrain-subtype+
+    val
+    uservarorstring
+    (fn [var-type resolvedstringorvar]
+      `((structure/type-name|simple|string ~var-type ~resolvedstringorvar)))))
+
+
+;(defn
+;  constrain-subtype*
+;  "Requires candidate matches to resolve to the binding for the given variable (an IType) or a subtype thereof."
+;  [val var]
+;  (generic-constrain-type
+ ;   val
+ ;;   var
+ ;   (fn [var-match var-type] 
+ ;     (let [var-match-type
+ ;           (util/gen-lvar 'matchtype)]
+ ;     `((cl/fresh [~var-match-type]
+  ;       (runtime/type ~var-match ~var-match-type)
+  ;;       (structure/type-type|super+ ~var-match-type ~var-type))
+  ;       )))
+  ;  (fn [var-type resolvedstringorvar]
+   ;   `((cl/== ~var-type ~resolvedstringorvar)))))
 
 
       
@@ -622,12 +729,6 @@ damp.ekeko.snippets.matching
     (snippet/snippet-nodes snippet)))
   
   
-
-(defn
-  string-represents-variable?
-  [string]
-  (@#'el/ekeko-lvar-sym? string))
-
 (defn
   snippet-vars-among-directivebindings-for-node
   "Returns all variables that feature as the binding for a directive operand of the node.
@@ -1052,6 +1153,38 @@ damp.ekeko.snippets.matching
     constrain-type|qname
     "Match resolves to a type with the given string as qualified name."))
 
+(def 
+  directive-type|sname
+  (directives/make-directive
+    "type|sname"
+    [(directives/make-directiveoperand "Simple name")]
+    constrain-type|sname
+    "Match resolves to a type with the given string as simple name."))
+
+(def 
+  directive-subtype+
+  (directives/make-directive
+    "subtype+"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-subtype+
+    "Match resolves to a transitive subtype of the binding for the meta-variable."))
+
+(def 
+  directive-subtype+|qname
+  (directives/make-directive
+    "subtype+|qname"
+    [(directives/make-directiveoperand "Qualified name")]
+    constrain-subtype+|qname
+    "Match resolves to a transitive subtype with the given string as qualified name."))
+
+(def 
+  directive-subtype+|sname
+  (directives/make-directive
+    "subtype+|sname"
+    [(directives/make-directiveoperand "Simple name")]
+    constrain-subtype+|sname
+    "Match resolves to a transitive subtype with the given string as simple name."))
+
 
 (def 
   directive-consider-as-set|lst
@@ -1105,6 +1238,10 @@ damp.ekeko.snippets.matching
    directive-refersto
    directive-type
    directive-type|qname
+   directive-type|sname
+   directive-subtype+
+   directive-subtype+|qname
+   directive-subtype+|sname
    ])
 
 
