@@ -315,55 +315,122 @@
 
 
 
-(defn-
-  snippet-conditions|rewrite
-  [snippet]
-  (let [root 
-        (snippet/snippet-root snippet)
-        conditions-codegeneration
-        (newnode-from-template snippet)
-        ;rewrite directives only feature at the root of a template
-        root-bounddirectives
+;(defn-
+;  snippet-conditions|rewrite
+;  [snippet]
+;  (let [root 
+ ;       (snippet/snippet-root snippet)
+ ;       conditions-codegeneration
+;        (newnode-from-template snippet)
+;        ;rewrite directives only feature at the root of a template
+;        root-bounddirectives
+;        (filter 
+;          (fn [bounddirective]
+;            (rewriting/registered-rewriting-directive? (directives/bounddirective-directive bounddirective)))
+;          (snippet/snippet-bounddirectives-for-node snippet root))
+;        conditions-rewriting
+;        (mapcat
+;          (fn [bounddirective]
+;            (directives/snippet-bounddirective-conditions snippet bounddirective))
+;          root-bounddirectives)]
+;    (concat conditions-codegeneration conditions-rewriting)))
+
+
+
+
+
+(defn
+  snippet-node-conditions|rewriting
+  [snippet value]
+  (let [rewriting-bounddirectives
         (filter 
           (fn [bounddirective]
             (rewriting/registered-rewriting-directive? (directives/bounddirective-directive bounddirective)))
-          (snippet/snippet-bounddirectives-for-node snippet root))
+          (snippet/snippet-bounddirectives-for-node snippet value))
         conditions-rewriting
         (mapcat
           (fn [bounddirective]
             (directives/snippet-bounddirective-conditions snippet bounddirective))
-          root-bounddirectives)]
-    (concat conditions-codegeneration conditions-rewriting)))
+          rewriting-bounddirectives)]
+    (mapcat
+         (fn [bounddirective]
+           (directives/snippet-bounddirective-conditions snippet bounddirective))
+         rewriting-bounddirectives)))
+
+  
+
+(defn 
+  snippet-node-conditions+|rewriting
+  [snippet node]
+  (let [query (atom '())]
+    (snippet/walk-snippet-element
+      snippet
+      node
+      (fn [val]
+        (swap! query concat (snippet-node-conditions|rewriting snippet val))))
+    @query))
 
 
-;todo: user-defined variables
+;new strategy:
+;generate conditions for instantiating template
+;then generate querying conditions over the code in the instantiated template
+;this way, there can also be rewriting directives that refer to non-root targets
+
+
+(defn
+  snippetgroup-uservars
+  [snippetgroup]
+  (mapcat
+    (fn [snippet]
+      (matching/snippet-vars-among-directivebindings snippet))
+    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
+
+(defn-
+  snippet-conditions|rewrite
+  [snippet lhsuservars]
+  (let [root 
+        (snippet/snippet-root snippet)
+        conditions-instantiation
+        (newnode-from-template snippet)
+        conditions-on-instantiation 
+        (snippet-conditions snippet)
+        conditions-rewriting
+        (snippet-node-conditions+|rewriting snippet root)
+        
+        rootvar
+        (snippet/snippet-var-for-root snippet) ;already introduced in scope
+        uservars 
+        (into #{} (matching/snippet-vars-among-directivebindings snippet))
+        vars
+        (disj (into #{} (snippet/snippet-vars snippet)) rootvar)
+        
+        allvarsexceptrootandlhs
+        (clojure.set/difference (clojure.set/union uservars vars)
+                                lhsuservars)]
+    `((cl/fresh [~@allvarsexceptrootandlhs] 
+                ~@(concat conditions-instantiation conditions-on-instantiation conditions-rewriting)))))
+
 
 (defn-
   snippetgroup-conditions|rewrite
-  [snippetgroup]
-  (mapcat snippet-conditions|rewrite (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-
-(defn
-  transformation-query
-  [snippetgroup|lhs snippetgroup|rhs]
-  (let [q (snippetgroup-query snippetgroup|lhs 
-                              'damp.ekeko/ekeko* 
-                              (snippetgroup-conditions|rewrite snippetgroup|rhs)
-                              (snippetgroup/snippetgroup-rootvars snippetgroup|rhs)
-                              )]
-    (println q)
-    q))
+  [snippetgrouprhs lhsuservars]
+  (mapcat (fn [snippet]
+            (snippet-conditions|rewrite snippet lhsuservars))
+          (snippetgroup/snippetgroup-snippetlist snippetgrouprhs)))
 
 
 (defn
   transformation-query|usingpredicates
   [snippetgroup|lhs snippetgroup|rhs]
-  (let [q (snippetgroup-query|usingpredicates
+  (let [lhsuservars
+        (snippetgroup-uservars snippetgroup|lhs)
+        q (snippetgroup-query|usingpredicates
             snippetgroup|lhs 
             'damp.ekeko/ekeko* 
-            (snippetgroup-conditions|rewrite snippetgroup|rhs)
+            (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
             (snippetgroup/snippetgroup-rootvars snippetgroup|rhs))]
-    (println q)
+    (clojure.pprint/pprint q)
     q))
 
 
