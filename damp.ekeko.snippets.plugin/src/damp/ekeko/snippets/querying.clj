@@ -242,35 +242,44 @@
         (zipmap variables values)
         node2var
         (damp.ekeko.snippets.matching/snippet-replacement-node2var template)
+        root
+        (snippet/snippet-root template)
+        ;either root or the value it should be replaced by (in case the root itself was replaced by a variable)
+        ;(although this seems impossible, once replaced .. not sure what will happen with the other replacements)
         projected
-        (snippet/snippet-root template)]
-    (doseq [[node var] node2var]
-      (let [varstr (str var)]
-        (when-not (contains? var2value varstr)
-          (throw (IllegalArgumentException. (str "While projecting template variables, encountered unbound variable: " varstr))))
-        (let [value (get var2value varstr)]
-          (cond 
-            (astnode/ast? value)
-            (damp.ekeko.snippets.operators/snippet-jdt-replace 
-              template
-              node 
-              (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) 
-                                                            value))
-            (astnode/lstvalue? value)
-            (damp.ekeko.snippets.operators/snippet-jdtlist-replace 
-              template
-              node 
-              (org.eclipse.jdt.core.dom.ASTNode/copySubtrees (.getAST projected)
-                                                             (astnode/value-unwrapped value)))
-            (or 
-              (astnode/primitivevalue? value)
-              (astnode/nilvalue? value))
-            (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
-                                                                    node
-                                                                    value)
-            :else
-            (throw (IllegalArgumentException.
-                     (str "While projecting template variables, encountered illegal binding for variable: " varstr "->" value)))))))
+        (if 
+          (contains? node2var root)
+          (get var2value (str (get node2var root)))
+          root)]
+      (doseq [[node var] node2var
+              :when (not= node root)] ;already taken care of above
+        (let [varstr (str var)]
+          (when-not (contains? var2value varstr)
+            (throw (IllegalArgumentException. (str "While instantiating template, encountered unbound variable: " varstr))))
+          (let [value (get var2value varstr)]
+            (cond 
+               
+              (astnode/ast? value)
+              (damp.ekeko.snippets.operators/snippet-jdt-replace 
+                template
+                node 
+                (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) 
+                                                              value))
+              (astnode/lstvalue? value)
+              (damp.ekeko.snippets.operators/snippet-jdtlist-replace 
+                template
+                node 
+                (org.eclipse.jdt.core.dom.ASTNode/copySubtrees (.getAST projected)
+                                                               (astnode/value-unwrapped value)))
+              (or 
+                (astnode/primitivevalue? value)
+                (astnode/nilvalue? value))
+              (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
+                                                                      node
+                                                                      value)
+              :else
+              (throw (IllegalArgumentException.
+                       (str "While instantiating template, encountered illegal binding for variable: " varstr "->" value)))))))
     projected))
           
 
@@ -385,39 +394,32 @@
       (matching/snippet-vars-among-directivebindings snippet))
     (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
-
-(defn-
-  snippet-conditions|rewrite
-  [snippet lhsuservars]
-  (let [root 
-        (snippet/snippet-root snippet)
-        conditions-instantiation
-        (newnode-from-template snippet)
-        conditions-on-instantiation 
-        (snippet-conditions snippet)
-        conditions-rewriting
-        (snippet-node-conditions+|rewriting snippet root)
-        
-        rootvar
-        (snippet/snippet-var-for-root snippet) ;already introduced in scope
-        uservars 
-        (into #{} (matching/snippet-vars-among-directivebindings snippet))
-        vars
-        (disj (into #{} (snippet/snippet-vars snippet)) rootvar)
-        
-        allvarsexceptrootandlhs
-        (clojure.set/difference (clojure.set/union uservars vars)
-                                lhsuservars)]
-    `((cl/fresh [~@allvarsexceptrootandlhs] 
-                ~@(concat conditions-instantiation conditions-on-instantiation conditions-rewriting)))))
-
-
 (defn-
   snippetgroup-conditions|rewrite
   [snippetgrouprhs lhsuservars]
-  (mapcat (fn [snippet]
-            (snippet-conditions|rewrite snippet lhsuservars))
-          (snippetgroup/snippetgroup-snippetlist snippetgrouprhs)))
+  (let [snippets
+        (snippetgroup/snippetgroup-snippetlist snippetgrouprhs)
+        instantiations
+        (mapcat newnode-from-template snippets)
+        conditions-on-instantiations
+        (mapcat snippet-conditions snippets)
+        changes
+        (mapcat (fn [snippet] 
+                  (snippet-node-conditions+|rewriting snippet (snippet/snippet-root snippet)))
+                snippets)
+        rootvars
+        (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) ;already introduced in scope through (ekeko [..]
+        uservars 
+        (into #{} (snippetgroup-uservars snippetgrouprhs))
+        vars
+        (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
+        allvarsexceptrootsandlhs
+        (clojure.set/difference (clojure.set/union uservars vars)
+                                (clojure.set/union lhsuservars rootvars))]
+    `((cl/fresh [~@allvarsexceptrootsandlhs] 
+           ~@instantiations
+           ~@conditions-on-instantiations
+           ~@changes))))
 
 
 (defn
