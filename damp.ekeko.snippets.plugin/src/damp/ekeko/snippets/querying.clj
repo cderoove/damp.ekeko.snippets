@@ -413,18 +413,20 @@
             ;at this point in the query, ~varsubject should be bound to the node generated for subject
             ;but the binding for the replacement var can stem from a different ast (e.g., the one of the unmodified base program, or from a different meta-model) 
             (let [varoperand (symbol (nth opbindingvals 1))]
-              `((cl/fresh [~compatiblevaluevar]
-                          (el/equals ~compatiblevaluevar (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject)))
-                          ;nil should be replaced by runtime snippet, like before
-                          (el/perform 
-                            (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  ~compatiblevaluevar))
-                          
-                          ;cannot use replace for this... astrewrite api 
-                          ;(el/perform (rewrites/replace-node ~varsubject ~compatiblevaluevar))
-                          
-                          
-                          ))        
-            ))))
+              `(;(cl/fresh [~compatiblevaluevar]
+                 ;        (el/equals ~compatiblevaluevar (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject)))
+                 ;nil should be replaced by runtime snippet, like before
+                 (el/perform 
+                   (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject))))
+                 ;cannot use replace for this... astrewrite api 
+                 ;(el/perform (rewrites/replace-node ~varsubject ~compatiblevaluevar))
+                 ))
+            matching/directive-replacedbyexp
+            (let [sexpoperand (read-string (nth opbindingvals 1))]
+              `((el/perform (damp.ekeko.snippets.operators/snippet-jdtvalue-replace ~snippetruntimevar ~varsubject ~sexpoperand))))
+            
+            
+            )))
       replacedby-bounddirectives
       )))
 
@@ -504,15 +506,14 @@
                 snippets snippetsruntimevars)
         
         rootvars
-        (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) ;already introduced in scope through (ekeko [..]
+        (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) 
         uservars 
         (into #{} (snippetgroup-uservars snippetgrouprhs)) ;uservars should be added to the ekeko [..] instead of here 
         vars
         (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
         allvarsexceptrootsandlhsandusers
-        (clojure.set/difference vars
-                                (clojure.set/union lhsuservars rootvars))]
-    `((cl/fresh [~@snippetsruntimevars ~@allvarsexceptrootsandlhsandusers] 
+        (clojure.set/difference vars lhsuservars)]
+    `((cl/fresh [~@snippetsruntimevars ~@rootvars  ~@allvarsexceptrootsandlhsandusers] 
            ~@instantiations
            ~@conditions-on-instantiations-without-grounding-of-root-node
            ~@changes))))
@@ -526,11 +527,9 @@
         q 
         (snippetgroup-query|usingpredicates
           snippetgroup|lhs 
-          'damp.ekeko/ekeko* 
+          'damp.ekeko/ekeko ;TODO: serious bug in GUI, getting indexoutofbounds exception when using ekeko*  
           (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
-          (concat
-            (snippetgroup/snippetgroup-rootvars snippetgroup|rhs)
-            (snippetgroup-uservars snippetgroup|rhs)))]
+          (snippetgroup-uservars snippetgroup|rhs))]
     (clojure.pprint/pprint q)
     q))
 

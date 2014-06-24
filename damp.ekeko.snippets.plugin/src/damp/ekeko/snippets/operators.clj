@@ -68,7 +68,7 @@ damp.ekeko.snippets.operators
 (defn
   replace-by-exp
   "Add directive replacedby-exp to snippet primitive value"
-  [snippet value]
+  [snippet value expstring]
   (snippet/add-bounddirective
       (matching/remove-directives
         snippet
@@ -77,7 +77,11 @@ damp.ekeko.snippets.operators
       value 
       (directives/make-bounddirective 
         matching/directive-replacedbyexp
-        [(make-directiveoperandbinding-for-match value)])))
+        [(make-directiveoperandbinding-for-match value)
+         (directives/make-directiveoperand-binding
+           (directives/make-directiveoperand "Expression")
+            expstring)]
+        )))
 
 (defn 
   replace-by-wildcard 
@@ -402,9 +406,6 @@ damp.ekeko.snippets.operators
   (when-not (or (astnode/nilvalue? value)
                 (astnode/primitivevalue? value))
     (throw (IllegalArgumentException. (str "Can only replace wrappers for JDT nil or primitive values, given: " value))))
-  (when-not (or (astnode/nilvalue? newvalue)
-                (astnode/primitivevalue? newvalue))
-    (throw (IllegalArgumentException. (str "Only wrappers for JDT nil or primitive values can be used as replacement for such a value, given: " newvalue))))
   (let [property
         (astnode/owner-property value)
         parent
