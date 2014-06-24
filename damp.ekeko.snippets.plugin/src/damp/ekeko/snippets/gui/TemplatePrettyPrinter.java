@@ -459,8 +459,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 				printVariableReplacement(primReplacementVar);
 			} else if(hasBeenReplacedByWildcard(element)) {
 				printWildcardReplacement();
-			} else { 
-				this.buffer.append(value.toString());
+			} else {
+				Object replacementExp = getUserExp(element);
+				if (replacementExp != null) {
+					printExpReplacement(replacementExp);
+				} 	
+				else { 
+					this.buffer.append(value.toString());
+				}
 			}
 			printClosingNode(element);
 			return getResult();
