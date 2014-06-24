@@ -18,6 +18,7 @@
              [gui]
              [runtime]
              [transformation]
+             [rewriting :as rewriting]
              ;todo: fix
              ;[searchspace]
              [public]

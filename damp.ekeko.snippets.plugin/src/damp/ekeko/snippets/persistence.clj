@@ -485,6 +485,15 @@
     (read-string string)))
 
 
+(def 
+  astnode-as-persistent-string
+  snippet-as-persistent-string)
+
+(def 
+  astnode-from-persistent-string
+  snippet-as-persistent-string)
+
+
 (defn
   template-string
   [snippet]

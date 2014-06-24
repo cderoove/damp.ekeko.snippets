@@ -13,17 +13,31 @@
              ])
   (:require 
     [damp.ekeko [logic :as el]]
-    [damp.ekeko.jdt [rewrites :as rewrites]]))
+    [damp.ekeko.jdt 
+     [astnode :as astnode]
+     [rewrites :as rewrites]]))
+
+;used to instantiate templates
+(defn
+  clone-compatible-with-ast
+  [valuetobecloned ast]
+  (cond (astnode/ast? valuetobecloned)
+        (org.eclipse.jdt.core.dom.ASTNode/copySubtree ast valuetobecloned)
+        (astnode/lstvalue? valuetobecloned)
+        (org.eclipse.jdt.core.dom.ASTNode/copySubtrees ast (astnode/value-unwrapped valuetobecloned))
+        :default
+        (throw (IllegalArgumentException. (str "Don't know how to clone given value: " valuetobecloned)))))
 
 
+;according to rewrite API
+;~var-generatedcode has to be freshly generated, not be part of the ast of ~var!!!
 (defn
   rewrite-replace
   [val replacement-var-string]
   (fn [snippet]
     (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
-      `((el/perform 
-          (rewrites/replace-node ~var ~var-generatedcode))))))
+      `((el/perform (rewrites/replace-node ~var ~var-generatedcode))))))
 
 
 (defn

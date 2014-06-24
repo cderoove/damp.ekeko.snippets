@@ -19,6 +19,7 @@
     [damp.ekeko 
      [logic :as el]]
     [damp.ekeko.jdt
+     [rewrites :as rewrites]
      [astnode :as astnode]]))
 
 ;; Converting a snippet to a query
@@ -38,17 +39,19 @@
 (defn
   snippet-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
-  [snippet]
-  (let [ast (snippet/snippet-root snippet)
-        query (atom '())]
-    (snippet/walk-snippet-element
-      snippet
-      ast
-      (fn [val]
-        (when-not 
-          (snippet-value-conditions-already-generated? snippet val)
-          (swap! query concat (matching/snippet-node-conditions snippet val)))))
-    @query))
+  ([snippet]
+    (snippet-conditions snippet identity))
+  ([snippet bounddirectivesfilterf]
+    (let [ast (snippet/snippet-root snippet)
+          query (atom '())]
+      (snippet/walk-snippet-element
+        snippet
+        ast
+        (fn [val]
+          (when-not 
+            (snippet-value-conditions-already-generated? snippet val)
+            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
+      @query)))
 
 (defn-
   snippet-query-with-conditions
@@ -123,7 +126,7 @@
           (symbol (str "match" root-var)) ;has to be same for call and definition
           uservars-exact
           (into #{} (matching/snippet-vars-among-directivebindings snippet))]
-      (snippet-predicatecall snippet  fname root-var uservars-exact))))
+      (snippet-predicatecall snippet fname root-var uservars-exact))))
 
 
 (defn
@@ -226,15 +229,15 @@
         additionalconditions)
       additionalrootvars)))
 
-        
-
-             
-
 ; Converting snippet group to rewrite query
 ;------------------------------------------
 
+;BEGIN OLD VERSION based on entire template
+
+(comment
+  
 (defn
-  template-root|projected 
+  template-root|projected-eager 
   "Projects a template replacing each of its variables by a clone of their binding.
    All variables have to be bound."
   [template variables values]
@@ -327,8 +330,10 @@
                                      ~runtime-template-var
                                      [~@replacement-vars|quotedstrings]
                                      [~@replacement-vars|symbols])
-                                   ))
+                                   )
+                                   )
                 ))))
+
 
 
 
@@ -354,38 +359,91 @@
 ;    (concat conditions-codegeneration conditions-rewriting)))
 
 
-
+   
+); END OLD VERSION based on entire template
 
 
 (defn
+  newnode-from-template
+  [template runtime-template-var]
+  (let [root
+        (snippet/snippet-root template)
+        var-generatedcode 
+        (snippet/snippet-var-for-node template root)
+        stemplate
+        (persistence/snippet-as-persistent-string template)]
+    `((cl/== ~runtime-template-var (persistence/snippet-from-persistent-string ~stemplate))
+       (el/equals ~var-generatedcode  (snippet/snippet-root ~runtime-template-var)))))
+  
+
+(defn
   snippet-node-conditions|rewriting
-  [snippet value]
+  [snippet value snippetruntimevar]
   (let [rewriting-bounddirectives
         (filter 
           (fn [bounddirective]
             (rewriting/registered-rewriting-directive? (directives/bounddirective-directive bounddirective)))
-          (snippet/snippet-bounddirectives-for-node snippet value))
-        conditions-rewriting
-        (mapcat
-          (fn [bounddirective]
-            (directives/snippet-bounddirective-conditions snippet bounddirective))
-          rewriting-bounddirectives)]
+          (snippet/snippet-bounddirectives-for-node snippet value))]
     (mapcat
-         (fn [bounddirective]
-           (directives/snippet-bounddirective-conditions snippet bounddirective))
-         rewriting-bounddirectives)))
+      (fn [bounddirective]
+        (directives/snippet-bounddirective-conditions snippet bounddirective))
+      rewriting-bounddirectives)))
+
+
+
+    
+
+(defn
+  snippet-node-conditions|replacedby
+  [snippet subject snippetruntimevar]
+  (let [replacedby-bounddirectives
+        (filter 
+          (fn [bounddirective]
+            (matching/registered-replacedby-directive? (directives/bounddirective-directive bounddirective)))
+          (snippet/snippet-bounddirectives-for-node snippet subject))]
+    (mapcat
+      (fn [bounddirective]
+        (let [directive (directives/bounddirective-directive bounddirective)
+              opbindingvals (map directives/directiveoperandbinding-value (directives/bounddirective-operandbindings bounddirective))
+              varsubject (snippet/snippet-var-for-node snippet subject)
+              compatiblevaluevar (util/gen-lvar 'compatiblevalue)]
+          (assert (= (nth opbindingvals 0) subject) "Something went horribly wrong.")
+          (condp = directive
+            matching/directive-replacedbyvariable
+            ;at this point in the query, ~varsubject should be bound to the node generated for subject
+            ;but the binding for the replacement var can stem from a different ast (e.g., the one of the unmodified base program, or from a different meta-model) 
+            (let [varoperand (symbol (nth opbindingvals 1))]
+              `((cl/fresh [~compatiblevaluevar]
+                          (el/equals ~compatiblevaluevar (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject)))
+                          ;nil should be replaced by runtime snippet, like before
+                          (el/perform 
+                            (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  ~compatiblevaluevar))
+                          
+                          ;cannot use replace for this... astrewrite api 
+                          ;(el/perform (rewrites/replace-node ~varsubject ~compatiblevaluevar))
+                          
+                          
+                          ))        
+            ))))
+      replacedby-bounddirectives
+      )))
+
 
   
 
 (defn 
-  snippet-node-conditions+|rewriting
-  [snippet node]
+  snippet-node-conditions+|rewritingandreplacedby
+  [snippet node snippetruntimevar]
   (let [query (atom '())]
     (snippet/walk-snippet-element
       snippet
       node
       (fn [val]
-        (swap! query concat (snippet-node-conditions|rewriting snippet val))))
+        (swap! query 
+               concat
+               (snippet-node-conditions|rewriting snippet val snippetruntimevar)
+               (snippet-node-conditions|replacedby snippet val snippetruntimevar)
+               )))
     @query))
 
 
@@ -408,26 +466,55 @@
   [snippetgrouprhs lhsuservars]
   (let [snippets
         (snippetgroup/snippetgroup-snippetlist snippetgrouprhs)
+        ;these vars hold the actual run-time snippet (different from match-var for root of run-time snippet)
+        snippetsruntimevars
+        (map (fn [snippet]
+               (util/gen-lvar 'runtimesnippet))
+             snippets)
+        ;create run-time instance of snippet and an ast for its root
         instantiations
-        (mapcat newnode-from-template snippets)
+        (mapcat (fn [snippet runtimevar] 
+                  (newnode-from-template snippet runtimevar))
+                snippets
+                snippetsruntimevars) 
+        ;bind match-vars of run-time snippet to ast components, such that they can be rewritten later on
+        ;ignoring replacedbysexp and replacedbyvar
+        
         conditions-on-instantiations
-        (mapcat snippet-conditions snippets)
-        changes
         (mapcat (fn [snippet] 
-                  (snippet-node-conditions+|rewriting snippet (snippet/snippet-root snippet)))
-                snippets)
+                  (snippet-conditions 
+                    snippet
+                    (fn [bounddirective]
+                      (let [directive (directives/bounddirective-directive bounddirective)]
+                        (not (or (matching/registered-replacedby-directive? directive)
+                                 (rewriting/registered-rewriting-directive? directive)))
+                        ))))
+                  snippets)
+        ;todo: fix this hack .. 
+        ;none of these conditions should ground against the base program
+        ;they are walking a newly generated piece of code
+        ;for now, simply ignoring the first condition, which corresponds to the grounding of the root node
+        ;other conditions use nongrounding variants of has etc
+        conditions-on-instantiations-without-grounding-of-root-node
+        (rest conditions-on-instantiations)
+        
+        changes
+        (mapcat (fn [snippet snippetruntimevar] 
+                  (snippet-node-conditions+|rewritingandreplacedby snippet (snippet/snippet-root snippet) snippetruntimevar)) 
+                snippets snippetsruntimevars)
+        
         rootvars
         (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) ;already introduced in scope through (ekeko [..]
         uservars 
-        (into #{} (snippetgroup-uservars snippetgrouprhs))
+        (into #{} (snippetgroup-uservars snippetgrouprhs)) ;uservars should be added to the ekeko [..] instead of here 
         vars
         (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
-        allvarsexceptrootsandlhs
-        (clojure.set/difference (clojure.set/union uservars vars)
+        allvarsexceptrootsandlhsandusers
+        (clojure.set/difference vars
                                 (clojure.set/union lhsuservars rootvars))]
-    `((cl/fresh [~@allvarsexceptrootsandlhs] 
+    `((cl/fresh [~@snippetsruntimevars ~@allvarsexceptrootsandlhsandusers] 
            ~@instantiations
-           ~@conditions-on-instantiations
+           ~@conditions-on-instantiations-without-grounding-of-root-node
            ~@changes))))
 
 
@@ -436,11 +523,14 @@
   [snippetgroup|lhs snippetgroup|rhs]
   (let [lhsuservars
         (snippetgroup-uservars snippetgroup|lhs)
-        q (snippetgroup-query|usingpredicates
-            snippetgroup|lhs 
-            'damp.ekeko/ekeko* 
-            (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
-            (snippetgroup/snippetgroup-rootvars snippetgroup|rhs))]
+        q 
+        (snippetgroup-query|usingpredicates
+          snippetgroup|lhs 
+          'damp.ekeko/ekeko* 
+          (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
+          (concat
+            (snippetgroup/snippetgroup-rootvars snippetgroup|rhs)
+            (snippetgroup-uservars snippetgroup|rhs)))]
     (clojure.pprint/pprint q)
     q))
 
