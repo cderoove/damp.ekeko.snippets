@@ -22,6 +22,8 @@ import damp.ekeko.snippets.data.TemplateGroup;
 public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	public static IFn FN_SNIPPET_USERVAR_FOR_NODE;
+	public static IFn FN_SNIPPET_EXP_FOR_NODE;
+
 	public static IFn FN_SNIPPET_BOUNDDIRECTIVES_STRING;
 
 	public static IFn FN_SNIPPET_NONDEFAULT_BOUNDDIRECTIVES;
@@ -81,6 +83,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public Object getUserVar(Object node) {
 		return FN_SNIPPET_USERVAR_FOR_NODE.invoke(snippet, node);
 	}
+	
+	public Object getUserExp(Object node) {
+		return FN_SNIPPET_EXP_FOR_NODE.invoke(snippet, node);
+	}
+
 
 	//TODO: figure out why these are hard-coded	}
 
@@ -113,6 +120,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static StyleRange styleRangeForVariable(int start, int length) {
 		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_BLUE), null);
 	}
+	
+	public static StyleRange styleRangeForExp(int start, int length) {
+		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_DARK_CYAN), null);
+	}
 
 	public static StyleRange styleRangeForMeta(int start, int length) {
 		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_RED), null);
@@ -138,6 +149,13 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		this.buffer.append(replacementVar);
 		styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));	
 	}
+	
+	protected void printExpReplacement(Object replacementExp) {
+		int start = getCurrentCharacterIndex();
+		this.buffer.append(replacementExp);
+		styleRanges.add(styleRangeForExp(start, getCurrentCharacterIndex() - start));	
+	}
+
 
 	@Override
 	public boolean preVisit2(ASTNode node) {
@@ -160,6 +178,8 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 						return false; //do not print node itself because list has been replaced
 					}
 				}
+				
+				
 
 				if(hasBeenReplacedByWildcard(nodeListWrapper)) {
 					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
@@ -179,6 +199,12 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		if (replacementVar != null) {
 			printVariableReplacement(replacementVar);
 			return false;//do not print node itself because node has been replace
+		} 
+		
+		Object replacementExp = getUserExp(node);
+		if (replacementExp != null) {
+			printExpReplacement(replacementExp);
+			return false;//do not print node itself because node has been replaced
 		} 
 		
 		if(hasBeenReplacedByWildcard(node)) {

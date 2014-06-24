@@ -65,6 +65,20 @@ damp.ekeko.snippets.operators
            uservar)]))))
 
 
+(defn
+  replace-by-exp
+  "Add directive replacedby-exp to snippet primitive value"
+  [snippet value]
+  (snippet/add-bounddirective
+      (matching/remove-directives
+        snippet
+        value
+        matching/directives-constraining|mutuallyexclusive)
+      value 
+      (directives/make-bounddirective 
+        matching/directive-replacedbyexp
+        [(make-directiveoperandbinding-for-match value)])))
+
 (defn 
   replace-by-wildcard 
   "Replace snippet AST node by a wildcard."
@@ -234,11 +248,11 @@ damp.ekeko.snippets.operators
 
 (defn
   add-unary-directive-opname-opvalue|rewriting
-  [snippet subjectshouldberoot directive uservar]
+  [snippet subject directive uservar]
   (let [root (snippet/snippet-root snippet)]
-    (when-not (= root subjectshouldberoot)
-      (throw (IllegalArgumentException. "Rewriting operators are only valid for template roots.")))
-    (add-unary-directive-opname-opvalue snippet root directive "Rewrite target" uservar)))
+    ;(when-not (= root subjectshouldberoot)
+    ;  (throw (IllegalArgumentException. "Rewriting operators are only valid for template roots.")))
+    (add-unary-directive-opname-opvalue snippet subject directive "Rewrite target" uservar)))
     
 
 
@@ -247,6 +261,11 @@ damp.ekeko.snippets.operators
   add-directive-replace
   [snippet subject uservar]
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))        
+
+(defn 
+  add-directive-replace-value
+  [snippet subject uservar]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace-value uservar))        
     
 (defn 
   add-directive-add-element
@@ -464,7 +483,7 @@ damp.ekeko.snippets.operators
 
 (defn
   replace-value
-  "Replaces a primitive value with the value correspondign to the given string."
+  "Replaces a primitive value with the value corresponding to the given string."
   [snippet value string]
   (let [property
         (astnode/owner-property value)

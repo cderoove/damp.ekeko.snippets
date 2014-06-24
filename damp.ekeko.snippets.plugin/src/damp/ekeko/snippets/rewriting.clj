@@ -18,20 +18,51 @@
 
 (defn
   rewrite-replace
-  [root-ast replacement-var-string]
+  [val replacement-var-string]
   (fn [snippet]
-    (let [var-generatedcode (snippet/snippet-var-for-node snippet root-ast)
+    (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
       `((el/perform 
           (rewrites/replace-node ~var ~var-generatedcode))))))
 
 
 (defn
-  rewrite-add-element
-  [root-ast target-list-var-string]
+  rewrite-replace-value
+  [val replacement-var-string]
   (fn [snippet]
-    (let [var-generatedcode (snippet/snippet-var-for-node snippet root-ast)
-          var (symbol target-list-var-string)]
+    (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
+          var (symbol replacement-var-string)]
+      `((el/perform 
+          (rewrites/replace-value ~var ~var-generatedcode))))))
+
+
+;(defn
+;  rewrite-replace-value
+ ; [val replacement-var-or-sexp-string]
+ ; (fn [snippet]
+  ;  (let [var-generatedcode
+  ;;        (snippet/snippet-var-for-node snippet val)
+  ;        replacementexp
+  ;        (if 
+  ;          (matching/string-represents-variable? replacement-var-or-sexp-string)
+   ;         (symbol replacement-var-or-sexp-string)
+   ;;         (read-string replacement-var-string))
+   ;       var-replacementvalue
+   ;       (util/gen-lvar 'replacement)]
+    ;  `((cl/fresh [~var-replacementvalue]
+    ;;              ;to project vars in replacementexp
+    ;              (el/equals ~var-replacementvalue ~replacementexp) 
+    ;              (el/perform (rewrites/replace-node ~var ~var-generatedcode)))))))
+
+
+(defn
+  rewrite-add-element
+  [val target-list-var-string]
+  (fn [snippet]
+    (let [var-generatedcode 
+          (snippet/snippet-var-for-node snippet val)
+          var
+          (symbol target-list-var-string)]
       `((el/perform 
           (rewrites/add-element ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
 
@@ -42,7 +73,18 @@
     "replace"
     [(directives/make-directiveoperand "Replacement")]
     rewrite-replace 
-    "Replaces its operand by the instantiated template."))
+    "Replaces its ASTNode operand by the instantiated template."))
+
+
+
+(def
+  directive-replace-value
+  (directives/make-directive
+    "replace-value"
+    [(directives/make-directiveoperand "Replacement")]
+    rewrite-replace-value 
+    "Replaces its value operand by the instantiated template."))
+
 
 
 (def
@@ -58,6 +100,7 @@
 (def 
   directives-rewriting
   [directive-replace
+   directive-replace-value
    directive-add-element])
 
 

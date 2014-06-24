@@ -242,6 +242,10 @@
         (zipmap variables values)
         node2var
         (damp.ekeko.snippets.matching/snippet-replacement-node2var template)
+        
+        val2exp 
+        (damp.ekeko.snippets.matching/snippet-replacement-node2exp template)
+        
         root
         (snippet/snippet-root template)
         ;either root or the value it should be replaced by (in case the root itself was replaced by a variable)
@@ -280,7 +284,12 @@
               :else
               (throw (IllegalArgumentException.
                        (str "While instantiating template, encountered illegal binding for variable: " varstr "->" value)))))))
-    projected))
+      (doseq [[val exp] val2exp] ;arf .. somehow need to get variables out of here, and passed to this thing
+        (let [newvalue (eval (read-string exp))]
+          (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
+                                                                  val
+                                                                  newvalue)))
+      projected))
           
 
 (defn

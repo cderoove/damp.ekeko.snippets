@@ -422,6 +422,16 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
+     "replace-by-exp"  
+     operators/replace-by-exp
+     :rewrite
+     "Replace by the result of an expression."
+     opscope-subject
+     applicability|simplepropertyvalue
+     "Upon template instantiation, will replace selection by result of expression."
+     [(make-operand "Expression (e.g., (str \"prefix\" ?string))" opscope-string validity|string)])
+   
+   (Operator. 
      "add-directive-equals"
      operators/add-directive-equals
      :neutral
@@ -592,10 +602,23 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive replace."
      opscope-subject 
-     (complement applicability|nonroot) 
+     ;(complement applicability|nonroot) 
+     applicability|node
      "Rewrites the operand by replacing it with the code corresponding to the template."
-     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) 
    
+   (Operator. 
+     "add-directive-replace-value"
+     operators/add-directive-replace-value
+     :rewrite
+     "Add directive replace-value."
+     opscope-subject 
+     ;(complement applicability|nonroot) 
+     applicability|simplepropertyvalue
+     "Rewrites the operand by replacing it with the code corresponding to the template."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) 
+   
+
    
    (Operator. 
      "add-directive-add-element"
@@ -603,9 +626,10 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive add-element."
      opscope-subject 
-     (complement applicability|nonroot) 
+     ;(complement applicability|nonroot) 
+     applicability|node
      "Adds the instantiated template to its list operand."
-     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) ;todo: check var comes from lhs?
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) 
    
    
    (Operator. 
