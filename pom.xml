@@ -6,7 +6,7 @@
 
 	<groupId>damp.ekeko.snippets</groupId>
 	<artifactId>damp.ekeko.snippets</artifactId>
-	<version>1.0.4-SNAPSHOT</version> <!-- bump this -->
+	<version>1.0.5-SNAPSHOT</version> <!-- bump this -->
 
 
 	<packaging>pom</packaging>
