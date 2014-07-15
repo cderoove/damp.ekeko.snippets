@@ -5,11 +5,16 @@ Ekeko/X specifications are decidedly **template**-based. On the **left-hand side
 
 Ekeko/X owes its peculiar name to our meta-programming library for Clojure on which it is founded. This library, called [Ekeko](https://github.com/cderoove/damp.ekeko/tree/master/EkekoPlugin), enables implementing Eclipse plugins as functional programs in which logic queries are embedded seamlessly. 
 
+## Demo
+
 The following screencast demonstrates an early prototype of Ekeko/X:
 
 [![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/CXNKyBIuAv8/0.jpg)](http://youtu.be/CXNKyBIuAv8)
 
+Example program transformations can be found in directory [damp.ekeko.snippets.plugin.test/resources/TestCase-JDT-CompositeVisitor-Templates](
+https://github.com/cderoove/damp.ekeko.snippets/tree/master/damp.ekeko.snippets.plugin.test/resources/TestCase-JDT-CompositeVisitor-Templates). 
 
+For our SCAM14 submission, the relevant files start with a ``chaqdemo_`` prefix. Opening these files from within Eclipse launches the transformation editor on them. The program under transformation can be found at [csmrwcrecase.zip](http://soft.vub.ac.be/~resteven/).
 
 ## Installation
 
