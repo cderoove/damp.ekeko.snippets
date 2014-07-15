@@ -7,10 +7,10 @@
     <relativePath>../pom.xml</relativePath>
     <groupId>damp.ekeko.snippets</groupId>
     <artifactId>damp.ekeko.snippets</artifactId>
-	<version>1.0.4-SNAPSHOT</version> <!-- bump this -->
+	<version>1.0.5-SNAPSHOT</version> <!-- bump this -->
   </parent>
 
   <artifactId>damp.ekeko.snippets.plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
-  <version>1.0.4-SNAPSHOT</version>
+  <version>1.0.5-SNAPSHOT</version>
 </project> 
