@@ -34,7 +34,7 @@ public class EkekoSnippetsTest {
 	
 	@BeforeClass
 	public static void ensureTestCasesExist() throws Exception {
-		EkekoTestHelper.ensureProjectImported(ekekoBundle, "/resources/TestCases/", "Ekeko-JDT");
+		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "Ekeko-JDT");
 	}
 
 	@Test
