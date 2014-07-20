@@ -120,13 +120,17 @@
 (defn
   class-propertydescriptor-with-id
   [ownerclasskeyword pdid]         
-  (let [found 
+  (let [clazz
+        (astnode/class-for-ekeko-keyword ownerclasskeyword)
+        found 
         (some (fn [pd]
                 (when (= pdid
                          (astnode/property-descriptor-id pd))
                   pd))
-              (astnode/nodeclass-property-descriptors 
-                (astnode/class-for-ekeko-keyword ownerclasskeyword)))]
+              
+              (clojure.set/union
+                (set (astnode/nodeclass-property-descriptors clazz AST/JLS4)) ;for older persisted ones
+                (set (astnode/nodeclass-property-descriptors clazz))))]
     (if
       (nil? found)
       (throw (Exception. (str "When deserializing, could not find property descriptor: " ownerclasskeyword pdid)))
