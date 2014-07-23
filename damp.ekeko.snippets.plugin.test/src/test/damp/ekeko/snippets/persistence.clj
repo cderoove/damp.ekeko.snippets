@@ -11,6 +11,7 @@
   (:require [damp.ekeko.jdt 
              [javaprojectmodel :as javaprojectmodel]
               ])
+  (:import [org.eclipse.jdt.core.dom CompilationUnit])
   (:use clojure.test))
 
 
@@ -28,9 +29,8 @@
     (doseq [cu cus]
       (let [serialized (persistence/snippet-as-persistent-string cu)
             deserialized (persistence/snippet-from-persistent-string serialized)]
-        (is (= (str cu)
-               (str deserialized)))))))
-      
+        (is (instance? CompilationUnit deserialized))))))
+
 ;; Test suite
   ;; ----------
 
