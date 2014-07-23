@@ -38,7 +38,10 @@ damp.ekeko.snippets.matching
   [?keyw ?owner ?value]
   (cl/conda 
     [(el/v- ?owner)
-     (el/perform (throw (Exception. "Generated query should have already ground the owner of the property.")))]
+     (el/perform (throw (Exception. (str "Generated query should have already ground the owner of the property."
+                                         ?keyw
+                                         ?owner
+                                         ?value))))]
     [(el/v+ ?owner)
      (ast/has ?keyw ?owner ?value)]))
 
