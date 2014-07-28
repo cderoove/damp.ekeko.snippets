@@ -67,6 +67,8 @@ public class TransformationEditor extends MultiPageEditorPart {
 	private int rewritesEditorPageIndex;
 	private TemplateGroup lhsTemplateGroup;
 	private TemplateGroup rhsTemplateGroup;
+	private TransformationOverviewEditor overviewEditor;
+	private int overviewEditorPageIndex;
 
 
 	public void initSubInputsFromTransformationFile(String fullPath) {
@@ -149,8 +151,10 @@ public class TransformationEditor extends MultiPageEditorPart {
 	@Override
 	protected void createPages() {
 		try {
+			createOverviewPage();
 			createSubjectsPage();
 			createRewritesPage();
+			
 		} catch (PartInitException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -195,6 +199,16 @@ public class TransformationEditor extends MultiPageEditorPart {
 		setPageText(subjectsEditorPageIndex, "LHS Change Subjects");
 		setPageImage(subjectsEditorPageIndex, EkekoSnippetsPlugin.IMG_TEMPLATE);
 	}
+	
+	private void createOverviewPage() throws PartInitException {
+		overviewEditor = new TransformationOverviewEditor();
+		overviewEditorPageIndex = addPage(overviewEditor, null);
+		setPageText(overviewEditorPageIndex, "Overview");
+		setPageImage(overviewEditorPageIndex, EkekoSnippetsPlugin.IMG_TEMPLATE);
+		overviewEditor.setTransformationEditor(this);
+
+	}
+
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {

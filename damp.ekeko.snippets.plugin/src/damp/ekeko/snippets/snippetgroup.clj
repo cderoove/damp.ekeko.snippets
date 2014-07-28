@@ -158,10 +158,10 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_UPDATE_SNIPPET_IN_SNIPPETGROUP) update-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPETS) snippetgroup-snippetlist)
   (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE) snippetgroup-remove-bounddirective)
   (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_ADD_DIRECTIVE_TO_NODE) snippetgroup-add-directive)
-
-
+  
   )
 
 (register-callbacks)

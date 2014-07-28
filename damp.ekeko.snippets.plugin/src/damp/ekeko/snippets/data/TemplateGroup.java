@@ -1,6 +1,7 @@
 package damp.ekeko.snippets.data;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -22,7 +23,8 @@ public class TemplateGroup {
 
 	public static IFn FN_SNIPPET_ROOT;
 	public static IFn FN_SNIPPET_USERQUERY;
-	
+
+	public static IFn FN_SNIPPETGROUP_SNIPPETS;
 	
 	public static IFn FN_SNIPPET_FROM_STRING;
 	public static IFn FN_SNIPPET_FROM_NODE;
@@ -90,6 +92,11 @@ public class TemplateGroup {
 		return cljGroup;
 	}
 	
+	@SuppressWarnings("rawtypes")
+	public List getSnippets() {
+		return (List) FN_SNIPPETGROUP_SNIPPETS.invoke(cljGroup);
+	}
+	
 	public String getName() {
 		return (String) FN_SNIPPETGROUP_NAME.invoke(cljGroup);
 	}
@@ -104,13 +111,6 @@ public class TemplateGroup {
 
 	public static ASTNode getRootOfSnippet(Object snippet) {
 		return (ASTNode) FN_SNIPPET_ROOT.invoke(snippet);
-	}
-
-	public Object[] getRootOfSnippets(Object[] snippets) {
-		Object[] roots = new Object[snippets.length];
-		for (int i=0; i<snippets.length; i++)
-			roots[i] = getRootOfSnippet(snippets[i]);
-		return roots;
 	}
 	
 	//TODO: can be eliminated once transformsview has been reviewed

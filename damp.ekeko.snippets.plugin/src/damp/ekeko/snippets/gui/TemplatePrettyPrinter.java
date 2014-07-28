@@ -7,7 +7,7 @@ import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
-import org.eclipse.jdt.internal.core.dom.NaiveASTFlattener;
+import damp.ekeko.jdt.NaiveASTFlattener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Display;
@@ -64,6 +64,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		listWrapperForWhichToIgnoreListDecorations = new Stack();
 		this.templateGroup = group;
 	}
+	
+	public void setTemplateGroup(TemplateGroup group) {
+		this.templateGroup = group;
+	}
+	
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
@@ -493,16 +498,36 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	}
 
+	
+	public String prettyPrint() {
+		for(Object groupElement : templateGroup.getSnippets()) {
+			prettyPrintSnippet(groupElement);
+			
+			if(this.buffer.codePointBefore(getCurrentCharacterIndex()) != '\n')			
+				this.buffer.append("\n\n");
+		}
+		return getResult();
+	}
+	
 
+	public void prettyPrintArrow() {
+		int start = getCurrentCharacterIndex();
+		this.buffer.append("\n=>\n\n");
+		styleRanges.add(styleRangeForMeta(start, getCurrentCharacterIndex() - start));	
+	}
+
+	
 	public String prettyPrintSnippet(Object snippet) {
 		setSnippet(snippet);
 		ASTNode root = TemplateGroup.getRootOfSnippet(snippet); 
 		root.accept(this);
 
+		/*
 		Collection conditions = templateGroup.getLogicConditions(snippet);
 		this.buffer.append('\n');
 		this.buffer.append(Joiner.on('\n').join(conditions));
-
+		*/
+		
 		return getResult();
 	}
 
