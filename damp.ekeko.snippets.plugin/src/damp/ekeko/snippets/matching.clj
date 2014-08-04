@@ -3,6 +3,7 @@
     :author "Coen De Roover, Siltvani"}
 damp.ekeko.snippets.matching
   (:require [clojure.core.logic :as cl])
+  (:require [clojure.zip :as zip])
   (:require [damp.ekeko.snippets 
              [directives :as directives]
              [util :as util]
@@ -18,7 +19,7 @@ damp.ekeko.snippets.matching
      [structure :as structure]
      ])
   (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
-            [org.eclipse.jdt.core.dom Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
+            [org.eclipse.jdt.core.dom MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
 
 ;;These expose flaws in the query generation process
@@ -293,6 +294,37 @@ damp.ekeko.snippets.matching
         `((~value|null ~var-match))))))
 
 
+(defn-
+  replace-conditions
+  [query conditionpred replacementf]
+  (loop [loc (zip/seq-zip query)]
+    (if 
+      (zip/end? loc)
+      (zip/root loc)
+      (recur 
+        (zip/next 
+          (if
+            (conditionpred (zip/node loc))
+            (zip/replace loc (replacementf (zip/node loc)))
+            loc))))))
+
+(defn 
+  constrain-orimplicit
+  "Like constrain-exact for MethodInvocation receivers, but allows implicit this-receiver."
+  [snippet-val]
+  (fn [snippet]
+    (let [exactnodeconditions
+          ((constrain-exact snippet-val) snippet)
+          offspringconditions
+          (snippet-node-conditions+ snippet snippet-val)
+          normalconditions
+          (concat exactnodeconditions offspringconditions)
+          var-match
+          (snippet/snippet-var-for-node snippet snippet-val)]          
+      `((cl/conde [~@normalconditions]
+                  [(~value|null ~var-match)])))))
+
+
 (declare string-represents-variable?)
 
 (defn 
@@ -300,7 +332,7 @@ damp.ekeko.snippets.matching
   [conditions]
   (filter string-represents-variable? (flatten conditions)))
 
-(declare  snippet-node-conditions+)
+(declare  snippet-node-conditions*)
   
 (declare snippet-value-multiplicity)
 
@@ -346,7 +378,7 @@ damp.ekeko.snippets.matching
                            ;querying/snippet-conditions takes care of this
                            ;using snippet-value-conditions-already-generated? predicate
                            elconditions 
-                           (snippet-node-conditions+ template element)
+                           (snippet-node-conditions* template element)
                            
                            elconditionsvars
                            (conj (conditions-variables elconditions)
@@ -439,7 +471,7 @@ damp.ekeko.snippets.matching
                            
                     ;these conditions no longer need to be included in the query 
                     elconditions 
-                    (snippet-node-conditions+ template element)
+                    (snippet-node-conditions* template element)
                            
                     elconditionsvars
                     (conj (conditions-variables elconditions)
@@ -519,7 +551,7 @@ damp.ekeko.snippets.matching
                 ;querying/snippet-conditions takes care of this
                 ;using snippet-value-conditions-already-generated? predicate
                 elconditions 
-                (snippet-node-conditions+ template element)
+                (snippet-node-conditions* template element)
                 elmatch                    
                 (snippet/snippet-var-for-node template element)
                 remaininglstvar (gensym "remaining")]
@@ -1360,16 +1392,31 @@ damp.ekeko.snippets.matching
     "Determines multiplicity of matches."))
 
 (def
+  directive-orimplicit
+  (directives/make-directive
+    "orimplicit"
+    []
+    constrain-orimplicit
+    "Invocations with implicit this-receiver match as well."))
+
+
+(def
   directives-replacedby
   [directive-replacedbyvariable
    directive-replacedbywildcard
    directive-replacedbyexp])
 
+
+(def 
+  directives-match
+  [directive-exact directive-orimplicit])
+
 (def
   directives-constraining|mutuallyexclusive
-  (conj
+  (concat
     directives-replacedby
-    directive-exact))
+    directives-match))
+ 
 
 (def 
   directives-constraining|optional
@@ -1389,9 +1436,7 @@ damp.ekeko.snippets.matching
    directive-subtype+|sname
    directive-subtype*
    directive-subtype*|qname
-   directive-subtype*|sname
-
-   ])
+   directive-subtype*|sname])
 
 
 (def 
@@ -1514,6 +1559,7 @@ damp.ekeko.snippets.matching
         (recur owner)))))
 
 
+
 (defn
   snippet-value-regexp-offspring?
   [snippet value]
@@ -1538,6 +1584,34 @@ damp.ekeko.snippets.matching
         (nth (directives/bounddirective-operandbindings mbd) 1))
       "1")))
 
+
+
+(defn
+  snippet-value-offspring-of-value-satisfying?
+  [snippet value satisfyingf]  
+  (loop [val value]
+    (cond
+      (= val (snippet/snippet-root snippet))
+      (satisfyingf val)
+      (astnode/valuelistmember? val)
+      (let [owninglst (snippet/snippet-list-containing snippet val)]
+        (or (satisfyingf owninglst)
+            (recur (snippet/snippet-node-owner snippet val))))
+      :default
+      (or (satisfyingf val)
+          (recur (snippet/snippet-node-owner snippet val))))))
+
+(defn
+  snippet-value-orimplicit-offspring?
+  [snippet value]
+  (snippet-value-offspring-of-value-satisfying?
+    snippet
+    value
+    (fn [val] 
+      (let [bds (snippet/snippet-bounddirectives-for-node snippet val)]
+        (directives/bounddirective-for-directive 
+          bds
+          directive-orimplicit)))))
 
 
 ;; Constructing Snippet instances with default matching directives
@@ -1718,7 +1792,7 @@ damp.ekeko.snippets.matching
 
 
   (defn 
-    snippet-node-conditions+
+    snippet-node-conditions*
     "Generates default (regardless of whether conditions have already been generated by a parent node)
    conditions for node and its offspring."
     ;similar to querying/snippet-conditions .. except that it does not check whether parents have already generated conditions
@@ -1729,6 +1803,21 @@ damp.ekeko.snippets.matching
         node
         (fn [val]
           (swap! query concat (snippet-node-conditions snippet val))))
+      @query))
+  
+  
+
+  (defn 
+    snippet-node-conditions+
+    "Generates default conditions for offspring of node."
+    [snippet node]
+    (let [query (atom '())]
+      (snippet/walk-snippet-element
+        snippet
+        node
+        (fn [val]
+          (when (not= val node)
+            (swap! query concat (snippet-node-conditions snippet val)))))
       @query))
 
 

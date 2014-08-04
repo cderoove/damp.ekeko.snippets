@@ -188,6 +188,15 @@ damp.ekeko.snippets.operators
   (add-unary-directive-opname-opvalue snippet node matching/directive-subtype*|sname "Simple name" uservar))
 
 
+(defn
+  add-directive-orimplicit
+  "Adds directive-orimplicit to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    (matching/remove-directives snippet node matching/directives-match)
+    node
+    (directives/make-bounddirective matching/directive-orimplicit
+                                    [(make-directiveoperandbinding-for-match node)])))
 
 (defn
   relax-size-to-atleast

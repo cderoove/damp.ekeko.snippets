@@ -33,7 +33,9 @@
   [snippet value]
   (or
     (matching/snippet-value-regexp-offspring? snippet value)
-    (matching/snippet-value-setmatch-offspring? snippet value)))
+    (matching/snippet-value-setmatch-offspring? snippet value)
+    (matching/snippet-value-orimplicit-offspring? snippet value)
+    ))
 
 
 (defn
@@ -141,6 +143,17 @@
        (~ekekolaunchersymbol 
          [~root-var ~@uservars-exact]
          ~(snippet-predicatecall snippet)))))
+
+;(defmacro
+; "Relatino of AST nodes ?ast that match the given ?template.
+;  Logic variables within ?template should already be defined."
+;  match
+;  [?ast ?template]
+;  `(cl/project [~?template]
+;        (l/fresh [?match-var#]
+;                 (l/== ?match# (snippet/snippet-var-for-root ~template)
+;  )
+
 
 
 

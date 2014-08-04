@@ -132,7 +132,17 @@ damp.ekeko.snippets.operatorsrep
     (applicability|regexplst snippetgroup snippet value)
     (when-let [ownerprop (astnode/owner-property value)]
       (= "statements" (astnode/property-descriptor-id ownerprop)))))
-  
+
+(defn
+  applicability|receiver
+  [snippetgroup snippet value]
+  (and
+    (astnode/ast? value) 
+    (when-let [owner (astnode/owner value)]
+      (and (= :MethodInvocation (astnode/ekeko-keyword-for-class-of owner))
+           (when-let [ownerprop (astnode/owner-property value)]
+             (and (= :expression (astnode/ekeko-keyword-for-property-descriptor ownerprop))))))))
+                    
 (defn
   validity|always
   [snippetgroup snippet subject operandvalue]
@@ -795,13 +805,21 @@ damp.ekeko.snippets.operatorsrep
      "Set matching will be used for elements of list."
      []
      )
+   
+   
+   (Operator. 
+     "add-directive-orimplicit"
+     operators/add-directive-orimplicit
+     :generalization
+     "Add directive orimplicit."
+     opscope-subject
+     applicability|receiver
+     "Implicit this receiver will match."
+     []
+     )
 
    
-   
-   
-  
-   
-   
+    
    
    
    
