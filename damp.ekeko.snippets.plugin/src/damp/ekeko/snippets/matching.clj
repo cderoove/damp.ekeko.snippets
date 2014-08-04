@@ -17,6 +17,7 @@ damp.ekeko.snippets.matching
      [astnode :as astnode]
      [ast :as ast]
      [structure :as structure]
+     [aststructure :as aststructure]
      ])
   (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
             [org.eclipse.jdt.core.dom MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
@@ -308,6 +309,8 @@ damp.ekeko.snippets.matching
             (zip/replace loc (replacementf (zip/node loc)))
             loc))))))
 
+(declare  snippet-node-conditions+)
+
 (defn 
   constrain-orimplicit
   "Like constrain-exact for MethodInvocation receivers, but allows implicit this-receiver."
@@ -325,6 +328,30 @@ damp.ekeko.snippets.matching
                   [(~value|null ~var-match)])))))
 
 
+(defn
+  constrain-orsimple
+  "Allows simple types and names to match their fully qualified equivalent in the template."
+  [snippet-val]
+  (fn [snippet]
+    (let [exactnodeconditions
+          ((constrain-exact snippet-val) snippet)
+          offspringconditions
+          (snippet-node-conditions+ snippet snippet-val)
+          normalconditions
+          (concat exactnodeconditions offspringconditions)
+          var-match
+          (snippet/snippet-var-for-node snippet snippet-val)
+          val-string
+          (.toString snippet-val)
+          var-match-type
+          (util/gen-lvar 'type)
+          ]
+      `((cl/conde [~@normalconditions]
+                  
+                  [(cl/fresh [~var-match-type]
+                             (aststructure/ast|type-type ~var-match ~var-match-type)
+                             (structure/type-name|qualified|string ~var-match-type ~val-string))])))))
+
 (declare string-represents-variable?)
 
 (defn 
@@ -333,7 +360,7 @@ damp.ekeko.snippets.matching
   (filter string-represents-variable? (flatten conditions)))
 
 (declare  snippet-node-conditions*)
-  
+
 (declare snippet-value-multiplicity)
 
    
@@ -1399,6 +1426,14 @@ damp.ekeko.snippets.matching
     constrain-orimplicit
     "Invocations with implicit this-receiver match as well."))
 
+(def
+  directive-orsimple
+  (directives/make-directive
+    "orsimple"
+    []
+    constrain-orsimple
+    "Simple types resolving to name of qualified type in template will match as well."))
+
 
 (def
   directives-replacedby
@@ -1409,7 +1444,9 @@ damp.ekeko.snippets.matching
 
 (def 
   directives-match
-  [directive-exact directive-orimplicit])
+  [directive-exact 
+   directive-orimplicit
+   directive-orsimple])
 
 (def
   directives-constraining|mutuallyexclusive
@@ -1592,7 +1629,9 @@ damp.ekeko.snippets.matching
   (loop [val value]
     (cond
       (= val (snippet/snippet-root snippet))
-      (satisfyingf val)
+      (and 
+        (not= val value)
+        (satisfyingf val))
       (astnode/valuelistmember? val)
       (let [owninglst (snippet/snippet-list-containing snippet val)]
         (or (satisfyingf owninglst)
@@ -1601,9 +1640,10 @@ damp.ekeko.snippets.matching
       (or (satisfyingf val)
           (recur (snippet/snippet-node-owner snippet val))))))
 
+
 (defn
-  snippet-value-orimplicit-offspring?
-  [snippet value]
+  snippet-value-offspring-of-directive
+  [snippet value directive]
   (snippet-value-offspring-of-value-satisfying?
     snippet
     value
@@ -1611,8 +1651,26 @@ damp.ekeko.snippets.matching
       (let [bds (snippet/snippet-bounddirectives-for-node snippet val)]
         (directives/bounddirective-for-directive 
           bds
-          directive-orimplicit)))))
+          directive)))))
 
+
+
+(defn
+  snippet-value-orimplicit-offspring?
+  [snippet value]
+  (snippet-value-offspring-of-directive
+    snippet
+    value
+    directive-orimplicit))
+
+
+(defn
+  snippet-value-orsimple-offspring?
+  [snippet value]
+  (snippet-value-offspring-of-directive
+    snippet
+    value
+    directive-orsimple))
 
 ;; Constructing Snippet instances with default matching directives
 ;; ---------------------------------------------------------------

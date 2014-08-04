@@ -35,6 +35,7 @@
     (matching/snippet-value-regexp-offspring? snippet value)
     (matching/snippet-value-setmatch-offspring? snippet value)
     (matching/snippet-value-orimplicit-offspring? snippet value)
+    (matching/snippet-value-orsimple-offspring? snippet value)
     ))
 
 

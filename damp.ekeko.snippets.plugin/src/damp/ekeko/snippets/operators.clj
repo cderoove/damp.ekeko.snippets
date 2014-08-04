@@ -198,6 +198,17 @@ damp.ekeko.snippets.operators
     (directives/make-bounddirective matching/directive-orimplicit
                                     [(make-directiveoperandbinding-for-match node)])))
 
+
+(defn
+  add-directive-orsimple
+  "Adds directive-orsimple to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    (matching/remove-directives snippet node matching/directives-match)
+    node
+    (directives/make-bounddirective matching/directive-orsimple
+                                    [(make-directiveoperandbinding-for-match node)])))
+
 (defn
   relax-size-to-atleast
   "Uses match-size|atleast/0 for constraining match candidates for a template list."

@@ -53,7 +53,7 @@ damp.ekeko.snippets.operatorsrep
   (and 
     (applicability|node snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)))
-    
+
 (defn 
   applicability|lst
   [snippetgroup snippet value]
@@ -66,7 +66,7 @@ damp.ekeko.snippets.operatorsrep
     (not (nil? value))
     (when-let [property (astnode/owner-property value)]
       (astnode/property-descriptor-simple? property))))
-    
+
 
 (defn 
   applicability|lstelement
@@ -112,9 +112,9 @@ damp.ekeko.snippets.operatorsrep
   "Verifies that value is not a list with regexp matching enabled."
   [snippetgroup snippet value]
   (not
-   (and
-     (astnode/lstvalue? value)
-     (matching/snippet-list-regexp? snippet value))))
+    (and
+      (astnode/lstvalue? value)
+      (matching/snippet-list-regexp? snippet value))))
 
 (defn
   applicability|regexplst
@@ -137,12 +137,22 @@ damp.ekeko.snippets.operatorsrep
   applicability|receiver
   [snippetgroup snippet value]
   (and
-    (astnode/ast? value) 
+    (applicability|node snippetgroup snippet value)
     (when-let [owner (astnode/owner value)]
       (and (= :MethodInvocation (astnode/ekeko-keyword-for-class-of owner))
            (when-let [ownerprop (astnode/owner-property value)]
              (and (= :expression (astnode/ekeko-keyword-for-property-descriptor ownerprop))))))))
-                    
+
+
+(defn
+  applicability|qualifiedtypeorname
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (> (count (clojure.string/split (.toString value) #"\.")) 1)))
+  
+
+
 (defn
   validity|always
   [snippetgroup snippet subject operandvalue]
@@ -192,7 +202,7 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value classkeyword]
   (let [propertydescriptor (astnode/owner-property value)]
     (instance-of-classkeyword-assignable-to-property? classkeyword propertydescriptor))) 
-  
+
 (def
   validity|subjectlisttype
   validity|subjectowninglisttype)
@@ -206,7 +216,7 @@ damp.ekeko.snippets.operatorsrep
     (let [lst-raw (astnode/value-unwrapped value)]
       (and (>= operandvalue 0)
            (< operandvalue (.size lst-raw))))))
-          
+
 
 (defn
   validity|incsubjectlistidx
@@ -223,7 +233,7 @@ damp.ekeko.snippets.operatorsrep
 (def
   validity|subjectownerpropertytype 
   validity|subjectowninglisttype)
-  
+
 (defn
   validity|multiplicity
   [snippetgroup snippet value operandvalue]
@@ -231,7 +241,7 @@ damp.ekeko.snippets.operatorsrep
     (= "1" operandvalue)
     (= "+" operandvalue)
     (= "*" operandvalue)))
-        
+
 (defrecord 
   Operator
   [id operator category name scope validation description operands])
@@ -374,20 +384,20 @@ damp.ekeko.snippets.operatorsrep
   make-implicit-operandbinding-for-operator-subject
   [group template subject-template-node operator]
   (make-binding
-      (make-operand "Subject" 
-                    opscope-subject
-                    validity|subject)
-      group
-      template
-      subject-template-node))
+    (make-operand "Subject" 
+                  opscope-subject
+                  validity|subject)
+    group
+    template
+    subject-template-node))
 
 (defn
   operator-bindings-for-operands-and-subject
   "Returns fresh bindings for the subject of an operator and its additional operands."
   [group template subject-template-node operator]
   (cons 
-   (make-implicit-operandbinding-for-operator-subject group template subject-template-node operator)
-   (operator-bindings-for-operands group template operator)))
+    (make-implicit-operandbinding-for-operator-subject group template subject-template-node operator)
+    (operator-bindings-for-operands group template operator)))
 
 ;; Registered operator types
 
@@ -460,7 +470,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Requires matches to lexically refer to the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
-
+   
    (Operator. 
      "add-directive-type"
      operators/add-directive-type
@@ -470,7 +480,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to a type, given by meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
-
+   
    (Operator. 
      "add-directive-type|qname"
      operators/add-directive-type|qname
@@ -480,7 +490,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to a type with the given qualified name."
      [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)])
-
+   
    (Operator. 
      "add-directive-type|sname"
      operators/add-directive-type|sname
@@ -501,7 +511,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to a transitive subtype of the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
-
+   
    (Operator. 
      "add-directive-subtype+|qname"
      operators/add-directive-subtype+|qname
@@ -521,7 +531,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to a transitive subtype with the given string as simlpe name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
-
+   
    (Operator. 
      "add-directive-subtype*"
      operators/add-directive-subtype*
@@ -531,7 +541,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to the type or a transitive subtype of the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
-
+   
    (Operator. 
      "add-directive-subtype*|qname"
      operators/add-directive-subtype*|qname
@@ -551,7 +561,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match should resolve to the type or a transitive subtype with the given string as simlpe name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)])
-
+   
    
    (Operator. 
      "restrict-scope-to-child"
@@ -562,7 +572,7 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Match is the corresponding child of the match for the parent."
      [])
-
+   
    (Operator. 
      "relax-scope-to-child+"
      operators/relax-scope-to-child+
@@ -572,7 +582,7 @@ damp.ekeko.snippets.operatorsrep
      (complement applicability|lst)
      "Match is nested within the corresponding child of the parent match."
      [])
-
+   
    (Operator. 
      "relax-scope-to-child*"
      operators/relax-scope-to-child*
@@ -582,7 +592,7 @@ damp.ekeko.snippets.operatorsrep
      (complement applicability|lst)
      "Matches are the corresponding child of the parent match, or nested within it."
      [])
-
+   
    
    (Operator. 
      "relax-size-to-atleast"
@@ -628,7 +638,7 @@ damp.ekeko.snippets.operatorsrep
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]) 
    
-
+   
    
    (Operator. 
      "add-directive-add-element"
@@ -695,7 +705,7 @@ damp.ekeko.snippets.operatorsrep
    ;  "Parses a string and inserts the resulting node after the selection."
    ;  [(make-operand "New node type" opscope-nodeclasskeyw validity|subjectowninglisttype)
    ;   (make-operand "String" opscope-string validity|string)])
-
+   
    (Operator. 
      "insert-node-at"
      operators/insert-newnodefromclasskeyw-atindex
@@ -738,10 +748,9 @@ damp.ekeko.snippets.operatorsrep
      "Erase list."
      opscope-subject
      applicability|lst
-    "Deletes all elements of the list."
+     "Deletes all elements of the list."
      []
      )
-   
    
    (Operator. 
      "replace-by-wildcard"
@@ -754,11 +763,9 @@ damp.ekeko.snippets.operatorsrep
      []
      )
    
-   
-   
    ;todo: operator to rever to normal constraining of list elements
    ;needs to re-add ground-relative-to-parent
-     
+   
    (Operator. 
      "consider-regexp|list"
      operators/consider-regexp|list
@@ -770,7 +777,6 @@ damp.ekeko.snippets.operatorsrep
      []
      )
    
-     
    (Operator. 
      "consider-regexp|cfglist"
      operators/consider-regexp|cfglist
@@ -781,7 +787,6 @@ damp.ekeko.snippets.operatorsrep
      "Regular expression over control flow graph of method."
      []
      )
-   
    
    (Operator. 
      "update-multiplicity"
@@ -794,7 +799,6 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Multiplicity" opscope-multiplicity validity|multiplicity)]
      )
    
-   
    (Operator. 
      "consider-set|lst"
      operators/consider-set|list
@@ -806,7 +810,6 @@ damp.ekeko.snippets.operatorsrep
      []
      )
    
-   
    (Operator. 
      "add-directive-orimplicit"
      operators/add-directive-orimplicit
@@ -817,14 +820,26 @@ damp.ekeko.snippets.operatorsrep
      "Implicit this receiver will match."
      []
      )
-
    
-    
+   (Operator. 
+     "add-directive-orsimple"
+     operators/add-directive-orsimple
+     :generalization
+     "Add directive orsimple."
+     opscope-subject
+     applicability|qualifiedtypeorname
+     "Simple types resolving to name of qualified type will match."
+     []
+     )
    
    
    
    
-       
+   
+   
+   
+   
+   
    
    ])
 
@@ -897,14 +912,14 @@ damp.ekeko.snippets.operatorsrep
           opdesc (operand-description operand)]      
       (when-not (opvalid group template node value)
         (throw (IllegalArgumentException. (str "Value \"" value "\" for operand \"" opdesc "\" is invalid according to \"" opvalid "\"")))))))
-  
+
 
 (defn
   validate-operandbinding
   [snippetgroup snippet node operator binding]
   (let [currentvalue (binding-value binding)]
     validate-newvalue-for-operandbinding snippetgroup snippet node operator binding currentvalue))
-   
+
 (defn
   validate-operandbindings
   [snippetgroup snippet node operator bindings]
@@ -933,18 +948,18 @@ damp.ekeko.snippets.operatorsrep
   apply-operator-to-snippetgroup
   "Apply operator to snippetgroup."
   ([snippetgroup operator bindings] ;called by UI
-     (let [subject-binding 
-           (first bindings)
-           subject-template
-           (binding-template subject-binding)
-           subject-node
-           (binding-value subject-binding)] 
-       (apply-operator-to-snippetgroup snippetgroup subject-template subject-node operator bindings)))
+                                    (let [subject-binding 
+                                          (first bindings)
+                                          subject-template
+                                          (binding-template subject-binding)
+                                          subject-node
+                                          (binding-value subject-binding)] 
+                                      (apply-operator-to-snippetgroup snippetgroup subject-template subject-node operator bindings)))
   ([snippetgroup snippet value operator bindings] ;regular call 
-   (validate-operandbindings snippetgroup snippet value operator bindings) 
-   (let [newsnippet
-         (apply-operator snippet (operator-operator operator) value (map binding-value (rest bindings)))]
-     (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet))))
+                                                  (validate-operandbindings snippetgroup snippet value operator bindings) 
+                                                  (let [newsnippet
+                                                        (apply-operator snippet (operator-operator operator) value (map binding-value (rest bindings)))]
+                                                    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet))))
 
 
 
@@ -1060,5 +1075,5 @@ damp.ekeko.snippets.operatorsrep
   )
 
 
-  (register-callbacks)
+(register-callbacks)
 
