@@ -460,6 +460,17 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Requires match to unify with meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+  
+   (Operator. 
+     "add-directive-invokes"
+     operators/add-directive-invokes
+     :refinement
+     "Add directive invokes."
+     opscope-subject
+     applicability|always
+     "Requires matches to invoke the binding for the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+   
    
    (Operator. 
      "add-directive-refersto"

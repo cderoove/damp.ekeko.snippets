@@ -65,7 +65,16 @@
       ;[(aststructure/typedeclaration-type ?ast ?itype)]
       )))
 
-            
+
+
+(defn
+  invokes
+  [?ast ?methoddeclaration]
+  (cl/all
+    (el/v+ ?ast)
+    (aststructure/methodinvocation-methoddeclaration ?ast ?methoddeclaration)))
+
+
 
 ;; end verif
 

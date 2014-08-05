@@ -1,0 +1,10 @@
+/Component.class
+/ComponentVisitor.class
+/Composite.class
+/EmptyLeaf.class
+/MayAliasLeaf.class
+/MustAliasLeaf.class
+/OnlyLoggingLeaf.class
+/PrototypicalLeaf.class
+/SuperLogLeaf.class
+/TestCase.class

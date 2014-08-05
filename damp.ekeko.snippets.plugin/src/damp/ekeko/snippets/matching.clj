@@ -812,7 +812,19 @@ damp.ekeko.snippets.matching
    ;   `((cl/== ~var-type ~resolvedstringorvar)))))
 
 
-      
+(defn
+  constrain-invokes
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)]
+      `((runtime/invokes ~var-match ~var)))))
+
+
+
+
 
 
 ;; Functions related to nodes that have been replaced by logic variable
@@ -1317,6 +1329,14 @@ damp.ekeko.snippets.matching
     constrain-replacedbywildcard
     "Match is unconstrained."))
 
+(def 
+  directive-invokes
+  (directives/make-directive
+    "invokes"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-invokes
+    "Match invokes a method, which is the binding for the meta-variable."))
+
 
 (def 
   directive-refersto
@@ -1486,6 +1506,7 @@ damp.ekeko.snippets.matching
    directive-consider-as-regexp|cfglst
    directive-consider-as-set|lst
    directive-multiplicity
+   directive-invokes
    directive-refersto
    directive-referredby
    directive-type

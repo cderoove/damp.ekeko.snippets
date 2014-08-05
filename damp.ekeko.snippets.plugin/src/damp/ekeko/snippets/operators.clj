@@ -122,6 +122,14 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (add-unary-directive-opname-opvalue snippet node matching/directive-equals "Meta-variable" uservar))
 
+
+(defn 
+  add-directive-invokes
+  "Adds directive-invokes to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-invokes "Meta-variable" uservar))
+
+
 (defn 
   add-directive-refersto
   "Adds directive-refersto to node."
