@@ -52,7 +52,7 @@
 (deftest 
   ^{:doc "There are 11 class declarations in the project."}
   match-persisted-anyclass
-  (let [snippet (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/anyclass.ekt")]
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/anyclass.ekt")]
     (is (= 11 (count (snippets/query-by-snippetgroup snippet))))))
 
 
@@ -66,7 +66,7 @@
                                         (ast/has :constructor ?m ?val)
                                         (ast/value-raw ?val false))))
         snippet
-        (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/anymethod.ekt")
+        (snippetgroup-from-resource "/resources/EkekoX-Specifications/anymethod.ekt")
         ms-by-snippet
         (count (snippets/query-by-snippetgroup snippet))]
     (is (= ms-by-query ms-by-snippet))))
@@ -79,11 +79,24 @@
           There should only be one solution, as the match for the non-wilcad modifier 
           leaves only one remaining modifier to be matched against."}
   match-setmatchedmodifiers
-  (let [snippet (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/setmatchedmodifiers.ekt")]
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/setmatchedmodifiers.ekt")]
     (is (= 1 (count (snippets/query-by-snippetgroup snippet))))))
 
 
-        
+
+(deftest
+  ^{:doc "Template for orimplicit matching directive on method invocation receiver this expresssions."}
+  match-orimplicit
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/orimplicit.ekt")]
+    (is (= 3 (count (snippets/query-by-snippetgroup snippet))))))
+
+(deftest
+  ^{:doc "Template for orsimple matching directive on qualfied types."}
+  match-orsimple
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/orsimple.ekt")]
+    (is (= 3 (count (snippets/query-by-snippetgroup snippet))))))
+
+
         
 ;; Matching Strategy: regexp
 ;; -------------------------
@@ -96,7 +109,7 @@
      in method TestCase.runTest from the CompositeVisitor project."}
   (let [results
         (snippets/query-by-snippetgroup 
-          (snippetgroup-from-resource "/resources/TestCase-JDT-CompositeVisitor-Templates/regexp_oneormore.ekt"))]
+          (snippetgroup-from-resource "/resources/EkekoX-Specifications/regexp_oneormore.ekt"))]
     (is (= 1 (count results)))))
                     
 ;; Test suite
@@ -104,12 +117,16 @@
 
 (deftest
    test-suite 
-   (let [testproject "TestCase-JDT-CompositeVisitor"]
+   (let [testproject "TestCase-JDT-CompositeVisitor"
+         matchproject "TestCase-EkekoX-Matching"]
      (test/against-project-named testproject false exactmatch-node)
      (test/against-project-named testproject false match-persisted-anyclass)
      (test/against-project-named testproject false match-persisted-anymethod)
      (test/against-project-named testproject false match-regexp-oneormore)
      (test/against-project-named testproject false match-setmatchedmodifiers)
+     (test/against-project-named matchproject false match-orimplicit)
+     (test/against-project-named matchproject false match-orsimple)
+
 
      )
    )
