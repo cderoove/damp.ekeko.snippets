@@ -619,6 +619,20 @@ damp.ekeko.snippets.matching
           var
           (symbol var-string)]
       `((runtime/refersto ~var-match ~var)))))
+
+(defn
+  constrain-referredby
+  "Requires candidate match variables to be referred by the given variable node."
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)]
+      `((runtime/referredby ~var-match ~var)))))
+
+
+
         
 ;todo: een refersto voor types en type declarations (die bindt aan ast nodes)
 ;todo: een var analoog aan type (die bindt aan de ivariablebinding) 
@@ -1313,6 +1327,14 @@ damp.ekeko.snippets.matching
     "Match refers to a variable, which is the binding for the meta-variable."))
 
 (def 
+  directive-referredby
+  (directives/make-directive
+    "referred-by"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-referredby
+    "Match declares a variable, referred to by the meta-variable binding."))
+
+(def 
   directive-type
   (directives/make-directive
     "type"
@@ -1465,6 +1487,7 @@ damp.ekeko.snippets.matching
    directive-consider-as-set|lst
    directive-multiplicity
    directive-refersto
+   directive-referredby
    directive-type
    directive-type|qname
    directive-type|sname

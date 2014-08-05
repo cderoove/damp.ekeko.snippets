@@ -472,6 +472,16 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
+     "add-directive-referredby"
+     operators/add-directive-referredby
+     :refinement
+     "Add directive referred-by."
+     opscope-subject
+     applicability|always
+     "Requires matches to be referred to lexically by the binding for the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
+   
+   (Operator. 
      "add-directive-type"
      operators/add-directive-type
      :refinement

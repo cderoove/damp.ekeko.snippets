@@ -37,6 +37,20 @@
       [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
       )))
 
+
+;going to be slow
+(defn
+  referredby
+  [?referred ?referring]
+  (cl/all
+    (el/v+ ?referred)
+    (cl/conde 
+      [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
+      [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
+      )))
+
+
+
 ;ast has to be bound
 (defn
   type

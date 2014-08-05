@@ -96,6 +96,12 @@
   (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/orsimple.ekt")]
     (is (= 3 (count (snippets/query-by-snippetgroup snippet))))))
 
+(deftest
+  ^{:doc "Template for referredby matching directive several children of a field declaration."}
+  match-referredby
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/referredby.ekt")]
+    (is (= 32 (count (snippets/query-by-snippetgroup snippet))))))
+
 
         
 ;; Matching Strategy: regexp
@@ -126,6 +132,7 @@
      (test/against-project-named testproject false match-setmatchedmodifiers)
      (test/against-project-named matchproject false match-orimplicit)
      (test/against-project-named matchproject false match-orsimple)
+     (test/against-project-named testproject false match-referredby)
 
 
      )
