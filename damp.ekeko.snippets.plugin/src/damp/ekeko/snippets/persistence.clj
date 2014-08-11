@@ -323,20 +323,33 @@
     :else
     (throw (Exception. (str "Unknown value to create identifier for:" value))))))
 
+
+(defn-
+  find-snippet-value-corresponding-to-identifier
+  [snippet identifier]
+  (some 
+    (fn [value] 
+      (let [value-id (snippet-value-identifier snippet value)]
+        (when (= value-id identifier)
+          value)))
+    (snippet/snippet-nodes snippet)))
+
 (defn
   snippet-value-corresponding-to-identifier
   [snippet identifier]
-  (let [found 
-        (some 
-          (fn [value] 
-            (let [value-id (snippet-value-identifier snippet value)]
-              (when (= value-id identifier)
-                value)))
-          (snippet/snippet-nodes snippet))]
+  (let [found (find-snippet-value-corresponding-to-identifier snippet identifier)]
     (if
       (nil? found)
       (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
-      found)))  
+      found))) 
+
+(defn
+  snippetgroup-snippet-value-corresponding-to-identifier
+  [snippetgroup identifier]
+  (some 
+    (fn [snippet] (find-snippet-value-corresponding-to-identifier snippet identifier))
+    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+   
 
 (defn
   snippet-persistable-directives
@@ -585,6 +598,7 @@
 
   
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet-value-identifier)
+  (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet-value-corresponding-to-identifier)
   
   )
 

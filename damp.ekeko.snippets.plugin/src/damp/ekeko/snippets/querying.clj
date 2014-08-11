@@ -56,6 +56,9 @@
             (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
       @query)))
 
+(declare snippet-uservars)
+(declare snippetgroup-uservars)
+
 (defn-
   snippet-query-with-conditions
   [snippet ekekolaunchersymbol conditions userconditions]
@@ -569,24 +572,24 @@
 
 
 ;user vars need to have been declared already in lexical scope
-(defn
- match
- [?var ?template]
- (cl/fresh [?solutions ?solution]
+;(defn
+; match
+; [?var ?template]
+; (cl/fresh [?solutions ?solution]
 ;           substition-map
-   (fresh [?varseq]
-          (el/equals ?varseq (concat [?var] (snippet-uservars ?template)))
-          (el/equals nil (map println (map  
-          
-          )
-   
-   (el/equals ?solutions (eval (snippet-query ?template 'damp.ekeko/ekeko)))
-   (el/contains ?solutions ?solution)
-   (el/equals nil (println (count ?solution)))
-   ;(cl/== ?varseq ?solution)
-   (uservars ?template)
-   
-           ))
+;   (fresh [?varseq]
+;          (el/equals ?varseq (concat [?var] (snippet-uservars ?template)))
+;          (el/equals nil (map println (map  
+;          
+;          )
+;   
+;   (el/equals ?solutions (eval (snippet-query ?template 'damp.ekeko/ekeko)))
+;   (el/contains ?solutions ?solution)
+;   (el/equals nil (println (count ?solution)))
+;   ;(cl/== ?varseq ?solution)
+;   (uservars ?template)
+;   
+;           ))
 
 
 

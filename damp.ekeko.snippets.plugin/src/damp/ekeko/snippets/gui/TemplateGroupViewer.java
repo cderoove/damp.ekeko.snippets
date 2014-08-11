@@ -26,18 +26,25 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 
+import clojure.lang.IFn;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplateGroupViewer extends Composite {
 
+	public static IFn FN_SNIPPET_VALUE_FOR_IDENTIFIER;
+	
+	public Object getValueForIdentifierInTemplate(Object identifier) {
+		return FN_SNIPPET_VALUE_FOR_IDENTIFIER.invoke(cljTemplate, identifier);
+	}
+	
 	private TextViewer textViewerSnippet;
 	private TreeViewer snippetTreeViewer;
 	private TreeViewerColumn snippetKindCol;
 	private TreeViewerColumn snippetPropCol;
 	private TreeViewerColumn snippetNodeCol;
 	private TreeViewerColumn snippetDirectivesCol;
-	
+
 	private List<TemplateGroupViewerNodeSelectionListener> nodeSelectionListeners; 
 	private List<TemplateGroupViewerNodeDoubleClickListener> nodeDoubleClickListeners; 
 
@@ -47,35 +54,35 @@ public class TemplateGroupViewer extends Composite {
 	//private TextViewer textViewerNode;
 
 	private List<StyleRange> hyperlinks;
-	
+
 	private TemplateEditor parentTemplateEditor;
-	
+
 	public void setParentTemplateEditor(TemplateEditor editor) {
 		parentTemplateEditor = editor;
 	}
-	
+
 	public TemplateEditor getParentTemplateEditor() {
 		return parentTemplateEditor;
 	}
 
 	public TemplateGroupViewer(Composite parent, int style) {
 		super(parent, SWT.NONE);
-		
+
 		nodeSelectionListeners = new LinkedList<TemplateGroupViewerNodeSelectionListener>();
 		nodeDoubleClickListeners = new LinkedList<TemplateGroupViewerNodeDoubleClickListener>();
 		hyperlinks = new LinkedList<StyleRange>();
 
-		
-		
-		
+
+
+
 		//Composite composite = this;
 		//gridLayout.marginWidth = 0;
 		//gridLayout.marginHeight = 0;
 		//composite.setLayout(gridLayout);
-		
+
 		this.setLayout(new FillLayout());
 		SashForm composite = new SashForm(this, SWT.VERTICAL);
-		
+
 		textViewerSnippet = new TextViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		final StyledText styledText = textViewerSnippet.getTextWidget();
 		//GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
@@ -85,12 +92,12 @@ public class TemplateGroupViewer extends Composite {
 		styledText.setFont(EkekoSnippetsPlugin.getEditorFont());
 		styledText.setCaret(null);
 
-		
+
 		//Label label = new Label(getShell(), SWT.SINGLE);
 		//RGB background = label.getBackground().getRGB();
 		//label.dispose();
 
-		
+
 		/*
 		textViewerNode = new TextViewer(composite, SWT.NONE | SWT.WRAP | SWT.READ_ONLY | SWT.NO_FOCUS);
 		StyledText textViewerNodeText = textViewerNode.getTextWidget();
@@ -100,7 +107,7 @@ public class TemplateGroupViewer extends Composite {
 		//textViewerNodeText.setFont(EkekoSnippetsPlugin.getEditorFont());
 		textViewerNodeText.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 		textViewerNodeText.setCaret(null);
-		*/
+		 */
 
 		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 		snippetTreeViewer.setAutoExpandLevel(3);
@@ -118,7 +125,7 @@ public class TemplateGroupViewer extends Composite {
 		TreeColumn templateElementColCol = snippetElementCol.getColumn();
 		templateElementColCol.setWidth(150);
 		templateElementColCol.setText("Textual Representation");
-		
+
 		snippetKindCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn snippetKindColCol = snippetKindCol.getColumn();
 		snippetKindColCol.setWidth(150);
@@ -128,67 +135,115 @@ public class TemplateGroupViewer extends Composite {
 		TreeColumn trclmnProperty = snippetPropCol.getColumn();
 		trclmnProperty.setWidth(150);
 		trclmnProperty.setText("Description");
-		
+
 		snippetDirectivesCol = new TreeViewerColumn(snippetTreeViewer, SWT.NONE);
 		TreeColumn snippetDirectivesColCol = snippetDirectivesCol.getColumn();
 		snippetDirectivesColCol.setWidth(150);
 		snippetDirectivesColCol.setText("Directives");
 		composite.setWeights(new int[] {144, 153});
 
-		
-		
+
+
 
 		snippetTreeViewer.setContentProvider(new TemplateTreeContentProvider());
-		
+
 		treeSnippet.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
 				onNodeSelectionInternal();
 			}
 		});	
-		
+
 		snippetTreeViewer.addDoubleClickListener(new IDoubleClickListener() {
 			@Override
 			public void doubleClick(DoubleClickEvent event) {
 				onNodeDoubleClickInternal();
 			}
 		}); 
+
 		
+		styledText.addListener(SWT.MouseHover, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
+				StyleRange smallestEncompassing = getSmallestEncompassingHyperlink(offset);
+				if(smallestEncompassing != null) {
+					
+					StyleRange[] styleRanges = styledText.getStyleRanges(smallestEncompassing.start, smallestEncompassing.length);
+					for(StyleRange range : styleRanges) {
+							range.underlineStyle = SWT.UNDERLINE_LINK;
+							range.underline = true;
+							range.strikeout = true;
+					}
+					styledText.replaceStyleRanges(smallestEncompassing.start, smallestEncompassing.length, styleRanges);
+						
+				}
+
 				
+			}
+
+		});
+
+		
+		
+		
 		styledText.addListener(SWT.MouseDown, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
 				try {
 					int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
+					StyleRange smallestEncompassing = getSmallestEncompassingHyperlink(offset);
 					
-					StyleRange smallestEncompassing;
-					
-					/*
-					for(StyleRange link : hyperLinks) {
-						if(link.start
-					}
-					*/
-					
-					
-			
+					if(smallestEncompassing != null) {
+						Object valueIdentifier = smallestEncompassing.data;
+						if(valueIdentifier != null) {
+							Object valueForIdentifierInTemplateGroup = getValueForIdentifierInTemplate(valueIdentifier);
+							if(valueForIdentifierInTemplateGroup != null) {
+								snippetTreeViewer.setSelection(new StructuredSelection(valueForIdentifierInTemplateGroup), true);
+								updateTextFields();
 							
-						} catch (IllegalArgumentException e) {
-						// no character under event.x, event.y
+							}
+						}
 					}
-					
+
+				} catch (IllegalArgumentException e) {
+					// no character under event.x, event.y
 				}
-			
+
+			}
+
 		});
 
-		
+
 
 	}
 	
+	private StyleRange getSmallestEncompassingHyperlink(int offset) {
+		StyleRange smallestEncompassing = null;
+		for(StyleRange link : hyperlinks) {
+			//find candidate
+			if(link.start <= offset && offset <= link.start + link.length) {
+				//find candidate with smallest length
+				if(smallestEncompassing == null) {
+					smallestEncompassing = link;
+				}
+				else {
+					if(link.length <= smallestEncompassing.length) {
+						smallestEncompassing = link;
+					}
+				}
+			}
+		}
+		return smallestEncompassing;
+
+		
+	}
+
 	private void onNodeDoubleClickInternal() {
 		TemplateGroupViewerNodeSelectionEvent event = new TemplateGroupViewerNodeSelectionEvent(this, jGroup, cljTemplate, cljNode);
 		for(TemplateGroupViewerNodeDoubleClickListener listener : nodeDoubleClickListeners) {
 			listener.nodeDoubleClicked(event);
 		}
-		
+
 	}
 
 	private void onNodeSelectionInternal() {
@@ -197,26 +252,26 @@ public class TemplateGroupViewer extends Composite {
 		for(TemplateGroupViewerNodeSelectionListener listener : nodeSelectionListeners) {
 			listener.nodeSelected(event);
 		}
-			
+
 	}
-	
+
 	public boolean addNodeSelectionListener(TemplateGroupViewerNodeSelectionListener listener) {
 		return nodeSelectionListeners.add(listener);
 	}
-	
+
 	public boolean removeNodeSelectionListener(TemplateGroupViewerNodeSelectionListener listener) {
 		return nodeSelectionListeners.remove(listener);
 	}
-	
+
 	public boolean addNodeDoubleClickListener(TemplateGroupViewerNodeDoubleClickListener listener) {
 		return nodeDoubleClickListeners.add(listener);
 	}
-	
+
 	public boolean removeNodeDoubleClickListener(TemplateGroupViewerNodeDoubleClickListener listener) {
 		return nodeDoubleClickListeners.remove(listener);
 	}
 
-			
+
 	public Object getSelectedSnippetNode() {
 		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();
 		cljNode = selection.getFirstElement();
@@ -231,23 +286,23 @@ public class TemplateGroupViewer extends Composite {
 	private void updateTextFields() {
 		StyledText textWidget = textViewerSnippet.getTextWidget();
 
-		
+
 		Object selectedSnippet = getSelectedSnippet();
 		if(selectedSnippet == null) {
 			textWidget.setText("");
 			//textViewerNode.getTextWidget().setText("");
 			return;
 		}			
-	
+
 		Object selectedSnippetNode = getSelectedSnippetNode();
 		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(jGroup);
 		prettyprinter.setHighlightNode(selectedSnippetNode);
 		textWidget.setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())
 			textWidget.setStyleRange(range);
-	
+
 		this.hyperlinks = prettyprinter.getHyperlinks();
-			
+
 		/*
 		for(StyleRange hyperlink : prettyprinter.getHyperlinks()) {
 			StyleRange[] styleRanges = textWidget.getStyleRanges(hyperlink.start, hyperlink.length, true);
@@ -259,34 +314,34 @@ public class TemplateGroupViewer extends Composite {
 			}
 			textWidget.replaceStyleRanges(hyperlink.start, hyperlink.length, styleRanges);
 			}
-		*/
-		
-		
-		
+		 */
+
+
+
 		/*
 		prettyprinter =  new TemplatePrettyPrinter(templateGroup);
 		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(selectedSnippet, selectedSnippetNode));
 		for(StyleRange range : prettyprinter.getStyleRanges())
 			textViewerNode.getTextWidget().setStyleRange(range);
-		*/
-		
-	
+		 */
+
+
 	}
-	
+
 	public void clearSelection() {
 		snippetTreeViewer.setSelection(null);
 	}
-	
+
 	public void updateWidgets() {
 		setInput(jGroup, cljTemplate, cljNode);
 		updateTextFields();
 	}
-	
+
 	public void setInput(TemplateGroup jGroup, Object cljTemplate, Object cljNode) {
 		this.jGroup = jGroup;
 		this.cljTemplate = cljTemplate;
 		this.cljNode = cljNode;
-		
+
 		Object cljGroup = jGroup.getGroup();
 
 		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));	
@@ -295,7 +350,7 @@ public class TemplateGroupViewer extends Composite {
 		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
 		snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(cljGroup));
 		snippetTreeViewer.setInput(cljGroup);
-		
+
 		if(cljNode != null) {
 			//set selection to node
 			snippetTreeViewer.setSelection(new StructuredSelection(cljNode), true);
@@ -311,16 +366,15 @@ public class TemplateGroupViewer extends Composite {
 			if(items.length > 0)
 				tree.setSelection(items[0]);
 		}
-		
+
 		onNodeSelectionInternal();
 
 	}
-	
+
 	@Override
 	public boolean setFocus() {
 		return snippetTreeViewer.getControl().setFocus();
 	}
 
 }
-		
-	
+
