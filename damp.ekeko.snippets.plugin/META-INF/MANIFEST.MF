@@ -6,8 +6,6 @@ Bundle-Version: 1.0.5.qualifier
 Bundle-Activator: damp.ekeko.snippets.EkekoSnippetsPlugin
 Export-Package: damp.ekeko,
  damp.ekeko.snippets,
- damp.ekeko.snippets.data;uses:="org.eclipse.swt.widgets",
- damp.ekeko.snippets.db;uses:="org.json.simple,clojure.lang",
  damp.ekeko.snippets.gui;
   uses:="org.eclipse.jface.resource,
    org.eclipse.swt.custom,
@@ -19,8 +17,7 @@ Export-Package: damp.ekeko,
    damp.ekeko.snippets.data,
    damp.ekeko.snippets.gui.viewer,
    org.eclipse.swt.widgets,
-   org.eclipse.jface.dialogs",
- org.eclipse.wb.swt;uses:="org.eclipse.jface.resource,org.eclipse.swt.graphics"
+   org.eclipse.jface.dialogs"
 Require-Bundle: org.eclipse.osgi.services;bundle-version="3.3.100",
  org.eclipse.osgi.util;bundle-version="3.2.300",
  org.eclipse.ui,
@@ -44,6 +41,4 @@ Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Eclipse-RegisterBuddy: damp.ekeko.plugin, damp.libs
 Bundle-ClassPath: .,
- lib/json-simple-1.1.1.jar,
- lib/swing2swt.jar,
  lib/antlr-4.1-complete.jar

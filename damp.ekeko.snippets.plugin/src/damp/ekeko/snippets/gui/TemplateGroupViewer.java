@@ -85,11 +85,13 @@ public class TemplateGroupViewer extends Composite {
 		SashForm composite = new SashForm(this, SWT.VERTICAL);
 
 		textViewerSnippet = new TextViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		
 		final StyledText styledText = textViewerSnippet.getTextWidget();
 		//GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
 		//gd_styledText.heightHint = 100;
 		//styledText.setLayoutData(gd_styledText);
 		textViewerSnippet.setEditable(false);		
+		
 		styledText.setFont(EkekoSnippetsPlugin.getEditorFont());
 		styledText.setCaret(null);
 

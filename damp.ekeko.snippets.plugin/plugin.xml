@@ -8,18 +8,6 @@
             name="Ekeko/X">
       </category>
       <view
-            category="damp.ekeko.snippets.views"
-            class="damp.ekeko.snippets.gui.ResultCheckView"
-            id="damp.ekeko.snippets.gui.ResultCheckView"
-            name="Ekeko/X Subject Inspector View">
-      </view>
-      <view
-            category="damp.ekeko.snippets.views"
-            class="damp.ekeko.snippets.gui.TransformsView"
-            id="damp.ekeko.snippets.gui.TransformsView"
-            name="Ekeko/X Transformation">
-      </view>
-      <view
             allowMultiple="false"
             category="damp.ekeko.snippets.views"
             class="damp.ekeko.snippets.gui.OperatorOperandsView"
