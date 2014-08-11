@@ -60,8 +60,7 @@
   snippet-query-with-conditions
   [snippet ekekolaunchersymbol conditions userconditions]
   (let [root-var (snippet/snippet-var-for-root snippet)
-        uservars-exact (into #{} (matching/snippet-vars-among-directivebindings snippet))
-        ;uservars-var (into #{} (matching/snippet-replacement-vars snippet))
+        uservars-exact (snippet-uservars snippet)
         vars (disj (into #{} (snippet/snippet-vars snippet)) root-var)]
     (if 
       (not-empty vars) 
@@ -94,7 +93,7 @@
           fname
           (symbol (str "match" root-var)) ;has to be same for call and definition
           uservars-exact
-          (into #{} (matching/snippet-vars-among-directivebindings snippet))
+          (snippet-uservars snippet)
           vars
           (disj (into #{} (snippet/snippet-vars snippet)) root-var)
           conditions
@@ -128,7 +127,7 @@
           fname
           (symbol (str "match" root-var)) ;has to be same for call and definition
           uservars-exact
-          (into #{} (matching/snippet-vars-among-directivebindings snippet))]
+          (snippet-uservars snippet)]
       (snippet-predicatecall snippet fname root-var uservars-exact))))
 
 
@@ -138,22 +137,12 @@
   (let [root-var
         (snippet/snippet-var-for-root snippet)
         uservars-exact
-        (into #{} (matching/snippet-vars-among-directivebindings snippet))]
+        (snippet-uservars snippet)]
     `(do
        ~(snippet-predicate snippet)
        (~ekekolaunchersymbol 
          [~root-var ~@uservars-exact]
          ~(snippet-predicatecall snippet)))))
-
-;(defmacro
-; "Relatino of AST nodes ?ast that match the given ?template.
-;  Logic variables within ?template should already be defined."
-;  match
-;  [?ast ?template]
-;  `(cl/project [~?template]
-;        (l/fresh [?match-var#]
-;                 (l/== ?match# (snippet/snippet-var-for-root ~template)
-;  )
 
 
 
@@ -176,8 +165,8 @@
     (let [root-vars 
           (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
                   additionalrootvars)
-          uservars-exact (into #{} (matching/snippetgroup-vars-among-directivebindings snippetgroup))
-          ;uservars-var (into #{} (snippetgroup/snippetgroup-uservars-for-variable snippetgroup))
+         uservars-exact
+         (snippetgroup-uservars snippetgroup)
           vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
       (if 
         (not-empty vars) 
@@ -220,7 +209,7 @@
         (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
                 additionalrootvars)
         uservars
-        (into #{} (matching/snippetgroup-vars-among-directivebindings snippetgroup))]
+        (snippetgroup-uservars snippetgroup)]
     `(do
        ~@predicates
        (~ekekolaunchersymbol 
@@ -470,12 +459,17 @@
 
 
 (defn
+  snippet-uservars
+  [snippet]
+  (sort (into #{}  (matching/snippet-vars-among-directivebindings snippet))))
+  
+(defn
   snippetgroup-uservars
   [snippetgroup]
-  (mapcat
-    (fn [snippet]
-      (matching/snippet-vars-among-directivebindings snippet))
-    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+  (sort (into #{}
+              (mapcat
+                snippet-uservars
+                (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
 
 (defn-
   snippetgroup-conditions|rewrite
@@ -522,7 +516,7 @@
         rootvars
         (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) 
         uservars 
-        (into #{} (snippetgroup-uservars snippetgrouprhs)) ;uservars should be added to the ekeko [..] instead of here 
+        (snippetgroup-uservars snippetgrouprhs) ;uservars should be added to the ekeko [..] instead of here 
         vars
         (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
         allvarsexceptrootsandlhsandusers
@@ -546,6 +540,67 @@
           (snippetgroup-uservars snippetgroup|rhs))]
     (clojure.pprint/pprint q)
     q))
+
+
+(defn
+  uservars
+  [template]
+  (fn [a]
+    (let [snippet
+          (clojure.core.logic.protocols/walk a template)
+          uservars 
+          (snippet-uservars snippet)]
+      
+      (doseq [uservar  uservars]
+        (println
+          (clojure.core.logic.protocols/walk
+            a
+            (cl/lvar uservar false))))
+      
+      
+          
+      
+    
+    
+      ))
+  
+  )
+
+
+
+;user vars need to have been declared already in lexical scope
+(defn
+ match
+ [?var ?template]
+ (cl/fresh [?solutions ?solution]
+;           substition-map
+   (fresh [?varseq]
+          (el/equals ?varseq (concat [?var] (snippet-uservars ?template)))
+          (el/equals nil (map println (map  
+          
+          )
+   
+   (el/equals ?solutions (eval (snippet-query ?template 'damp.ekeko/ekeko)))
+   (el/contains ?solutions ?solution)
+   (el/equals nil (println (count ?solution)))
+   ;(cl/== ?varseq ?solution)
+   (uservars ?template)
+   
+           ))
+
+
+
+
+
+
+ 
+
+
+(def
+  t 
+  (matching/jdt-node-as-snippet (parsing/parse-string-expression "3")))
+
+
 
 
 (defn

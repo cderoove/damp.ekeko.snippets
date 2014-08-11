@@ -823,6 +823,31 @@ damp.ekeko.snippets.matching
       `((runtime/invokes ~var-match ~var)))))
 
 
+(defn
+  constrain-invokes|sname
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)
+          var-name
+          (util/gen-lvar 'name)
+          ]
+      `(cl/fresh [~var-name]
+                 (~has :name ~var-match ~var-name)  
+                 (ast/name|simple-string ~var-name ~var-string)
+                 ))))
+
+(defn
+  constrain-invokedby
+  [val var-string]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol var-string)]
+      `((runtime/invokedby ~var-match ~var)))))
 
 
 
@@ -1337,6 +1362,22 @@ damp.ekeko.snippets.matching
     constrain-invokes
     "Match invokes a method, which is the binding for the meta-variable."))
 
+(def
+  directive-invokes|sname
+  (directives/make-directive
+    "invokes|sname"
+    [(directives/make-directiveoperand "Simple name")]
+    constrain-invokes|sname
+    "Match invokes a method, with the given string as simple name."))
+
+(def 
+  directive-invokedby
+  (directives/make-directive
+    "invoked-by"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-invokedby
+    "Match is invoked by an invocation expression, bound to the meta-variable."))
+
 
 (def 
   directive-refersto
@@ -1507,6 +1548,7 @@ damp.ekeko.snippets.matching
    directive-consider-as-set|lst
    directive-multiplicity
    directive-invokes
+   directive-invokedby
    directive-refersto
    directive-referredby
    directive-type

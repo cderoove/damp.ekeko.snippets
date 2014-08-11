@@ -108,6 +108,11 @@
   (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokes.ekt")]
     (is (= 7 (count (snippets/query-by-snippetgroup snippet))))))
 
+(deftest
+  ^{:doc "Template for invoked-by matching directive on method declaration template, argument bound by invocation template."}
+  match-invokes
+  (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
+    (is (= 7 (count (snippets/query-by-snippetgroup snippet))))))
 
         
 ;; Matching Strategy: regexp

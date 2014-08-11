@@ -75,6 +75,16 @@
     (aststructure/methodinvocation-methoddeclaration ?ast ?methoddeclaration)))
 
 
+(defn
+  invokedby
+  [?ast ?invocation]
+  (cl/all
+    (el/v+ ?ast)
+    (aststructure/methodinvocation-methoddeclaration ?invocation ?ast)))
+
+
+
+  
 
 ;; end verif
 
