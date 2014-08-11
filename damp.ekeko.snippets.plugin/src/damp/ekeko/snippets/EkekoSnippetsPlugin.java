@@ -94,6 +94,13 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static Image IMG_TRANSFORM; 
 
 	public static Image IMG_OPERATOR_APPLY; 
+	
+	public static Image IMG_INTENDED_RESULTS;
+
+
+	public static Image IMG_NEGATIVE_EXAMPLE;
+	public static Image IMG_POSITIVE_EXAMPLE;
+	
 
 	
 	static {
@@ -117,7 +124,11 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_TRANSFORM = getImageDescriptor("icons/cog_go.png").createImage();
 		
 		IMG_OPERATOR_APPLY = getImageDescriptor("icons/tick.png").createImage();
+		
+		IMG_INTENDED_RESULTS = getImageDescriptor("icons/spectacle.png").createImage();
 
+		IMG_POSITIVE_EXAMPLE = getImageDescriptor("icons/plus-white.png").createImage();
+		IMG_NEGATIVE_EXAMPLE = getImageDescriptor("icons/minus-white.png").createImage();
 				
 	}
 	

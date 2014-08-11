@@ -33,6 +33,11 @@
             id="damp.ekeko.snippets.commands.transformation"
             name="Transformation Editor">
       </command>
+      <command
+            category="damp.ekeko.snippets.commands"
+            id="damp.ekeko.snippets.commands.intended"
+            name="Intended Results Editor">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -43,6 +48,10 @@
       <handler
             class="damp.ekeko.snippets.gui.TransformationEditorCommandHandler"
             commandId="damp.ekeko.snippets.commands.transformation">
+      </handler>
+      <handler
+            class="damp.ekeko.snippets.gui.IntendedResultsEditorCommandHandler"
+            commandId="damp.ekeko.snippets.commands.intended">
       </handler>
    </extension>
    <extension
@@ -61,6 +70,11 @@
                   commandId="damp.ekeko.snippets.commands.transformation"
                   icon="icons/cog.png"
                   label="Transformation Editor">
+            </command>
+            <command
+                  commandId="damp.ekeko.snippets.commands.intended"
+                  icon="icons/spectacle.png"
+                  label="Intended Results Editor">
             </command>
          </menu>
       </menuContribution>
@@ -100,6 +114,14 @@
             id="damp.ekeko.snippets.gui.TransformationEditor"
             name="Transformation Editor">
       </editor>
+      <editor
+            class="damp.ekeko.snippets.gui.IntendedResultsEditor"
+            extensions="eir"
+            icon="icons/spectacle.png"
+            id="damp.ekeko.snippets.gui.IntendedResultsEditor"
+            name="Intended Results Editor">
+      </editor>
+      
    </extension>
    <extension
          point="org.eclipse.ui.elementFactories">
@@ -111,5 +133,16 @@
             class="damp.ekeko.snippets.gui.TransformationEditorPersistableElementFactory"
             id="damp.ekeko.snippets.gui.TransformationEditorPersistableElementFactory">
       </factory>
+      <factory
+            class="damp.ekeko.snippets.gui.IntendedResultsEditorPersistableElementFactory"
+            id="damp.ekeko.snippets.gui.IntendedResultsEditorPersistableElementFactory">
+      </factory>
+      
+      
+      
+      
+      
+      
+      
    </extension>
 </plugin>

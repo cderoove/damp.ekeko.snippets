@@ -154,6 +154,7 @@ public class TransformationEditor extends MultiPageEditorPart {
 			createOverviewPage();
 			createSubjectsPage();
 			createRewritesPage();
+			//overviewEditor.setFocus();
 			
 		} catch (PartInitException e) {
 			// TODO Auto-generated catch block

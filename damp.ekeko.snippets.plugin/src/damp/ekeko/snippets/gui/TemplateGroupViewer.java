@@ -72,9 +72,7 @@ public class TemplateGroupViewer extends Composite {
 		nodeSelectionListeners = new LinkedList<TemplateGroupViewerNodeSelectionListener>();
 		nodeDoubleClickListeners = new LinkedList<TemplateGroupViewerNodeDoubleClickListener>();
 		hyperlinks = new LinkedList<StyleRange>();
-
-
-
+		
 
 		//Composite composite = this;
 		//gridLayout.marginWidth = 0;
@@ -163,6 +161,8 @@ public class TemplateGroupViewer extends Composite {
 			}
 		}); 
 
+		
+		styledText.setBlockSelection(false);
 
 		styledText.addListener(SWT.MouseMove, new Listener() {
 			@Override
@@ -222,6 +222,7 @@ public class TemplateGroupViewer extends Composite {
 							if(valueForIdentifierInTemplateGroup != null) {
 								snippetTreeViewer.setSelection(new StructuredSelection(valueForIdentifierInTemplateGroup), true);
 								updateTextFields();
+								snippetTreeViewer.getControl().setFocus();
 
 							}
 						}
