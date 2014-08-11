@@ -33,11 +33,11 @@ import damp.ekeko.snippets.data.TemplateGroup;
 public class TemplateGroupViewer extends Composite {
 
 	public static IFn FN_SNIPPET_VALUE_FOR_IDENTIFIER;
-	
+
 	public Object getValueForIdentifierInTemplate(Object identifier) {
 		return FN_SNIPPET_VALUE_FOR_IDENTIFIER.invoke(cljTemplate, identifier);
 	}
-	
+
 	private TextViewer textViewerSnippet;
 	private TreeViewer snippetTreeViewer;
 	private TreeViewerColumn snippetKindCol;
@@ -54,6 +54,7 @@ public class TemplateGroupViewer extends Composite {
 	//private TextViewer textViewerNode;
 
 	private List<StyleRange> hyperlinks;
+	private StyleRange lastUnderlined;
 
 	private TemplateEditor parentTemplateEditor;
 
@@ -160,39 +161,58 @@ public class TemplateGroupViewer extends Composite {
 			}
 		}); 
 
-		
-		styledText.addListener(SWT.MouseHover, new Listener() {
+
+		styledText.addListener(SWT.MouseMove, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
-				int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
-				StyleRange smallestEncompassing = getSmallestEncompassingHyperlink(offset);
-				if(smallestEncompassing != null) {
+				try {
+					int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
+					StyleRange smallestEncompassing = getSmallestEncompassingHyperlink(offset);
+			
+					if(lastUnderlined != null) {
+						if(lastUnderlined.equals(smallestEncompassing))
+							return;
+						
+						StyleRange[] styleRanges = styledText.getStyleRanges(lastUnderlined.start, lastUnderlined.length);
+						for(StyleRange range : styleRanges) {
+							range.underline = false;
+						}
+						styledText.replaceStyleRanges(lastUnderlined.start, lastUnderlined.length, styleRanges);						
+						lastUnderlined = null;
+					}
 					
-					StyleRange[] styleRanges = styledText.getStyleRanges(smallestEncompassing.start, smallestEncompassing.length);
-					for(StyleRange range : styleRanges) {
+					
+					if(smallestEncompassing != null) {
+						lastUnderlined = smallestEncompassing;
+						StyleRange[] styleRanges = styledText.getStyleRanges(smallestEncompassing.start, smallestEncompassing.length);
+						for(StyleRange range : styleRanges) {
 							range.underlineStyle = SWT.UNDERLINE_LINK;
 							range.underline = true;
-							range.strikeout = true;
+						}
+						styledText.replaceStyleRanges(smallestEncompassing.start, smallestEncompassing.length, styleRanges);
+						//styledText.redraw();	
 					}
-					styledText.replaceStyleRanges(smallestEncompassing.start, smallestEncompassing.length, styleRanges);
-						
+
+
+				}
+				catch(IllegalArgumentException e) {
+					//when mouse cursor out on boundary of widget
 				}
 
-				
 			}
 
 		});
 
-		
-		
-		
+
+
+
 		styledText.addListener(SWT.MouseDown, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
 				try {
 					int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
 					StyleRange smallestEncompassing = getSmallestEncompassingHyperlink(offset);
-					
+
 					if(smallestEncompassing != null) {
 						Object valueIdentifier = smallestEncompassing.data;
 						if(valueIdentifier != null) {
@@ -200,7 +220,7 @@ public class TemplateGroupViewer extends Composite {
 							if(valueForIdentifierInTemplateGroup != null) {
 								snippetTreeViewer.setSelection(new StructuredSelection(valueForIdentifierInTemplateGroup), true);
 								updateTextFields();
-							
+
 							}
 						}
 					}
@@ -216,7 +236,7 @@ public class TemplateGroupViewer extends Composite {
 
 
 	}
-	
+
 	private StyleRange getSmallestEncompassingHyperlink(int offset) {
 		StyleRange smallestEncompassing = null;
 		for(StyleRange link : hyperlinks) {
@@ -235,7 +255,7 @@ public class TemplateGroupViewer extends Composite {
 		}
 		return smallestEncompassing;
 
-		
+
 	}
 
 	private void onNodeDoubleClickInternal() {
@@ -290,7 +310,6 @@ public class TemplateGroupViewer extends Composite {
 		Object selectedSnippet = getSelectedSnippet();
 		if(selectedSnippet == null) {
 			textWidget.setText("");
-			//textViewerNode.getTextWidget().setText("");
 			return;
 		}			
 
@@ -302,28 +321,6 @@ public class TemplateGroupViewer extends Composite {
 			textWidget.setStyleRange(range);
 
 		this.hyperlinks = prettyprinter.getHyperlinks();
-
-		/*
-		for(StyleRange hyperlink : prettyprinter.getHyperlinks()) {
-			StyleRange[] styleRanges = textWidget.getStyleRanges(hyperlink.start, hyperlink.length, true);
-			for(StyleRange range : styleRanges) {
-				range.underlineStyle = hyperlink.underlineStyle;
-				range.data = hyperlink.data;
-				range.underline = true;
-				range.strikeout = true;
-			}
-			textWidget.replaceStyleRanges(hyperlink.start, hyperlink.length, styleRanges);
-			}
-		 */
-
-
-
-		/*
-		prettyprinter =  new TemplatePrettyPrinter(templateGroup);
-		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(selectedSnippet, selectedSnippetNode));
-		for(StyleRange range : prettyprinter.getStyleRanges())
-			textViewerNode.getTextWidget().setStyleRange(range);
-		 */
 
 
 	}
