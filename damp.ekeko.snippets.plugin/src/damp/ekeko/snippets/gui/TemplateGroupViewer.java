@@ -16,6 +16,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -42,11 +43,10 @@ public class TemplateGroupViewer extends Composite {
 
 	private TemplateGroup jGroup;
 	private Object cljTemplate, cljNode;
-	private Table directivesTable;
-	private TableViewer directivesTableViewer;
 	private TreeViewerColumn snippetElementCol;
 	//private TextViewer textViewerNode;
-	private LinkedList<ISelectionChangedListener> workbenchListeners;
+
+	private List<StyleRange> hyperlinks;
 	
 	private TemplateEditor parentTemplateEditor;
 	
@@ -63,8 +63,9 @@ public class TemplateGroupViewer extends Composite {
 		
 		nodeSelectionListeners = new LinkedList<TemplateGroupViewerNodeSelectionListener>();
 		nodeDoubleClickListeners = new LinkedList<TemplateGroupViewerNodeDoubleClickListener>();
+		hyperlinks = new LinkedList<StyleRange>();
 
-		workbenchListeners = new LinkedList<ISelectionChangedListener>();
+		
 		
 		
 		//Composite composite = this;
@@ -76,7 +77,7 @@ public class TemplateGroupViewer extends Composite {
 		SashForm composite = new SashForm(this, SWT.VERTICAL);
 		
 		textViewerSnippet = new TextViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		StyledText styledText = textViewerSnippet.getTextWidget();
+		final StyledText styledText = textViewerSnippet.getTextWidget();
 		//GridData gd_styledText = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
 		//gd_styledText.heightHint = 100;
 		//styledText.setLayoutData(gd_styledText);
@@ -151,6 +152,34 @@ public class TemplateGroupViewer extends Composite {
 				onNodeDoubleClickInternal();
 			}
 		}); 
+		
+				
+		styledText.addListener(SWT.MouseDown, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				try {
+					int offset = styledText.getOffsetAtLocation(new Point(event.x, event.y));
+					
+					StyleRange smallestEncompassing;
+					
+					/*
+					for(StyleRange link : hyperLinks) {
+						if(link.start
+					}
+					*/
+					
+					
+			
+							
+						} catch (IllegalArgumentException e) {
+						// no character under event.x, event.y
+					}
+					
+				}
+			
+		});
+
+		
 
 	}
 	
@@ -200,9 +229,12 @@ public class TemplateGroupViewer extends Composite {
 	}
 
 	private void updateTextFields() {
+		StyledText textWidget = textViewerSnippet.getTextWidget();
+
+		
 		Object selectedSnippet = getSelectedSnippet();
 		if(selectedSnippet == null) {
-			textViewerSnippet.getTextWidget().setText("");
+			textWidget.setText("");
 			//textViewerNode.getTextWidget().setText("");
 			return;
 		}			
@@ -210,10 +242,27 @@ public class TemplateGroupViewer extends Composite {
 		Object selectedSnippetNode = getSelectedSnippetNode();
 		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(jGroup);
 		prettyprinter.setHighlightNode(selectedSnippetNode);
-		textViewerSnippet.getTextWidget().setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
+		textWidget.setText(prettyprinter.prettyPrintSnippet(selectedSnippet));
 		for(StyleRange range : prettyprinter.getStyleRanges())
-			textViewerSnippet.getTextWidget().setStyleRange(range);
+			textWidget.setStyleRange(range);
 	
+		this.hyperlinks = prettyprinter.getHyperlinks();
+			
+		/*
+		for(StyleRange hyperlink : prettyprinter.getHyperlinks()) {
+			StyleRange[] styleRanges = textWidget.getStyleRanges(hyperlink.start, hyperlink.length, true);
+			for(StyleRange range : styleRanges) {
+				range.underlineStyle = hyperlink.underlineStyle;
+				range.data = hyperlink.data;
+				range.underline = true;
+				range.strikeout = true;
+			}
+			textWidget.replaceStyleRanges(hyperlink.start, hyperlink.length, styleRanges);
+			}
+		*/
+		
+		
+		
 		/*
 		prettyprinter =  new TemplatePrettyPrinter(templateGroup);
 		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(selectedSnippet, selectedSnippetNode));

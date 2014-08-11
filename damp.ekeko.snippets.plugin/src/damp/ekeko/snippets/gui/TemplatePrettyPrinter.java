@@ -7,10 +7,13 @@ import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
+
 import damp.ekeko.jdt.NaiveASTFlattener;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.texteditor.HyperlinkDetectorDescriptor;
 
 import clojure.lang.IFn;
 import clojure.lang.RT;
@@ -43,6 +46,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static IFn FN_SNIPPET_ELEMENT_NODE;
 
 	public static IFn FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD;
+	
+	public static IFn FN_SNIPPET_VALUE_IDENTIFIER;
+	
+	
 
 
 
@@ -53,15 +60,20 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 
 	protected LinkedList<StyleRange> styleRanges;
+	protected LinkedList<StyleRange> hyperlinks;
+	
 	protected Stack<StyleRange> currentHighlight;
 	@SuppressWarnings("rawtypes")
 	private Stack listWrapperForWhichToIgnoreListDecorations;
+	private Stack currentHyperlink;
 
 	@SuppressWarnings("rawtypes")
 	public TemplatePrettyPrinter(TemplateGroup group) {
 		styleRanges = new LinkedList<StyleRange>();
+		hyperlinks = new LinkedList<StyleRange>();
 		currentHighlight = new Stack<StyleRange>();
 		listWrapperForWhichToIgnoreListDecorations = new Stack();
+		currentHyperlink = new Stack();
 		this.templateGroup = group;
 	}
 	
@@ -72,7 +84,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
-
+	
+	public Object getIdentifier(Object value) {
+		return FN_SNIPPET_VALUE_IDENTIFIER.invoke(snippet, value);
+	}
+	
 	public void setSnippet(Object snippet) {
 		this.snippet = snippet;
 	}
@@ -275,6 +291,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		}
 		printOpeningNode(node);
 		printOpeningHighlight(node);
+		
+		
+		
+		
+		
+		
+		
+		
 	}
 
 	public void postVisit(ASTNode node) {
@@ -321,6 +345,15 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("[");
 			styleRanges.add(styleRangeForMeta(start, 1));
 		}
+				
+		
+		
+		StyleRange styleRange = new StyleRange();
+		styleRange.start = getCurrentCharacterIndex();
+		styleRange.data = getIdentifier(node);
+		styleRange.underlineStyle = SWT.UNDERLINE_LINK;
+		
+		currentHyperlink.push(styleRange);
 	}
 
 	private int getCurrentCharacterIndex() {
@@ -344,7 +377,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("]");
 			styleRanges.add(styleRangeForMeta(start, 1));	
 		}
-
+		
+		StyleRange styleRange = (StyleRange) currentHyperlink.pop();
+		styleRange.length = getCurrentCharacterIndex() - styleRange.start;
+		hyperlinks.add(styleRange);
+	}
+	
+	public LinkedList<StyleRange> getHyperlinks() {
+		return hyperlinks;
 	}
 
 	public void printOpeningHighlight(Object node) {
