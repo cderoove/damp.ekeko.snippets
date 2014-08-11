@@ -584,7 +584,7 @@
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippetgroup)
 
   
-  
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet-value-identifier)
   
   )
 
