@@ -44,6 +44,7 @@
            [damp.ekeko.snippets.transformation 
             Transformation]
            [damp.ekeko JavaProjectModel]
+           [org.eclipse.jdt.core JavaCore]
            ))
 
 ;;TODO: dispatch on node type, call parse-string with correct node type
@@ -259,6 +260,9 @@
   RootIdentifier []) 
 
 (defrecord
+  ProjectRootIdentifier [icuhandle])
+
+(defrecord
   RelativePropertyValueIdentifier
   [ownerid
    property])
@@ -321,7 +325,7 @@
       property)
     
     :else
-    (throw (Exception. (str "Unknown value to create identifier for:" value))))))
+    (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
 
 
 (defn-
@@ -334,6 +338,22 @@
           value)))
     (snippet/snippet-nodes snippet)))
 
+
+;(defprotocol 
+;  IIdentifiesProjectValue
+;  corresponding-project-value
+;  [identifier])
+
+;(extend-protocol IIdentifiesProjectValue
+;  ProjectRootIdentifier
+;  (corresponding-project-value [id]
+;    (let [handle (:icuhandlestr id)]
+;      (if-let (icu (JavaCore/create id)
+;    
+;    ))
+  
+  
+ 
 (defn
   snippet-value-corresponding-to-identifier
   [snippet identifier]
@@ -430,6 +450,14 @@
   RootIdentifier
   [identifier w]
   (.write w (str  "#=" `(make-root-identifier))))
+
+
+(defmethod 
+  clojure.core/print-dup 
+  ProjectRootIdentifier
+  [identifier w]
+  (.write w (str  "#=" `(make-root-identifier|project))))
+
 
 
 (defmethod 
@@ -585,6 +613,64 @@
     snippetgroup
     (snippetgroup/snippetgroup-snippetlist tobecopied)))
 
+
+(defn
+  make-root-identifier|project
+  [icuhandlestr]
+  (ProjectRootIdentifier. icuhandlestr))
+
+(defn
+  root-identifier|project
+  [^CompilationUnit cu]
+  (when-let [icu (.getJavaElement cu)]
+    (let [handlestr (.getHandleIdentifier icu)]
+      handlestr)))
+
+(defn
+  project-value-identifier
+  [value]
+  (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
+        property (astnode/owner-property value)]
+    (cond 
+      ;root
+      (instance? org.eclipse.jdt.core.dom.CompilationUnit value)
+      (make-root-identifier|project (root-identifier|project value))
+    
+      ;lists (keep before next clause, do not merge with before-last clause)
+      (astnode/lstvalue? value)
+      (make-property-value-identifier 
+        (project-value-identifier owner)
+        property)
+    
+      ;list members
+      (astnode/property-descriptor-list? property)
+      (let [lst 
+            ((get 
+               (astnode/reifiers owner)
+               (astnode/ekeko-keyword-for-property-descriptor property))
+              owner)
+            lst-raw (astnode/value-unwrapped lst)]
+        (make-list-element-identifier 
+          (project-value-identifier lst)
+          (.indexOf lst-raw value)))
+    
+      ;non-list members
+      (or 
+        (astnode/ast? value)
+        (astnode/nilvalue? value)
+        (astnode/primitivevalue? value))
+      (make-property-value-identifier
+        (project-value-identifier owner)
+        property)
+    
+      :else
+      (throw (Exception. (str "Unknown project value to create identifier for:" value))))))
+
+(defn
+  project-tuple-identifier
+  [tuple]
+  (map project-value-identifier tuple))
+
 (defn
   register-callbacks
   []
@@ -600,7 +686,13 @@
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet-value-identifier)
   (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet-value-corresponding-to-identifier)
   
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_VALUE_IDENTIFIER) project-value-identifier)
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_TUPLE_IDENTIFIER) project-tuple-identifier)
+
+  
   )
+
+
 
 (register-callbacks)
 

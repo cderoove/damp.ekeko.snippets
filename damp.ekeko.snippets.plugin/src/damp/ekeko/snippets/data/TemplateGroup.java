@@ -1,5 +1,6 @@
 package damp.ekeko.snippets.data;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.dom.ASTNode;
 
 import clojure.lang.IFn;
+import clojure.lang.IPersistentCollection;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
@@ -31,6 +33,7 @@ public class TemplateGroup {
 	
 	public static IFn FN_QUERY_BY_SNIPPET;
 	public static IFn FN_QUERY_BY_SNIPPETGROUP;
+	public static IFn FN_QUERY_BY_SNIPPETGROUP_NOGUI;
 
 	public static IFn FN_SNIPPETGROUP_QUERY;
 	public static IFn FN_SNIPPET_QUERY;
@@ -52,6 +55,9 @@ public class TemplateGroup {
 	public static IFn FN_UPDATE_SNIPPET_IN_SNIPPETGROUP;
 	
 	public static IFn FN_TRANSFORM_BY_SNIPPETGROUPS;
+	
+	public static IFn FN_SNIPPETGROUP_NORMALIZED_MATCH_VARS;
+	
 
 	protected Object cljGroup;
 
@@ -186,6 +192,11 @@ public class TemplateGroup {
 		job.schedule();
 	}
 	
+	public Collection getResults() {
+		return (Collection) FN_QUERY_BY_SNIPPETGROUP_NOGUI.invoke(getGroup()); 		
+	}
+	
+	
 	public Object[] searchSpace(Object[] positiveExamples, Object[] negativeExamples) {
 		//return getArray(RT.var(ns_search,"dfs-snippet").invoke(getGroup(), positiveExamples, negativeExamples)); 		
 		return getArray(FN_SEARCH.invoke(getGroup(), positiveExamples, negativeExamples)); 		
@@ -195,4 +206,9 @@ public class TemplateGroup {
 		return FN_PARSE_TO_NODES.invoke(arrStr); 		
 	}
 	
+	public Collection getNormalizedMatchVariables() {
+		return (Collection) FN_SNIPPETGROUP_NORMALIZED_MATCH_VARS.invoke(getGroup()); 		
+
+	}
+
 }

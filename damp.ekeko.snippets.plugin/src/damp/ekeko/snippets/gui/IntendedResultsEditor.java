@@ -1,13 +1,15 @@
 package damp.ekeko.snippets.gui;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -16,13 +18,15 @@ import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.DialogCellEditor;
-import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -30,11 +34,12 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Link;
@@ -53,8 +58,12 @@ import org.eclipse.ui.dialogs.ListDialog;
 import org.eclipse.ui.model.WorkbenchPartLabelProvider;
 import org.eclipse.ui.part.EditorPart;
 
-import com.google.common.collect.Iterators;
+import clojure.lang.IFn;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+
+import baristaui.util.MarkerUtility;
 import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
@@ -64,6 +73,9 @@ public class IntendedResultsEditor extends EditorPart {
 
 	public static final String ID = "damp.ekeko.snippets.gui.IntendedResultsEditor"; //$NON-NLS-1$
 
+	public static IFn FN_PROJECT_VALUE_IDENTIFIER;
+	public static IFn FN_PROJECT_TUPLE_IDENTIFIER;
+	
 	private IEditorPart linkedTransformationOrTemplateEditor;
 	private TemplateEditor linkedTemplateEditor;
 	private ToolBar toolBar;
@@ -80,8 +92,21 @@ public class IntendedResultsEditor extends EditorPart {
 	private Button linkButton;
 
 	private ToolItem toolitemCompareResults;
-	
+
 	private EkekoLabelProvider ekekoLabelProvider;
+
+	private ToolItem toolitemAddPositive;
+
+	private ToolItem toolitemAddNegative;
+
+	private Set<Collection<Object>> results = new HashSet<>();
+	
+	private Set<Object> positiveIDs = new HashSet<>();
+	private Set<Object> negativeIDs = new HashSet<>();
+
+	private IStructuredContentProvider verifiedContentProvider;
+
+	private ArrayContentProvider matchesContentProvider;
 
 
 	@Override
@@ -92,6 +117,15 @@ public class IntendedResultsEditor extends EditorPart {
 	public void doSaveAs() {
 	}
 
+	public static Object projectValueIdentifier(Object value) {
+		return FN_PROJECT_VALUE_IDENTIFIER.invoke(value);
+	}
+	
+	public static Object projectTupleIdentifier(Object value) {
+		return FN_PROJECT_TUPLE_IDENTIFIER.invoke(value);
+	}
+
+	
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 		setSite(site);
@@ -115,30 +149,6 @@ public class IntendedResultsEditor extends EditorPart {
 		toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
 
-		ToolItem toolitemInitialize = new ToolItem(toolBar, SWT.NONE);
-		toolitemInitialize.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//initialize from file, clone instances, recorded changes, diff ...
-				//probably want drop down menu
-			}
-
-		});
-		toolitemInitialize.setImage(EkekoSnippetsPlugin.IMG_RESULTS_IMPORT);
-		toolitemInitialize.setToolTipText("Initialize intended results");
-
-
-		ToolItem toolitemAddColumn = new ToolItem(toolBar, SWT.NONE);
-		toolitemAddColumn.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				addColumn(matchesViewerTable.getColumnCount());
-			}
-		});
-		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
-		toolitemAddColumn.setToolTipText("Add Column");
-
-		
 		toolitemCompareResults = new ToolItem(toolBar, SWT.NONE);
 		toolitemCompareResults.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -148,8 +158,28 @@ public class IntendedResultsEditor extends EditorPart {
 		});
 		toolitemCompareResults.setImage(EkekoSnippetsPlugin.IMG_RESULTS_REFRESH);
 		toolitemCompareResults.setToolTipText("Compare results");
-		
-		
+
+
+		toolitemAddPositive = new ToolItem(toolBar, SWT.NONE);
+		toolitemAddPositive.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onAddPositiveExample();
+			}
+		});
+		toolitemAddPositive.setImage(EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE);
+		toolitemAddPositive.setToolTipText("Mark as positive example");
+
+		toolitemAddNegative = new ToolItem(toolBar, SWT.NONE);
+		toolitemAddNegative.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onAddNegativeExample();
+			}
+		});
+		toolitemAddNegative.setImage(EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE);
+		toolitemAddNegative.setToolTipText("Mark as negative example");
+
 		final ToolItem tltmSearchModifications = new ToolItem(toolBar, SWT.NONE);
 		tltmSearchModifications.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -201,38 +231,57 @@ public class IntendedResultsEditor extends EditorPart {
 		//matchesViewer.setLabelProvider(new EkekoLabelProvider());
 		//addColumn(matchesViewer, 0, "?match");
 		//matchesViewer.setInput(new String[]{"a", "b"});
-
 		
+		matchesContentProvider = new ArrayContentProvider();
+		matchesViewer.setContentProvider(matchesContentProvider);		
+		matchesViewer.setInput(results);
+
+
+
+		matchesViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				toolitemAddNegative.setEnabled(!selection.isEmpty());
+				toolitemAddPositive.setEnabled(!selection.isEmpty());
+
+			}
+		});
+
+
 		Composite bottomComposite = new Composite(sash, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.marginWidth = 0;
 		gridLayout.marginHeight = 0;
 		bottomComposite.setLayout(gridLayout);
-		
-		
+
+
 		ToolBar bottomToolBar = new ToolBar(bottomComposite, SWT.FLAT | SWT.RIGHT);
 		bottomToolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-		
-		ToolItem toolitemAddPositive = new ToolItem(bottomToolBar, SWT.NONE);
-		toolitemAddPositive.addSelectionListener(new SelectionAdapter() {
+
+		ToolItem toolitemInitialize = new ToolItem(bottomToolBar, SWT.NONE);
+		toolitemInitialize.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onAddPositiveExample();
+				//initialize from file, clone instances, recorded changes, diff ...
+				//probably want drop down menu
 			}
-		});
-		toolitemAddPositive.setImage(EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE);
-		toolitemAddPositive.setToolTipText("Mark as true positive");
 
-		ToolItem toolitemAddNegative = new ToolItem(bottomToolBar, SWT.NONE);
-		toolitemAddNegative.addSelectionListener(new SelectionAdapter() {
+		});
+		toolitemInitialize.setImage(EkekoSnippetsPlugin.IMG_RESULTS_IMPORT);
+		toolitemInitialize.setToolTipText("Initialize intended results");
+
+
+		ToolItem toolitemAddColumn = new ToolItem(bottomToolBar, SWT.NONE);
+		toolitemAddColumn.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onAddNegativeExample();
+				addColumnToVerifiedViewer(verifiedViewerTable.getColumnCount());
+				verifiedViewer.refresh();
 			}
 		});
-		toolitemAddNegative.setImage(EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE);
-		toolitemAddNegative.setToolTipText("Mark as false positive");
-
+		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
+		toolitemAddColumn.setToolTipText("Add Column");
 
 		verifiedViewer = new TableViewer(bottomComposite, SWT.BORDER | SWT.FULL_SELECTION);
 		verifiedViewerTable = verifiedViewer.getTable();
@@ -240,39 +289,91 @@ public class IntendedResultsEditor extends EditorPart {
 
 		verifiedViewerTable.setLinesVisible(true);
 		verifiedViewerTable.setHeaderVisible(true);
+		
+		TableViewerColumn imgColumn = new TableViewerColumn(verifiedViewer, SWT.NONE, 0);
+		imgColumn.getColumn().setWidth(24);
+		imgColumn.getColumn().setResizable(false);
+		imgColumn.getColumn().setText("");
+		imgColumn.getColumn().setMoveable(false);
+		imgColumn.setLabelProvider(new ColumnLabelProvider() {
+			@SuppressWarnings("rawtypes")
+			@Override
+			public String getText(Object element) {
+				return "";
+			}
+			
+			@Override
+			public org.eclipse.swt.graphics.Image getImage(Object tupleIdentifier) {
+				if(isPositiveIdentifier(tupleIdentifier)) 
+					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
+				if(isNegativeIdentifier(tupleIdentifier))
+					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
+				return null;
+			}
+			
+		});
 
-		verifiedViewer.setContentProvider(new ArrayContentProvider());		
-		//verifiedViewer.setLabelProvider(new EkekoLabelProvider());
-		//addColumn(verifiedViewer, 0, "?match");
-		//verifiedViewer.setInput(new String[]{"a", "b"});
+
+		verifiedContentProvider = new ArrayContentProvider();
+		verifiedViewer.setContentProvider(verifiedContentProvider);		
+		verifiedViewer.setInput(Sets.union(positiveIDs,negativeIDs));
 
 		addActiveColumnListener(matchesViewerTable);
 		addActiveColumnListener(verifiedViewerTable);
 
-		addMenu(matchesViewerTable);
-		addMenu(verifiedViewerTable);
-		
-		
+		addMenu(matchesViewer);
+		addMenu(verifiedViewer);
+
+
 		ekekoLabelProvider = new EkekoLabelProvider();
-		
+
 		updateWidgets();
 
 	}
 
+	protected boolean isPositiveIdentifier(Object tupleIdentifier) {
+		return positiveIDs.contains(tupleIdentifier);
+	}
+
 	protected void onSearchModifications() {
-		// TODO Auto-generated method stub
+
+	}
+
+	protected void addVerifiedExample(boolean isPositive) {
+		ISelection selection = matchesViewer.getSelection();
+		IStructuredSelection sel = (IStructuredSelection) selection;
+		if(sel.isEmpty()) {
+			return;
+		}
+		Collection selectedTuple = (Collection) sel.getFirstElement();
+		Object tupleIdentifier = projectTupleIdentifier(selectedTuple);
+		if(isPositive) {
+			positiveIDs.add(tupleIdentifier);
+			negativeIDs.remove(tupleIdentifier);
+		} else {
+			negativeIDs.add(tupleIdentifier);
+			positiveIDs.remove(tupleIdentifier);
+
+		}
+		//arraycontentprovider's implementation does nothing
+		//verifiedContentProvider.inputChanged(verifiedViewer, verifiedViewer.getInput(), Sets.union(positives, negatives));
 		
+		//would be better to update only for the added example...
+		verifiedViewer.setInput(Sets.union(positiveIDs, negativeIDs));
+		matchesViewer.refresh();
 	}
 
 	protected void onAddPositiveExample() {
-		// TODO Auto-generated method stub
-		
+		addVerifiedExample(true);
 	}
 
 	protected void onAddNegativeExample() {
-		// TODO Auto-generated method stub
-		
+		addVerifiedExample(false);
+
+
 	}
+
+
 
 	protected void onCompareResults() {
 		for (TableColumn tableColumn : matchesViewerTable.getColumns()) {
@@ -280,39 +381,77 @@ public class IntendedResultsEditor extends EditorPart {
 		}
 		for (Object object : getResultVariables()) {
 			String varname = (String) object;
-			TableViewerColumn column = addColumn(matchesViewer, matchesViewerTable.getColumnCount(), varname);
+			final int columnIndex = matchesViewerTable.getColumnCount();
+			TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname);
+			/*
 			column.setEditingSupport(new EditingSupport(matchesViewer) {
+
+				private Object getCellValue(final Object element) {
+					Collection row = (Collection) element;
+					Object cellValue = nth(row, columnIndex);
+					return cellValue;
+				}
+
 				@Override
 				protected void setValue(Object element, Object value) {
-						
+
 				}
-				
+
 				@Override
 				protected Object getValue(Object element) {
-					return element;
+					return getCellValue(element);
 				}
-				
+
 				@Override
 				protected CellEditor getCellEditor(final Object element) {
 					return new DialogCellEditor(matchesViewerTable) {
-						
+
 						@Override
 						protected Object openDialogBox(Control cellEditorWindow) {
-							System.out.println(element);
+							OpenASTNodeInEditorAction action = new OpenASTNodeInEditorAction(null);
+							try {
+								action.showNodeInEditor((ASTNode) getCellValue(element));
+							} catch (PartInitException | JavaModelException e) {
+								e.printStackTrace();
+							}
 							return null;
 						}
 					};
 				}
-				
+
 				@Override
 				protected boolean canEdit(Object element) {
-					return true;
+					return getCellValue(element) instanceof ASTNode;
 				}
+			});
+			 */
+
+			column.setLabelProvider(new ColumnLabelProvider() {
+				
+				@SuppressWarnings("rawtypes")
+				@Override
+				public String getText(Object element) {
+					return ekekoLabelProvider.getText(nth((Collection) element, columnIndex));
+				}
+				
+				@Override
+				public Color getBackground(Object element) {
+					Collection tuple = (Collection) element;
+					if(isPositive(tuple))
+						return Display.getCurrent().getSystemColor(SWT.COLOR_GREEN);
+					if(isNegative(tuple))
+						return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+					return super.getBackground(element);
+				}
+				
 			});
 		}
 
 		matchesViewerTable.layout(true);
-		matchesViewer.setInput(getResults());
+		results = new HashSet(getResults());
+		//arraycontentprovider's implementation does nothing
+		//matchesContentProvider.inputChanged(matchesViewer, matchesViewer.getInput(), results);
+		matchesViewer.setInput(results);
 		
 	}
 
@@ -354,7 +493,7 @@ public class IntendedResultsEditor extends EditorPart {
 		}
 
 	}
-	
+
 	private void updateLinkWidget() {
 		if(linkedTransformationOrTemplateEditor instanceof TransformationEditor) {
 			linkStatus.setText("Linked to LHS of transformation editor on <a>" + linkedTransformationOrTemplateEditor.getEditorInput().getName() + "</a>");
@@ -368,19 +507,28 @@ public class IntendedResultsEditor extends EditorPart {
 		linkStatus.pack();
 
 	}
-	
+
 	private void updateWidgets() {
 		updateLinkWidget();
 		toolitemCompareResults.setEnabled(linkedTransformationOrTemplateEditor != null);
-		
+		if(linkedTemplateEditor == null) {
+			toolitemAddNegative.setEnabled(false);
+			toolitemAddPositive.setEnabled(false);
+			toolitemCompareResults.setEnabled(false);
+		} else {	
+			toolitemCompareResults.setEnabled(true);
+			ISelection selection = matchesViewer.getSelection();
+			toolitemAddNegative.setEnabled(!selection.isEmpty());
+			toolitemAddPositive.setEnabled(!selection.isEmpty());
+		}
 	}
-	
+
 
 	@SuppressWarnings("rawtypes")
 	private Collection getResults() {
 		return linkedTemplateEditor.getGroup().getResults();
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	private Collection getResultVariables() {
 		return linkedTemplateEditor.getGroup().getNormalizedMatchVariables();
@@ -404,11 +552,13 @@ public class IntendedResultsEditor extends EditorPart {
 		updateWidgets();
 	}
 
-	private void addMenu(final Table table) {
+	private void addMenu(final TableViewer tableViewer) {
+		final Table table = tableViewer.getTable();
 		final MenuManager mgr = new MenuManager();
 		final Action insertColumnAfter = new Action("Insert New Column After") {
 			public void run() {
-				addColumn(activeColumn + 1);
+				addColumnToVerifiedViewer(activeColumn + 1);
+				verifiedViewer.refresh();
 			}
 		};
 		insertColumnAfter.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD));
@@ -422,23 +572,47 @@ public class IntendedResultsEditor extends EditorPart {
 		removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
 
 
+		final Action revealNode = new Action("Reveal In Editor") {
+			public void run() {
+				revealNode(tableViewer, activeColumn);
+			}
+		};
+		//removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
+
+
 
 		mgr.setRemoveAllWhenShown(true);
 		mgr.addMenuListener(new IMenuListener() {
 			@Override
 			public void menuAboutToShow(IMenuManager manager) {
-				if (table.getColumnCount() == 1) {
-					manager.add(insertColumnAfter);
-				} else {
-					manager.add(insertColumnAfter);
-					manager.add(removeColumn);
+				if(tableViewer.equals(verifiedViewer)) {
+					if (table.getColumnCount() == 1) {
+						manager.add(insertColumnAfter);
+					} else {
+						manager.add(insertColumnAfter);
+						manager.add(removeColumn);
+					}
 				}
+				manager.add(revealNode);
 			}
 
 
 		});
 
 		table.setMenu(mgr.createContextMenu(table));
+	}
+
+	protected void revealNode(TableViewer viewer, int activeColumn) {
+		ISelection selection = viewer.getSelection();
+		IStructuredSelection sel = (IStructuredSelection) selection;
+		if(sel.isEmpty()) 
+			return;
+		Collection tuple = (Collection) sel.getFirstElement();
+		Object element = nth(tuple, activeColumn);
+		if(element instanceof ASTNode) {
+			ASTNode astNode = (ASTNode) element;
+			MarkerUtility.getInstance().createMarkerAndGoto(astNode);
+		}
 	}
 
 	private void addActiveColumnListener(final Table table) {
@@ -467,39 +641,66 @@ public class IntendedResultsEditor extends EditorPart {
 	protected void addRow() {
 	}
 
+	private Object nth(Collection coll, int n) {
+		Iterator iterator = coll.iterator();
+		for(int i=0; i<n; i++){
+			iterator.next();
+		}
+		return iterator.next();
+	}
+
 	protected TableViewerColumn addColumn(TableViewer viewer, final int columnIndex, String attributeName) {
 		TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE, columnIndex);
 		column.getColumn().setWidth(200);
 		column.getColumn().setText(attributeName);
 		column.getColumn().setMoveable(true);
-		column.setLabelProvider(new ColumnLabelProvider() {
-							
-			@Override
-			public String getText(Object element) {
-				@SuppressWarnings("rawtypes")
-				Collection row = (Collection) element;
-				
-				Iterator iterator = row.iterator();
-				for(int i=0; i<columnIndex; i++){
-					iterator.next();
-				}
-				return ekekoLabelProvider.getText(iterator.next());
-			}
-		});
 		return column;
 	}
 
 
-	protected TableViewerColumn addColumn(int columnIndex) {
+	protected TableViewerColumn addColumnToVerifiedViewer(final int columnIndex) {
 		String attributeName = getAttributeName();
 		if(attributeName == null)
 			return null;
-		//addColumn(matchesViewer, columnIndex, attributeName);
-		return addColumn(verifiedViewer, columnIndex, attributeName);
+		TableViewerColumn col = addColumn(verifiedViewer, columnIndex, attributeName);
+		col.setLabelProvider(new ColumnLabelProvider() {
+			@SuppressWarnings("rawtypes")
+			@Override
+			public String getText(Object element) {
+				Collection tuple = (Collection) element;
+				return ekekoLabelProvider.getText(nth(tuple, columnIndex));
+			}
+			
+			@Override
+			public org.eclipse.swt.graphics.Image getImage(Object element) {
+				if(columnIndex != -1) 
+					return null;
+				Collection tuple = (Collection) element;
+				if(isPositive(tuple)) 
+					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
+				if(isNegative(tuple))
+					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
+				return null;
+			}
+			
+		});
+		return col;
 	}
 
 
+	public boolean isPositive(Collection<Object> tuple) {
+		Object tupleIdentifier = projectTupleIdentifier(tuple);
+		return isPositiveIdentifier(tupleIdentifier);
+	}
 
+	public boolean isNegative(Collection<Object> tuple) {
+		Object tupleIdentifier = projectTupleIdentifier(tuple);
+		return isNegativeIdentifier(tupleIdentifier);
+	}
+
+	private boolean isNegativeIdentifier(Object tupleIdentifier) {
+		return negativeIDs.contains(tupleIdentifier);
+	}
 
 	@Override
 	public void setFocus() {
