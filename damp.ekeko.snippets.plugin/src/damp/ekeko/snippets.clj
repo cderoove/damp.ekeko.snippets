@@ -59,6 +59,15 @@
   [snippetgroup]
   (eval (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko)))
 
+
+(defn
+  query-by-snippetgroup|java
+  [snippetgroup]
+  (let [solutions (query-by-snippetgroup snippetgroup)]
+    ;(java.util.ArrayList. solutions)
+    solutions
+    ))
+
 (defn
   transform-by-snippetgroups
   "Performs the program transformation defined by the lhs and rhs snippetgroups." 
@@ -91,6 +100,7 @@
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPET) query-by-snippet*)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP) query-by-snippetgroup*)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_QUERY_BY_SNIPPETGROUP_NOGUI) query-by-snippetgroup|java)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_TRANSFORM_BY_SNIPPETGROUPS) transform-by-snippetgroups))
 
 (register-callbacks)

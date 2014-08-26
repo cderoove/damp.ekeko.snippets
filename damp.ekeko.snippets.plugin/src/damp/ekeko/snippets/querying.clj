@@ -235,6 +235,7 @@
         additionalconditions)
       additionalrootvars)))
 
+
 ; Converting snippet group to rewrite query
 ;------------------------------------------
 
@@ -474,6 +475,7 @@
                 snippet-uservars
                 (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
 
+
 (defn-
   snippetgroup-conditions|rewrite
   [snippetgrouprhs lhsuservars]
@@ -596,8 +598,15 @@
 
 
 
- 
-
+(defn
+  snippetgroup-matchvariables|normalized
+  [snippetgroup]
+  (sort (into #{}  
+              (map
+                str
+                (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
+                        (snippetgroup-uservars snippetgroup))))))
+  
 
 (def
   t 
@@ -610,7 +619,10 @@
   register-callbacks 
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_QUERY) snippetgroup-query|usingpredicates)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_QUERY) snippet-query|usingpredicate))
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_QUERY) snippet-query|usingpredicate)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NORMALIZED_MATCH_VARS) snippetgroup-matchvariables|normalized))
+
+  
 
 (register-callbacks)
 

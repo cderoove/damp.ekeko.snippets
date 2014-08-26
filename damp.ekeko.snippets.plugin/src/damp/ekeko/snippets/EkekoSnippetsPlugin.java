@@ -100,9 +100,16 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 	public static Image IMG_NEGATIVE_EXAMPLE;
 	public static Image IMG_POSITIVE_EXAMPLE;
+	public static Image IMG_COLUMN_ADD;
+	public static Image IMG_COLUMN_DELETE;
 	
+	public static Image IMG_SEARCH;
+	public static Image IMG_RESULTS_IMPORT;
 
-	
+
+	public static Image IMG_RESULTS_REFRESH;
+
+
 	static {
 		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
 		
@@ -129,6 +136,13 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 		IMG_POSITIVE_EXAMPLE = getImageDescriptor("icons/plus-white.png").createImage();
 		IMG_NEGATIVE_EXAMPLE = getImageDescriptor("icons/minus-white.png").createImage();
+		
+		IMG_COLUMN_ADD = getImageDescriptor("icons/table-insert-column.png").createImage();
+		IMG_COLUMN_DELETE = getImageDescriptor("icons/table-delete-column.png").createImage();
+
+		IMG_SEARCH = getImageDescriptor("icons/brain.png").createImage();
+		IMG_RESULTS_IMPORT = getImageDescriptor("icons/table-import.png").createImage();
+		IMG_RESULTS_REFRESH = getImageDescriptor("icons/arrow_refresh.png").createImage();
 				
 	}
 	
