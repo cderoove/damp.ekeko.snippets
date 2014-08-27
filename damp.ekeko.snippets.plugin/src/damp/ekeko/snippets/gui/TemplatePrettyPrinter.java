@@ -12,6 +12,7 @@ import damp.ekeko.jdt.NaiveASTFlattener;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.texteditor.HyperlinkDetectorDescriptor;
 
@@ -138,31 +139,35 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		return "(= " + uservar + ")";
 	}
 
+	public static Color colorOrNullOutsideOfDisplayThread(int id) {
+		Display current = Display.getCurrent();
+		if(current == null)
+			return null;
+		return current.getSystemColor(id);
+	}
+	
 	public static StyleRange styleRangeForVariable(int start, int length) {
-		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_BLUE), null);
+		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_BLUE), null);
 	}
 	
 	public static StyleRange styleRangeForExp(int start, int length) {
-		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_DARK_CYAN), null);
+		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_DARK_CYAN), null);
 	}
 
 	public static StyleRange styleRangeForMeta(int start, int length) {
-		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_RED), null);
+		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_RED), null);
 	}
 	public static StyleRange styleRangeForHighlight(int start) {
-		return new StyleRange(start, 0, null, Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+		return new StyleRange(start, 0, null, colorOrNullOutsideOfDisplayThread(SWT.COLOR_YELLOW));
 	}
 
 	public static StyleRange styleRangeForDirectives(int start, int length) {
-		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_GRAY), null);
+		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_GRAY), null);
 	}
 	
 	public static StyleRange styleRangeForWildcard(int start, int length) {
-		return new StyleRange(start, length, Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GREEN), null);
+		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_DARK_GREEN), null);
 	}
-
-
-
 
 
 	protected void printVariableReplacement(Object replacementVar) {
