@@ -201,7 +201,8 @@ damp.ekeko.snippets.operatorsrep
   validity|subjectowninglisttype
   [snippetgroup snippet value classkeyword]
   (let [propertydescriptor (astnode/owner-property value)]
-    (instance-of-classkeyword-assignable-to-property? classkeyword propertydescriptor))) 
+    (and propertydescriptor
+         (instance-of-classkeyword-assignable-to-property? classkeyword propertydescriptor))))
 
 (def
   validity|subjectlisttype
@@ -907,11 +908,13 @@ damp.ekeko.snippets.operatorsrep
 (defn
   applicable-operators
   "Filters operators that are applicable to the given node."
-  [snippetgroup snippet node]
-  (filter
-    (fn [operator] 
-      (applicable? snippetgroup snippet node operator))
-    (registered-operators)))
+  ([snippetgroup snippet node operators] 
+    (filter
+      (fn [operator] 
+        (applicable? snippetgroup snippet node operator))
+      operators))
+  ([snippetgroup snippet node]
+    (applicable-operators snippetgroup snippet node (registered-operators))))
 
 (defn
   applicable-operators-in-category

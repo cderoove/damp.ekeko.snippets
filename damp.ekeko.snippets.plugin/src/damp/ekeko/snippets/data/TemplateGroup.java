@@ -168,7 +168,7 @@ public class TemplateGroup {
 		Object snippet = getSnippet(node);
 		Object query = "";
 		if (snippet == null)		
-			query = FN_SNIPPETGROUP_QUERY.invoke(getGroup(), Symbol.intern("damp.ekeko/ekeko*"));
+			query = FN_SNIPPETGROUP_QUERY.invoke(getGroup(), Symbol.intern("damp.ekeko/ekeko*"), false);
 		else 
 			query = FN_SNIPPET_QUERY.invoke(snippet, Symbol.intern("damp.ekeko/ekeko*"));
 		return query.toString().replace(") ", ") \n").replace("] ", "] \n");

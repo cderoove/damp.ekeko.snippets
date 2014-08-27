@@ -559,6 +559,14 @@
                 grp))]
     (.prettyPrintSnippet pp snippet)))
 
+(defn
+  snippetgroup-string
+  [snippetgroup]
+  (let [pp  
+        (damp.ekeko.snippets.gui.TemplatePrettyPrinter. 
+          (damp.ekeko.snippets.data.TemplateGroup/newFromClojureGroup
+            snippetgroup))]
+    (.prettyPrint pp)))
 
 (defn 
   copy-snippet
@@ -679,6 +687,14 @@
   project-tuple-identifier
   [tuple]
   (map project-value-identifier tuple))
+
+(defn
+  slurp-from-resource
+  [pathrelativetobundle]
+  (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+
+
+
 
 (defn
   register-callbacks

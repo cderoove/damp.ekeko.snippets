@@ -49,7 +49,8 @@ damp.ekeko.snippets.snippetgroup
   snippetgroup-rootvars
   "Returns all logic variables of root node of all snippets in snippet group."
   [snippetgroup]
-  (map snippet/snippet-var-for-root (snippetgroup-snippetlist snippetgroup)))
+  (sort 
+    (map snippet/snippet-var-for-root (snippetgroup-snippetlist snippetgroup))))
 
 
 (defn

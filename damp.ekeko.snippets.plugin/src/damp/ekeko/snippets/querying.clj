@@ -201,7 +201,7 @@
 
 (defn-
   snippetgroup-query-with-conditions|usingpredicates
-  [snippetgroup ekekolaunchersymbol conditions userconditions additionalrootvars]
+  [snippetgroup ekekolaunchersymbol conditions userconditions additionalrootvars hideuservars]
   (let [snippets
         (snippetgroup/snippetgroup-snippetlist snippetgroup)
         predicates
@@ -213,27 +213,38 @@
                 additionalrootvars)
         uservars
         (snippetgroup-uservars snippetgroup)]
-    `(do
-       ~@predicates
-       (~ekekolaunchersymbol 
-         [~@root-vars ~@uservars]
-         ~@calls
-         ~@userconditions))))
+    (if
+      hideuservars
+      `(do
+         ~@predicates
+         (~ekekolaunchersymbol 
+           [~@root-vars]
+           (cl/fresh [~@uservars]
+                     ~@calls
+                     ~@userconditions)))
+      `(do
+         ~@predicates
+         (~ekekolaunchersymbol 
+           [~@root-vars ~@uservars]
+           ~@calls
+           ~@userconditions)))))
          
               
 (defn
   snippetgroup-query|usingpredicates
   "Returns an Ekeko query that that will retrieve matches for the given snippet group."
-  ([snippetgroup ekekolaunchersymbol]
-    (snippetgroup-query|usingpredicates snippetgroup ekekolaunchersymbol '() '()))
-  ([snippetgroup ekekolaunchersymbol additionalconditions additionalrootvars]
+  ([snippetgroup ekekolaunchersymbol hideuservars]
+    (snippetgroup-query|usingpredicates snippetgroup ekekolaunchersymbol '() '() hideuservars))
+  ([snippetgroup ekekolaunchersymbol additionalconditions additionalrootvars hideuservars]
     (snippetgroup-query-with-conditions|usingpredicates 
       snippetgroup ekekolaunchersymbol 
       (snippetgroup-conditions snippetgroup) 
       (concat 
         (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
         additionalconditions)
-      additionalrootvars)))
+      additionalrootvars
+      hideuservars
+      )))
 
 
 ; Converting snippet group to rewrite query
@@ -542,7 +553,8 @@
           snippetgroup|lhs 
           'damp.ekeko/ekeko ;TODO: serious bug in GUI, getting indexoutofbounds exception when using ekeko*  
           (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
-          (snippetgroup-uservars snippetgroup|rhs))]
+          (snippetgroup-uservars snippetgroup|rhs)
+          false)]
     (clojure.pprint/pprint q)
     q))
 
@@ -601,11 +613,9 @@
 (defn
   snippetgroup-matchvariables|normalized
   [snippetgroup]
-  (sort (into #{}  
-              (map
-                str
-                (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
-                        (snippetgroup-uservars snippetgroup))))))
+  (map
+    str
+    (snippetgroup/snippetgroup-rootvars snippetgroup)))
   
 
 (def

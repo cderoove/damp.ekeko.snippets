@@ -48,7 +48,7 @@
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (let [q (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko*)]
+  (let [q (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko* false)]
     (println q)
     (eval q)))
 
@@ -56,7 +56,7 @@
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippetgroup."
   [snippetgroup]
-  (eval (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko)))
+  (eval (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko false)))
 
 
 (defn
@@ -64,8 +64,7 @@
   [snippetgroup]
   (let [solutions (query-by-snippetgroup snippetgroup)]
     ;(java.util.ArrayList. solutions)
-    solutions
-    ))
+    (into #{} solutions)))
 
 (defn
   transform-by-snippetgroups
