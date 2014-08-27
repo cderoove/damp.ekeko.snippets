@@ -697,6 +697,9 @@
   
   (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_VALUE_IDENTIFIER) project-value-identifier)
   (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_TUPLE_IDENTIFIER) project-tuple-identifier)
+  
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE) corresponding-project-value)
+  
 
   
   )

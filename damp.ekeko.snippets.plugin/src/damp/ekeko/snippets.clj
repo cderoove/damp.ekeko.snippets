@@ -19,8 +19,7 @@
              [runtime]
              [transformation]
              [rewriting :as rewriting]
-             ;todo: fix
-             ;[searchspace]
+             [search :as search]
              [public]
              ;todo: fix
              ;[datastore]

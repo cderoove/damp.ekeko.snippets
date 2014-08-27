@@ -75,6 +75,7 @@ public class IntendedResultsEditor extends EditorPart {
 
 	public static IFn FN_PROJECT_VALUE_IDENTIFIER;
 	public static IFn FN_PROJECT_TUPLE_IDENTIFIER;
+	public static IFn FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE;
 	
 	private IEditorPart linkedTransformationOrTemplateEditor;
 	private TemplateEditor linkedTemplateEditor;
@@ -125,6 +126,10 @@ public class IntendedResultsEditor extends EditorPart {
 	
 	public static Object projectTupleIdentifier(Object value) {
 		return FN_PROJECT_TUPLE_IDENTIFIER.invoke(value);
+	}
+	
+	public static Object projectvalueForIdentifier(Object identifier) {
+		return FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE.invoke(identifier);
 	}
 
 	
@@ -706,21 +711,10 @@ public class IntendedResultsEditor extends EditorPart {
 			@Override
 			public String getText(Object element) {
 				Collection tuple = (Collection) element;
-				return ekekoLabelProvider.getText(nth(tuple, columnIndex));
-			}
-			
-			@Override
-			public org.eclipse.swt.graphics.Image getImage(Object element) {
-				if(columnIndex != -1) 
-					return null;
-				Collection tuple = (Collection) element;
-				if(isPositive(tuple)) 
-					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
-				if(isNegative(tuple))
-					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
-				return null;
-			}
-			
+				Object identifier = nth(tuple, columnIndex - 1); //0th col is the +/- img
+				Object value = projectvalueForIdentifier(identifier);
+				return ekekoLabelProvider.getText(value);
+			}			
 		});
 		return col;
 	}
