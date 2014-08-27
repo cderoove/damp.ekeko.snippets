@@ -338,19 +338,30 @@
           value)))
     (snippet/snippet-nodes snippet)))
 
+(defprotocol 
+  IIdentifiesProjectValue
+  (corresponding-project-value [identifier]))
 
-;(defprotocol 
-;  IIdentifiesProjectValue
-;  corresponding-project-value
-;  [identifier])
-
-;(extend-protocol IIdentifiesProjectValue
-;  ProjectRootIdentifier
-;  (corresponding-project-value [id]
-;    (let [handle (:icuhandlestr id)]
-;      (if-let (icu (JavaCore/create id)
-;    
-;    ))
+(extend-protocol IIdentifiesProjectValue
+  ProjectRootIdentifier
+  (corresponding-project-value [id]
+    (let [^String handle (:icuhandle id)]
+      (if-let [icu (JavaCore/create handle)]
+        (parsing/jdt-parse-icu icu) ;these ASTs are different from those queried by Ekeko
+        (throw (Exception. (str "While looking for value in project, could not find its file using handle: " handle))))))
+  RelativePropertyValueIdentifier
+  (corresponding-project-value [id]
+    (let [ownerid (:ownerid id)
+          property (:property id)
+          owner (corresponding-project-value ownerid)]
+        (astnode/node-poperty-value|reified owner property)))
+  RelativeListElementIdentifier
+  (corresponding-project-value [id]
+    (let [listid (:listid id)
+          idx (:index id)
+          lst (corresponding-project-value listid)
+          lst-raw (astnode/value-unwrapped lst)]
+        (.get lst-raw idx))))
   
   
  
@@ -626,6 +637,7 @@
     (let [handlestr (.getHandleIdentifier icu)]
       handlestr)))
 
+
 (defn
   project-value-identifier
   [value]
@@ -645,10 +657,7 @@
       ;list members
       (astnode/property-descriptor-list? property)
       (let [lst 
-            ((get 
-               (astnode/reifiers owner)
-               (astnode/ekeko-keyword-for-property-descriptor property))
-              owner)
+            (astnode/node-poperty-value|reified owner property)
             lst-raw (astnode/value-unwrapped lst)]
         (make-list-element-identifier 
           (project-value-identifier lst)
@@ -727,6 +736,20 @@
         (let [snippet (damp.ekeko.snippets.persistence/slurp-snippetgroup file)]
           (damp.ekeko.snippets.persistence/spit-snippetgroup  file snippet))
         (catch Exception e (println e)))))
+  
+  
+  (def m (first (first (damp.ekeko/ekeko [?m] (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)))))
+  (def mid (project-value-identifier m))
+  (def equivalenttom (corresponding-project-value mid))
+  (= (str m) (str equivalenttom))
+  
+  
+  (reduce (fn [sofar t] 
+             (let [exp (first t)
+                   expid (project-value-identifier exp)
+                   equivalent (corresponding-project-value expid)]
+               (and sofar (= (str exp) (str equivalent)))))
+           (damp.ekeko/ekeko [?e ?key] (damp.ekeko.jdt.ast/ast ?key ?e)))
   
   
   

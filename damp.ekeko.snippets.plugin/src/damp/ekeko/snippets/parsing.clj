@@ -2,10 +2,12 @@
   ^{:doc "Functions for parsing strings as Java code, resulting in a JDT ASTNode."
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.parsing
-  (:import [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
-            CompilationUnit TypeDeclaration Block Expression]
-           [damp.ekeko JavaProjectModel]
-           ))
+  (:import 
+    [org.eclipse.jdt.core ICompilationUnit]
+    [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
+     CompilationUnit TypeDeclaration Block Expression]
+    [damp.ekeko JavaProjectModel]
+    ))
 
 (defn 
   jdt-node-malformed?
@@ -116,6 +118,12 @@
     (.setSource parser (.toCharArray string))
     (.setKind parser string-kind)
     (.createAST parser nil)))
+
+
+(defn
+  jdt-parse-icu 
+  [^ICompilationUnit icu]
+  (JavaProjectModel/parse icu nil))
 
 (defn 
   parse-string

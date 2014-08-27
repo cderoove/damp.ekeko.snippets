@@ -18,7 +18,7 @@
 
 
 ;; Persisting JDT AST nodes
-;; -----------------------------------
+;; ------------------------
 
 (deftest
   ^{:doc "For all nodes compilation units cu, cu has to be persistable."}
@@ -31,13 +31,30 @@
             deserialized (persistence/snippet-from-persistent-string serialized)]
         (is (instance? CompilationUnit deserialized))))))
 
+
+
+;; Looking up AST nodes in project by identifier
+;; ---------------------------------------------
+
+(deftest
+  ^{:doc "For all AST nodes returned by Ekeko, an equivalent AST node should be found in a workspace project."}
+   lookup-equivalent-nodes
+   (is (reduce (fn [sofar t] 
+             (let [exp (first t)
+                   expid (persistence/project-value-identifier exp)
+                   equivalent (persistence/corresponding-project-value expid)]
+               (and sofar (= (str exp) (str equivalent)))))
+           (damp.ekeko/ekeko [?e ?key] (damp.ekeko.jdt.ast/ast ?key ?e)))))
+
 ;; Test suite
-  ;; ----------
+;; ----------
 
 (deftest
    test-suite 
    (let [testproject "TestCase-JDT-CompositeVisitor"]
      (test/against-project-named testproject false persist-compilationunits)
+     (test/against-project-named testproject false lookup-equivalent-nodes)
+     
      )
    )
 

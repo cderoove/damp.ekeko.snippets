@@ -108,6 +108,8 @@ public class IntendedResultsEditor extends EditorPart {
 
 	private ArrayContentProvider matchesContentProvider;
 
+	private ToolItem toolitemDeleteVerifiedResult;
+
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -195,7 +197,6 @@ public class IntendedResultsEditor extends EditorPart {
 
 		linkStatus = new Link(parent, SWT.NONE);
 		linkStatus.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-		linkToEditor(null);
 
 		linkStatus.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -282,6 +283,17 @@ public class IntendedResultsEditor extends EditorPart {
 		});
 		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
 		toolitemAddColumn.setToolTipText("Add Column");
+		
+		
+		toolitemDeleteVerifiedResult = new ToolItem(bottomToolBar, SWT.NONE);
+		toolitemDeleteVerifiedResult.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onDeleteVerifiedResult();
+			}
+		});
+		toolitemDeleteVerifiedResult.setImage(EkekoSnippetsPlugin.IMG_DELETE);
+		toolitemDeleteVerifiedResult.setToolTipText("Delete example");
 
 		verifiedViewer = new TableViewer(bottomComposite, SWT.BORDER | SWT.FULL_SELECTION);
 		verifiedViewerTable = verifiedViewer.getTable();
@@ -317,6 +329,18 @@ public class IntendedResultsEditor extends EditorPart {
 		verifiedContentProvider = new ArrayContentProvider();
 		verifiedViewer.setContentProvider(verifiedContentProvider);		
 		verifiedViewer.setInput(Sets.union(positiveIDs,negativeIDs));
+		
+		verifiedViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				toolitemDeleteVerifiedResult.setEnabled(!selection.isEmpty());
+
+			}
+		});
+
+		
+		
 
 		addActiveColumnListener(matchesViewerTable);
 		addActiveColumnListener(verifiedViewerTable);
@@ -327,8 +351,21 @@ public class IntendedResultsEditor extends EditorPart {
 
 		ekekoLabelProvider = new EkekoLabelProvider();
 
+		linkToEditor(null);
 		updateWidgets();
 
+	}
+
+	protected void onDeleteVerifiedResult() {
+		ISelection selection = verifiedViewer.getSelection();
+		IStructuredSelection sel = (IStructuredSelection) selection;
+		if(sel.isEmpty()) {
+			return;
+		}
+		Object exampleID = sel.getFirstElement();
+		positiveIDs.remove(exampleID);
+		negativeIDs.remove(exampleID);
+		verifiedViewer.refresh();
 	}
 
 	protected boolean isPositiveIdentifier(Object tupleIdentifier) {
@@ -521,6 +558,7 @@ public class IntendedResultsEditor extends EditorPart {
 			toolitemAddNegative.setEnabled(!selection.isEmpty());
 			toolitemAddPositive.setEnabled(!selection.isEmpty());
 		}
+		toolitemDeleteVerifiedResult.setEnabled(!verifiedViewer.getSelection().isEmpty());
 	}
 
 
