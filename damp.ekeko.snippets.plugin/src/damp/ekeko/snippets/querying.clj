@@ -454,17 +454,20 @@
 (defn 
   snippet-node-conditions+|rewritingandreplacedby
   [snippet node snippetruntimevar]
-  (let [query (atom '())]
+  (let [snippetchanges (atom '())
+        programchanges (atom '())]
     (snippet/walk-snippet-element
       snippet
       node
       (fn [val]
-        (swap! query 
+        (swap! snippetchanges 
                concat
-               (snippet-node-conditions|rewriting snippet val snippetruntimevar)
-               (snippet-node-conditions|replacedby snippet val snippetruntimevar)
-               )))
-    @query))
+               (snippet-node-conditions|replacedby snippet val snippetruntimevar))
+        (swap! programchanges
+               concat
+               (snippet-node-conditions|rewriting snippet val snippetruntimevar))
+               ))
+    (concat @snippetchanges @programchanges)))
 
 
 ;new strategy:
@@ -537,6 +540,8 @@
         (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
         allvarsexceptrootsandlhsandusers
         (clojure.set/difference vars lhsuservars)]
+    (println changes)
+
     `((cl/fresh [~@snippetsruntimevars ~@rootvars  ~@allvarsexceptrootsandlhsandusers] 
            ~@instantiations
            ~@conditions-on-instantiations-without-grounding-of-root-node

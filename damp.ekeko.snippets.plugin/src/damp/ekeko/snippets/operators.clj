@@ -474,6 +474,9 @@ damp.ekeko.snippets.operators
     (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode))))
   (let [property (astnode/owner-property value)]
     (cond 
+      ;special case that can only occur when instantiating a snippet
+      (= value (snippet/snippet-root snippet))
+      (throw (IllegalArgumentException. (str "Still to be implemented, replacing root node of snippet by creating new snippet: " value)))
       (astnode/property-descriptor-child? property)
       (let [parent (astnode/owner value)]
         (.setStructuralProperty parent property newnode))
