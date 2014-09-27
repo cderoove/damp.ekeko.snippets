@@ -221,7 +221,8 @@ public class TemplateGroupViewer extends Composite {
 							Object valueForIdentifierInTemplateGroup = getValueForIdentifierInTemplate(valueIdentifier);
 							if(valueForIdentifierInTemplateGroup != null) {
 								snippetTreeViewer.setSelection(new StructuredSelection(valueForIdentifierInTemplateGroup), true);
-								updateTextFields();
+								//updateTextFields();
+								onNodeSelectionInternal();
 								snippetTreeViewer.getControl().setFocus();
 
 							}
