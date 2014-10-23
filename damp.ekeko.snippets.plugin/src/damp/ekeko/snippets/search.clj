@@ -132,8 +132,10 @@
 (defn
   mutate
   [snippetgroup]
-  (let [snippet 
-        (rand-nth (snippetgroup/snippetgroup-snippetlist snippetgroup))
+  (let [copiedgroup        
+        (persistence/copy-snippetgroup snippetgroup)
+        snippet
+        (rand-nth (snippetgroup/snippetgroup-snippetlist copiedgroup))
         value
         (rand-nth (snippet/snippet-nodes snippet))]
     (let [operators
