@@ -2,14 +2,25 @@
   ^{:doc "(Genetic) search for template specifications."
   :author "Coen De Roover"}
   damp.ekeko.snippets.search
+  (:import 
+    [damp.ekeko JavaProjectModel]
+    [org.eclipse.jface.text Document]
+    [org.eclipse.text.edits TextEdit]
+    [org.eclipse.jdt.core ICompilationUnit IJavaProject]
+    [org.eclipse.jdt.core.dom BodyDeclaration Expression Statement ASTNode ASTParser AST CompilationUnit]
+    [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
   (:require [clojure.core.logic :as cl])
-  (:require [damp.ekeko])
+  (:require [damp.ekeko]
+            [damp.ekeko.jdt
+             [astnode :as astnode]
+             [rewrites :as rewrites]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
              [persistence :as persistence]
              [querying :as querying]
              [matching :as matching]
+             [operators :as operators]
              [operatorsrep :as operatorsrep]
              ]))
 
@@ -24,6 +35,9 @@
 
 (defn
   make-verified-matches
+  "Create a record of verified matches, consisting of a number of positive and negative matches.
+   The positive ones are those that the resulting template must match;
+   the negative one are those it may not match."
   [positives negatives]
   (VerifiedMatches. (into #{} positives)
                     (into #{} negatives)))
@@ -31,6 +45,7 @@
 
 (defn
   templategroup-matches
+  "Given a templategroup, look for all of its matches in the code"
   [templategroup]
   (into #{} (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))) 
 
@@ -80,6 +95,9 @@
 
 (defn
   make-fitness-function
+  "Return a fitness function that calculates the F-measure/F1-score
+   which compares the matches found by a template
+   against the matches we want (or don't want)"
   [verifiedmatches]
   (fn [templategroup]
     (let [matches (templategroup-matches templategroup)]
@@ -100,7 +118,8 @@
 
 (defn
   population-from-tuples
-  [matches] 
+  "Generate an initial population of templates based on the desired matches"
+  [matches]
   (map-indexed
     (fn [idx tuple] 
       (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
@@ -132,15 +151,15 @@
 (defn
   mutate
   [snippetgroup]
-  (let [copiedgroup        
+  (let [copiedgroup         
         (persistence/copy-snippetgroup snippetgroup)
-        snippet
+        snippet ; Pick a random snippet from the group
         (rand-nth (snippetgroup/snippetgroup-snippetlist copiedgroup))
-        value
+        value ; Pick a random node in the snippet
         (rand-nth (snippet/snippet-nodes snippet))]
-    (let [operators
+    (let [operators ; Fetch all mutation operators
           (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
-          operator
+          operator ; Pick a random mutation
           (rand-nth operators)
           operands
           (operatorsrep/operator-operands operator)]
@@ -164,8 +183,57 @@
                                                      operator 
                                                      bindings)))))
 
+(defn rand-ast-node
+  "Return a random AST node in a snippet"
+  [snippet]
+  (let [node (rand-nth (snippet/snippet-nodes snippet))]
+    (if (astnode/ast? node) ; Some of these nodes appear to be wrappers? (produced by astnode/make-value) 
+      node
+      (recur snippet))))
+
+(defn rand-typed-ast-node
+  "Return a random AST node in a snippet of a certain type"
+  [snippet cls]
+  (let [node (rand-nth (snippet/snippet-nodes snippet))]
+    (if (and (astnode/ast? node) (= (type node) cls)) 
+      node
+      (recur snippet cls))))
+
+(defn
+  crossover
+  "Performs a crossover between two snippets:
+   This means that two AST nodes are chosen at random, and both nodes (and their children) will be swapped.
+   (In case this operation leads to invalid syntax, we try again..)
+   Returns a vector containing the two crossed-over snippets"
+  [snippetgroup1 snippetgroup2]
+  (let
+    [snippet1 (rand-nth snippetgroup1)
+     snippet2 (rand-nth snippetgroup2)
+     ; Get two random AST nodes
+     node1 (rand-ast-node snippet1)
+     node2 (rand-typed-ast-node snippet2 (type node1))]
+    (println node1)
+    (println node2)
+    (println (:ast snippet1))
+    [(operators/replace-node-with snippet1 node1 node2)
+     (operators/replace-node-with snippet2 node2 node1)]
+    ;(rewrites/replace-node (ASTRewrite/create (.getAST node1))  node1 node2)
+    ))
+;
+;(use '(inspector-jay core))
+;(let [] 
+;  (inspect
+;     (let [pop (population-from-tuples matches)
+;           group1 (snippetgroup/snippetgroup-snippetlist (rand-nth pop))
+;           group2 (snippetgroup/snippetgroup-snippetlist (rand-nth pop))
+;           group1-copy (persistence/copy-snippetgroup group1)
+;           group2-copy (persistence/copy-snippetgroup group1)]
+;       (crossover group1-copy group2-copy)))
+;  nil)
+
 (defn
   sort-by-fitness
+  "Sort the templates in a population by the fitness function"
   [population fitnessf]
   (sort-by (fn [templategroup]
              (fitnessf templategroup))
@@ -195,7 +263,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Best specification:" (persistence/snippetgroup-string best))
-        (when (< generation 1000)
+        (when (< generation 10)
           (if
             (> best-fitness 0.9)
             (println "Success:" (persistence/snippetgroup-string best))
@@ -213,26 +281,21 @@
   
 
 (comment
-  
   (def templategroup
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
-  
+       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/anymethod.ekt"))
   (def matches (templategroup-matches templategroup))
-  
   (def verifiedmatches (make-verified-matches matches []))
-    
-  (= 1 (precision matches verifiedmatches))
   
+  (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
-    
-  (pmap (make-fitness-function verifiedmatches) (population-from-tuples matches))
+  
+  (pmap (make-fitness-function verifiedmatches) (inspect (population-from-tuples matches)))
   
   ;MethodDeclaration - MethodInvocation (vars sorted .. cannot compare otherwise)
   (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
+       
+        ; Test each generated template
         (map templategroup-matches (population-from-tuples matches)))
   
-  
-
+;  (evolve verifiedmatches)
   )
-
-
