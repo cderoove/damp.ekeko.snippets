@@ -183,6 +183,17 @@
                                                      operator 
                                                      bindings)))))
 
+(defn- node-expected-class
+  "Returns the expected type of an ASTnode, more specifically, the type that the parent node expects.
+   This is done by looking at the child type in the property descriptor of the parent node."
+  [node]
+  (let [pd (astnode/owner-property node)]
+    (cond 
+      (astnode/property-descriptor-simple? pd) (astnode/property-descriptor-value-class pd)
+      (astnode/property-descriptor-child? pd) (astnode/property-descriptor-child-node-class pd)
+      (astnode/property-descriptor-list? pd) (astnode/property-descriptor-element-node-class pd)
+      :else (type node))))
+
 (defn rand-ast-node
   "Return a random AST node in a snippet"
   [snippet]
@@ -192,10 +203,10 @@
       (recur snippet))))
 
 (defn rand-typed-ast-node
-  "Return a random AST node in a snippet of a certain type"
+  "Return a random AST node in a snippet that must be an instance of a certain type"
   [snippet cls]
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
-    (if (and (astnode/ast? node) (= (type node) cls)) 
+    (if (and (astnode/ast? node) (instance? cls node)) 
       node
       (recur snippet cls))))
 
@@ -211,15 +222,17 @@
      snippet2 (rand-nth snippetgroup2)
      ; Get two random AST nodes
      node1 (rand-ast-node snippet1)
-     node2 (rand-typed-ast-node snippet2 (type node1))]
+     node2 (rand-typed-ast-node snippet2 (node-expected-class node1))]
     (println node1)
     (println node2)
     (println (:ast snippet1))
+    (println (node-expected-class node1))
+    ;(inspect (astnode/owner-property node1))
     [(operators/replace-node-with snippet1 node1 node2)
      (operators/replace-node-with snippet2 node2 node1)]
     ;(rewrites/replace-node (ASTRewrite/create (.getAST node1))  node1 node2)
     ))
-;
+
 ;(use '(inspector-jay core))
 ;(let [] 
 ;  (inspect
