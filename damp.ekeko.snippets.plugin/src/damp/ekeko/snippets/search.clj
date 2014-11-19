@@ -72,8 +72,7 @@
         cfp (count (falsep matches verifiedmatches))]
     (if (= 0 (+ cfp ctp))
       0
-      (/ ctp (+ cfp ctp))
-      )))
+      (/ ctp (+ cfp ctp)))))
   
 (defn
   recall
@@ -147,24 +146,22 @@
           (operatorsrep/registered-operators)
           ))
 
-;note:clone snippetgroup best wanneer destructieve operatoren toegelaten worden op asts 
+(defn- rand-snippet [snippetgroup]
+  (-> snippetgroup
+    snippetgroup/snippetgroup-snippetlist
+    persistence/copy-snippetgroup ; Creating a copy, as we might alter the snippet's AST
+    rand-nth))
+ 
 (defn
   mutate
   [snippetgroup]
-  (let [copiedgroup         
-        (persistence/copy-snippetgroup snippetgroup)
-        snippet ; Pick a random snippet from the group
-        (rand-nth (snippetgroup/snippetgroup-snippetlist copiedgroup))
-        value ; Pick a random node in the snippet
-        (rand-nth (snippet/snippet-nodes snippet))]
-    (let [operators ; Fetch all mutation operators
-          (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
-          operator ; Pick a random mutation
-          (rand-nth operators)
-          operands
-          (operatorsrep/operator-operands operator)]
+  (let [snippet (rand-snippet snippetgroup)
+        value (rand-nth (snippet/snippet-nodes snippet))]
+    (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
+          operator (rand-nth operators)
+          operands (operatorsrep/operator-operands operator)]
       (let [operandvalues
-            (map 
+            (map
               (fn [operand]
                 (rand-nth
                   (operatorsrep/possible-operand-values|valid
@@ -194,7 +191,7 @@
       (astnode/property-descriptor-list? pd) (astnode/property-descriptor-element-node-class pd)
       :else (type node))))
 
-(defn rand-ast-node
+(defn- rand-ast-node
   "Return a random AST node in a snippet"
   [snippet]
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
@@ -202,13 +199,22 @@
       node
       (recur snippet))))
 
-(defn rand-typed-ast-node
-  "Return a random AST node in a snippet that must be an instance of a certain type"
-  [snippet cls]
-  (let [node (rand-nth (snippet/snippet-nodes snippet))]
-    (if (and (astnode/ast? node) (instance? cls node)) 
-      node
-      (recur snippet cls))))
+(defn- find-compatible-ast-pair
+  "Given two snippets, find a pair of nodes in each snippet's AST
+   such that they can be safely swapped without causing syntax issues"
+  [snippet1 snippet2]
+  (let [node1 (rand-ast-node snippet1)
+        cls1 (node-expected-class node1)]
+    (loop [node2 (rand-ast-node snippet2)
+           i 0]
+      (if (and 
+            (instance? cls1 node2)
+            (instance? (node-expected-class node2) node1))
+        [node1 node2]
+        (if (< i 20)
+          (recur (rand-ast-node snippet2) (inc i)) ; Try again with another node2
+          (find-compatible-ast-pair snippet1 snippet2) ; Seems like nothing is compatible with node1? Better start over.. 
+          )))))
 
 (defn
   crossover
@@ -218,31 +224,18 @@
    Returns a vector containing the two crossed-over snippets"
   [snippetgroup1 snippetgroup2]
   (let
-    [snippet1 (rand-nth snippetgroup1)
-     snippet2 (rand-nth snippetgroup2)
+    [; Get two random snippets
+     snippet1 (rand-snippet snippetgroup1)
+     snippet2 (rand-snippet snippetgroup2)
      ; Get two random AST nodes
-     node1 (rand-ast-node snippet1)
-     node2 (rand-typed-ast-node snippet2 (node-expected-class node1))]
-    (println node1)
-    (println node2)
-    (println (:ast snippet1))
-    (println (node-expected-class node1))
-    ;(inspect (astnode/owner-property node1))
-    [(operators/replace-node-with snippet1 node1 node2)
-     (operators/replace-node-with snippet2 node2 node1)]
-    ;(rewrites/replace-node (ASTRewrite/create (.getAST node1))  node1 node2)
+     node-pair (find-compatible-ast-pair snippet1 snippet2)
+     node1 (first node-pair)
+     node2 (second node-pair)]
+    (let [new-snippet1 (operators/replace-node-with snippet1 node1 node2)
+          new-snippet2 (operators/replace-node-with snippet2 node2 node1)]
+      [(snippetgroup/snippetgroup-replace-snippet snippetgroup1 snippet1 new-snippet1)
+       (snippetgroup/snippetgroup-replace-snippet snippetgroup2 snippet2 new-snippet2)])
     ))
-
-;(use '(inspector-jay core))
-;(let [] 
-;  (inspect
-;     (let [pop (population-from-tuples matches)
-;           group1 (snippetgroup/snippetgroup-snippetlist (rand-nth pop))
-;           group2 (snippetgroup/snippetgroup-snippetlist (rand-nth pop))
-;           group1-copy (persistence/copy-snippetgroup group1)
-;           group2-copy (persistence/copy-snippetgroup group1)]
-;       (crossover group1-copy group2-copy)))
-;  nil)
 
 (defn
   sort-by-fitness
@@ -252,48 +245,61 @@
              (fitnessf templategroup))
            population))
 
-
 (defn 
   select
+  "Do tournament selection in a population:
+   Given that the population is sorted from best fitness to worst, we pick a number 
+   of random entries in the population, then return the best one from those entries.
+   @param tournament-size  The number of random entries to pick"
   [population tournament-size]
   (let [size (count population)]
     (nth population
          (apply min (repeatedly tournament-size #(rand-int size))))))
 
-
-
-
-
 (defn
-  evolve 
-  [verifiedmatches]
-  (let [fitness (make-fitness-function verifiedmatches)]
+  evolve
+  "Look for a template that is able to match with a number of snippets, using genetic search
+   @param verifiedmatches  There are the snippets we want to match with
+   @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
+  [verifiedmatches max-generations]
+  (let
+    [fitness (make-fitness-function verifiedmatches)
+     popsize (count verifiedmatches)
+     tournament-size 7]
     (loop 
       [generation 0
        population (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)]
       (let [best (last population)
             best-fitness (fitness best)]
         (println "Generation:" generation)
+        (println "Size:" (count population))
         (println "Highest fitness:" best-fitness)
         (println "Best specification:" (persistence/snippetgroup-string best))
-        (when (< generation 10)
+        (when (< generation max-generations)
           (if
             (> best-fitness 0.9)
             (println "Success:" (persistence/snippetgroup-string best))
             (recur 
               (inc generation)
               (sort-by-fitness
+                ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
-                  (repeatedly (* 1/2 (count population)) #(mutate (select population 7)))
-                  (repeatedly (* 1/2 (count population)) #(select population 7)))
+                  (repeatedly (* 1/2 (count population)) #(mutate (select population tournament-size)))
+                  (flatten (repeatedly (* 1/8 (count population)) #(crossover (select population tournament-size)
+                                                                              (select population tournament-size))))
+                  (repeatedly (* 1/4 (count population)) #(select population tournament-size)))
                 fitness))))))))          
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
-;; todo: gewone a* search
-  
-  
+;; todo: gewone a* search  
 
 (comment
+  (defmacro dbg[x]
+    (if true
+      `(let [x# ~x] (println "dbg:" '~x "=" x#) x#)
+      x))
+  (use '(inspector-jay core))
+  
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/anymethod.ekt"))
   (def matches (templategroup-matches templategroup))
@@ -306,9 +312,7 @@
   
   ;MethodDeclaration - MethodInvocation (vars sorted .. cannot compare otherwise)
   (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
-       
-        ; Test each generated template
         (map templategroup-matches (population-from-tuples matches)))
   
-;  (evolve verifiedmatches)
+  (evolve verifiedmatches 2)
   )
