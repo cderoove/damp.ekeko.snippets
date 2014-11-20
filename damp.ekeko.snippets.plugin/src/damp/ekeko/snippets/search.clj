@@ -192,10 +192,12 @@
       :else (type node))))
 
 (defn- rand-ast-node
-  "Return a random AST node in a snippet"
+  "Return a random AST node (that is not the root) in a snippet"
   [snippet]
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
-    (if (astnode/ast? node) ; Some of these nodes appear to be wrappers? (produced by astnode/make-value) 
+    (if (and 
+          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors.. 
+          (not= node (.getRoot node)))
       node
       (recur snippet))))
 
@@ -230,7 +232,7 @@
      ; Get two random AST nodes
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
-     node2 (second node-pair)]
+     node2 (second node-pair) ]
     (let [new-snippet1 (operators/replace-node-with snippet1 node1 node2)
           new-snippet2 (operators/replace-node-with snippet2 node2 node1)]
       [(snippetgroup/snippetgroup-replace-snippet snippetgroup1 snippet1 new-snippet1)
@@ -272,7 +274,6 @@
       (let [best (last population)
             best-fitness (fitness best)]
         (println "Generation:" generation)
-        (println "Size:" (count population))
         (println "Highest fitness:" best-fitness)
         (println "Best specification:" (persistence/snippetgroup-string best))
         (when (< generation max-generations)
@@ -284,19 +285,22 @@
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
+                  ; Mutation
                   (repeatedly (* 1/2 (count population)) #(mutate (select population tournament-size)))
+                  ; Crossover (Note that each crossover operation produces a pair)
                   (flatten (repeatedly (* 1/8 (count population)) #(crossover (select population tournament-size)
                                                                               (select population tournament-size))))
+                  ; Selection
                   (repeatedly (* 1/4 (count population)) #(select population tournament-size)))
-                fitness))))))))          
+                fitness))))))))
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
 
 (comment
-  (defmacro dbg[x]
+  (defmacro dbg[x y]
     (if true
-      `(let [x# ~x] (println "dbg:" '~x "=" x#) x#)
+      `(let [x# ~x] (println "dbg:" '~x "=" x# "---" ~y) x#)
       x))
   (use '(inspector-jay core))
   
