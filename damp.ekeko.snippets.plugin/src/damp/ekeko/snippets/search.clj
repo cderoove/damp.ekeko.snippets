@@ -163,18 +163,19 @@
     (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
           operator (rand-nth operators)
           operands (operatorsrep/operator-operands operator)]
+      (println (operatorsrep/operator-id operator))
       (let [operandvalues
             (map
               (fn [operand]
                 (rand-nth
                   (operatorsrep/possible-operand-values|valid
-                    snippetgroup snippet value operator operand)))
+                    group-copy snippet value operator operand)))
               operands)
             bindings
             (cons
-              (operatorsrep/make-implicit-operandbinding-for-operator-subject snippetgroup snippet value operator)
+              (operatorsrep/make-implicit-operandbinding-for-operator-subject group-copy snippet value operator)
               (map (fn [operand operandval]
-                     (operatorsrep/make-binding operand snippetgroup snippet operandval))
+                     (operatorsrep/make-binding operand group-copy snippet operandval))
                    operands
                    operandvalues))]
         (operatorsrep/apply-operator-to-snippetgroup group-copy 
@@ -238,8 +239,6 @@
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
      node2 (second node-pair) ]
-    (println node1)
-    (println node2)
     (let [new-snippet1 (operators/replace-node-with snippet1 node1 node2)
           new-snippet2 (operators/replace-node-with snippet2 node2 node1)]
       [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
@@ -278,7 +277,8 @@
     (loop 
       [generation 0
        population (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)]
-      (let [best (last population)
+      (let [;sorted (inspect (map fitness population))
+            best (last population)
             best-fitness (fitness best)]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
@@ -295,9 +295,10 @@
                   ; Mutation
                   (repeatedly (* 1/2 (count population)) #(mutate (select population tournament-size)))
                   ; Crossover (Note that each crossover operation produces a pair)
-                  (flatten (repeatedly (* 1/8 (count population)) #(crossover 
-                                                                     (select population tournament-size)
-                                                                     (select population tournament-size))))
+                  (mapcat identity 
+                          (repeatedly (* 1/8 (count population)) #(crossover 
+                                                                    (select population tournament-size)
+                                                                    (select population tournament-size))))
                   ; Selection
                   (repeatedly (* 1/4 (count population)) #(select population tournament-size)))
                 fitness))))))))
@@ -310,33 +311,30 @@
     (if true
       `(let [x# ~x] (println "dbg:" x#) x#)
       x))
-  (defmacro dbg[x y]
-    (if true
-      `(let [x# ~x] (println "dbg:" '~x "=" x# "---" ~y) x#)
-      x))
   (use '(inspector-jay core))
   
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
+  (evolve verifiedmatches 10)
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
+  (fmeasure matches verifiedmatches)
   
-  (pmap (make-fitness-function verifiedmatches) (inspect (population-from-tuples matches)))
+  (pmap (make-fitness-function verifiedmatches) (population-from-tuples matches))
   
   ;MethodDeclaration - MethodInvocation (vars sorted .. cannot compare otherwise)
   (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
         (map templategroup-matches (population-from-tuples matches)))
   
-  (evolve verifiedmatches 10)
-  
+  ; Testing crossover
   (let [pop (population-from-tuples matches)]
     [(first pop)
-              (second pop)
-              (crossover (first pop) (second pop))]
+     (second pop)
+     (crossover (first pop) (second pop))]
     0)
 )
