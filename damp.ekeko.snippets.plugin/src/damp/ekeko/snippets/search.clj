@@ -109,8 +109,7 @@
       (catch Exception e
         (do
           (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
-          0)
-        ))))
+          0)))))
 
 
 ;; Search
@@ -170,7 +169,7 @@
     (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
           operator (rand-nth operators)
           operands (operatorsrep/operator-operands operator)]
-      (println (operatorsrep/operator-id operator))
+      ;(println (operatorsrep/operator-id operator))
       (let [operandvalues
             (map
               (fn [operand]
@@ -269,7 +268,7 @@
   [population tournament-size]
   (let [size (count population)]
     (nth population
-         (apply min (repeatedly tournament-size #(rand-int size))))))
+         (apply max (repeatedly tournament-size #(rand-int size))))))
 
 (defn
   evolve
@@ -280,11 +279,11 @@
   (let
     [fitness (make-fitness-function verifiedmatches)
      popsize (count verifiedmatches)
-     tournament-size 7]
+     tournament-size 1]
     (loop 
       [generation 0
        population (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)]
-      (let [;sorted (inspect (map fitness population))
+      (let [sorted (println (map fitness population))
             best (last population)
             best-fitness (fitness best)]
         (println "Generation:" generation)
