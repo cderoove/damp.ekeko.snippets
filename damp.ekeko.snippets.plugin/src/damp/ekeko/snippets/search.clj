@@ -424,4 +424,17 @@
                   (second pop)
                   (crossover (first pop) (second pop))]
                  0))
+  
+  (def m1
+       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
+  (def m2
+       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m2.ekt"))
+    
+  (println (persistence/snippetgroup-string m1))
+  (println (persistence/snippetgroup-string m2))
+  (println "-----")
+  (doseq [[t1 t2] (repeat 30 (crossover m1 m2))] 
+    (println (persistence/snippetgroup-string t1)))
+  
+  
 )
