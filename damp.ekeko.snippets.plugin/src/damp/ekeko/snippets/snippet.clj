@@ -389,6 +389,54 @@ damp.ekeko.snippets.snippet
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
+
+(defn 
+  walk-snippets-elements
+  "See walk-snippet-element, but walks two corresponding elements from different snippets simultaneously.
+   Function arguments therefore take pairs of elements, rather than a single element."
+  ([s1 e1 s2 e2 f]
+    (walk-snippets-elements s1 e1 s2 e2 f f f f))
+  ([s1 e1 s2 e2 node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list [e1 e2])]
+      (when-not (empty? nodes)
+        (let [[v1 v2 :as v] (first nodes)
+              others (rest nodes)]
+          (cond 
+            (astnode/ast? v1)
+            ;;;todo: check v2 is an astnode as well, otherwise throw friendly exception
+            (do
+              (node-f v)
+              (recur 
+                (concat 
+                  (map vector 
+                       (snippet-node-children|conceptually s1 v1)
+                       (snippet-node-children|conceptually s2 v2))
+                  others)))
+            (astnode/lstvalue? v1)
+            (do 
+              (list-f v)
+              (recur (concat
+                       (map vector 
+                            (snippet-node-children|conceptually s1 v1)
+                            (snippet-node-children|conceptually s2 v2))
+                       others)))
+            (astnode/primitivevalue? v1)
+            (do
+              (primitive-f v)
+              (recur others))
+            (astnode/nilvalue? v1)
+            (do
+              (null-f v)
+              (recur others))
+            :default
+            (throw (Exception. (str "Don't know how to walk this value:" val)))
+            ))))))
+
+
+
+
+
 (defn
   register-callbacks
   []

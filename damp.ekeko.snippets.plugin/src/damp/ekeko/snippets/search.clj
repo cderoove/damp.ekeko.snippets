@@ -23,6 +23,8 @@
              [matching :as matching]
              [operators :as operators]
              [operatorsrep :as operatorsrep]
+             [util :as util]
+             [directives :as directives]
              ]))
 
 
@@ -44,12 +46,23 @@
                     (into #{} negatives)))
 
 
+;http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
+(defmacro with-timeout [millis & body]
+  `(let [future# (future ~@body)]
+     (try
+       (.get future# ~millis java.util.concurrent.TimeUnit/MILLISECONDS)
+       (catch java.util.concurrent.TimeoutException x# 
+         (do
+           (future-cancel future#)
+           nil)))))
+
+;;;MAGIC CONSTANT! timeout for matching of individual snippet group
 (defn
   templategroup-matches
   "Given a templategroup, look for all of its matches in the code"
   [templategroup]
-  (into #{} (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))) 
-
+  (into #{} (with-timeout 15000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+          
   
 (defn 
   truep
@@ -114,7 +127,6 @@
 
 ;; Search
 
-
 ;;assumes: arity of tuple corresponds to number of templategroups required
 (defn
   templategroup-from-tuple
@@ -144,12 +156,12 @@
                      "replace-by-wildcard"
                      "add-directive-invokes"
                      "add-directive-invokedby"
-                     "restrict-scope-to-child"
-                     "relax-scope-to-child+"
-                     "relax-scope-to-child*"
-                     "relax-size-to-atleast"
-                     "relax-scope-to-member"
-                     "consider-set|lst"
+                     ;"restrict-scope-to-child"
+                     ;"relax-scope-to-child+"
+                     ;"relax-scope-to-child*"
+                     ;"relax-size-to-atleast"
+                     ;"relax-scope-to-member"
+                     ;"consider-set|lst"
                      ]
                     )))
           (operatorsrep/registered-operators)
@@ -169,7 +181,7 @@
     (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
           operator (rand-nth operators)
           operands (operatorsrep/operator-operands operator)]
-      ;(println (operatorsrep/operator-id operator))
+      (println (operatorsrep/operator-id operator))
       (let [operandvalues
             (map
               (fn [operand]
@@ -199,7 +211,7 @@
       (astnode/property-descriptor-simple? pd) (astnode/property-descriptor-value-class pd)
       (astnode/property-descriptor-child? pd) (astnode/property-descriptor-child-node-class pd)
       (astnode/property-descriptor-list? pd) (astnode/property-descriptor-element-node-class pd)
-      :else (type node))))
+      :else (throw (Exception. "Should not happen.")))))
 
 (defn- rand-ast-node
   "Return a random AST node (that is not the root) in a snippet"
@@ -207,7 +219,7 @@
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
     (if (and 
           (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors.. 
-          (not= node (.getRoot node)))
+          (not= node (snippet/snippet-root snippet)))
       node
       (recur snippet))))
 
@@ -220,13 +232,73 @@
     (loop [node2 (rand-ast-node snippet2)
            i 0]
       (if (and 
-            (instance? cls1 node2)
-            (instance? (node-expected-class node2) node1))
+            (instance? (node-expected-class node2) node1)
+            (instance? cls1 node2))
         [node1 node2]
         (if (< i 20)
           (recur (rand-ast-node snippet2) (inc i)) ; Try again with another node2
           (find-compatible-ast-pair snippet1 snippet2) ; Seems like nothing is compatible with node1? Better start over.. 
           )))))
+
+
+(defn-
+  copynode
+  "Copy a node (and its children) from its AST into another AST
+   @author Tim"
+  [tgt-ast node]
+  (ASTNode/copySubtree tgt-ast node))
+
+
+(defn
+  replace-node-with
+  "Replaces a node within a snippet with another node from another snippet
+   @author Tim"
+  [destination-snippet destination-node source-snippet source-node]
+  (let [copy-of-source-node
+        (copynode (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
+        newsnippet 
+        (atom destination-snippet)] 
+    ; dissoc destination-node and children in destination-snippet
+    (snippet/walk-snippet-element
+      destination-snippet 
+      destination-node
+      (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
+    
+    ; do replacement of destination-node by source-node in the actual AST
+    (operators/snippet-jdt-replace  
+      @newsnippet
+      destination-node
+      copy-of-source-node)
+    
+    ;assoc copy-of-source-node and children with default directives in destination-snippet
+    (util/walk-jdt-node 
+      copy-of-source-node
+      (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+    
+    ;update new-node and children with 
+    (snippet/walk-snippets-elements
+      @newsnippet
+      copy-of-source-node
+      source-snippet
+      source-node
+      (fn [[destval srcval]] 
+        (let [srcbds
+              (snippet/snippet-bounddirectives-for-node source-snippet srcval) 
+              destbds
+              (map
+                (fn [bounddirective]
+	                 (directives/make-bounddirective
+                    (directives/bounddirective-directive bounddirective)
+                    (cons 
+                      (directives/make-implicit-operand destval)
+                      (rest (directives/bounddirective-operandbindings bounddirective)))))
+                   srcbds)]
+          (swap! newsnippet snippet/update-bounddirectives  destval destbds))))
+    @newsnippet))
+
+
+
+
 
 (defn
   crossover
@@ -245,8 +317,8 @@
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
      node2 (second node-pair) ]
-    (let [new-snippet1 (operators/replace-node-with snippet1 node1 node2)
-          new-snippet2 (operators/replace-node-with snippet2 node2 node1)]
+    (let [new-snippet1 (replace-node-with snippet1 node1 snippet2 node2)
+          new-snippet2 (replace-node-with snippet2 node2 snippet1 node1)]
       [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
        (snippetgroup/snippetgroup-replace-snippet group-copy2 snippet2 new-snippet2)])
     ))
@@ -277,17 +349,25 @@
    @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
   [verifiedmatches max-generations]
   (let
-    [fitness (make-fitness-function verifiedmatches)
+    [fitness (memoize (make-fitness-function verifiedmatches)) ;table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 1]
+     tournament-size 2] ;p47 of essentials of meta-heuristics
     (loop 
       [generation 0
-       population (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)]
-      (let [sorted (println (map fitness population))
-            best (last population)
-            best-fitness (fitness best)]
+       population (sort-by-fitness 
+                    (population-from-tuples 
+                      (:positives verifiedmatches))
+                    fitness)
+      ]
+      (let [best (last population)
+            best-fitness (fitness best)
+            viable (filter (fn [individual]
+                            (pos? (fitness individual)))
+                           population)
+            ]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
+        (println "Fitnesses:" (map fitness population))
         (println "Best specification:" (persistence/snippetgroup-string best))
         
         (when (< generation max-generations)
@@ -300,14 +380,14 @@
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
                   ; Mutation
-                  (repeatedly (* 1/2 (count population)) #(mutate (select population tournament-size)))
+                  (repeatedly (* 1/2 (count population)) #(mutate (select viable tournament-size)))
                   ; Crossover (Note that each crossover operation produces a pair)
-                  (mapcat identity 
-                          (repeatedly (* 1/8 (count population)) #(crossover 
-                                                                    (select population tournament-size)
-                                                                    (select population tournament-size))))
-                  ; Selection
-                  (repeatedly (* 1/4 (count population)) #(select population tournament-size)))
+                  (apply concat
+                         (repeatedly (* 1/8 (count population)) #(crossover 
+                                                                   (select viable tournament-size)
+                                                                   (select viable tournament-size))))
+                 ; Selection
+                 (repeatedly (* 1/4 (count population)) #(select viable tournament-size)))
                 fitness))))))))
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
@@ -339,9 +419,9 @@
         (map templategroup-matches (population-from-tuples matches)))
   
   ; Testing crossover
-  (let [pop (population-from-tuples matches)]
-    [(first pop)
-     (second pop)
-     (crossover (first pop) (second pop))]
-    0)
+  (jay/inspect (let [pop (population-from-tuples matches)]
+                 [(first pop)
+                  (second pop)
+                  (crossover (first pop) (second pop))]
+                 0))
 )

@@ -361,12 +361,6 @@ damp.ekeko.snippets.operators
   (let [clazz (astnode/class-for-ekeko-keyword classkeyw)]
     (.createInstance ast clazz)))
 
-(defn-
-  copynode
-  "Copy a node (and its children) from its AST into another AST
-   @author Tim"
-  [tgt-ast node]
-  (ASTNode/copySubtree tgt-ast node))
 
 (defn
   modifierkeyword-from-string
@@ -506,14 +500,14 @@ damp.ekeko.snippets.operators
         (newnode|classkeyword (.getAST value) classkeyw)]
     (let [newsnippet 
           (atom snippet)] 
-      ;dissoc children 
+      ;dissoc value and its children 
       (snippet/walk-snippet-element
         snippet
         value 
         (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
-      ;perform replace
+      ;perform replace (jdt side effects only)
       (snippet-jdt-replace  
-        snippet
+        @newsnippet
         value 
         newnode)
       ;assoc node and children
@@ -522,29 +516,6 @@ damp.ekeko.snippets.operators
         (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
       @newsnippet)))
 
-(defn
-  replace-node-with
-  "Replaces a node within a snippet with another node from another snippet
-   @author Tim"
-  [snippet src-node new-node]
-  (let [newsnippet (atom snippet)] 
-    ; remove src-node children (and everything associated to them) from the snippet 
-    (snippet/walk-snippet-element
-      snippet
-      src-node 
-      (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
-    
-    ; do replacement in the actual AST
-    (snippet-jdt-replace  
-      snippet
-      src-node 
-      (copynode (.getAST src-node) new-node))
-
-    ;assoc new-node and children
-    (util/walk-jdt-node 
-      new-node 
-      (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
-    @newsnippet))
 
 (defn
   newvalue|string

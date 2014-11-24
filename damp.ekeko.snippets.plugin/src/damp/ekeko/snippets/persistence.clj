@@ -299,6 +299,12 @@
     (= value (snippet/snippet-root snippet))
     (make-root-identifier)
     
+    (nil? property)
+    (do 
+      (println "Dit zou niet mogen")
+      (throw (Exception. "Help")))
+
+    
     ;lists (keep before next clause, do not merge with before-last clause)
     (astnode/lstvalue? value)
     (make-property-value-identifier 
@@ -320,9 +326,12 @@
       (astnode/ast? value)
       (astnode/nilvalue? value)
       (astnode/primitivevalue? value))
-    (make-property-value-identifier
-      (snippet-value-identifier snippet owner)
-      property)
+    
+      
+      
+      (make-property-value-identifier
+        (snippet-value-identifier snippet owner)
+        property)
     
     :else
     (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
