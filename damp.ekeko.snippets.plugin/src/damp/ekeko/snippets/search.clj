@@ -2,6 +2,7 @@
   ^{:doc "(Genetic) search for template specifications."
   :author "Coen De Roover, Tim Molderez"}
   damp.ekeko.snippets.search
+  (:refer-clojure :exclude [rand-nth rand-int rand])
   (:import 
     [damp.ekeko JavaProjectModel]
     [org.eclipse.jface.text Document]
@@ -25,11 +26,31 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]
-             ]))
+             ])
+  (:import [ec.util MersenneTwister]))
+
+
+(def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
+
+(defn 
+  rand
+  ([n] (.nextInt *twister* n)))
+
+(defn
+  rand-int
+  [n]
+  (int (rand n)))
+
+(defn 
+  rand-nth
+  [coll]
+  (nth coll (rand-int (count coll))))
 
 
 ;; Problem representation
 ;; State corresponds to templategroup (can use sequence of operators later, problem is that there arguments cannot easily cross over)
+
+
 
 
 (defrecord
