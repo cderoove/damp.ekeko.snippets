@@ -52,16 +52,19 @@
   
 (defn 
   truep
+  "True positives"
   [matches verifiedmatches]
   (clojure.set/intersection matches (:positives verifiedmatches)))
 
 (defn 
   falsep
+  "False positives"
   [matches verifiedmatches]
   (clojure.set/difference matches (:positives verifiedmatches)))
 
 (defn
   falsen
+  "False negatives"
   [matches verifiedmatches]
   (clojure.set/difference (:positives verifiedmatches) matches))
   
@@ -149,13 +152,13 @@
 (defn- rand-snippet [snippetgroup]
   (-> snippetgroup
     snippetgroup/snippetgroup-snippetlist
-    persistence/copy-snippetgroup ; Creating a copy, as we might alter the snippet's AST
     rand-nth))
  
 (defn
   mutate
   [snippetgroup]
-  (let [snippet (rand-snippet snippetgroup)
+  (let [group-copy (persistence/copy-snippetgroup snippetgroup)
+        snippet (rand-snippet group-copy)
         value (rand-nth (snippet/snippet-nodes snippet))]
     (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
           operator (rand-nth operators)
@@ -174,7 +177,7 @@
                      (operatorsrep/make-binding operand snippetgroup snippet operandval))
                    operands
                    operandvalues))]
-        (operatorsrep/apply-operator-to-snippetgroup snippetgroup 
+        (operatorsrep/apply-operator-to-snippetgroup group-copy 
                                                      snippet
                                                      value 
                                                      operator 
@@ -226,17 +229,21 @@
    Returns a vector containing the two crossed-over snippets"
   [snippetgroup1 snippetgroup2]
   (let
-    [; Get two random snippets
-     snippet1 (rand-snippet snippetgroup1)
-     snippet2 (rand-snippet snippetgroup2)
+    [group-copy1 (persistence/copy-snippetgroup snippetgroup1)
+     group-copy2 (persistence/copy-snippetgroup snippetgroup2)
+     ; Get two random snippets
+     snippet1 (rand-snippet group-copy1)
+     snippet2 (rand-snippet group-copy2)
      ; Get two random AST nodes
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
      node2 (second node-pair) ]
+    (println node1)
+    (println node2)
     (let [new-snippet1 (operators/replace-node-with snippet1 node1 node2)
           new-snippet2 (operators/replace-node-with snippet2 node2 node1)]
-      [(snippetgroup/snippetgroup-replace-snippet snippetgroup1 snippet1 new-snippet1)
-       (snippetgroup/snippetgroup-replace-snippet snippetgroup2 snippet2 new-snippet2)])
+      [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
+       (snippetgroup/snippetgroup-replace-snippet group-copy2 snippet2 new-snippet2)])
     ))
 
 (defn
@@ -288,8 +295,9 @@
                   ; Mutation
                   (repeatedly (* 1/2 (count population)) #(mutate (select population tournament-size)))
                   ; Crossover (Note that each crossover operation produces a pair)
-                  (flatten (repeatedly (* 1/8 (count population)) #(crossover (select population tournament-size)
-                                                                              (select population tournament-size))))
+                  (flatten (repeatedly (* 1/8 (count population)) #(crossover 
+                                                                     (select population tournament-size)
+                                                                     (select population tournament-size))))
                   ; Selection
                   (repeatedly (* 1/4 (count population)) #(select population tournament-size)))
                 fitness))))))))
@@ -298,6 +306,10 @@
 ;; todo: gewone a* search  
 
 (comment
+  (defmacro dbg[x]
+    (if true
+      `(let [x# ~x] (println "dbg:" x#) x#)
+      x))
   (defmacro dbg[x y]
     (if true
       `(let [x# ~x] (println "dbg:" '~x "=" x# "---" ~y) x#)
@@ -305,9 +317,11 @@
   (use '(inspector-jay core))
   
   (def templategroup
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/anymethod.ekt"))
+       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
+  
+  (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
@@ -318,5 +332,11 @@
   (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
         (map templategroup-matches (population-from-tuples matches)))
   
-  (evolve verifiedmatches 2)
-  )
+  (evolve verifiedmatches 10)
+  
+  (let [pop (population-from-tuples matches)]
+    [(first pop)
+              (second pop)
+              (crossover (first pop) (second pop))]
+    0)
+)
