@@ -1,6 +1,6 @@
 (ns 
   ^{:doc "(Genetic) search for template specifications."
-  :author "Coen De Roover"}
+  :author "Coen De Roover, Tim Molderez"}
   damp.ekeko.snippets.search
   (:import 
     [damp.ekeko JavaProjectModel]
@@ -14,6 +14,7 @@
             [damp.ekeko.jdt
              [astnode :as astnode]
              [rewrites :as rewrites]])
+  (:require [inspector-jay [core :as jay]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -102,8 +103,14 @@
    against the matches we want (or don't want)"
   [verifiedmatches]
   (fn [templategroup]
-    (let [matches (templategroup-matches templategroup)]
-      (fmeasure matches verifiedmatches))))
+    (try
+      (let [matches (templategroup-matches templategroup)]
+        (fmeasure matches verifiedmatches))
+      (catch Exception e
+        (do
+          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
+          0)
+        ))))
 
 
 ;; Search
@@ -283,6 +290,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Best specification:" (persistence/snippetgroup-string best))
+        
         (when (< generation max-generations)
           (if
             (> best-fitness 0.9)
