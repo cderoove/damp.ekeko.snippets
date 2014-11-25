@@ -338,6 +338,7 @@
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
      node2 (second node-pair) ]
+    (println node1 " --- " node2)
     (let [new-snippet1 (replace-node-with snippet1 node1 snippet2 node2)
           new-snippet2 (replace-node-with snippet2 node2 snippet1 node1)]
       [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
@@ -379,12 +380,20 @@
                     (population-from-tuples 
                       (:positives verifiedmatches))
                     fitness)
+       history #{}
       ]
       (let [best (last population)
             best-fitness (fitness best)
             viable (filter (fn [individual]
-                            (pos? (fitness individual)))
+                             (and
+                               ; We ignore the individuals we've seen before
+                               (not (contains? history (hash individual)))
+                               ; .. and those with fitness 0
+                               (pos? (fitness individual))))
                            population)
+            new-history (clojure.set/intersection 
+                          history
+                          (set (map hash population)))
             ]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
@@ -407,9 +416,10 @@
                          (repeatedly (* 1/8 (count population)) #(crossover 
                                                                    (select viable tournament-size)
                                                                    (select viable tournament-size))))
-                 ; Selection
-                 (repeatedly (* 1/4 (count population)) #(select viable tournament-size)))
-                fitness))))))))
+                  ; Selection
+                  (repeatedly (* 1/4 (count population)) #(select viable tournament-size)))
+                fitness)
+              new-history)))))))
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
@@ -453,9 +463,24 @@
     
   (println (persistence/snippetgroup-string m1))
   (println (persistence/snippetgroup-string m2))
-  (println "-----")
-  (doseq [[t1 t2] (repeat 30 (crossover m1 m2))] 
-    (println (persistence/snippetgroup-string t1)))
+  (println (snippet/snippet-bounddirectives m1))
+  (def match1 
+    (templategroup-matches m1))
+  (def match2 
+    (templategroup-matches m2))
+  
+  (for [x (range 0 5)]
+    (let [[x1 x2] (crossover m1 m2)]
+;      (println (persistence/snippetgroup-string x1))
+;      (println (persistence/snippetgroup-string x2))
+;      (println (templategroup-matches x1))
+;      (println (templategroup-matches x2))
+      (println (snippet/snippet-bounddirectives x1))
+      ;(jay/inspect [m1 m2 x1 x2])
+      (println "@@@")))
+
+;  (doseq [[t1 t2] (repeat 30 (crossover m1 m2))] 
+;    (println (persistence/snippetgroup-string t1)))
   
   
 )
