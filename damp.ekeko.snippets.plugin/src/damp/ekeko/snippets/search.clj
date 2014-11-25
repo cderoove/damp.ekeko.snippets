@@ -82,7 +82,7 @@
   templategroup-matches
   "Given a templategroup, look for all of its matches in the code"
   [templategroup]
-  (into #{} (with-timeout 15000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+  (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
           
   
 (defn 
@@ -157,14 +157,39 @@
     (snippetgroup/make-snippetgroup name
                                     (map matching/snippet-from-node tuple))))
 
+
+(defn viable-repeat [cnt func test-func]
+                            (repeatedly 
+                              cnt 
+                              #(loop []
+                                 (let [result (func)]
+                                   (if (test-func result)
+                                     result (recur))))))
+
 (defn
   population-from-tuples
   "Generate an initial population of templates based on the desired matches"
   [matches]
-  (map-indexed
-    (fn [idx tuple] 
-      (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
-    matches))
+  (let [id-templates 
+        (map-indexed
+          (fn [idx tuple] 
+            (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
+          matches)]
+    (concat id-templates
+;            (viable-repeat 
+;              (* 1 (count id-templates)) 
+;              #(mutate (select id-templates 2)) 
+;              (fn [templategroup]
+;                
+;                (try
+;                  (let [matches (templategroup-matches templategroup)]
+;                    (pos? (count matches)))
+;                  (catch Exception e
+;                    false))
+;                
+;                ))
+            )
+    ))
 
 
 (def
@@ -239,7 +264,18 @@
   [snippet]
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
     (if (and 
-          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors.. 
+          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
+          (not= node (snippet/snippet-root snippet)))
+      node
+      (recur snippet))))
+
+(defn- rand-ast-node2
+  "Return a random AST node (that is not the root) in a snippet"
+  [snippet]
+  (let [node (rand-nth (snippet/snippet-nodes snippet))]
+    (if (and 
+          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
+          (= (-> node .getClass .getName) "org.eclipse.jdt.core.dom.SimpleName")
           (not= node (snippet/snippet-root snippet)))
       node
       (recur snippet))))
@@ -248,7 +284,7 @@
   "Given two snippets, find a pair of nodes in each snippet's AST
    such that they can be safely swapped without causing syntax issues"
   [snippet1 snippet2]
-  (let [node1 (rand-ast-node snippet1)
+  (let [node1 (rand-ast-node2 snippet1)
         cls1 (node-expected-class node1)]
     (loop [node2 (rand-ast-node snippet2)
            i 0]
@@ -364,6 +400,9 @@
     (nth population
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
+(defn is-viable [individual fitness history]
+  )
+
 (defn
   evolve
   "Look for a template that is able to match with a number of snippets, using genetic search
@@ -371,30 +410,39 @@
    @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
   [verifiedmatches max-generations]
   (let
-    [fitness (memoize (make-fitness-function verifiedmatches)) ;table individual->fitness
+    [fitness (memoize (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 2] ;p47 of essentials of meta-heuristics
+     tournament-size 2] ; p.47 of essentials of meta-heuristics
     (loop 
       [generation 0
        population (sort-by-fitness 
                     (population-from-tuples 
                       (:positives verifiedmatches))
                     fitness)
-       history #{}
-      ]
+       history #{}]
       (let [best (last population)
             best-fitness (fitness best)
-            viable (filter (fn [individual]
-                             (and
-                               ; We ignore the individuals we've seen before
-                               (not (contains? history (hash individual)))
-                               ; .. and those with fitness 0
-                               (pos? (fitness individual))))
-                           population)
+            is-viable (fn [individual]
+                        (and
+                          ; We ignore the individuals we've seen before
+                          (not (contains? history (hash individual)))
+                          ; .. and those with fitness 0
+                          (pos? (fitness individual))))
+            
+            ; Keep applying func until we get cnt results, for which test-func is true
+            viable-repeat (fn [cnt func test-func]
+                            (repeatedly 
+                              cnt 
+                              #(loop []
+                                 (let [result (func)]
+                                   (if (test-func result)
+                                     result (recur))))))
             new-history (clojure.set/intersection 
                           history
                           (set (map hash population)))
             ]
+        (doseq [individual population]
+          (assert (correct-implicit-operands? individual) ))
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map fitness population))
@@ -410,26 +458,48 @@
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
                   ; Mutation
-                  (repeatedly (* 1/2 (count population)) #(mutate (select viable tournament-size)))
+                  (viable-repeat 
+                    (* 1/2 (count population)) 
+                    #(mutate (select population tournament-size)) 
+                    is-viable)
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (repeatedly (* 1/8 (count population)) #(crossover 
-                                                                   (select viable tournament-size)
-                                                                   (select viable tournament-size))))
+                         (viable-repeat 
+                           (* 1/8 (count population))
+                           #(crossover
+                              (select population tournament-size)
+                              (select population tournament-size))
+                           (fn [x] (and (is-viable (first x)) (is-viable (second x))))))
                   ; Selection
-                  (repeatedly (* 1/4 (count population)) #(select viable tournament-size)))
+                  (viable-repeat 
+                    (* 1/4 (count population)) 
+                    #(select population tournament-size) 
+                    is-viable))
                 fitness)
               new-history)))))))
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
 
+
+(defn correct-implicit-operands? [snippetgroup]
+  (reduce (fn [sofar node]
+            (and 
+              sofar
+              (every? (fn [bd]
+                        (let [implOp (first (.getOperandBindings bd))]
+                          (= (.getValue implOp) node)))
+                      (snippet/snippet-bounddirectives-for-node node))))
+          true
+          (mapcat snippet/snippet-nodes snippetgroup)))
+          
+
+
 (comment
   (defmacro dbg[x]
     (if true
       `(let [x# ~x] (println "dbg:" x#) x#)
       x))
-  (use '(inspector-jay core))
   
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
@@ -463,21 +533,65 @@
     
   (println (persistence/snippetgroup-string m1))
   (println (persistence/snippetgroup-string m2))
-  (println (snippet/snippet-bounddirectives m1))
+  
+  (jay/inspect (for [x (snippetgroup/snippetgroup-snippetlist m1)]
+                 (for [y (snippet/snippet-bounddirectives x)]
+                   (filter (fn [z]
+                             (let [name (.toString z)]
+                               (and (not= name "child") (not= name "match"))))
+                           y))))
+  
+  (jay/inspect (:ast2bounddirectives (first (for [x (snippetgroup/snippetgroup-snippetlist m1)] x))))
+  
+  ; May be useful to refine fitness function? e.g. the fewer directives the better..
+  (defn get-directives [snippetgroup]
+    (for [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+                 (for [y (snippet/snippet-bounddirectives x)]
+                   (filter (fn [z]
+                             (let [name (.toString z)]
+                               (and (not= name "child") (not= name "match")))
+                             )
+                           y))))
+  
+  (defn test-impl-operand [snippetgroup]
+    (doseq [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+      (doseq [node (snippet/snippet-nodes x)]
+        (doseq [directive (snippet/snippet-bounddirectives-for-node x node)]
+          (let [implOp (first (.getOperandBindings directive))]
+            (if (not= (.getValue implOp) node)
+              (do (println "Incorrect implicit operand!")
+                (println (.getValue implOp))
+                (println node))))))))
+  
+  (test-impl-operand m1)
+  
+  (jay/inspect (get-directives m2))
+  
   (def match1 
     (templategroup-matches m1))
   (def match2 
     (templategroup-matches m2))
+  (jay/inspect m1)
   
-  (for [x (range 0 5)]
-    (let [[x1 x2] (crossover m1 m2)]
-;      (println (persistence/snippetgroup-string x1))
-;      (println (persistence/snippetgroup-string x2))
-;      (println (templategroup-matches x1))
-;      (println (templategroup-matches x2))
-      (println (snippet/snippet-bounddirectives x1))
+  (doseq [x (range 0 20)]
+    (let [[x1 x2] (crossover m1 m2)
+          x1-match (templategroup-matches x1)]
+      (if (not (empty? x1-match))
+        (do
+;          (println "@@@")
+          (println x1-match)
+;          (test-impl-operand x1)
+;          (println (persistence/snippetgroup-string x1))
+;          (jay/inspect x1)
+          (println "!!!")))
+      
+      (assert (correct-implicit-operands? x1))
+      (assert (correct-implicit-operands? x2))
+;      (for [x (snippetgroup/snippetgroup-snippetlist x1)]
+;        (println (snippet/snippet-bounddirectives x)))
+      
       ;(jay/inspect [m1 m2 x1 x2])
-      (println "@@@")))
+      ))
 
 ;  (doseq [[t1 t2] (repeat 30 (crossover m1 m2))] 
 ;    (println (persistence/snippetgroup-string t1)))
