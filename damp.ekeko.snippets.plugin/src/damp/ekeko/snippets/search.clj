@@ -133,17 +133,21 @@
       0
       (* 2 (/ (* p r) (+ p r))))))
 
+(defn- snippetgroup|hasequals?
+  "Count the number of directives used in a snippet group (excluding default directives)"
+  [snippetgroup]
+  (some (fn [snippet]
+          (boolean (directives/bounddirective-for-directive 
+                     (snippet/snippet-bounddirectives snippet)
+                     matching/directive-equals)))
+         (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
 (defn- count-directives
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
   (reduce + 
           (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-            (reduce +
-                    (for [directives (snippet/snippet-bounddirectives snippet)]
-                      (count (filter (fn [directive]
-                                       (let [name (.toString directive)]
-                                         (and (not= name "child") (not= name "match"))))
-                                     directives)))))))
+            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
 
 ;(defn count-directives 
 ;  "Count the number of directives used in a snippet group"
@@ -169,9 +173,9 @@
       (let [matches (templategroup-matches templategroup)]
         (+
           ; The more desired matches, the better
-          (* 9/10 (fmeasure matches verifiedmatches))
+          (* 19/20 (fmeasure matches verifiedmatches))
           ; The fewer directives used, the better
-          (* 1/10 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
+          (* 1/20 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
       (catch Exception e
         (do
 ;          (println "!!!" e)
@@ -262,6 +266,7 @@
                      "replace-by-wildcard"
                      "add-directive-invokes"
                      "add-directive-invokedby"
+                     "remove-node"
                      ;"restrict-scope-to-child"
                      ;"relax-scope-to-child+"
                      ;"relax-scope-to-child*"
@@ -283,6 +288,17 @@
   [snippetgroup]
   (let [group-copy (persistence/copy-snippetgroup snippetgroup)
         snippet (rand-snippet group-copy)
+        
+        pick-operator2
+        (fn []
+          (let [operator (rand-nth registered-operators|search)
+                all-valid-nodes (filter
+                                  (fn [x] (operatorsrep/applicable? snippetgroup snippet x operator))
+                                  (snippet/snippet-nodes snippet))]
+            (if (empty? all-valid-nodes)
+              (recur)
+              [operator (rand-nth all-valid-nodes)])))
+        
         pick-operator 
         (fn []
           (let [operator (rand-nth registered-operators|search)
@@ -294,7 +310,7 @@
               (recur)
               [operator value])))
         
-        [operator value] (pick-operator)]
+        [operator value] (pick-operator2)]
     (let [
           
           
@@ -333,43 +349,54 @@
       (astnode/property-descriptor-list? pd) (astnode/property-descriptor-element-node-class pd)
       :else (throw (Exception. "Should not happen.")))))
 
+
+(defn- non-root-ast-node?
+  [node snippet]
+  (and 
+    (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
+    (not= node (snippet/snippet-root snippet))))
+
 (defn- rand-ast-node
   "Return a random AST node (that is not the root) in a snippet"
   [snippet]
   (let [node (rand-nth (snippet/snippet-nodes snippet))]
-    (if (and 
-          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
-          (not= node (snippet/snippet-root snippet)))
+    (if (non-root-ast-node? node snippet)
       node
       (recur snippet))))
-
-;(defn- rand-ast-node2
-;  "Return a random AST node (that is not the root) in a snippet"
-;  [snippet]
-;  (let [node (rand-nth (snippet/snippet-nodes snippet))]
-;    (if (and 
-;          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
-;          (= (-> node .getClass .getName) "org.eclipse.jdt.core.dom.SimpleName")
-;          (not= node (snippet/snippet-root snippet)))
-;      node
-;      (recur snippet))))
 
 (defn- find-compatible-ast-pair
   "Given two snippets, find a pair of nodes in each snippet's AST
    such that they can be safely swapped without causing syntax issues"
   [snippet1 snippet2]
   (let [node1 (rand-ast-node snippet1)
-        cls1 (node-expected-class node1)]
-    (loop [node2 (rand-ast-node snippet2)
-           i 0]
-      (if (and 
-            (instance? (node-expected-class node2) node1)
-            (instance? cls1 node2))
-        [node1 node2]
-        (if (< i 20)
-          (recur (rand-ast-node snippet2) (inc i)) ; Try again with another node2
-          (find-compatible-ast-pair snippet1 snippet2) ; Seems like nothing is compatible with node1? Better start over.. 
-          )))))
+        cls1 (node-expected-class node1)
+        compatible-node2s (filter
+                            (fn [node2]
+                              (and
+                                (non-root-ast-node? node2 snippet2)
+                                (instance? cls1 node2)
+                                (instance? (node-expected-class node2) node1)))
+                            (snippet/snippet-nodes snippet2))]
+    (if (empty? compatible-node2s)
+      (recur snippet1 snippet2)
+      [node1 (rand-nth compatible-node2s)])))
+
+;(defn- find-compatible-ast-pair
+;  "Given two snippets, find a pair of nodes in each snippet's AST
+;   such that they can be safely swapped without causing syntax issues"
+;  [snippet1 snippet2]
+;  (let [node1 (rand-ast-node snippet1)
+;        cls1 (node-expected-class node1)]
+;    (loop [node2 (rand-ast-node snippet2)
+;           i 0]
+;      (if (and 
+;            (instance? (node-expected-class node2) node1)
+;            (instance? cls1 node2))
+;        [node1 node2]
+;        (if (< i 20)
+;          (recur (rand-ast-node snippet2) (inc i)) ; Try again with another node2
+;          (find-compatible-ast-pair snippet1 snippet2) ; Seems like nothing is compatible with node1? Better start over.. 
+;          )))))
 
 
 (defn-
@@ -493,7 +520,7 @@
    @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
   [verifiedmatches max-generations]
   (let
-    [fitness (memoize (make-fitness-function verifiedmatches)) ; table individual->fitness
+    [fitness (clojure.core.memoize/memo (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
      tournament-size 7] ; p.47 of essentials of meta-heuristics; 2 is most common
     (loop 
@@ -507,6 +534,7 @@
             best-fitness (fitness best)
             is-viable (fn [individual]
                         (and
+                          ; (empty? (clojure.set/difference ( :negatives verifiedmatches ) (templategroup-matches individual) ))
                           ; We ignore the individuals we've seen before
                           (not (contains? history (hash individual)))
                           ; .. and those with fitness 0
@@ -533,7 +561,7 @@
         
         (when (< generation max-generations)
           (if
-            (> best-fitness 0.9)
+            (> best-fitness 0.95)
             (println "Success:" (persistence/snippetgroup-string best))
             (recur 
               (inc generation)
@@ -569,10 +597,21 @@
 (comment
   (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
   
+  (jay/inspect templategroup)
+  
   (def templategroup
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
+       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
-  (def verifiedmatches (make-verified-matches matches []))
+  (def verifiedmatches (make-verified-matches matches 
+                                              (clojure.set/difference 
+                                                (set 
+                                                     (damp.ekeko/ekeko [?m ?i]
+                                                            (clojure.core.logic/fresh [?key]
+                                                                   (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)
+                                                                   (damp.ekeko.jdt.ast/ast|invocation ?key ?i)))
+                                                   )
+                                                (set matches))
+                                              ))
   (evolve verifiedmatches 30)
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
@@ -588,12 +627,6 @@
         (map templategroup-matches (population-from-tuples matches)))
   
   ; Testing crossover
-  (jay/inspect (let [pop (population-from-tuples matches)]
-                 [(first pop)
-                  (second pop)
-                  (crossover (first pop) (second pop))]
-                 0))
-  
   (def m1
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
   (def m2
@@ -601,25 +634,6 @@
     
   (println (persistence/snippetgroup-string m1))
   (println (persistence/snippetgroup-string m2))
-  
-  (jay/inspect (for [x (snippetgroup/snippetgroup-snippetlist m1)]
-                 (for [y (snippet/snippet-bounddirectives x)]
-                   (filter (fn [z]
-                             (let [name (.toString z)]
-                               (and (not= name "child") (not= name "match"))))
-                           y))))
-  
-  (jay/inspect (:ast2bounddirectives (first (for [x (snippetgroup/snippetgroup-snippetlist m1)] x))))
-  
-  ; May be useful to refine fitness function? e.g. the fewer directives the better..
-;  (defn get-directives [snippetgroup]
-;    (for [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-;                 (for [y (snippet/snippet-bounddirectives x)]
-;                   (filter (fn [z]
-;                             (let [name (.toString z)]
-;                               (and (not= name "child") (not= name "match")))
-;                             )
-;                           y))))
   
   (def match1 
     (templategroup-matches m1))
@@ -632,19 +646,13 @@
           x1-match (templategroup-matches x1)]
       (if (not (empty? x1-match))
         (do
-;          (println "@@@")
           (println x1-match)
-;          (test-impl-operand x1)
 ;          (println (persistence/snippetgroup-string x1))
 ;          (jay/inspect x1)
           (println "!!!")))
       
       (assert (correct-implicit-operands? x1))
-      (assert (correct-implicit-operands? x2))
-;      (for [x (snippetgroup/snippetgroup-snippetlist x1)]
-;        (println (snippet/snippet-bounddirectives x)))
-      
-      ))
+      (assert (correct-implicit-operands? x2)))
  
   
-)
+))

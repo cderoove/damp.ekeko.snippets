@@ -141,10 +141,12 @@ damp.ekeko.snippets.operatorsrep
   applicability|wildcard
   "Verifies that value is not a list with regexp matching enabled."
   [snippetgroup snippet value]
-  (not
-    (and
-      (astnode/lstvalue? value)
-      (matching/snippet-list-regexp? snippet value))))
+  (and
+    (applicability|nonroot snippetgroup snippet value)
+    (not
+     (and
+       (astnode/lstvalue? value)
+       (matching/snippet-list-regexp? snippet value)))))
 
 (defn
   applicability|regexplst
@@ -468,7 +470,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by meta-variable."
      opscope-subject
-     applicability|always
+     applicability|nonroot
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
@@ -1054,14 +1056,14 @@ damp.ekeko.snippets.operatorsrep
   possible-operand-values
   opscope-variable
   [snippetgroup snippet node operator operand]
-  ;(if
-   ; (= (operator-name operator) "add-directive-equals")
-    (conj
-      (map 
-        matching/snippet-vars-among-directivebindings
-        (snippetgroup/snippetgroup-snippetlist snippetgroup))
-      (str (util/gen-lvar))))
-    ;[(str (util/gen-readable-lvar-for-value node))]))
+  (if
+   (= (operator-name operator) "add-directive-equals")
+   (conj
+     (map 
+       matching/snippet-vars-among-directivebindings
+       (snippetgroup/snippetgroup-snippetlist snippetgroup))
+     (str (util/gen-lvar))))
+   [(str (util/gen-readable-lvar-for-value node))])
 
 
 (defmethod
