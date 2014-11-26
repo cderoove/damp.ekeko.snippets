@@ -16,7 +16,20 @@ damp.ekeko.snippets.operatorsrep
              [matching :as matching]
              [snippetgroup :as snippetgroup]
              [util :as util]
-             ]))
+             ])
+  (:import 
+    [java.util Map]
+    [damp.ekeko JavaProjectModel]
+    [damp.ekeko EkekoModel]
+    [edu.cmu.cs.crystal.cfg.eclipse EclipseCFG EclipseCFGEdge EclipseCFGNode]
+    [org.eclipse.core.runtime IProgressMonitor]
+    [org.eclipse.jdt.core IJavaElement ITypeHierarchy IType IPackageFragment IClassFile ICompilationUnit
+     IJavaProject WorkingCopyOwner IMethod]
+    [org.eclipse.jdt.core.dom Expression IVariableBinding ASTParser AST IBinding Type TypeDeclaration 
+     QualifiedName SimpleName ITypeBinding MethodDeclaration 
+     MethodInvocation ClassInstanceCreation SuperConstructorInvocation SuperMethodInvocation
+     SuperFieldAccess FieldAccess ConstructorInvocation ASTNode ASTNode$NodeList CompilationUnit
+     Annotation IAnnotationBinding TypeLiteral]))
 
 ;; Operator information
 
@@ -41,6 +54,23 @@ damp.ekeko.snippets.operatorsrep
   applicability|node
   [snippetgroup snippet value]
   (astnode/ast? value))
+
+(defn 
+  applicability|methoddeclaration
+  [snippetgroup snippet value]
+  (and (astnode/ast? value)
+       (instance? MethodDeclaration value)))
+
+(defn 
+  applicability|methodinvocation
+  [snippetgroup snippet value]
+  (and (astnode/ast? value)
+       (or
+         (instance? MethodInvocation value)
+         (instance? SuperMethodInvocation value)
+         (instance? ClassInstanceCreation value)
+         (instance? ConstructorInvocation value)
+         (instance? SuperConstructorInvocation value))))
 
 (defn
   applicability|nonroot
@@ -468,7 +498,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive invokes."
      opscope-subject
-     applicability|always
+     applicability|methodinvocation
      "Requires matches to invoke the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
 
@@ -478,7 +508,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive invoked-by."
      opscope-subject
-     applicability|always
+     applicability|methoddeclaration
      "Requires matches to be invoked by the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    

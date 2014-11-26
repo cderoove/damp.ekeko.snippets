@@ -121,6 +121,10 @@
   
 (defn
   fmeasure
+  "Calculate the F-measure/F1-score by comparing the matches produced by an individual
+   to the matches we actually want
+   @param matches  the matches of an individual
+   @param verifiedmatches  the matches we want"
   [matches verifiedmatches]
   (let [p (precision matches verifiedmatches)
         r (recall matches verifiedmatches)]
@@ -129,20 +133,49 @@
       0
       (* 2 (/ (* p r) (+ p r))))))
 
+(defn- count-directives
+  "Count the number of directives used in a snippet group (excluding default directives)"
+  [snippetgroup]
+  (reduce + 
+          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+            (reduce +
+                    (for [directives (snippet/snippet-bounddirectives snippet)]
+                      (count (filter (fn [directive]
+                                       (let [name (.toString directive)]
+                                         (and (not= name "child") (not= name "match"))))
+                                     directives)))))))
+
+;(defn count-directives 
+;  "Count the number of directives used in a snippet group"
+;  [snippetgroup]
+;    (count 
+;      (flatten 
+;        (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+;          (filter 
+;            (fn [directives] (not (empty? directives)))
+;            (for [directives (snippet/snippet-bounddirectives snippet)]
+;              (filter (fn [directive]
+;                        (let [name (.toString directive)]
+;                          (and (not= name "child") (not= name "match"))))
+;                      directives)))))))
 
 (defn
   make-fitness-function
-  "Return a fitness function that calculates the F-measure/F1-score
-   which compares the matches found by a template
-   against the matches we want (or don't want)"
+  "Return a fitness function, used to measure how good/fit an individual is
+   0 is worst fitness; 1 is the best"
   [verifiedmatches]
   (fn [templategroup]
     (try
       (let [matches (templategroup-matches templategroup)]
-        (fmeasure matches verifiedmatches))
+        (+
+          ; The more desired matches, the better
+          (* 9/10 (fmeasure matches verifiedmatches))
+          ; The fewer directives used, the better
+          (* 1/10 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
       (catch Exception e
         (do
-          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
+;          (println "!!!" e)
+;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0)))))
 
 
@@ -158,13 +191,38 @@
                                     (map matching/snippet-from-node tuple))))
 
 
-(defn viable-repeat [cnt func test-func]
-                            (repeatedly 
-                              cnt 
-                              #(loop []
-                                 (let [result (func)]
-                                   (if (test-func result)
-                                     result (recur))))))
+(defn viable-repeat 
+  "Keep on applying func until we get cnt results for which test-func is true
+   @param cnt  We want this many viable results
+   @param func  The function to apply repeatedly (has no args)
+   @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
+   @return a list of cnt viable results"
+  [cnt func test-func]
+  (repeatedly 
+    cnt 
+    #(loop []
+       (let [result (func)]
+         (if (test-func result)
+           result 
+           (recur))))))
+
+(defn repeat-until
+  "Keep on applying func until we get a result for which test-func is true.
+   If we already retried more than max-retries times, give up and return nil."
+  [func test-func max-retries]
+  (loop [i 0]
+    (let [result (func)]
+      (if (test-func result)
+        result
+        (if (> i max-retries)
+          nil
+          (recur (inc i)))))))
+
+;(defn viable-repeat-once
+;  "@see viable-repeat
+;   Keeps on applying func until we get a result for which test-func is true"
+;  [func test-func]
+;  (first (viable-repeat 1 func test-func)))
 
 (defn
   population-from-tuples
@@ -176,6 +234,8 @@
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
     (concat id-templates
+            id-templates
+            id-templates
 ;            (viable-repeat 
 ;              (* 1 (count id-templates)) 
 ;              #(mutate (select id-templates 2)) 
@@ -217,15 +277,29 @@
   (-> snippetgroup
     snippetgroup/snippetgroup-snippetlist
     rand-nth))
- 
+
 (defn
   mutate
   [snippetgroup]
   (let [group-copy (persistence/copy-snippetgroup snippetgroup)
         snippet (rand-snippet group-copy)
-        value (rand-nth (snippet/snippet-nodes snippet))]
-    (let [operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
-          operator (rand-nth operators)
+        pick-operator 
+        (fn []
+          (let [operator (rand-nth registered-operators|search)
+                value (repeat-until
+                        #(rand-nth (snippet/snippet-nodes snippet))
+                        (fn [x] (operatorsrep/applicable? snippetgroup snippet x operator))
+                        20)]
+            (if (nil? value)
+              (recur)
+              [operator value])))
+        
+        [operator value] (pick-operator)]
+    (let [
+          
+          
+          ;operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
+          ;operator (rand-nth operators)
           operands (operatorsrep/operator-operands operator)]
       (println (operatorsrep/operator-id operator))
       (let [operandvalues
@@ -269,22 +343,22 @@
       node
       (recur snippet))))
 
-(defn- rand-ast-node2
-  "Return a random AST node (that is not the root) in a snippet"
-  [snippet]
-  (let [node (rand-nth (snippet/snippet-nodes snippet))]
-    (if (and 
-          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
-          (= (-> node .getClass .getName) "org.eclipse.jdt.core.dom.SimpleName")
-          (not= node (snippet/snippet-root snippet)))
-      node
-      (recur snippet))))
+;(defn- rand-ast-node2
+;  "Return a random AST node (that is not the root) in a snippet"
+;  [snippet]
+;  (let [node (rand-nth (snippet/snippet-nodes snippet))]
+;    (if (and 
+;          (astnode/ast? node) ; Because some nodes aren't AST nodes but property descriptors..
+;          (= (-> node .getClass .getName) "org.eclipse.jdt.core.dom.SimpleName")
+;          (not= node (snippet/snippet-root snippet)))
+;      node
+;      (recur snippet))))
 
 (defn- find-compatible-ast-pair
   "Given two snippets, find a pair of nodes in each snippet's AST
    such that they can be safely swapped without causing syntax issues"
   [snippet1 snippet2]
-  (let [node1 (rand-ast-node2 snippet1)
+  (let [node1 (rand-ast-node snippet1)
         cls1 (node-expected-class node1)]
     (loop [node2 (rand-ast-node snippet2)
            i 0]
@@ -374,7 +448,7 @@
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
      node2 (second node-pair) ]
-    (println node1 " --- " node2)
+    ;(println node1 " --- " node2)
     (let [new-snippet1 (replace-node-with snippet1 node1 snippet2 node2)
           new-snippet2 (replace-node-with snippet2 node2 snippet1 node1)]
       [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
@@ -400,8 +474,17 @@
     (nth population
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
-(defn is-viable [individual fitness history]
-  )
+
+(defn correct-implicit-operands? [snippetgroup]
+  (reduce (fn [sofar node]
+            (and 
+              sofar
+              (every? (fn [bd]
+                        (let [implOp (first (.getOperandBindings bd))]
+                          (= (.getValue implOp) node)))
+                      (snippet/snippet-bounddirectives-for-node node))))
+          true
+          (mapcat snippet/snippet-nodes snippetgroup)))
 
 (defn
   evolve
@@ -412,7 +495,7 @@
   (let
     [fitness (memoize (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 2] ; p.47 of essentials of meta-heuristics
+     tournament-size 7] ; p.47 of essentials of meta-heuristics; 2 is most common
     (loop 
       [generation 0
        population (sort-by-fitness 
@@ -441,8 +524,8 @@
                           history
                           (set (map hash population)))
             ]
-        (doseq [individual population]
-          (assert (correct-implicit-operands? individual) ))
+;        (doseq [individual population]
+;          (assert (correct-implicit-operands? individual) ))
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map fitness population))
@@ -480,32 +563,17 @@
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
-
-
-(defn correct-implicit-operands? [snippetgroup]
-  (reduce (fn [sofar node]
-            (and 
-              sofar
-              (every? (fn [bd]
-                        (let [implOp (first (.getOperandBindings bd))]
-                          (= (.getValue implOp) node)))
-                      (snippet/snippet-bounddirectives-for-node node))))
-          true
-          (mapcat snippet/snippet-nodes snippetgroup)))
           
 
 
 (comment
-  (defmacro dbg[x]
-    (if true
-      `(let [x# ~x] (println "dbg:" x#) x#)
-      x))
+  (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
   
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 10)
+  (evolve verifiedmatches 30)
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
@@ -544,28 +612,14 @@
   (jay/inspect (:ast2bounddirectives (first (for [x (snippetgroup/snippetgroup-snippetlist m1)] x))))
   
   ; May be useful to refine fitness function? e.g. the fewer directives the better..
-  (defn get-directives [snippetgroup]
-    (for [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-                 (for [y (snippet/snippet-bounddirectives x)]
-                   (filter (fn [z]
-                             (let [name (.toString z)]
-                               (and (not= name "child") (not= name "match")))
-                             )
-                           y))))
-  
-  (defn test-impl-operand [snippetgroup]
-    (doseq [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-      (doseq [node (snippet/snippet-nodes x)]
-        (doseq [directive (snippet/snippet-bounddirectives-for-node x node)]
-          (let [implOp (first (.getOperandBindings directive))]
-            (if (not= (.getValue implOp) node)
-              (do (println "Incorrect implicit operand!")
-                (println (.getValue implOp))
-                (println node))))))))
-  
-  (test-impl-operand m1)
-  
-  (jay/inspect (get-directives m2))
+;  (defn get-directives [snippetgroup]
+;    (for [x (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+;                 (for [y (snippet/snippet-bounddirectives x)]
+;                   (filter (fn [z]
+;                             (let [name (.toString z)]
+;                               (and (not= name "child") (not= name "match")))
+;                             )
+;                           y))))
   
   (def match1 
     (templategroup-matches m1))
@@ -573,7 +627,7 @@
     (templategroup-matches m2))
   (jay/inspect m1)
   
-  (doseq [x (range 0 20)]
+  (doseq [x (range 0 100)]
     (let [[x1 x2] (crossover m1 m2)
           x1-match (templategroup-matches x1)]
       (if (not (empty? x1-match))
@@ -590,11 +644,7 @@
 ;      (for [x (snippetgroup/snippetgroup-snippetlist x1)]
 ;        (println (snippet/snippet-bounddirectives x)))
       
-      ;(jay/inspect [m1 m2 x1 x2])
       ))
-
-;  (doseq [[t1 t2] (repeat 30 (crossover m1 m2))] 
-;    (println (persistence/snippetgroup-string t1)))
-  
+ 
   
 )
