@@ -84,24 +84,38 @@
   [templategroup]
   (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
           
-  
+
+; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
+; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
+; Do we consider them relevant, or irrelevant? (i.e. is it okay to match too much .. as long as it's not in :negatives
+; .. or should such matches be rejected too?)
+; They're considered irrelevant now.. 
+
+; Actually, in this case the notion of :negatives isn't of much use.. 
+; If you don't want a particular pattern to match, it simply shouldn't be in positives..
+
 (defn 
   truep
-  "True positives"
+  "True positives; how many results were correctly considered relevant"
   [matches verifiedmatches]
-  (clojure.set/intersection matches (:positives verifiedmatches)))
+  (clojure.set/intersection matches (:positives verifiedmatches))
+  ; (clojure.set/difference matches (:negatives verifiedmatches)) ; If gray zone is considered relevant 
+  )
 
 (defn 
   falsep
-  "False positives"
+  "False positives; how many results were incorrectly considered relevant"
   [matches verifiedmatches]
-  (clojure.set/difference matches (:positives verifiedmatches)))
+  (clojure.set/difference matches (:positives verifiedmatches))
+  ;(clojure.set/intersection matches (:negatives verifiedmatches))) ; If gray zone is considered relevant
+  )
 
 (defn
   falsen
-  "False negatives"
+  "False negatives; how many results were incorrectly considered irrelevant"
   [matches verifiedmatches]
   (clojure.set/difference (:positives verifiedmatches) matches))
+  ; Hmm.. if gray zone were considered relevant, falsen always is infinity as the number of relevant stuff is infinite..
   
 (defn 
   precision
@@ -132,6 +146,23 @@
       (= (+ p r) 0)
       0
       (* 2 (/ (* p r) (+ p r))))))
+
+(defn simple-measure
+  "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
+   Produces a number in [0-1], such that higher means more correct (positive or negative) results"
+  [matches verifiedmatches]
+  (let [correct-positives (clojure.set/intersection matches (:positives verifiedmatches))
+        correct-negatives (clojure.set/difference (:negatives verifiedmatches) matches)]
+    (/ 
+      (+ (count correct-positives) (count correct-negatives))
+      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))
+;    (if (= 0 (count (:negatives verifiedmatches))) ; (Avoid division by zero if no :negatives are present..)
+;      (/ (count correct-positives) (count (:positives verifiedmatches)))
+;      (+
+;       (* 1/2 (/ (count correct-positives) (count (:positives verifiedmatches))))
+;       (* 1/2 (/ (count correct-negatives) (count (:negatives verifiedmatches))))))
+    ))
+(simple-measure matches verifiedmatches)
 
 (defn- snippetgroup|hasequals?
   "Count the number of directives used in a snippet group (excluding default directives)"
@@ -597,11 +628,11 @@
 (comment
   (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
   
-  (jay/inspect templategroup)
-  
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
+  (def verifiedmatches (make-verified-matches matches []))
+  
   (def verifiedmatches (make-verified-matches matches 
                                               (clojure.set/difference 
                                                 (set 
