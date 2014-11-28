@@ -25,34 +25,29 @@
              [operators :as operators]
              [operatorsrep :as operatorsrep]
              [util :as util]
-             [directives :as directives]
-             ])
+             [directives :as directives]])
   (:import [ec.util MersenneTwister]))
 
-
+; Replace Java's pseudo-random number generator for MersenneTwister
 (def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
-
 (defn 
   rand
   ([n] (.nextInt *twister* n)))
-
 (defn
   rand-int
   [n]
   (int (rand n)))
-
 (defn 
   rand-nth
   [coll]
   (nth coll (rand-int (count coll))))
 
-
 ;; Problem representation
 ;; State corresponds to templategroup (can use sequence of operators later, problem is that there arguments cannot easily cross over)
 
-
-
-
+; Specifies our "oracle" for testing the fitness of templates produced by our search algorithm
+; The entries in :positives are snippet groups that a template must match.
+; The entries in :negatives are snippet group that a template may not match.
 (defrecord
   VerifiedMatches
   [positives negatives])
@@ -155,22 +150,15 @@
         correct-negatives (clojure.set/difference (:negatives verifiedmatches) matches)]
     (/ 
       (+ (count correct-positives) (count correct-negatives))
-      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))
-;    (if (= 0 (count (:negatives verifiedmatches))) ; (Avoid division by zero if no :negatives are present..)
-;      (/ (count correct-positives) (count (:positives verifiedmatches)))
-;      (+
-;       (* 1/2 (/ (count correct-positives) (count (:positives verifiedmatches))))
-;       (* 1/2 (/ (count correct-negatives) (count (:negatives verifiedmatches))))))
-    ))
-(simple-measure matches verifiedmatches)
+      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))))
 
 (defn- snippetgroup|hasequals?
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
   (some (fn [snippet]
-          (boolean (directives/bounddirective-for-directive 
-                     (snippet/snippet-bounddirectives snippet)
-                     matching/directive-equals)))
+          (boolean (dbg (directives/bounddirective-for-directive 
+                         (apply concat (snippet/snippet-bounddirectives snippet))
+                         matching/directive-equals))))
          (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
 (defn- count-directives
@@ -179,20 +167,6 @@
   (reduce + 
           (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
             (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
-
-;(defn count-directives 
-;  "Count the number of directives used in a snippet group"
-;  [snippetgroup]
-;    (count 
-;      (flatten 
-;        (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-;          (filter 
-;            (fn [directives] (not (empty? directives)))
-;            (for [directives (snippet/snippet-bounddirectives snippet)]
-;              (filter (fn [directive]
-;                        (let [name (.toString directive)]
-;                          (and (not= name "child") (not= name "match"))))
-;                      directives)))))))
 
 (defn
   make-fitness-function
@@ -225,7 +199,6 @@
     (snippetgroup/make-snippetgroup name
                                     (map matching/snippet-from-node tuple))))
 
-
 (defn viable-repeat 
   "Keep on applying func until we get cnt results for which test-func is true
    @param cnt  We want this many viable results
@@ -240,24 +213,6 @@
          (if (test-func result)
            result 
            (recur))))))
-
-(defn repeat-until
-  "Keep on applying func until we get a result for which test-func is true.
-   If we already retried more than max-retries times, give up and return nil."
-  [func test-func max-retries]
-  (loop [i 0]
-    (let [result (func)]
-      (if (test-func result)
-        result
-        (if (> i max-retries)
-          nil
-          (recur (inc i)))))))
-
-;(defn viable-repeat-once
-;  "@see viable-repeat
-;   Keeps on applying func until we get a result for which test-func is true"
-;  [func test-func]
-;  (first (viable-repeat 1 func test-func)))
 
 (defn
   population-from-tuples
@@ -306,8 +261,7 @@
                      ;"consider-set|lst"
                      ]
                     )))
-          (operatorsrep/registered-operators)
-          ))
+          (operatorsrep/registered-operators)))
 
 (defn- rand-snippet [snippetgroup]
   (-> snippetgroup
@@ -316,11 +270,13 @@
 
 (defn
   mutate
+  "Perform a mutation operation on a snippet group. A random node is chosen among the snippets,
+   and a random operation is applied to it, in order to mutate the snippet."
   [snippetgroup]
   (let [group-copy (persistence/copy-snippetgroup snippetgroup)
         snippet (rand-snippet group-copy)
         
-        pick-operator2
+        pick-operator
         (fn []
           (let [operator (rand-nth registered-operators|search)
                 all-valid-nodes (filter
@@ -330,44 +286,27 @@
               (recur)
               [operator (rand-nth all-valid-nodes)])))
         
-        pick-operator 
-        (fn []
-          (let [operator (rand-nth registered-operators|search)
-                value (repeat-until
-                        #(rand-nth (snippet/snippet-nodes snippet))
-                        (fn [x] (operatorsrep/applicable? snippetgroup snippet x operator))
-                        20)]
-            (if (nil? value)
-              (recur)
-              [operator value])))
+        [operator value] (pick-operator)
+        operands (operatorsrep/operator-operands operator)
         
-        [operator value] (pick-operator2)]
-    (let [
-          
-          
-          ;operators (operatorsrep/applicable-operators snippetgroup snippet value registered-operators|search)
-          ;operator (rand-nth operators)
-          operands (operatorsrep/operator-operands operator)]
-      (println (operatorsrep/operator-id operator))
-      (let [operandvalues
-            (map
-              (fn [operand]
-                (rand-nth
-                  (operatorsrep/possible-operand-values|valid
-                    group-copy snippet value operator operand)))
-              operands)
-            bindings
-            (cons
-              (operatorsrep/make-implicit-operandbinding-for-operator-subject group-copy snippet value operator)
-              (map (fn [operand operandval]
-                     (operatorsrep/make-binding operand group-copy snippet operandval))
-                   operands
-                   operandvalues))]
-        (operatorsrep/apply-operator-to-snippetgroup group-copy 
-                                                     snippet
-                                                     value 
-                                                     operator 
-                                                     bindings)))))
+        operandvalues
+        (map
+          (fn [operand]
+            (rand-nth
+              (operatorsrep/possible-operand-values|valid
+                group-copy snippet value operator operand)))
+          operands)
+        
+        bindings
+        (cons
+          (operatorsrep/make-implicit-operandbinding-for-operator-subject group-copy snippet value operator)
+          (map (fn [operand operandval]
+                 (operatorsrep/make-binding operand group-copy snippet operandval))
+               operands
+               operandvalues))]
+    (with-meta
+      (operatorsrep/apply-operator-to-snippetgroup group-copy snippet value operator bindings)
+      {:mutation-operator (operatorsrep/operator-id operator)})))
 
 (defn- node-expected-class
   "Returns the expected type of an ASTnode, more specifically, the type that the parent node expects.
@@ -379,7 +318,6 @@
       (astnode/property-descriptor-child? pd) (astnode/property-descriptor-child-node-class pd)
       (astnode/property-descriptor-list? pd) (astnode/property-descriptor-element-node-class pd)
       :else (throw (Exception. "Should not happen.")))))
-
 
 (defn- non-root-ast-node?
   [node snippet]
@@ -401,6 +339,7 @@
   [snippet1 snippet2]
   (let [node1 (rand-ast-node snippet1)
         cls1 (node-expected-class node1)
+        ; Look for all compatible nodes in snippet2 that could be swapped with node1 
         compatible-node2s (filter
                             (fn [node2]
                               (and
@@ -412,39 +351,13 @@
       (recur snippet1 snippet2)
       [node1 (rand-nth compatible-node2s)])))
 
-;(defn- find-compatible-ast-pair
-;  "Given two snippets, find a pair of nodes in each snippet's AST
-;   such that they can be safely swapped without causing syntax issues"
-;  [snippet1 snippet2]
-;  (let [node1 (rand-ast-node snippet1)
-;        cls1 (node-expected-class node1)]
-;    (loop [node2 (rand-ast-node snippet2)
-;           i 0]
-;      (if (and 
-;            (instance? (node-expected-class node2) node1)
-;            (instance? cls1 node2))
-;        [node1 node2]
-;        (if (< i 20)
-;          (recur (rand-ast-node snippet2) (inc i)) ; Try again with another node2
-;          (find-compatible-ast-pair snippet1 snippet2) ; Seems like nothing is compatible with node1? Better start over.. 
-;          )))))
-
-
-(defn-
-  copynode
-  "Copy a node (and its children) from its AST into another AST
-   @author Tim"
-  [tgt-ast node]
-  (ASTNode/copySubtree tgt-ast node))
-
-
 (defn
   replace-node-with
   "Replaces a node within a snippet with another node from another snippet
    @author Tim"
   [destination-snippet destination-node source-snippet source-node]
   (let [copy-of-source-node
-        (copynode (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
+        (ASTNode/copySubtree (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
         newsnippet 
         (atom destination-snippet)] 
     ; dissoc destination-node and children in destination-snippet
@@ -505,17 +418,19 @@
      ; Get two random AST nodes
      node-pair (find-compatible-ast-pair snippet1 snippet2)
      node1 (first node-pair)
-     node2 (second node-pair) ]
-    ;(println node1 " --- " node2)
-    (let [new-snippet1 (replace-node-with snippet1 node1 snippet2 node2)
-          new-snippet2 (replace-node-with snippet2 node2 snippet1 node1)]
-      [(snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
-       (snippetgroup/snippetgroup-replace-snippet group-copy2 snippet2 new-snippet2)])
-    ))
+     node2 (second node-pair) 
+     new-snippet1 (replace-node-with snippet1 node1 snippet2 node2)
+     new-snippet2 (replace-node-with snippet2 node2 snippet1 node1)]
+    [(with-meta 
+       (snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
+       {:crossover-old node1 :crossover-new node2})
+     (with-meta
+       (snippetgroup/snippetgroup-replace-snippet group-copy2 snippet2 new-snippet2)
+       {:crossover-old node2 :crossover-new node1})]))
 
 (defn
   sort-by-fitness
-  "Sort the templates in a population by the fitness function"
+  "Sort the individuals in a population (from worst to best) using the fitness function"
   [population fitnessf]
   (sort-by (fn [templategroup]
              (fitnessf templategroup))
@@ -533,7 +448,8 @@
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
 
-(defn correct-implicit-operands? [snippetgroup]
+(defn- correct-implicit-operands?
+  [snippetgroup]
   (reduce (fn [sofar node]
             (and 
               sofar
@@ -547,7 +463,7 @@
 (defn
   evolve
   "Look for a template that is able to match with a number of snippets, using genetic search
-   @param verifiedmatches  There are the snippets we want to match with
+   @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
    @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
   [verifiedmatches max-generations]
   (let
@@ -589,7 +505,14 @@
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map fitness population))
         (println "Best specification:" (persistence/snippetgroup-string best))
-        
+        ; Show detailed population info
+;        (jay/inspect (map 
+;                       (fn [individual]
+;                         [(snippetgroup/snippetgroup-name individual)
+;                          (fitness individual)
+;                          (meta individual)
+;                          (snippetgroup/snippetgroup-snippetlist individual)]) 
+;                       population))
         (when (< generation max-generations)
           (if
             (> best-fitness 0.95)
@@ -622,8 +545,6 @@
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
-          
-
 
 (comment
   (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
@@ -636,11 +557,11 @@
   (def verifiedmatches (make-verified-matches matches 
                                               (clojure.set/difference 
                                                 (set 
-                                                     (damp.ekeko/ekeko [?m ?i]
-                                                            (clojure.core.logic/fresh [?key]
-                                                                   (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)
-                                                                   (damp.ekeko.jdt.ast/ast|invocation ?key ?i)))
-                                                   )
+                                                  (damp.ekeko/ekeko [?m ?i]
+                                                                    (clojure.core.logic/fresh [?key]
+                                                                                              (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)
+                                                                                              (damp.ekeko.jdt.ast/ast|invocation ?key ?i)))
+                                                  )
                                                 (set matches))
                                               ))
   (evolve verifiedmatches 30)
@@ -672,9 +593,11 @@
     (templategroup-matches m2))
   (jay/inspect m1)
   
-  (doseq [x (range 0 100)]
+  (doseq [x (range 0 1)]
     (let [[x1 x2] (crossover m1 m2)
           x1-match (templategroup-matches x1)]
+      (println "---" (meta x1))
+      
       (if (not (empty? x1-match))
         (do
           (println x1-match)
