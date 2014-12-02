@@ -1057,14 +1057,13 @@ damp.ekeko.snippets.operatorsrep
   opscope-variable
   [snippetgroup snippet node operator operand]
   (if
-   (= (operator-name operator) "add-directive-equals")
-   (conj
-     (map 
-       matching/snippet-vars-among-directivebindings
-       (snippetgroup/snippetgroup-snippetlist snippetgroup))
-     (str (util/gen-lvar))))
-   [(str (util/gen-readable-lvar-for-value node))])
-
+    (= (operator-id operator) "add-directive-equals")
+    (conj
+      (map 
+        matching/snippet-vars-among-directivebindings
+        (snippetgroup/snippetgroup-snippetlist snippetgroup))
+      (str (util/gen-lvar)))
+    [(str (util/gen-readable-lvar-for-value node))]))
 
 (defmethod
   possible-operand-values

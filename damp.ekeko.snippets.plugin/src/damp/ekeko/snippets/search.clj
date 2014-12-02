@@ -61,7 +61,6 @@
   (VerifiedMatches. (into #{} positives)
                     (into #{} negatives)))
 
-
 ;http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
 (defmacro with-timeout [millis & body]
   `(let [future# (future ~@body)]
@@ -156,9 +155,9 @@
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
   (some (fn [snippet]
-          (boolean (dbg (directives/bounddirective-for-directive 
+          (boolean (directives/bounddirective-for-directive 
                          (apply concat (snippet/snippet-bounddirectives snippet))
-                         matching/directive-equals))))
+                         matching/directive-equals)))
          (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
 (defn- count-directives
@@ -208,11 +207,12 @@
   [cnt func test-func]
   (repeatedly 
     cnt 
-    #(loop []
+    (fn [] 
+      (loop []
        (let [result (func)]
          (if (test-func result)
            result 
-           (recur))))))
+           (recur)))))))
 
 (defn
   population-from-tuples
@@ -230,16 +230,13 @@
 ;              (* 1 (count id-templates)) 
 ;              #(mutate (select id-templates 2)) 
 ;              (fn [templategroup]
-;                
 ;                (try
 ;                  (let [matches (templategroup-matches templategroup)]
 ;                    (pos? (count matches)))
 ;                  (catch Exception e
 ;                    false))
-;                
 ;                ))
-            )
-    ))
+            )))
 
 
 (def
@@ -279,9 +276,15 @@
         pick-operator
         (fn []
           (let [operator (rand-nth registered-operators|search)
+                ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [x] (operatorsrep/applicable? snippetgroup snippet x operator))
-                                  (snippet/snippet-nodes snippet))]
+;                                  (snippet/snippet-nodes snippet)
+                                  
+                                  (filter
+                                    (fn [node] (astnode/ast? node))
+                                    (snippet/snippet-nodes snippet))
+                                  )]
             (if (empty? all-valid-nodes)
               (recur)
               [operator (rand-nth all-valid-nodes)])))
@@ -306,7 +309,9 @@
                operandvalues))]
     (with-meta
       (operatorsrep/apply-operator-to-snippetgroup group-copy snippet value operator bindings)
-      {:mutation-operator (operatorsrep/operator-id operator)})))
+      {:mutation-operator (operatorsrep/operator-id operator)
+       :mutation-node value
+       :mutation-opvals operandvalues})))
 
 (defn- node-expected-class
   "Returns the expected type of an ASTnode, more specifically, the type that the parent node expects.
@@ -398,10 +403,6 @@
           (swap! newsnippet snippet/update-bounddirectives  destval destbds))))
     @newsnippet))
 
-
-
-
-
 (defn
   crossover
   "Performs a crossover between two snippets:
@@ -469,7 +470,7 @@
   (let
     [fitness (clojure.core.memoize/memo (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 7] ; p.47 of essentials of meta-heuristics; 2 is most common
+     tournament-size 7] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
     (loop 
       [generation 0
        population (sort-by-fitness 
@@ -480,25 +481,14 @@
       (let [best (last population)
             best-fitness (fitness best)
             is-viable (fn [individual]
-                        (and
-                          ; (empty? (clojure.set/difference ( :negatives verifiedmatches ) (templategroup-matches individual) ))
+                        (and  
                           ; We ignore the individuals we've seen before
                           (not (contains? history (hash individual)))
                           ; .. and those with fitness 0
                           (pos? (fitness individual))))
-            
-            ; Keep applying func until we get cnt results, for which test-func is true
-            viable-repeat (fn [cnt func test-func]
-                            (repeatedly 
-                              cnt 
-                              #(loop []
-                                 (let [result (func)]
-                                   (if (test-func result)
-                                     result (recur))))))
-            new-history (clojure.set/intersection 
+            new-history (clojure.set/union
                           history
-                          (set (map hash population)))
-            ]
+                          (set (map hash population)))]
 ;        (doseq [individual population]
 ;          (assert (correct-implicit-operands? individual) ))
         (println "Generation:" generation)
@@ -506,13 +496,14 @@
         (println "Fitnesses:" (map fitness population))
         (println "Best specification:" (persistence/snippetgroup-string best))
         ; Show detailed population info
-;        (jay/inspect (map 
-;                       (fn [individual]
-;                         [(snippetgroup/snippetgroup-name individual)
-;                          (fitness individual)
-;                          (meta individual)
-;                          (snippetgroup/snippetgroup-snippetlist individual)]) 
-;                       population))
+        (jay/inspect (map 
+                       (fn [individual]
+                         [(snippetgroup/snippetgroup-name individual)
+                          (fitness individual)
+                          (meta individual)
+                          ;(snippetgroup/snippetgroup-snippetlist individual)
+                          (persistence/snippetgroup-string individual)]) 
+                       population))
         (when (< generation max-generations)
           (if
             (> best-fitness 0.95)
@@ -539,7 +530,7 @@
                   (viable-repeat 
                     (* 1/4 (count population)) 
                     #(select population tournament-size) 
-                    is-viable))
+                    (fn [x] true)))
                 fitness)
               new-history)))))))
 
@@ -553,6 +544,7 @@
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
+  (evolve verifiedmatches 10)
   
   (def verifiedmatches (make-verified-matches matches 
                                               (clojure.set/difference 
@@ -560,17 +552,16 @@
                                                   (damp.ekeko/ekeko [?m ?i]
                                                                     (clojure.core.logic/fresh [?key]
                                                                                               (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)
-                                                                                              (damp.ekeko.jdt.ast/ast|invocation ?key ?i)))
-                                                  )
-                                                (set matches))
-                                              ))
-  (evolve verifiedmatches 30)
+                                                                                              (damp.ekeko.jdt.ast/ast|invocation ?key ?i))))
+                                                (set matches))))
+  
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
   (fmeasure matches verifiedmatches)
+  ((make-fitness-function verifiedmatches) matches)
   
   (pmap (make-fitness-function verifiedmatches) (population-from-tuples matches))
   
@@ -591,7 +582,7 @@
     (templategroup-matches m1))
   (def match2 
     (templategroup-matches m2))
-  (jay/inspect m1)
+  
   
   (doseq [x (range 0 1)]
     (let [[x1 x2] (crossover m1 m2)
@@ -606,7 +597,10 @@
           (println "!!!")))
       
       (assert (correct-implicit-operands? x1))
-      (assert (correct-implicit-operands? x2)))
- 
+      (assert (correct-implicit-operands? x2))))
   
-))
+  (let [mutant (mutate m1)] 
+    (jay/inspect [mutant (meta mutant)])
+    0)
+  
+  )
