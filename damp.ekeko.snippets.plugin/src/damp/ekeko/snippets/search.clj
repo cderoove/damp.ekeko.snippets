@@ -28,6 +28,8 @@
              [directives :as directives]])
   (:import [ec.util MersenneTwister]))
 
+(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
+
 ; Replace Java's pseudo-random number generator for MersenneTwister
 (def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
 (defn 
@@ -160,6 +162,25 @@
                          matching/directive-equals)))
          (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
+(def operator-directive
+  "Retrieve the directive that will be created by an operator
+   !! For now, this relies on the naming convention that the operator's id starts with 'add-'
+   , followed by the directive's name.."
+  (clojure.core/memoize
+    (fn [operator-id] 
+      (try
+        (let [directive-func-name (subs operator-id 4)]
+         (eval (read-string (str "matching/" directive-func-name))))
+        (catch Exception e nil))))
+  ;  (cond
+  ;    "replace-by-variable" matching/directive-replacedbyvariable
+  ;    "replace-by-exp" matching/directive-replacedbyexp
+  ;    "add-directive-equals" matching/directive-equals
+  ;    "add-directive-invokes" matching/directive-invokes
+  ;    
+  ;    :rest nil)
+  )
+
 (defn- count-directives
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
@@ -177,9 +198,9 @@
       (let [matches (templategroup-matches templategroup)]
         (+
           ; The more desired matches, the better
-          (* 19/20 (fmeasure matches verifiedmatches))
+          (* 20/20 (fmeasure matches verifiedmatches))
           ; The fewer directives used, the better
-          (* 1/20 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
+          (* 0/20 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
       (catch Exception e
         (do
 ;          (println "!!!" e)
@@ -207,7 +228,7 @@
   [cnt func test-func]
   (repeatedly 
     cnt 
-    (fn [] 
+    (fn []
       (loop []
        (let [result (func)]
          (if (test-func result)
@@ -244,12 +265,12 @@
   (filter (fn [op] 
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
-                    ["replace-by-variable"
+                    [;"replace-by-variable"
                      "add-directive-equals"
                      "replace-by-wildcard"
-                     "add-directive-invokes"
+                     ;"add-directive-invokes"
                      "add-directive-invokedby"
-                     "remove-node"
+                     ;"remove-node"
                      ;"restrict-scope-to-child"
                      ;"relax-scope-to-child+"
                      ;"relax-scope-to-child*"
@@ -278,13 +299,19 @@
           (let [operator (rand-nth registered-operators|search)
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
-                                  (fn [x] (operatorsrep/applicable? snippetgroup snippet x operator))
-;                                  (snippet/snippet-nodes snippet)
-                                  
-                                  (filter
-                                    (fn [node] (astnode/ast? node))
-                                    (snippet/snippet-nodes snippet))
-                                  )]
+                                  (fn [node] 
+                                    (and (operatorsrep/applicable? snippetgroup snippet node operator)
+                                         ; Check that you haven't already applied this operation to this node..
+                                         (not (boolean
+                                                (directives/bounddirective-for-directive
+                                                  (snippet/snippet-bounddirectives-for-node snippet node)
+                                                  (operator-directive (operatorsrep/operator-id operator)))))))
+                                  (snippet/snippet-nodes snippet)
+;                                  (filter
+;                                    (fn [node] (astnode/ast? node))
+;                                    (snippet/snippet-nodes snippet))
+                                  )
+                ]
             (if (empty? all-valid-nodes)
               (recur)
               [operator (rand-nth all-valid-nodes)])))
@@ -297,7 +324,7 @@
           (fn [operand]
             (rand-nth
               (operatorsrep/possible-operand-values|valid
-                group-copy snippet value operator operand)))
+                    group-copy snippet value operator operand)))
           operands)
         
         bindings
@@ -470,12 +497,11 @@
   (let
     [fitness (clojure.core.memoize/memo (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 7] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
+     tournament-size 2] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
     (loop 
       [generation 0
        population (sort-by-fitness 
-                    (population-from-tuples 
-                      (:positives verifiedmatches))
+                    (population-from-tuples (:positives verifiedmatches))
                     fitness)
        history #{}]
       (let [best (last population)
@@ -496,14 +522,14 @@
         (println "Fitnesses:" (map fitness population))
         (println "Best specification:" (persistence/snippetgroup-string best))
         ; Show detailed population info
-        (jay/inspect (map 
-                       (fn [individual]
-                         [(snippetgroup/snippetgroup-name individual)
-                          (fitness individual)
-                          (meta individual)
-                          ;(snippetgroup/snippetgroup-snippetlist individual)
-                          (persistence/snippetgroup-string individual)]) 
-                       population))
+;        (jay/inspect (map 
+;                       (fn [individual]
+;                         [(snippetgroup/snippetgroup-name individual)
+;                          (fitness individual)
+;                          (meta individual)
+;                          ;(snippetgroup/snippetgroup-snippetlist individual)
+;                          (persistence/snippetgroup-string individual)]) 
+;                       population))
         (when (< generation max-generations)
           (if
             (> best-fitness 0.95)
@@ -538,7 +564,6 @@
 ;; todo: gewone a* search  
 
 (comment
-  (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
   
   (def templategroup
        (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))

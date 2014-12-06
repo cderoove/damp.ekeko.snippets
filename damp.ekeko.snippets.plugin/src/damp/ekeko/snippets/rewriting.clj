@@ -39,7 +39,6 @@
           var (symbol replacement-var-string)]
       `((el/perform (rewrites/replace-node ~var ~var-generatedcode))))))
 
-
 (defn
   rewrite-replace-value
   [val replacement-var-string]

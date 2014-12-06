@@ -1052,18 +1052,22 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   ["1" "+" "*"]) 
 
+(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 (defmethod
   possible-operand-values
   opscope-variable
   [snippetgroup snippet node operator operand]
   (if
     (= (operator-id operator) "add-directive-equals")
-    (conj
-      (map 
-        matching/snippet-vars-among-directivebindings
-        (snippetgroup/snippetgroup-snippetlist snippetgroup))
-      (str (util/gen-lvar)))
-    [(str (util/gen-readable-lvar-for-value node))]))
+    [(str (util/gen-lvar))]
+    (let [uservars
+          (apply concat (map 
+                          matching/snippet-vars-among-directivebindings
+                          (snippetgroup/snippetgroup-snippetlist snippetgroup)))]
+      (if (empty? uservars)
+        [(str (util/gen-readable-lvar-for-value node))]
+        (map str uservars)))
+    ))
 
 (defmethod
   possible-operand-values
