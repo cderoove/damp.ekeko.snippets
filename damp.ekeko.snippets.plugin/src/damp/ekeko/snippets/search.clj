@@ -26,7 +26,10 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]])
-  (:import [ec.util MersenneTwister]))
+  (:import [ec.util MersenneTwister]
+           [jmetal.core Solution SolutionSet Problem]
+           [jmetal.util Ranking]
+           [jmetal.metaheuristics.ibea IBEA]))
 
 (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
@@ -143,6 +146,19 @@
       0
       (* 2 (/ (* p r) (+ p r))))))
 
+(defn- count-directives
+  "Count the number of directives used in a snippet group (excluding default directives)"
+  [snippetgroup]
+  (reduce + 
+          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
+
+(defn directive-count-measure
+  "Produce a score in [0,1] to reflect how complex a template looks,
+   which is based on how many directives are used in the template"
+  [templategroup]
+  (/ 1 (inc (* 1/2 (count-directives templategroup)))))
+
 (defn simple-measure
   "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
    Produces a number in [0-1], such that higher means more correct (positive or negative) results"
@@ -180,13 +196,6 @@
   ;    
   ;    :rest nil)
   )
-
-(defn- count-directives
-  "Count the number of directives used in a snippet group (excluding default directives)"
-  [snippetgroup]
-  (reduce + 
-          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
 
 (defn
   make-fitness-function
@@ -489,6 +498,31 @@
           (mapcat snippet/snippet-nodes snippetgroup)))
 
 (defn
+  generate-new-population
+  "Generate a new population based on the previous generation"
+  [population]
+  (let [tournament-size 2] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
+    (concat
+      ; Mutation
+      (viable-repeat 
+        (* 1/2 (count population)) 
+        #(mutate (select population tournament-size)) 
+        (fn [x] true))
+      ; Crossover (Note that each crossover operation produces a pair)
+      (apply concat
+             (viable-repeat 
+               (* 1/8 (count population))
+               #(crossover
+                  (select population tournament-size)
+                  (select population tournament-size))
+               (fn [x] true)))
+      ; Selection
+      (viable-repeat 
+        (* 1/4 (count population)) 
+        #(select population tournament-size) 
+        (fn [x] true)))))
+
+(defn
   evolve
   "Look for a template that is able to match with a number of snippets, using genetic search
    @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
@@ -497,7 +531,7 @@
   (let
     [fitness (clojure.core.memoize/memo (make-fitness-function verifiedmatches)) ; table individual->fitness
      popsize (count verifiedmatches)
-     tournament-size 2] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
+     tournament-size 2] 
     (loop 
       [generation 0
        population (sort-by-fitness 
@@ -566,20 +600,12 @@
 (comment
   
   (def templategroup
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
+  
   (evolve verifiedmatches 10)
-  
-  (def verifiedmatches (make-verified-matches matches 
-                                              (clojure.set/difference 
-                                                (set 
-                                                  (damp.ekeko/ekeko [?m ?i]
-                                                                    (clojure.core.logic/fresh [?key]
-                                                                                              (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)
-                                                                                              (damp.ekeko.jdt.ast/ast|invocation ?key ?i))))
-                                                (set matches))))
-  
+  (ibea-evolve verifiedmatches)
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
@@ -592,14 +618,14 @@
   
   ;MethodDeclaration - MethodInvocation (vars sorted .. cannot compare otherwise)
   (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
-        (map templategroup-matches (population-from-tuples matches)))
+       (map templategroup-matches (population-from-tuples matches)))
   
   ; Testing crossover
   (def m1
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
   (def m2
-       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m2.ekt"))
-    
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m2.ekt"))
+  
   (println (persistence/snippetgroup-string m1))
   (println (persistence/snippetgroup-string m2))
   
@@ -607,7 +633,6 @@
     (templategroup-matches m1))
   (def match2 
     (templategroup-matches m2))
-  
   
   (doseq [x (range 0 1)]
     (let [[x1 x2] (crossover m1 m2)
@@ -617,8 +642,8 @@
       (if (not (empty? x1-match))
         (do
           (println x1-match)
-;          (println (persistence/snippetgroup-string x1))
-;          (jay/inspect x1)
+          ;          (println (persistence/snippetgroup-string x1))
+          ;          (jay/inspect x1)
           (println "!!!")))
       
       (assert (correct-implicit-operands? x1))
@@ -626,6 +651,4 @@
   
   (let [mutant (mutate m1)] 
     (jay/inspect [mutant (meta mutant)])
-    0)
-  
-  )
+    0))

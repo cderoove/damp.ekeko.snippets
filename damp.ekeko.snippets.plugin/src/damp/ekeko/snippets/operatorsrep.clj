@@ -1081,7 +1081,6 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   [""])
 
-
 (defmethod
   possible-operand-values
   opscope-string
