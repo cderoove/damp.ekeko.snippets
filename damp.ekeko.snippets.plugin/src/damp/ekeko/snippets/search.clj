@@ -26,10 +26,7 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]])
-  (:import [ec.util MersenneTwister]
-           [jmetal.core Solution SolutionSet Problem]
-           [jmetal.util Ranking]
-           [jmetal.metaheuristics.ibea IBEA]))
+  (:import [ec.util MersenneTwister]))
 
 (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
@@ -77,11 +74,12 @@
            nil)))))
 
 ;;;MAGIC CONSTANT! timeout for matching of individual snippet group
-(defn
+(def
   templategroup-matches
   "Given a templategroup, look for all of its matches in the code"
-  [templategroup]
-  (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+  (clojure.core/memoize 
+    (fn [templategroup]
+      (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
           
 
 ; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
@@ -228,22 +226,6 @@
     (snippetgroup/make-snippetgroup name
                                     (map matching/snippet-from-node tuple))))
 
-(defn viable-repeat 
-  "Keep on applying func until we get cnt results for which test-func is true
-   @param cnt  We want this many viable results
-   @param func  The function to apply repeatedly (has no args)
-   @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
-   @return a list of cnt viable results"
-  [cnt func test-func]
-  (repeatedly 
-    cnt 
-    (fn []
-      (loop []
-       (let [result (func)]
-         (if (test-func result)
-           result 
-           (recur)))))))
-
 (defn
   population-from-tuples
   "Generate an initial population of templates based on the desired matches"
@@ -256,7 +238,7 @@
     (concat id-templates
             id-templates
             id-templates
-;            (viable-repeat 
+;            (util/viable-repeat 
 ;              (* 1 (count id-templates)) 
 ;              #(mutate (select id-templates 2)) 
 ;              (fn [templategroup]
@@ -484,7 +466,6 @@
     (nth population
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
-
 (defn- correct-implicit-operands?
   [snippetgroup]
   (reduce (fn [sofar node]
@@ -496,31 +477,6 @@
                       (snippet/snippet-bounddirectives-for-node node))))
           true
           (mapcat snippet/snippet-nodes snippetgroup)))
-
-(defn
-  generate-new-population
-  "Generate a new population based on the previous generation"
-  [population]
-  (let [tournament-size 2] ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
-    (concat
-      ; Mutation
-      (viable-repeat 
-        (* 1/2 (count population)) 
-        #(mutate (select population tournament-size)) 
-        (fn [x] true))
-      ; Crossover (Note that each crossover operation produces a pair)
-      (apply concat
-             (viable-repeat 
-               (* 1/8 (count population))
-               #(crossover
-                  (select population tournament-size)
-                  (select population tournament-size))
-               (fn [x] true)))
-      ; Selection
-      (viable-repeat 
-        (* 1/4 (count population)) 
-        #(select population tournament-size) 
-        (fn [x] true)))))
 
 (defn
   evolve
@@ -574,20 +530,20 @@
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
                   ; Mutation
-                  (viable-repeat 
-                    (* 1/2 (count population)) 
+                  (util/viable-repeat 
+                    (* 1/2 (count population))
                     #(mutate (select population tournament-size)) 
                     is-viable)
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (viable-repeat 
+                         (util/viable-repeat 
                            (* 1/8 (count population))
                            #(crossover
                               (select population tournament-size)
                               (select population tournament-size))
                            (fn [x] (and (is-viable (first x)) (is-viable (second x))))))
                   ; Selection
-                  (viable-repeat 
+                  (util/viable-repeat 
                     (* 1/4 (count population)) 
                     #(select population tournament-size) 
                     (fn [x] true)))
@@ -598,14 +554,12 @@
 ;; todo: gewone a* search  
 
 (comment
-  
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
   
   (evolve verifiedmatches 10)
-  (ibea-evolve verifiedmatches)
   
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
@@ -648,7 +602,4 @@
       
       (assert (correct-implicit-operands? x1))
       (assert (correct-implicit-operands? x2))))
-  
-  (let [mutant (mutate m1)] 
-    (jay/inspect [mutant (meta mutant)])
-    0))
+  )

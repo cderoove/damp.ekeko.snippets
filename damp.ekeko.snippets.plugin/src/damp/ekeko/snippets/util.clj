@@ -1,6 +1,6 @@
 (ns 
   ^{:doc "Auxiliary functions for snippet-driven querying."
-    :author "Coen De Roover, Siltvani."}
+    :author "Coen De Roover, Siltvani, Tim Molderez."}
   damp.ekeko.snippets.util
   (:require [damp.ekeko.jdt [astnode :as astnode]]))
 
@@ -81,8 +81,7 @@
               (null-f val)
               (recur others))
             :default
-            (throw (Exception. "Don't know how to walk this value."))
-            ))))))
+            (throw (Exception. "Don't know how to walk this value."))))))))
 
 (defn dissoc-in [tmap keys]
   (let [newmap (dissoc ((first keys) tmap) (fnext keys))]
@@ -145,3 +144,18 @@
          (filter (fn [x] (not (empty? x))) 
                  (seq (.split (.replace string "(" "open") "open"))))))   ;cannot use "(" in split
 
+(defn viable-repeat 
+  "Keep on applying func until we get cnt results for which test-func is true
+   @param cnt  We want this many viable results
+   @param func  The function to apply repeatedly (has no args)
+   @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
+   @return a list of cnt viable results"
+  [cnt func test-func]
+  (repeatedly 
+    cnt 
+    (fn []
+      (loop []
+       (let [result (func)]
+         (if (test-func result)
+           result 
+           (recur)))))))
