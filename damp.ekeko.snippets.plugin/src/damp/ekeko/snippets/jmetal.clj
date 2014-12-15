@@ -107,30 +107,31 @@ damp.ekeko.snippets.jmetal
    We pick a number of random entries in the population, then return the best one from those entries.
    @param tournament-size  The number of random entries to pick"
   [solution-seq tournament-size]
-  (let [do-select (fn [best tournaments]
-                    (if (> 0 tournaments)
+  (let [is-better (fn [sol1 sol2]
+;                    (> (.getFitness sol1) (.getFitness sol2))
+                    (> (.getObjective sol1 0) (.getObjective sol2 0)))
+        do-select (fn [best tournaments]
+                    (if (> tournaments 0)
                       (recur
                         (let [candidate (search/rand-nth solution-seq)]
-                          (if (> (.getFitness candidate) (.getFitness best))
-                            candidate
-                            best))
-                        (dec tournament-size))
+                          (if (is-better candidate best) candidate best))
+                        (dec tournaments))
                       best))]
-    (get-individual (do-select 
-                      (search/rand-nth solution-seq)
-                      (dec tournament-size)))))
+    (do-select
+      (search/rand-nth solution-seq)
+      (dec tournament-size))))
 
 (defn
   generate-new-population
   "Generate a new population based on the previous generation"
   [solution-set population-size verifiedmatches]
-  (let [tournament-size 2 ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
+  (let [tournament-size 7 ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
         population (solution-set-to-population solution-set)
         solution-seq (iterator-seq (.iterator solution-set))
 ;        selector (make-selection-operator)
 ;        select (fn [solution-set]
 ;                 (get-individual (.execute selector solution-set)))
-        select (fn [] (tournament-select solution-seq tournament-size))
+        select (fn [] (get-individual (tournament-select solution-seq tournament-size)))
         is-viable (fn [individual]
                     (pos? (search/fmeasure 
                             (search/templategroup-matches individual)
@@ -153,6 +154,14 @@ damp.ekeko.snippets.jmetal
         #(select)
         is-viable))))
 
+(defn nan-correct
+  "Replace NaN fitness values by 0 .. otherwise IBEA.removeWorst() won't work properly.."
+  [solution-set]
+  (let [solution-seq (iterator-seq (.iterator solution-set))]
+    (doseq [x solution-seq]
+      (if (java.lang.Double/isNaN (.getFitness x))
+        (.setFitness x 0.0)))))
+
 (defn ibea-algorithm [verifiedmatches population-size archive-size max-generations]
   (proxy [IBEA] [(make-problem)]
     (execute []
@@ -165,6 +174,7 @@ damp.ekeko.snippets.jmetal
             ; Create the next generation
             (let [new-archive (let [union (.union solution-set archive)]
                                 (.calculateFitness this union)
+                                (nan-correct union)
                                 (print-generation-info generation solution-set verifiedmatches)
                                 (while (> (.size union) population-size)
                                   (.removeWorst this union))
@@ -179,15 +189,25 @@ damp.ekeko.snippets.jmetal
 (defn ibea-evolve [verifiedmatches max-generations]
   (let [algo (ibea-algorithm 
                verifiedmatches 
-               50 ; population size 
-               50 ; archive size
+               20 ; population size 
+               20 ; archive size
                max-generations)]
     (.execute algo)))
 
+(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (search/templategroup-matches templategroup))
   (def verifiedmatches (search/make-verified-matches matches []))
   (ibea-evolve verifiedmatches 50)
+  
+  
+  ; Testing selection..
+  (let [initial-population (search/population-from-tuples (:positives verifiedmatches))
+        solution-set (population-to-solution-set initial-population verifiedmatches)
+        solution-seq (iterator-seq (.iterator solution-set))
+        select (fn [] (tournament-select solution-seq 7))]
+    (doseq [x solution-seq] (println x))
+    (.getObjective (select) 0))
 )

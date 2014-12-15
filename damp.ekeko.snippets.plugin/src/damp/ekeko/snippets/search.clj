@@ -77,7 +77,7 @@
 (def
   templategroup-matches
   "Given a templategroup, look for all of its matches in the code"
-  (clojure.core/memoize 
+  (clojure.core.memoize/memo 
     (fn [templategroup]
       (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
           
@@ -180,7 +180,7 @@
   "Retrieve the directive that will be created by an operator
    !! For now, this relies on the naming convention that the operator's id starts with 'add-'
    , followed by the directive's name.."
-  (clojure.core/memoize
+  (clojure.core.memoize/memo
     (fn [operator-id] 
       (try
         (let [directive-func-name (subs operator-id 4)]
@@ -236,8 +236,7 @@
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
     (concat id-templates
-            id-templates
-            id-templates
+            ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
 ;              (* 1 (count id-templates)) 
 ;              #(mutate (select id-templates 2)) 
