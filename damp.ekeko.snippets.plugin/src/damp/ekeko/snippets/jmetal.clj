@@ -124,7 +124,7 @@ damp.ekeko.snippets.jmetal
 (defn
   generate-new-population
   "Generate a new population based on the previous generation"
-  [solution-set population-size verifiedmatches]
+  [solution-set population-size verifiedmatches history]
   (let [tournament-size 7 ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
         population (solution-set-to-population solution-set)
         solution-seq (iterator-seq (.iterator solution-set))
@@ -133,9 +133,13 @@ damp.ekeko.snippets.jmetal
 ;                 (get-individual (.execute selector solution-set)))
         select (fn [] (get-individual (tournament-select solution-seq tournament-size)))
         is-viable (fn [individual]
-                    (pos? (search/fmeasure 
-                            (search/templategroup-matches individual)
-                            verifiedmatches)))]
+                    (and  
+                      ; We ignore the individuals we've seen before
+                      (not (contains? history (hash individual)))
+                      ; .. and those with fitness 0
+                      (pos? (search/fmeasure 
+                              (search/templategroup-matches individual)
+                              verifiedmatches))))]
     (concat
       ; Mutation
       (util/viable-repeat 
@@ -152,7 +156,7 @@ damp.ekeko.snippets.jmetal
       (util/viable-repeat 
         (* 1/4 population-size) 
         #(select)
-        is-viable))))
+        (fn [x] true)))))
 
 (defn nan-correct
   "Replace NaN fitness values by 0 .. otherwise IBEA.removeWorst() won't work properly.."
@@ -169,7 +173,8 @@ damp.ekeko.snippets.jmetal
             initial-solution-set (population-to-solution-set initial-population verifiedmatches)]
         (loop [generation 0
                solution-set initial-solution-set 
-               archive (new SolutionSet archive-size)]
+               archive (new SolutionSet archive-size)
+               history #{}]
           (if (< generation max-generations)
             ; Create the next generation
             (let [new-archive (let [union (.union solution-set archive)]
@@ -179,10 +184,12 @@ damp.ekeko.snippets.jmetal
                                 (while (> (.size union) population-size)
                                   (.removeWorst this union))
                                 union)
-                  new-solution-set (population-to-solution-set
-                                     (generate-new-population new-archive population-size verifiedmatches)
-                                     verifiedmatches)]
-              (recur (inc generation) new-solution-set new-archive))
+                  new-population (generate-new-population new-archive population-size verifiedmatches history)
+                  new-solution-set (population-to-solution-set new-population verifiedmatches)
+                  new-history (clojure.set/union
+                                history
+                                (set (map hash new-population)))]
+              (recur (inc generation) new-solution-set new-archive new-history))
             ; Once we're all done, create a ranking of the best solutions
             (.getSubfront (new Ranking archive) 0)))))))
 

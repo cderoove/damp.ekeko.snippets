@@ -17,6 +17,10 @@
      [astnode :as astnode]
      [rewrites :as rewrites]]))
 
+(def replace-node `rewrites/replace-node)
+(def replace-value `rewrites/replace-value)
+(def add-element `rewrites/add-element)
+
 ;used to instantiate templates
 (defn
   clone-compatible-with-ast
@@ -37,7 +41,7 @@
   (fn [snippet]
     (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
-      `((el/perform (rewrites/replace-node ~var ~var-generatedcode))))))
+      `((el/perform (~replace-node ~var ~var-generatedcode))))))
 
 (defn
   rewrite-replace-value
@@ -46,7 +50,7 @@
     (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
       `((el/perform 
-          (rewrites/replace-value ~var ~var-generatedcode))))))
+          (~replace-value ~var ~var-generatedcode))))))
 
 
 ;(defn
@@ -77,7 +81,7 @@
           var
           (symbol target-list-var-string)]
       `((el/perform 
-          (rewrites/add-element ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
+          (~add-element ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
 
 
 (def

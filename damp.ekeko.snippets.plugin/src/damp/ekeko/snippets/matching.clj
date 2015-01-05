@@ -81,7 +81,7 @@ damp.ekeko.snippets.matching
 (def to-prefix-expression-operator `runtime/to-prefix-expression-operator)
 (def to-postfix-expression-operator `runtime/to-postfix-expression-operator)
 
-
+(def generic-nongrounding-ast `nongrounding-ast)
 (declare ast-primitive-as-expression)
 
 ;; Aux
@@ -274,7 +274,7 @@ damp.ekeko.snippets.matching
                       `((~has ~property-keyw ~var-match ~var-value)))))
                 snippet-properties)]
           ;ast should not ground, only perform an instanceof check ;TODO: make separate predicate
-          `((nongrounding-ast ~ast-keyw ~var-match)
+          `((~generic-nongrounding-ast ~ast-keyw ~var-match)
              ~@child-conditions))
         ;constrain lists
         (astnode/lstvalue? snippet-val)

@@ -560,6 +560,8 @@
   
   (evolve verifiedmatches 10)
   
+  (persistence/snippetgroup-string templategroup)
+  (jay/inspect matches)
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
