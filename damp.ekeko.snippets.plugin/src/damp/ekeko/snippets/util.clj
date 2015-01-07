@@ -156,6 +156,7 @@
     (fn []
       (loop []
        (let [result (func)]
+         (print ".")
          (if (test-func result)
            result 
            (recur)))))))

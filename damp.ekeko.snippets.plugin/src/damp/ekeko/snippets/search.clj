@@ -81,6 +81,11 @@
     (fn [templategroup]
       (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
           
+(defn
+  templategroup-matches-nomemo
+  "Given a templategroup, look for all of its matches in the code"
+  [templategroup]
+  (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
 
 ; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
 ; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
@@ -256,11 +261,12 @@
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
                     [;"replace-by-variable"
-                     "add-directive-equals"
-                     "replace-by-wildcard"
+                     ;"add-directive-equals"
+                     ;"replace-by-wildcard"
                      ;"add-directive-invokes"
-                     "add-directive-invokedby"
+                     ;"add-directive-invokedby"
                      ;"remove-node"
+                     "consider-set|lst"
                      ;"restrict-scope-to-child"
                      ;"relax-scope-to-child+"
                      ;"relax-scope-to-child*"
@@ -554,6 +560,9 @@
 
 (comment
   (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/match-set.ekt"))
+  
+  (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
@@ -561,7 +570,6 @@
   (evolve verifiedmatches 10)
   
   (persistence/snippetgroup-string templategroup)
-  (jay/inspect matches)
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
@@ -589,6 +597,10 @@
   (def match2 
     (templategroup-matches m2))
   
+  ; Testing mutation
+  (persistence/snippetgroup-string (mutate m1))
+  
+  ; Testing crossover
   (doseq [x (range 0 1)]
     (let [[x1 x2] (crossover m1 m2)
           x1-match (templategroup-matches x1)]
