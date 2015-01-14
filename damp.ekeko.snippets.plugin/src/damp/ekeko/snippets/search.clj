@@ -70,6 +70,7 @@
        (.get future# ~millis java.util.concurrent.TimeUnit/MILLISECONDS)
        (catch java.util.concurrent.TimeoutException x# 
          (do
+           (println "Timed out!!")
            (future-cancel future#)
            nil)))))
 
@@ -79,13 +80,13 @@
   "Given a templategroup, look for all of its matches in the code"
   (clojure.core.memoize/memo 
     (fn [templategroup]
-      (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
+      (into #{} (with-timeout 5000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
           
 (defn
   templategroup-matches-nomemo
   "Given a templategroup, look for all of its matches in the code"
   [templategroup]
-  (into #{} (with-timeout 30000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+  (into #{} (with-timeout 5000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
 
 ; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
 ; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
@@ -149,7 +150,7 @@
       0
       (* 2 (/ (* p r) (+ p r))))))
 
-(defn- count-directives
+(defn count-directives
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
   (reduce + 
@@ -201,21 +202,45 @@
   )
 
 (defn
+  template-size
+  [templategroup]
+  (.length (persistence/snippetgroup-string templategroup)))
+
+(defn
+  ast-node-count
+  [templategroup]
+  (let [snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
+    (apply + (for [x snippets]
+               (count (snippet/snippet-nodes x))))))
+
+(defn
   make-fitness-function
   "Return a fitness function, used to measure how good/fit an individual is
    0 is worst fitness; 1 is the best"
   [verifiedmatches]
   (fn [templategroup]
     (try
-      (let [matches (templategroup-matches templategroup)]
-        (+
-          ; The more desired matches, the better
-          (* 20/20 (fmeasure matches verifiedmatches))
-          ; The fewer directives used, the better
-          (* 0/20 (/ 1 (inc (* 1/2 (count-directives templategroup)))))))
+      (let [matches (templategroup-matches templategroup)
+            ; The more desired matches, the better
+            fscore (fmeasure matches verifiedmatches)
+;            fscore (/ 
+;                     (count (truep matches verifiedmatches)) 
+;                     (count (:positives verifiedmatches)))
+            ; The fewer directives, the better
+            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
+            ; The shorter a template-group, the better
+            lengthscore (/ 1 (template-size templategroup))
+            ]
+        (if (= 0 fscore)
+          0
+          (+
+            (* 19/20 fscore)
+            (* 0/20 dirscore)
+            (* 1/20 lengthscore)
+            )))
       (catch Exception e
         (do
-;          (println "!!!" e)
+          (println "!!!" e)
 ;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0)))))
 
@@ -240,7 +265,8 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (concat id-templates
+    (mapcat identity (repeat 2 id-templates))
+;    (concat id-templates
             ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
 ;              (* 1 (count id-templates)) 
@@ -252,7 +278,8 @@
 ;                  (catch Exception e
 ;                    false))
 ;                ))
-            )))
+;            )
+    ))
 
 
 (def
@@ -260,13 +287,12 @@
   (filter (fn [op] 
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
-                    [;"replace-by-variable"
+                    ["replace-by-variable"
                      ;"add-directive-equals"
-                     ;"replace-by-wildcard"
+                     "replace-by-wildcard"
                      ;"add-directive-invokes"
                      ;"add-directive-invokedby"
-                     ;"remove-node"
-                     "consider-set|lst"
+                     "remove-node"
                      ;"restrict-scope-to-child"
                      ;"relax-scope-to-child+"
                      ;"relax-scope-to-child*"
@@ -490,14 +516,13 @@
    @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
   [verifiedmatches max-generations]
   (let
-    [fitness (clojure.core.memoize/memo (make-fitness-function verifiedmatches)) ; table individual->fitness
+    [fitness (make-fitness-function verifiedmatches) ;(clojure.core.memoize/memo (make-fitness-function verifiedmatches))
      popsize (count verifiedmatches)
+     initial-pop (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)
      tournament-size 2] 
     (loop 
       [generation 0
-       population (sort-by-fitness 
-                    (population-from-tuples (:positives verifiedmatches))
-                    fitness)
+       population initial-pop
        history #{}]
       (let [best (last population)
             best-fitness (fitness best)
@@ -534,15 +559,20 @@
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
+                  ; Random reselect from initial population
+                  (util/viable-repeat
+                    (* 1/8 (count population))
+                    #(rand-nth initial-pop)
+                    (fn [x] true))
                   ; Mutation
                   (util/viable-repeat 
-                    (* 1/2 (count population))
+                    (* 2/4 (count population))
                     #(mutate (select population tournament-size)) 
                     is-viable)
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
                          (util/viable-repeat 
-                           (* 1/8 (count population))
+                           (* 0/8 (count population))
                            #(crossover
                               (select population tournament-size)
                               (select population tournament-size))
@@ -561,6 +591,9 @@
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/match-set.ekt"))
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/test.ekt"))
+  (inspector-jay.core/inspect (templategroup-matches templategroup))
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))

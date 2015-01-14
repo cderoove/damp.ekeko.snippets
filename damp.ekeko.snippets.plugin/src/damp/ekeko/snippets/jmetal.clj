@@ -29,10 +29,10 @@ damp.ekeko.snippets.jmetal
     (createVariables [] nil)))
 
 (defn make-problem 
-  "Create a new 2-objective Problem instance"
+  "Create a new Problem instance"
   []
   (let [problem (proxy [Problem] []
-                  (getNumberOfObjectives [] 2)
+                  (getNumberOfObjectives [] 3)
                   (evaluate [solution] nil))]
     (.setNumberOfVariables problem 0)
     (.setSolutionType problem (make-solution-type problem))
@@ -60,10 +60,35 @@ damp.ekeko.snippets.jmetal
 ;        (.setObjective sol 0 (* 1 (search/rand-int 1000)))
 ;        (.setObjective sol 1 (* 1 (search/rand-int 1000)))
 ; Fitness of an individual depends on the entire population .. fitness is NaN when all objective vals of the population are the same..
-        (.setObjective sol 0 (search/fmeasure matches verifiedmatches))
-        (.setObjective sol 1 (search/directive-count-measure templategroup))
+;        (.setObjective sol 0 (search/fmeasure matches verifiedmatches))
+        (.setObjective sol 0 (/
+                               (count (search/truep matches verifiedmatches)) 
+                               (count (:positives verifiedmatches))))
+        (.setObjective sol 1 (/ 1 (search/template-size templategroup)))
+        (.setObjective sol 2 (search/directive-count-measure templategroup))
         (.add solution-set sol)))
     solution-set))
+
+(defn solution-score 
+  [sol]
+  (let [matches-obj (.getObjective sol 0)
+        ast-obj (.getObjective sol 1)]
+    (+
+      (* 19/20 matches-obj)
+      (* 1/20 ast-obj))))
+
+(defn make-solution-comparator
+  []
+  "Make a Comparator to determine whether one solution is better than another"
+  (proxy [java.util.Comparator] []
+    (compare [sol1 sol2]
+      (let [score1 (solution-score sol1)
+            score2 (solution-score sol2)]
+        (if (= score1 score2)
+          0
+          (if (< score1 score2)
+            1
+            -1))))))
 
 (defn- solution-set-to-population
   "Obtain the population encapsulated by a JMetal SolutionSet"
@@ -72,7 +97,10 @@ damp.ekeko.snippets.jmetal
        (iterator-seq (.iterator solution-set))))
 
 (defn format-double [num]
-  (format "%.3f" num))
+  (format "%.4f" num))
+
+(defn format-obj [ind obj]
+  (format-double (.getObjective ind obj)))
 
 (defn print-generation-info
   [generation solution-set verifiedmatches]
@@ -81,9 +109,16 @@ damp.ekeko.snippets.jmetal
   (doseq [x (iterator-seq (.iterator solution-set))]
     (let [individual (get-individual x)] 
       (println
-        "O1" (format-double (.getObjective x 0)) 
-        "O2" (format-double (.getObjective x 1))
+        "O1" (format-obj x 0) 
+        "O2" (format-obj x 1)
+        "O3" (format-obj x 2)
+        "S" (format-double (solution-score x))
         "F" (format-double (.getFitness x)))))
+  (let [best (.best solution-set (make-solution-comparator))]
+    (println "Best solution (O1 " (format-obj best 0) " O2 " (format-obj best 1) " O3 " (format-obj best 2) " S " (format-double (solution-score best)) ")")
+    (println (persistence/snippetgroup-string (get-individual best))))
+  
+  
 ;  (jay/inspect (map 
 ;                 (fn [individual]
 ;                   [;(snippetgroup/snippetgroup-name individual)
@@ -101,20 +136,21 @@ damp.ekeko.snippets.jmetal
   (new BinaryTournament
        (java.util.HashMap. {"comparator" (new FitnessComparator)})))
 
+(proxy [Solution] [(make-problem)]
+    ; Hrm.. this is pretty gross.. can't add new methods using proxy, so I'm just hijacking some unused method..
+    (clone [] true))
+
 (defn 
   tournament-select
   "Do tournament selection in a sequence of solutions:
    We pick a number of random entries in the population, then return the best one from those entries.
    @param tournament-size  The number of random entries to pick"
   [solution-seq tournament-size]
-  (let [is-better (fn [sol1 sol2]
-;                    (> (.getFitness sol1) (.getFitness sol2))
-                    (> (.getObjective sol1 0) (.getObjective sol2 0)))
-        do-select (fn [best tournaments]
+  (let [do-select (fn [best tournaments]
                     (if (> tournaments 0)
                       (recur
                         (let [candidate (search/rand-nth solution-seq)]
-                          (if (is-better candidate best) candidate best))
+                          (if (> (solution-score candidate) (solution-score best)) candidate best))
                         (dec tournaments))
                       best))]
     (do-select
@@ -125,12 +161,9 @@ damp.ekeko.snippets.jmetal
   generate-new-population
   "Generate a new population based on the previous generation"
   [solution-set population-size verifiedmatches history]
-  (let [tournament-size 7 ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
+  (let [tournament-size 20 ; p.47 of essentials of meta-heuristics; 2 is most common in general; 7 most common for gen. prog.
         population (solution-set-to-population solution-set)
         solution-seq (iterator-seq (.iterator solution-set))
-;        selector (make-selection-operator)
-;        select (fn [solution-set]
-;                 (get-individual (.execute selector solution-set)))
         select (fn [] (get-individual (tournament-select solution-seq tournament-size)))
         is-viable (fn [individual]
                     (and  
@@ -180,7 +213,7 @@ damp.ekeko.snippets.jmetal
             (let [new-archive (let [union (.union solution-set archive)]
                                 (.calculateFitness this union)
                                 (nan-correct union)
-                                (print-generation-info generation solution-set verifiedmatches)
+                                (print-generation-info generation union verifiedmatches)
                                 (while (> (.size union) population-size)
                                   (.removeWorst this union))
                                 union)
@@ -196,8 +229,8 @@ damp.ekeko.snippets.jmetal
 (defn ibea-evolve [verifiedmatches max-generations]
   (let [algo (ibea-algorithm 
                verifiedmatches 
-               20 ; population size 
-               20 ; archive size
+               10 ; population size 
+               10 ; archive size
                max-generations)]
     (.execute algo)))
 
@@ -209,12 +242,11 @@ damp.ekeko.snippets.jmetal
   (def verifiedmatches (search/make-verified-matches matches []))
   (ibea-evolve verifiedmatches 50)
   
-  
   ; Testing selection..
   (let [initial-population (search/population-from-tuples (:positives verifiedmatches))
         solution-set (population-to-solution-set initial-population verifiedmatches)
         solution-seq (iterator-seq (.iterator solution-set))
-        select (fn [] (tournament-select solution-seq 7))]
+        select (fn [] (tournament-select solution-seq 70))]
     (doseq [x solution-seq] (println x))
-    (.getObjective (select) 0))
+    (.getObjective (select) 1))
 )

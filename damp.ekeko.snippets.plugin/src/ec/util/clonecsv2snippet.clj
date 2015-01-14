@@ -6,8 +6,10 @@
   (:require
     [damp.ekeko.jdt.javaprojectmodel :as jmodel]
     [damp.ekeko.snippets.parsing :as p]
+    [damp.ekeko.snippets.persistence :as per]
     [damp.ekeko.snippets.matching :as m]
     [damp.ekeko.snippets.search :as search]
+    [damp.ekeko.snippets.jmetal :as jmetal]
     [clojure.java.io :as io]
     [clojure.string :as s])
   (:import
@@ -87,8 +89,11 @@
               (assoc files cluster-key (conj (cluster-key files) file1 file2))
               new-history2)))))))
 
-(defn- set-other-compilation-units-enabled!
-  [files enable]
+(defn- disable-other-compilation-units!
+  "Given a number of file paths to Java files of a project,
+   disable all other files of that project, so Ekeko won't query them
+   @return the list of compilation "
+  [files]
   (let [project-model (first (jmodel/java-project-models))
         disable-method (let [meth (-> project-model 
                                     .getClass 
@@ -96,32 +101,49 @@
                                       (into-array Class [ICompilationUnit])))]
                          (-> meth (.setAccessible true))
                          meth)
+        all-units (seq (.getCompilationUnits project-model))]
+    (loop [units-remaining all-units
+           units-removed []]
+      (if (empty? units-remaining)
+        ; Base case
+        units-removed
+        ; Recursive step; check whether the current unit should be disabled, and do so
+        (let [unit (first units-remaining)
+              type-root (.getTypeRoot unit)
+              file-name (new String (.getFileName type-root))]
+          (if (not (contains? (set files) file-name))
+            (do 
+              (-> disable-method (.invoke project-model (to-array [type-root])))
+              (recur (rest units-remaining) (conj units-removed unit)))
+            (recur (rest units-remaining) units-removed)))))))
+
+(defn enable-compilation-units!
+  "Add the given compilation units to the Ekeko database"
+  [units]
+  (let [project-model (first (jmodel/java-project-models))
         enable-method (let [meth (-> project-model 
                                    .getClass 
                                    (.getDeclaredMethod "processNewCompilationUnit" 
                                      (into-array Class [ICompilationUnit])))]
                         (-> meth (.setAccessible true))
-                        meth)
-        all-units (seq (.getCompilationUnits project-model))]
-    (doseq [unit all-units]
-      (let [type-root (.getTypeRoot unit)
-            file-name (new String (.getFileName type-root))]
-        (if (not (contains? (set files) file-name))
-          (if enable
-            (-> enable-method (.invoke project-model (to-array [type-root])))
-            (-> disable-method (.invoke project-model (to-array [type-root])))))))))
+                        meth)]
+    (doseq [unit units]
+      (let [type-root (.getTypeRoot unit)]
+        (-> enable-method (.invoke project-model (to-array [type-root])))))))
 
 (def src-prefix "/Users/soft/Downloads/QualitasCorpus-20130901r-pt1/Systems/")
 (def csv-prefix "/Users/soft/Downloads/QCCC/Systems/")
 
-(defn run-qualitas-clone-suite 
+(defn run-qualitas-clone-suite
   [system-name system-version]
   (let [full-system-name (str system-name "-" system-version)
         src-path (str src-prefix system-name "/" full-system-name "/compressed")
         csv-path (str csv-prefix system-name "/provenance/" full-system-name "-mete-cmcd.csv" )
         [ast-nodes files] (clonecsv2ast csv-path src-path)]
-    (let [cluster (get ast-nodes (first (keys ast-nodes)))
-          cluster-files (get files (first (keys files)))
+    (let [tmp (inspector-jay.core/inspect ast-nodes)
+          cluster-no 3
+          cluster (get ast-nodes (nth (keys ast-nodes) cluster-no))
+          cluster-files (get files (nth (keys files) cluster-no))
           tgroups (search/population-from-tuples (set (for [x cluster] [x])))
           ; Note that you can't directly use the AST nodes from the .csv file as verified-matches..
           ; I should first turn each node into a template, then match it..
@@ -129,12 +151,20 @@
           verified-matches (search/make-verified-matches
                              (for [x tgroups] (first (search/templategroup-matches-nomemo x)))
                              [])
-          ]
-      (set-other-compilation-units-enabled! cluster-files false)
-      (search/evolve verified-matches 100)
+          disabled-units (disable-other-compilation-units! cluster-files)]
+      
+      ;(per/spit-snippetgroup "test.ekt" (first tgroups))
+      (search/evolve verified-matches 200)
+      (println "Done!")
+      (enable-compilation-units! disabled-units)
+      verified-matches
       )))
 
 (comment
+  (def verified-matches (run-qualitas-clone-suite "jgrapht" "0.8.1"))
+;  (search/evolve verified-matches 200)
+  (jmetal/ibea-evolve verified-matches 400)
+  
   (inspector-jay.core/inspect 
     (run-qualitas-clone-suite "jgrapht" "0.8.1"))
   
