@@ -1,6 +1,6 @@
 (ns 
   ^{:doc "Snippet-driven querying of Java projects."
-    :author "Coen De Roover, Siltvani"}
+    :author "Coen De Roover, Siltvani, Tim Molderez"}
   damp.ekeko.snippets
   (:refer-clojure :exclude [== type])
   (:require [clojure.core.logic :as cl]) 
@@ -19,11 +19,12 @@
              [runtime]
              [transformation]
              [rewriting :as rewriting]
-             [search :as search]
              [public]
              ;todo: fix
              ;[datastore]
              ])
+  (:require [damp.ekeko.snippets.geneticsearch 
+             [search :as search]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
              [rewrites :as rewrites]
