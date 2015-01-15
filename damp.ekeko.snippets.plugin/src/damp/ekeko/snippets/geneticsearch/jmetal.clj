@@ -2,7 +2,7 @@
   ^{:doc "Provides integration with the JMetal library, so we can do multi-objective genetic search
           in order to automatically find a template from a given set of code snippets"
     :author "Tim Molderez"}
-damp.ekeko.snippets.jmetal
+  damp.ekeko.snippets.geneticsearch.jmetal
   (:refer-clojure :exclude [rand-nth rand-int rand])
   (:require [inspector-jay [core :as jay]])
   (:require [damp.ekeko.snippets 
@@ -14,8 +14,8 @@ damp.ekeko.snippets.jmetal
              [operators :as operators]
              [operatorsrep :as operatorsrep]
              [util :as util]
-             [directives :as directives]
-             [search :as search]])
+             [directives :as directives]])
+  (:require [damp.ekeko.snippets.geneticsearch.search :as search])
   (:import [jmetal.core Solution SolutionSet Problem SolutionType]
            [jmetal.util Ranking]
            [jmetal.util.comparators FitnessComparator]

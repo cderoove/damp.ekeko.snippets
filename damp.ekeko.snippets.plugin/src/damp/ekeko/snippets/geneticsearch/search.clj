@@ -1,7 +1,7 @@
 (ns 
   ^{:doc "(Genetic) search for template specifications."
   :author "Coen De Roover, Tim Molderez"}
-  damp.ekeko.snippets.search
+  damp.ekeko.snippets.geneticsearch.search
   (:refer-clojure :exclude [rand-nth rand-int rand])
   (:import 
     [damp.ekeko JavaProjectModel]

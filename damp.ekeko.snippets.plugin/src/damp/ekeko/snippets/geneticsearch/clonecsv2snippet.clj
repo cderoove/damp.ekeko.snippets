@@ -2,14 +2,14 @@
   ^{:doc "Utility to read the clones described in the .csv files in the Qualitas Corpus Clone Collection
           (http://qualitascorpus.com/clones) , and convert these clones into Ekeko/X snippets"
     :author "Tim Molderez"}
-  ec.util.clonecsv2snippet
+  damp.ekeko.snippets.geneticsearch.clonecsv2snippet
   (:require
     [damp.ekeko.jdt.javaprojectmodel :as jmodel]
     [damp.ekeko.snippets.parsing :as p]
     [damp.ekeko.snippets.persistence :as per]
     [damp.ekeko.snippets.matching :as m]
-    [damp.ekeko.snippets.search :as search]
-    [damp.ekeko.snippets.jmetal :as jmetal]
+    [damp.ekeko.snippets.geneticsearch.search :as search]
+    [damp.ekeko.snippets.geneticsearch.jmetal :as jmetal]
     [clojure.java.io :as io]
     [clojure.string :as s])
   (:import
