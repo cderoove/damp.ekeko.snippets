@@ -288,17 +288,20 @@
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
                     ["replace-by-variable"
-                     ;"add-directive-equals"
+                     "add-directive-equals"
                      "replace-by-wildcard"
-                     ;"add-directive-invokes"
-                     ;"add-directive-invokedby"
+                     "add-directive-invokes"
+                     "add-directive-invokedby"
                      "remove-node"
-                     ;"restrict-scope-to-child"
-                     ;"relax-scope-to-child+"
-                     ;"relax-scope-to-child*"
-                     ;"relax-size-to-atleast"
-                     ;"relax-scope-to-member"
-                     ;"consider-set|lst"
+                     "restrict-scope-to-child"
+                     "relax-scope-to-child+"
+                     "relax-scope-to-child*"
+                     "relax-size-to-atleast"
+                     "relax-scope-to-member"
+                     "consider-set|lst"
+                     
+                     ;untested:
+                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))

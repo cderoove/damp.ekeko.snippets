@@ -18,7 +18,7 @@ damp.ekeko.snippets.operators
      [rewrites :as rewrites]
      [ast :as ast]])
   (:import
-    [org.eclipse.jdt.core.dom ASTNode]
+    [org.eclipse.jdt.core.dom ASTNode Comment]
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
 
@@ -338,6 +338,10 @@ damp.ekeko.snippets.operators
     @newsnippet))
 
 
+
+
+
+
 (defn
   insert-at
   "Inserts node in list from snippet at the given index."
@@ -569,6 +573,35 @@ damp.ekeko.snippets.operators
       (remove-node newsnippet child))
     snippet
     (snippet/snippet-node-children|conceptually snippet value)))
+
+
+(defn
+  erase-comments
+  "Removes all JavaDoc and comments inside of node."
+  [snippet value]
+  (let [newsnippet (atom snippet)]
+    (snippet/walk-snippet-element 
+      snippet value
+      (fn [value] 
+        (when (instance? Comment value)
+          (swap! newsnippet remove-node value))))
+    @newsnippet)) 
+
+
+;(defn
+;  generalize-types
+;  "Generalizes all references to the same type referred to by the argument."
+;  [snippet value var]
+;  ;vindt uit waar
+;  (let [newsnippet (atom snippet)]
+;    (snippet/walk-snippet-element 
+ ;     snippet value
+ ;;     (fn [value] 
+ ;       (when (instance? Comment value)
+ ;         (swap! newsnippet remove-node value))))
+ ;   @newsnippet)) 
+
+    
 
 
 ;TODO:operator to undo effect on children

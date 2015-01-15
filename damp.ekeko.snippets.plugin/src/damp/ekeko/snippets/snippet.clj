@@ -349,6 +349,7 @@ damp.ekeko.snippets.snippet
       (=  node (snippet-node-parent|conceptually snippet child)))
     (snippet-nodes snippet)))
 
+  
 (defn 
   walk-snippet-element
   "Performs a recursive descent through a particular snippet element.
