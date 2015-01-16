@@ -234,9 +234,9 @@
         (if (= 0 fscore)
           0
           (+
-            (* 19/20 fscore)
+            (* 20/20 fscore)
             (* 0/20 dirscore)
-            (* 1/20 lengthscore)
+            (* 0/20 lengthscore)
             )))
       (catch Exception e
         (do
@@ -603,7 +603,7 @@
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
   
-  (evolve verifiedmatches 10)
+  (evolve verifiedmatches 100)
   
   (persistence/snippetgroup-string templategroup)
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))

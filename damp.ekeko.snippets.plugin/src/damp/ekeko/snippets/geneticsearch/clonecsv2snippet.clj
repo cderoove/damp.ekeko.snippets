@@ -9,7 +9,7 @@
     [damp.ekeko.snippets.persistence :as per]
     [damp.ekeko.snippets.matching :as m]
     [damp.ekeko.snippets.geneticsearch.search :as search]
-    [damp.ekeko.snippets.geneticsearch.jmetal :as jmetal]
+;    [damp.ekeko.snippets.geneticsearch.jmetal :as jmetal]
     [clojure.java.io :as io]
     [clojure.string :as s])
   (:import
@@ -163,7 +163,7 @@
 (comment
   (def verified-matches (run-qualitas-clone-suite "jgrapht" "0.8.1"))
 ;  (search/evolve verified-matches 200)
-  (jmetal/ibea-evolve verified-matches 400)
+;  (jmetal/ibea-evolve verified-matches 400)
   
   (inspector-jay.core/inspect 
     (run-qualitas-clone-suite "jgrapht" "0.8.1"))

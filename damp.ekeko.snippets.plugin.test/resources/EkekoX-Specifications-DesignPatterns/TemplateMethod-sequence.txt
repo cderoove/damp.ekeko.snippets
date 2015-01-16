@@ -1,0 +1,45 @@
+Template group with 3 templates:
+	[1] - class with template method itself
+	[2] - class with abstract method being called
+	[3] - class with overridden method
+
+Template-method steps:
+
+// Removing irrelevant stuff..
+
+1 Remove javadoc in each template (3 x erase-template)
+
+2 Replace class name by wildcard in [1]
+
+3 Remove irrelevant methods in [1]
+
+4 Add match set around the class body
+
+5 Remove irrelevant statements in generate method in [1]
+
+6 Add match|set around generate-method body in [1]
+
+7? Pull up expression of prepare() call in assignment stmt
+
+8 Remove abstract from class decl in [2]
+	+ add match|set to modifiers (apparently doesn't match otherwise..)
+
+9 Remove irrelevant methods in [2]
+
+10 match|set to body in [2]
+
+11 Remove irrelevant methods in [3]
+
+12 add match|set to class body [3]
+
+// Abstracting away names
+
+13 Replace generate methodname in [1]
+
+14 Replace generate params by wildcard
+
+?
+	How to pull up an expression?
+	i.e. turn bla = call(); into call()@[child+]
+
+	Add-directive: pull-up-and-add-child+ ?
