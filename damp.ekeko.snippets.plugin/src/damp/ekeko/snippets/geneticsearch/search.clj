@@ -287,21 +287,27 @@
   (filter (fn [op] 
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
-                    ["replace-by-variable"
-                     "add-directive-equals"
-                     "replace-by-wildcard"
-                     "add-directive-invokes"
-                     "add-directive-invokedby"
-                     "remove-node"
-                     "restrict-scope-to-child"
-                     "relax-scope-to-child+"
-                     "relax-scope-to-child*"
-                     "relax-size-to-atleast"
-                     "relax-scope-to-member"
-                     "consider-set|lst"
+                    [
+;                     "replace-by-variable"
+;                     "replace-by-wildcard"
+;                     "remove-node"
+;                     "add-directive-equals"
+;                     
+;                     "add-directive-invokes"
+;                     "add-directive-invokedby"
+                     
+;                     "restrict-scope-to-child"
+;                     "relax-scope-to-child+"
+;                     "relax-scope-to-child*"
+;                     "relax-size-to-atleast"
+;                     "relax-scope-to-member"
+;                     "consider-set|lst"
+;                     "add-directive-type"
+                     "add-directive-type|qname"
+;                     "add-directive-type|sname"
                      
                      ;untested:
-                     "erase-comments"
+;                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))
@@ -594,10 +600,6 @@
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/match-set.ekt"))
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/test.ekt"))
-  (inspector-jay.core/inspect (templategroup-matches templategroup))
-  
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))

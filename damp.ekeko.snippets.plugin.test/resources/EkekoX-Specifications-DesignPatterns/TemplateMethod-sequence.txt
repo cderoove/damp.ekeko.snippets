@@ -36,7 +36,12 @@ Template-method steps:
 
 13 Replace generate methodname in [1]
 
-14 Replace generate params by wildcard
+14 Replace generate params & return type by wildcard
+
+15 Replace class name by meta-var in [2]
+
+16 Replace method name by meta-var in []
+
 
 ?
 	How to pull up an expression?

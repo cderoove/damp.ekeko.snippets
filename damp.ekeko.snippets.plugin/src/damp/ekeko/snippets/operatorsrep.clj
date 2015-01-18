@@ -1065,7 +1065,6 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   ["1" "+" "*"]) 
 
-(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 (defmethod
   possible-operand-values
   opscope-variable
@@ -1088,17 +1087,23 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   (map astnode/ekeko-keyword-for-class astnode/node-classes))
 
-(defmethod
-  possible-operand-values
-  opscope-string
-  [snippetgroup snippet node operator operand]
-  [""])
+(defn- all-type-declarations []
+  (for [x (damp.ekeko/ekeko [?type] (ast/ast :TypeDeclaration ?type))]
+    (first x)))
 
 (defmethod
   possible-operand-values
   opscope-string
   [snippetgroup snippet node operator operand]
-  [""])
+  (case (operator-id operator)
+    "add-directive-type|sname"
+    (for [x (all-type-declarations)] ; Memoize this? But the cache'd have to be cleared when the project being queried changes..
+      (-> x .getName .toString))
+    "add-directive-type|qname"
+    (for [x (all-type-declarations)]
+      (-> x .resolveBinding .getQualifiedName))
+    :else
+    []))
 
 (defmethod
   possible-operand-values
