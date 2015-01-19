@@ -514,6 +514,15 @@ damp.ekeko.snippets.operatorsrep
      "Requires matches to be invoked by the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
+   (Operator. 
+     "add-directive-overrides"
+     operators/add-directive-overrides
+     :refinement
+     "Add directive overrides."
+     opscope-subject
+     applicability|methoddeclaration
+     "Requires match to be a method, which overrides the meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
    (Operator. 
      "add-directive-refersto"

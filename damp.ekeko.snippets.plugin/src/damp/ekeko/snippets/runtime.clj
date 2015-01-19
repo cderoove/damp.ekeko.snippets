@@ -82,7 +82,12 @@
     (el/v+ ?ast)
     (aststructure/methodinvocation-methoddeclaration ?invocation ?ast)))
 
-
+(defn
+  overrides
+  [?ast ?overridden]
+  (cl/all
+    (el/v+ ?ast)
+    (aststructure/methoddeclaration-methoddeclaration|overrides ?overridden ?ast)))
 
   
 

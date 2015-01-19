@@ -849,6 +849,14 @@ damp.ekeko.snippets.matching
           (symbol var-string)]
       `((runtime/invokedby ~var-match ~var)))))
 
+(defn
+  constrain-overrides
+  [val var-string]
+  (fn [template]
+    (let [var-match (snippet/snippet-var-for-node template val)
+          var (symbol var-string)]
+      `((runtime/overrides ~var-match ~var)))))
+
 
 
 
@@ -1378,6 +1386,13 @@ damp.ekeko.snippets.matching
     constrain-invokedby
     "Match is invoked by an invocation expression, bound to the meta-variable."))
 
+(def 
+  directive-overrides
+  (directives/make-directive
+    "overrides"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-overrides
+    "Match overrides a method, which is the binding for the meta-variable."))
 
 (def 
   directive-refersto
