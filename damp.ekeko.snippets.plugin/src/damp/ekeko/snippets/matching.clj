@@ -1564,6 +1564,7 @@ damp.ekeko.snippets.matching
    directive-multiplicity
    directive-invokes
    directive-invokedby
+   directive-overrides
    directive-refersto
    directive-referredby
    directive-type

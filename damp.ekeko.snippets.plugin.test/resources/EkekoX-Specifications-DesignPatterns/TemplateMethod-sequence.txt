@@ -19,7 +19,7 @@ Template-method steps:
 
 6 Add match|set around generate-method body in [1]
 
-7? Pull up expression of prepare() call in assignment stmt
+7?? Pull up expression of prepare() call in assignment stmt
 
 8 Remove abstract from class decl in [2]
 	+ add match|set to modifiers (apparently doesn't match otherwise..)
@@ -41,6 +41,25 @@ Template-method steps:
 15 Replace class name by meta-var in [2]
 
 16 Replace method name by meta-var in []
+
+17 Abstract away prepare() 's name and formal params in [2] (replace by meta-var + replace by wildcard on params and return type)
+
+.. hmm, interesting .. at this point we're getting more matches than needed; we're only going to narrow it back down later on .. how is our evolution-fitness-function going to deal with this?
+maybe the evolution thing should first add refinement ops before generalizing as much as possible?
+
+18 Abstract class names + body in [3] (replace by wildcard and by meta-variable)
+
+.. hm hold on, maybe we don't need the class definitions for [2] and [3] after all?
+
+---
+
+20 add equals ?amethod to method declaration in [2]
+
+21 add overrides in [3]
+
+22 add equals ?call to prepare() call in [1]
+
+23 add invoked-by around method decl in [2]
 
 
 ?

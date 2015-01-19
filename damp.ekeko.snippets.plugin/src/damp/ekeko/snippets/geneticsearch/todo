@@ -4,7 +4,7 @@ automatic operator application:
 	type-related ones
 		possible operands: 
 			types occurring in wanted matches
-			(source-defined) types (type|source ekeko query launchen)
+			DONE - (source-defined) types (type|source ekeko query launchen)
 	
 	
 cases:
