@@ -736,6 +736,16 @@ damp.ekeko.snippets.operatorsrep
      [])
    
    (Operator. 
+     "replace-parent"
+     operators/replace-parent
+     :destructive
+     "Replace parent."
+     opscope-subject
+     applicability|node|nonroot 
+     "Make this expression node replace its parent."
+     [])
+   
+   (Operator. 
      "insert-node-before"
      operators/insert-newnodefromclasskeyw-before
      :destructive

@@ -342,11 +342,6 @@ damp.ekeko.snippets.operators
       (.delete node))   ;remove node
     @newsnippet))
 
-
-
-
-
-
 (defn
   insert-at
   "Inserts node in list from snippet at the given index."
@@ -525,6 +520,16 @@ damp.ekeko.snippets.operators
         (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
       @newsnippet)))
 
+(defn
+  replace-parent
+  "Make an expression node replace its parent."
+  [snippet node]
+  (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)
+        newsnippet (atom snippet)]
+    (inspector-jay.core/inspect parent-node)
+    (swap! newsnippet matching/remove-value-from-snippet parent-node) ; Remove snippet-data of parent
+    (snippet-jdt-replace @newsnippet parent-node node) ; Adjust AST
+    @newsnippet))
 
 (defn
   newvalue|string
