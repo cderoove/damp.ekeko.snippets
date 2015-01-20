@@ -80,13 +80,13 @@
   "Given a templategroup, look for all of its matches in the code"
   (clojure.core.memoize/memo 
     (fn [templategroup]
-      (into #{} (with-timeout 5000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
+      (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
           
 (defn
   templategroup-matches-nomemo
   "Given a templategroup, look for all of its matches in the code"
   [templategroup]
-  (into #{} (with-timeout 5000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+  (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
 
 ; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
 ; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
@@ -234,9 +234,9 @@
         (if (= 0 fscore)
           0
           (+
-            (* 20/20 fscore)
+            (* 18/20 fscore)
             (* 0/20 dirscore)
-            (* 0/20 lengthscore)
+            (* 2/20 lengthscore)
             )))
       (catch Exception e
         (do
@@ -265,7 +265,7 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (mapcat identity (repeat 2 id-templates))
+    (mapcat identity (repeat 1 id-templates))
 ;    (concat id-templates
             ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
@@ -289,25 +289,27 @@
               (some #{id} 
                     [
 ;                     "replace-by-variable"
-;                     "replace-by-wildcard"
-;                     "remove-node"
-;                     "add-directive-equals"
-;                     
+                     "replace-by-wildcard"
+                     "remove-node"
+                     
+                     "add-directive-equals"
+
 ;                     "add-directive-invokes"
-;                     "add-directive-invokedby"
+                     "add-directive-invokedby"
                      
 ;                     "restrict-scope-to-child"
-;                     "relax-scope-to-child+"
+                     "relax-scope-to-child+"
 ;                     "relax-scope-to-child*"
 ;                     "relax-size-to-atleast"
 ;                     "relax-scope-to-member"
-;                     "consider-set|lst"
+                     "consider-set|lst"
 ;                     "add-directive-type"
-                     "add-directive-type|qname"
+;                     "add-directive-type|qname"
 ;                     "add-directive-type|sname"
                      
                      ;untested:
-;                     "erase-comments"
+                     ;"replace-parent"
+                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))
@@ -599,6 +601,10 @@
 
 (comment
   (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/TemplateMethod_alt_25.ekt"))
+  
+  
+  (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/match-set.ekt"))
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
@@ -606,6 +612,7 @@
   (def verifiedmatches (make-verified-matches matches []))
   
   (evolve verifiedmatches 100)
+  (inspector-jay.core/inspect matches)
   
   (persistence/snippetgroup-string templategroup)
   (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))

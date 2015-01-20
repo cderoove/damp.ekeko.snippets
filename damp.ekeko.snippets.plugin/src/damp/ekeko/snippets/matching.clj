@@ -327,7 +327,6 @@ damp.ekeko.snippets.matching
       `((cl/conde [~@normalconditions]
                   [(~value|null ~var-match)])))))
 
-
 (defn
   constrain-orsimple
   "Allows simple types and names to match their fully qualified equivalent in the template."
@@ -608,6 +607,19 @@ damp.ekeko.snippets.matching
                    (~value-raw ~var-match ~var-match-raw)
                    (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
 
+(defn
+  constrain-emptybody
+  "Requires a Block to be nil or have no statements."
+  [val]
+  (fn [template]
+    (let [var-match (snippet/snippet-var-for-node template val)
+          stmts-match (util/gen-lvar "stmts")]
+      `((cl/conde
+          [(cl/fresh [~stmts-match]
+                     (~has :statements ~var-match ~stmts-match)
+                     (damp.ekeko.snippets.runtime/list-size ~stmts-match 0))
+           ]
+          [(el/succeeds (nil? ~var-match))])))))
 
 (defn
   constrain-refersto
@@ -1303,10 +1315,6 @@ damp.ekeko.snippets.matching
     ground-relativetoparent*
     "Match is the corresponding child for the parent match, or nested therein."))
 
-
-
-    
-
 (def 
   directive-size|atleast
   (directives/make-directive
@@ -1315,6 +1323,13 @@ damp.ekeko.snippets.matching
     constrain-size|atleast 
     "Requires candidate matches to have at least as many elements as the corresponding list in the template."))
 
+(def 
+  directive-emptybody
+  (directives/make-directive
+    "empty-body"
+    []
+    constrain-emptybody 
+    "Requires candidate matches to be an empty block (or nil)."))
 
 (def 
   directive-replacedbyvariable
@@ -1532,7 +1547,6 @@ damp.ekeko.snippets.matching
     constrain-orsimple
     "Simple types resolving to name of qualified type in template will match as well."))
 
-
 (def
   directives-replacedby
   [directive-replacedbyvariable
@@ -1544,7 +1558,8 @@ damp.ekeko.snippets.matching
   directives-match
   [directive-exact 
    directive-orimplicit
-   directive-orsimple])
+   directive-orsimple
+   directive-emptybody])
 
 (def
   directives-constraining|mutuallyexclusive
@@ -1912,12 +1927,9 @@ damp.ekeko.snippets.matching
     (jdt-node-as-snippet normalized)
     ))
 
-
 (def
   snippet-from-node
   jdt-node-as-snippet)
- 
-
 
 (defn 
   snippet-node-conditions

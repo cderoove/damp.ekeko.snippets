@@ -61,9 +61,15 @@ maybe the evolution thing should first add refinement ops before generalizing as
 
 23 add invoked-by around method decl in [2]
 
+24 pull up prepare in [1]
+
+25 add child+ to [1]
+	replace method call to ...
 
 ?
 	How to pull up an expression?
 	i.e. turn bla = call(); into call()@[child+]
 
 	Add-directive: pull-up-and-add-child+ ?
+
+

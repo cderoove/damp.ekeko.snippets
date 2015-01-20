@@ -247,6 +247,14 @@ damp.ekeko.snippets.operators
     (directives/make-bounddirective matching/directive-size|atleast
                                     [(make-directiveoperandbinding-for-match lst)])))
   
+(defn
+  empty-body
+  [template lst]
+  (snippet/add-bounddirective 
+    (matching/remove-directives template lst [matching/directive-exact])
+    lst
+    (directives/make-bounddirective matching/directive-emptybody
+                                    [(make-directiveoperandbinding-for-match lst)])))
 
 (defn
   relax-scope-to-member
@@ -521,15 +529,56 @@ damp.ekeko.snippets.operators
       @newsnippet)))
 
 (defn
+  replace-node-with
+  "Replaces a node within a snippet with another node from another snippet"
+  [destination-snippet destination-node source-snippet source-node]
+  (let [copy-of-source-node
+        (ASTNode/copySubtree (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
+        newsnippet (atom destination-snippet)] 
+    ; dissoc destination-node and children in destination-snippet
+    (snippet/walk-snippet-element
+      destination-snippet 
+      destination-node
+      (fn [val] (swap! newsnippet matching/remove-value-from-snippet val)))
+    
+    ; do replacement of destination-node by source-node in the actual AST
+    (snippet-jdt-replace  
+      @newsnippet
+      destination-node
+      copy-of-source-node)
+    
+    ;assoc copy-of-source-node and children with default directives in destination-snippet
+    (util/walk-jdt-node 
+      copy-of-source-node
+      (fn [val] (swap! newsnippet matching/add-value-to-snippet val)))
+    
+    ;update new-node and children with 
+    (snippet/walk-snippets-elements
+      @newsnippet
+      copy-of-source-node
+      source-snippet
+      source-node
+      (fn [[destval srcval]] 
+        (let [srcbds
+              (snippet/snippet-bounddirectives-for-node source-snippet srcval) 
+              destbds
+              (map
+                (fn [bounddirective]
+	                 (directives/make-bounddirective
+                    (directives/bounddirective-directive bounddirective)
+                    (cons 
+                      (directives/make-implicit-operand destval)
+                      (rest (directives/bounddirective-operandbindings bounddirective)))))
+                   srcbds)]
+          (swap! newsnippet snippet/update-bounddirectives  destval destbds))))
+    @newsnippet))
+
+(defn
   replace-parent
   "Make an expression node replace its parent."
   [snippet node]
-  (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)
-        newsnippet (atom snippet)]
-    (inspector-jay.core/inspect parent-node)
-    (swap! newsnippet matching/remove-value-from-snippet parent-node) ; Remove snippet-data of parent
-    (snippet-jdt-replace @newsnippet parent-node node) ; Adjust AST
-    @newsnippet))
+  (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
+    (replace-node-with snippet parent-node snippet node)))
 
 (defn
   newvalue|string

@@ -84,10 +84,26 @@ damp.ekeko.snippets.operatorsrep
     (applicability|node snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)))
 
+(defn applicability|replace-parent
+  "The replace-parent operator can only be applied to Expression nodes, whose parent is an Expression as well."
+  [snippetgroup snippet value]
+  (and
+    (applicability|node snippetgroup snippet value)
+    (applicability|nonroot snippetgroup snippet value)
+    (astnode/expression? value)
+    (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))))
+
 (defn 
   applicability|lst
   [snippetgroup snippet value]
   (astnode/lstvalue? value))
+
+(defn 
+  applicability|block-or-nil
+  [snippetgroup snippet value]
+  (or 
+    (astnode/nilvalue? value)
+    (astnode/block? value)))
 
 (defn
   applicability|simplepropertyvalue
@@ -96,7 +112,6 @@ damp.ekeko.snippets.operatorsrep
     (not (nil? value))
     (when-let [property (astnode/owner-property value)]
       (astnode/property-descriptor-simple? property))))
-
 
 (defn 
   applicability|lstelement
@@ -677,6 +692,16 @@ damp.ekeko.snippets.operatorsrep
      "Matches are lists with at least as many elements as the selection."
      [])
    
+   (Operator. 
+     "empty-body"
+     operators/empty-body
+     :generalization
+     "Add directive empty-body."
+     opscope-subject
+     applicability|block-or-nil
+     "Matches empty lists (nil or 0 elements)."
+     [])
+   
    ;prefer set matching on owner of list element
    (Operator. 
      "relax-scope-to-member"
@@ -739,9 +764,9 @@ damp.ekeko.snippets.operatorsrep
      "replace-parent"
      operators/replace-parent
      :destructive
-     "Replace parent."
+     "Replace parent node."
      opscope-subject
-     applicability|node|nonroot 
+     applicability|replace-parent 
      "Make this expression node replace its parent."
      [])
    
@@ -927,14 +952,6 @@ damp.ekeko.snippets.operatorsrep
      "Simple types resolving to name of qualified type will match."
      []
      )
-   
-   
-   
-   
-   
-   
-   
-   
    
    
    ])
