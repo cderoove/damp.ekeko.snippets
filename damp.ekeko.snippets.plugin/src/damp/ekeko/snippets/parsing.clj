@@ -3,7 +3,6 @@
     :author "Coen De Roover, Siltvani"}
   damp.ekeko.snippets.parsing
   (:import 
-    [org.eclipse.jdt.core ICompilationUnit]
     [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
      CompilationUnit TypeDeclaration Block Expression]
     [damp.ekeko JavaProjectModel]
@@ -119,11 +118,6 @@
     (.setKind parser string-kind)
     (.createAST parser nil)))
 
-
-(defn
-  jdt-parse-icu 
-  [^ICompilationUnit icu]
-  (JavaProjectModel/parse icu nil))
 
 (defn 
   parse-string

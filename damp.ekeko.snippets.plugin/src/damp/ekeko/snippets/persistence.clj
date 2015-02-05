@@ -1,4 +1,6 @@
 (ns 
+  ^{:doc "Persistence of snippets. Relies heavily on persistence in damp.ekeko.jdt.astnode." 
+    :author "Coen De Roover"}
   damp.ekeko.snippets.persistence
   (:require 
     [damp.ekeko.jdt
@@ -13,28 +15,20 @@
      [rewriting :as rewriting]
      [transformation :as transformation]
      ])
-  (:import [org.eclipse.jdt.core.dom 
-            AST
-            Expression Statement BodyDeclaration CompilationUnit ImportDeclaration
-            ASTNode
-            ASTNode$NodeList
-            StructuralPropertyDescriptor
-            Modifier
-            Modifier$ModifierKeyword
-            PrimitiveType
-            PrimitiveType$Code  
-            InfixExpression$Operator
-            InfixExpression
-            PrefixExpression$Operator
-            PostfixExpression$Operator
-            PostfixExpression
-            PrefixExpression
-            Assignment$Operator
-            Assignment            
-            ]
-           [damp.ekeko.snippets
-            BoundDirective
-            DirectiveOperandBinding]
+ ;;Does not seem to work with print-duped values (see explicit def aliases below)
+ ; (:use [damp.ekeko.jdt.astnode
+ ;       :only
+ ;       [newnode-propertyvalues
+ ;        class-propertydescriptor-with-id
+ ;        make-property-value-identifier
+ ;        make-list-element-identifier
+ ;        ]]) ;for future reference: also supports :rename
+  (:import 
+    [java.io Writer] 
+    [java.util List]
+    [damp.ekeko.snippets
+     BoundDirective
+     DirectiveOperandBinding]
            [damp.ekeko.snippets.snippet
             Snippet]
            [damp.ekeko.snippets.snippetgroup
@@ -44,189 +38,23 @@
            [damp.ekeko.snippets.transformation 
             Transformation]
            [damp.ekeko JavaProjectModel]
-           [org.eclipse.jdt.core JavaCore]
            ))
 
-;;TODO: dispatch on node type, call parse-string with correct node type
-;(defmethod 
-;  clojure.core/print-dup 
-;;  ASTNode
-;  [node w]
-;  (.write w (str "#="
-;                 (cond 
-;                   (instance? Expression node)
-;                   `(parsing/parse-string-expression ~(str node))
-;                   (instance? Statement node)
-;                   `(parsing/parse-string-statement ~(str node))
-;                   (instance? BodyDeclaration node)
-;                   `(parsing/parse-string-declaration ~(str node))
-;                   (instance? CompilationUnit node)
-;                   `(parsing/parse-string-unit ~(str node))
-;                   (instance? ImportDeclaration node)
- ;                  `(parsing/parse-string-importdeclaration ~(str node))
-;                   :default 
-;                   `(parsing/parse-string-ast ~(str node))))))
+(set! *warn-on-reflection* true)
 
 
-(def 
-  ast-for-newlycreatednodes
-  (AST/newAST JavaProjectModel/JLS))
-
-(defn
-  newnode 
-  ([ekekokeyword]
-    (newnode ast-for-newlycreatednodes ekekokeyword))
-  ([ast ekekokeyword]
-    (let [nodeclass
-          (astnode/class-for-ekeko-keyword ekekokeyword)]
-      (.createInstance ast nodeclass))))
-    
-(defn
-  set-property!
-  [^ASTNode node ^StructuralPropertyDescriptor propertydescriptor value]
-  (.setStructuralProperty node propertydescriptor value))
-  
-(defn
-  newnode-propertyvalues
-  [nodekeyword propertyvalues]
-  (let [node (newnode nodekeyword)]
-    (doseq [[property value] propertyvalues]
-      (if
-        (astnode/property-descriptor-list? property)
-        (let [lst
-              (astnode/node-property-value node property)]
-          (.addAll lst value))
-        (set-property! node property value)))
-    node))
-
-(defmethod 
-  clojure.core/print-dup 
-  ASTNode
-  [node w]
-  (let [nodeclass
-        (class node)
-        nodeclasskeyword
-        (astnode/ekeko-keyword-for-class nodeclass)]
-    (let [propertyvalues
-          (for [property (astnode/node-property-descriptors node)]
-            (let [value (astnode/node-property-value node property)]
-              [property
-               (if
-                 (astnode/property-descriptor-list? property)
-                 (into [] value)
-                 value)]))]
-      (.write w (str "#="
-                     `(newnode-propertyvalues ~nodeclasskeyword ~propertyvalues))))))
-
-(defn
-  class-propertydescriptor-with-id
-  [ownerclasskeyword pdid]         
-  (let [clazz
-        (astnode/class-for-ekeko-keyword ownerclasskeyword)
-        found 
-        (some (fn [pd]
-                (when (= pdid
-                         (astnode/property-descriptor-id pd))
-                  pd))
-              
-              (clojure.set/union
-                (set (astnode/nodeclass-property-descriptors clazz AST/JLS4)) ;for older persisted ones
-                (set (astnode/nodeclass-property-descriptors clazz))))]
-    (if
-      (nil? found)
-      (throw (Exception. (str "When deserializing, could not find property descriptor: " ownerclasskeyword pdid)))
-      found)))
-
-(defmethod
-  clojure.core/print-dup 
-  StructuralPropertyDescriptor
-  [pd w]
-  (let [id 
-        (astnode/property-descriptor-id pd)
-        ownerclass
-        (astnode/property-descriptor-owner-node-class pd)
-        ownerclass-keyword
-        (astnode/ekeko-keyword-for-class ownerclass)
-        ]
-    (.write w (str  "#=" `(class-propertydescriptor-with-id ~ownerclass-keyword ~id)))))
-
-
-(defn
-  modifierkeyword-for-flagvalue
-  [flagvalue]
-  (Modifier$ModifierKeyword/fromFlagValue flagvalue))
-
-
-(defmethod 
-  clojure.core/print-dup 
-  Modifier$ModifierKeyword
-  [node w]
-  (let [flagvlue (.toFlagValue node)]
-    (.write w (str  "#=" `(modifierkeyword-for-flagvalue ~flagvlue)))))
-
-
-(defn
-  primitivetypecode-for-string
-  [codestr]
-  (PrimitiveType/toCode codestr))
-
-(defmethod 
-  clojure.core/print-dup 
-  PrimitiveType$Code  
-  [node w]
-  (let [codestr (.toString node)]
-    (.write w (str  "#=" `(primitivetypecode-for-string ~codestr)))))
-
-(defn
-  infixexpressionoperator-for-string
-  [opstr]
-  (InfixExpression$Operator/toOperator opstr))
-
-
-(defmethod 
-  clojure.core/print-dup 
-  InfixExpression$Operator
-  [node w]
-  (let [codestr (.toString node)]
-    (.write w (str  "#=" `(infixexpressionoperator-for-string ~codestr)))))
-
-(defn
-  assignmentoperator-for-string
-  [opstring]
-  (Assignment$Operator/toOperator opstring))
-
-(defmethod 
-  clojure.core/print-dup 
-  Assignment$Operator
-  [node w]
-  (let [codestr (.toString node)]
-    (.write w (str  "#=" `(assignmentoperator-for-string ~codestr)))))
-
-
-(defn
-  prefixexpressionoperator-for-string
-  [opstring]
-  (PrefixExpression$Operator/toOperator opstring))
-
-(defmethod 
-  clojure.core/print-dup 
-  PrefixExpression$Operator
-  [node w]
-  (let [codestr (.toString node)]
-    (.write w (str  "#=" `(prefixexpressionoperator-for-string ~codestr)))))
-
-
-(defn
-  postfixexpressionoperator-for-string
-  [opstring]
-  (PostfixExpression$Operator/toOperator opstring))
-
-(defmethod 
-  clojure.core/print-dup 
-  PostfixExpression$Operator
-  [node w]
-  (let [codestr (.toString node)]
-    (.write w (str  "#=" `(postfixexpressionoperator-for-string ~codestr)))))
+;; Aliases to functions that from this namespace moved to there, required to support reading in old ekt and ekx files.
+;; did not work using :use :only above
+(def newnode-propertyvalues astnode/newnode-propertyvalues)
+(def class-propertydescriptor-with-id astnode/class-propertydescriptor-with-id)
+(def make-property-value-identifier astnode/make-property-value-identifier)
+(def make-list-element-identifier astnode/make-list-element-identifier)
+(def modifierkeyword-for-flagvalue astnode/modifierkeyword-for-flagvalue)
+(def primitivetypecode-for-string astnode/primitivetypecode-for-string)
+(def infixexpressionoperator-for-string astnode/infixexpressionoperator-for-string)
+(def assignmentoperator-for-string astnode/assignmentoperator-for-string)
+(def prefixexpressionoperator-for-string astnode/prefixexpressionoperator-for-string)
+(def postfixexpressionoperator-for-string astnode/postfixexpressionoperator-for-string)
 
 
 
@@ -242,7 +70,7 @@
         (directives/bounddirective-operandbindings bd)
         opbindings-without-implicit-operandbinding
         (rest opbindings)]
-    (.write w (str  "#=" `(directives/make-bounddirective ~directive ~opbindings-without-implicit-operandbinding)))))
+    (.write ^Writer w (str  "#=" `(directives/make-bounddirective ~directive ~opbindings-without-implicit-operandbinding)))))
 
 (defmethod 
   clojure.core/print-dup 
@@ -252,41 +80,17 @@
         (directives/directiveoperandbinding-directiveoperand bd) 
         value
         (directives/directiveoperandbinding-value bd)]
-    (.write w (str  "#=" `(directives/make-directiveoperand-binding ~directiveoperand ~value)))))
-
+    (.write ^Writer w (str  "#=" `(directives/make-directiveoperand-binding ~directiveoperand ~value)))))
 
 
 (defrecord 
   RootIdentifier []) 
-
-(defrecord
-  ProjectRootIdentifier [icuhandle])
-
-(defrecord
-  RelativePropertyValueIdentifier
-  [ownerid
-   property])
-
-(defrecord
-  RelativeListElementIdentifier
-  [listid
-   index
-   ])
 
 (defn
   make-root-identifier
   []
   (RootIdentifier.))
 
-(defn
-  make-property-value-identifier
-  [ownerid property]
-  (RelativePropertyValueIdentifier. ownerid property))
-
-(defn
-  make-list-element-identifier
-  [listid index]
-  (RelativeListElementIdentifier. listid index))
 
 ;memoize?
 (defn
@@ -307,7 +111,7 @@
     
     ;lists (keep before next clause, do not merge with before-last clause)
     (astnode/lstvalue? value)
-    (make-property-value-identifier 
+    (astnode/make-property-value-identifier 
       (snippet-value-identifier snippet owner)
       property)
     
@@ -315,11 +119,11 @@
     (astnode/property-descriptor-list? property)
     (let [lst (snippet/snippet-list-containing snippet value)
           lst-raw (astnode/value-unwrapped lst)]
-      (make-list-element-identifier 
+      (astnode/make-list-element-identifier 
         (snippet-value-identifier 
           snippet
           lst)
-        (.indexOf lst-raw value)))
+        (.indexOf ^List lst-raw value)))
     
     ;non-list members
     (or 
@@ -329,7 +133,7 @@
     
       
       
-      (make-property-value-identifier
+      (astnode/make-property-value-identifier
         (snippet-value-identifier snippet owner)
         property)
     
@@ -347,30 +151,6 @@
           value)))
     (snippet/snippet-nodes snippet)))
 
-(defprotocol 
-  IIdentifiesProjectValue
-  (corresponding-project-value [identifier]))
-
-(extend-protocol IIdentifiesProjectValue
-  ProjectRootIdentifier
-  (corresponding-project-value [id]
-    (let [^String handle (:icuhandle id)]
-      (if-let [icu (JavaCore/create handle)]
-        (parsing/jdt-parse-icu icu) ;these ASTs are different from those queried by Ekeko
-        (throw (Exception. (str "While looking for value in project, could not find its file using handle: " handle))))))
-  RelativePropertyValueIdentifier
-  (corresponding-project-value [id]
-    (let [ownerid (:ownerid id)
-          property (:property id)
-          owner (corresponding-project-value ownerid)]
-        (astnode/node-poperty-value|reified owner property)))
-  RelativeListElementIdentifier
-  (corresponding-project-value [id]
-    (let [listid (:listid id)
-          idx (:index id)
-          lst (corresponding-project-value listid)
-          lst-raw (astnode/value-unwrapped lst)]
-        (.get lst-raw idx))))
   
   
  
@@ -448,9 +228,9 @@
         (snippet/snippet-root snippet)
         directives
         (snippet-persistable-directives snippet)]
-  (.write w (str  "#=" `(snippet-from-node-and-persisted-directives 
-                          ~root
-                          ~directives)))))
+  (.write ^Writer w (str  "#=" `(snippet-from-node-and-persisted-directives 
+                           ~root
+                           ~directives)))))
 
 (defmethod 
   clojure.core/print-dup 
@@ -460,42 +240,16 @@
         (snippetgroup/snippetgroup-name snippetgroup)
         snippets
         (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-  (.write w (str  "#=" `(snippetgroup/make-snippetgroup 
-                          ~name 
-                          ~snippets)))))
+  (.write ^Writer w (str  "#=" `(snippetgroup/make-snippetgroup 
+                           ~name 
+                           ~snippets)))))
 
 
 (defmethod 
   clojure.core/print-dup 
   RootIdentifier
   [identifier w]
-  (.write w (str  "#=" `(make-root-identifier))))
-
-
-(defmethod 
-  clojure.core/print-dup 
-  ProjectRootIdentifier
-  [identifier w]
-  (.write w (str  "#=" `(make-root-identifier|project))))
-
-
-
-(defmethod 
-  clojure.core/print-dup 
-  RelativePropertyValueIdentifier
-  [identifier w]
-  (let [ownerid (:ownerid identifier)
-        property (:property identifier)]
-  (.write w (str  "#=" `(make-property-value-identifier ~ownerid ~property)))))
-
-
-(defmethod 
-  clojure.core/print-dup 
-  RelativeListElementIdentifier
-  [identifier w]
-  (let [listid (:listid identifier)
-        index (:index identifier)]
-  (.write w (str  "#=" `(make-list-element-identifier ~listid ~index)))))
+  (.write ^Writer w (str  "#=" `(make-root-identifier))))
 
 
 (defn
@@ -516,7 +270,7 @@
   [d w]
   (let [name 
         (directives/directive-name d)]
-    (.write w (str  "#=" `(registered-directive-for-name ~name)))))
+    (.write ^Writer w (str  "#=" `(registered-directive-for-name ~name)))))
 
 
 (defmethod 
@@ -525,7 +279,7 @@
   [d w]
   (let [description 
         (directives/directive-description d)]
-    (.write w (str  "#=" `(directives/make-directiveoperand ~description)))))
+    (.write ^Writer w (str  "#=" `(directives/make-directiveoperand ~description)))))
 
 
 (defmethod 
@@ -534,29 +288,17 @@
   [t w]
   (let [lhs (transformation/transformation-lhs t)
         rhs (transformation/transformation-rhs t)]
-  (.write w (str  "#=" `(transformation/make-transformation ~lhs ~rhs)))))
+  (.write ^Writer w (str  "#=" `(transformation/make-transformation ~lhs ~rhs)))))
 
 
-(defn
+
+(def 
   snippet-as-persistent-string
-  [snippet]
-  (binding [*print-dup* true]
-    (pr-str snippet)))
+  astnode/astnode-as-persistent-string)
 
-(defn
+(def 
   snippet-from-persistent-string
-  [string]
-  (binding [*read-eval* true]
-    (read-string string)))
-
-
-(def 
-  astnode-as-persistent-string
-  snippet-as-persistent-string)
-
-(def 
-  astnode-from-persistent-string
-  snippet-as-persistent-string)
+  astnode/astnode-from-persistent-string)
 
 
 (defn
@@ -643,66 +385,9 @@
 
 
 (defn
-  make-root-identifier|project
-  [icuhandlestr]
-  (ProjectRootIdentifier. icuhandlestr))
-
-(defn
-  root-identifier|project
-  [^CompilationUnit cu]
-  (when-let [icu (.getJavaElement cu)]
-    (let [handlestr (.getHandleIdentifier icu)]
-      handlestr)))
-
-
-(defn
-  project-value-identifier
-  [value]
-  (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
-        property (astnode/owner-property value)]
-    (cond 
-      ;root
-      (instance? org.eclipse.jdt.core.dom.CompilationUnit value)
-      (make-root-identifier|project (root-identifier|project value))
-    
-      ;lists (keep before next clause, do not merge with before-last clause)
-      (astnode/lstvalue? value)
-      (make-property-value-identifier 
-        (project-value-identifier owner)
-        property)
-    
-      ;list members
-      (astnode/property-descriptor-list? property)
-      (let [lst 
-            (astnode/node-poperty-value|reified owner property)
-            lst-raw (astnode/value-unwrapped lst)]
-        (make-list-element-identifier 
-          (project-value-identifier lst)
-          (.indexOf lst-raw value)))
-    
-      ;non-list members
-      (or 
-        (astnode/ast? value)
-        (astnode/nilvalue? value)
-        (astnode/primitivevalue? value))
-      (make-property-value-identifier
-        (project-value-identifier owner)
-        property)
-    
-      :else
-      (throw (Exception. (str "Unknown project value to create identifier for:" value))))))
-
-(defn
-  project-tuple-identifier
-  [tuple]
-  (map project-value-identifier tuple))
-
-(defn
   slurp-from-resource
   [pathrelativetobundle]
   (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
-
-
 
 
 (defn
@@ -720,10 +405,10 @@
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet-value-identifier)
   (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet-value-corresponding-to-identifier)
   
-  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_VALUE_IDENTIFIER) project-value-identifier)
-  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_TUPLE_IDENTIFIER) project-tuple-identifier)
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_VALUE_IDENTIFIER) astnode/project-value-identifier)
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_TUPLE_IDENTIFIER) astnode/project-tuple-identifier)
   
-  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE) corresponding-project-value)
+  (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE) astnode/corresponding-project-value)
   
 
   
@@ -766,18 +451,6 @@
         (catch Exception e (println e)))))
   
   
-  (def m (first (first (damp.ekeko/ekeko [?m] (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)))))
-  (def mid (project-value-identifier m))
-  (def equivalenttom (corresponding-project-value mid))
-  (= (str m) (str equivalenttom))
-  
-  
-  (reduce (fn [sofar t] 
-             (let [exp (first t)
-                   expid (project-value-identifier exp)
-                   equivalent (corresponding-project-value expid)]
-               (and sofar (= (str exp) (str equivalent)))))
-           (damp.ekeko/ekeko [?e ?key] (damp.ekeko.jdt.ast/ast ?key ?e)))
   
   
   

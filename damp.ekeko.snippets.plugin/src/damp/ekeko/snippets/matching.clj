@@ -19,8 +19,10 @@ damp.ekeko.snippets.matching
      [structure :as structure]
      [aststructure :as aststructure]
      ])
-  (:import  [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
-            [org.eclipse.jdt.core.dom MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
+  (:import 
+    [java.util List]
+    [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
+    [org.eclipse.jdt.core.dom ASTNode MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
 
 ;;These expose flaws in the query generation process
@@ -131,9 +133,9 @@ damp.ekeko.snippets.matching
               list-raw        
               (:value list-owner)
               list-match-raw  
-              (util/gen-readable-lvar-for-value list-raw)
+              (util/gen-readable-lvar-for-value ^List list-raw)
               index-match     
-              (.indexOf list-raw snippet-val)]
+              (.indexOf ^List list-raw snippet-val)]
           ;could check for parent list directives that might already have ground the element
           ;but for now rely on operators to switch correctly between directives (and e.g., remove ground-relative-to-parent from all list elements)
           `((runtime/list-nth-element ~list-match ~index-match ~var-match)))
@@ -281,7 +283,7 @@ damp.ekeko.snippets.matching
         (let [lst 
               (:value snippet-val)
               snippet-list-size 
-              (.size lst)
+              (.size ^List lst)
               var-match-raw (util/gen-readable-lvar-for-value lst)]
           `((runtime/list-size ~var-match ~snippet-list-size)))
         ;constrain primitive values
@@ -384,7 +386,7 @@ damp.ekeko.snippets.matching
           (astnode/value-unwrapped val)
           
           idx-last 
-          (dec (.size elements))
+          (dec (.size ^List elements))
           
           element-conditions
           (apply concat
@@ -600,7 +602,7 @@ damp.ekeko.snippets.matching
           lst
           (:value val)
           template-list-size 
-          (.size lst)
+          (.size ^List lst)
           var-match-raw (util/gen-readable-lvar-for-value lst)]
       `(;(ast/value|list ~var-match)
          (cl/fresh [~var-match-raw] 
@@ -1912,7 +1914,7 @@ damp.ekeko.snippets.matching
    strategies (i.e., grounding=:exact, constaining=:exact)
    for the values of its properties."
   [n]
-  (let [copy (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST n) n)
+  (let [copy (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST ^ASTNode n) n)
         snippet (atom (snippet/make-snippet copy))]
     (util/walk-jdt-node 
       copy
