@@ -26,7 +26,8 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]])
-  (:import [ec.util MersenneTwister]))
+  (:import [ec.util MersenneTwister]
+           [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
 
 (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
@@ -81,10 +82,10 @@
   (clojure.core.memoize/memo 
     (fn [templategroup]
       (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
-          
+
 (defn
   templategroup-matches-nomemo
-  "Given a templategroup, look for all of its matches in the code"
+  "Given a templategroup, look for all of its matches in the code; no memoization."
   [templategroup]
   (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
 
@@ -213,12 +214,26 @@
     (apply + (for [x snippets]
                (count (snippet/snippet-nodes x))))))
 
+(defn create-partial-model [verifiedmatches]
+  (let [partialmodel (new PartialJavaProjectModel)]
+    (doseq [matchgroup (:positives verifiedmatches)]
+      (doseq [match matchgroup]
+        (.addExistingAST partialmodel match)))
+    partialmodel))
+
+(defn partial-matches [templategroup partialmodel]
+  (matching/reset-count-match)
+  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+    (templategroup-matches-nomemo templategroup))
+  @matching/matched-ast-count)
+
 (defn
   make-fitness-function
   "Return a fitness function, used to measure how good/fit an individual is
    0 is worst fitness; 1 is the best"
   [verifiedmatches]
-  (fn [templategroup]
+  (let [partialmodel (create-partial-model verifiedmatches)]
+    (fn [templategroup]
     (try
       (let [matches (templategroup-matches templategroup)
             ; The more desired matches, the better
@@ -230,19 +245,28 @@
             dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ; The shorter a template-group, the better
             lengthscore (/ 1 (template-size templategroup))
+            ; The more ast-relations succeed in the underlying Ekeko-query, the better
+            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
             ]
         (if (= 0 fscore)
           0
           (+
             (* 18/20 fscore)
             (* 0/20 dirscore)
-            (* 2/20 lengthscore)
+            (* 0/20 lengthscore)
+            (* 2/20 partialscore)
             )))
       (catch Exception e
         (do
           (println "!!!" e)
 ;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
-          0)))))
+          0))))
+    
+    
+    
+    )
+  
+  )
 
 
 ;; Search
@@ -265,7 +289,7 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (mapcat identity (repeat 1 id-templates))
+    (mapcat identity (repeat 3 id-templates))
 ;    (concat id-templates
             ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
@@ -603,19 +627,15 @@
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/TemplateMethod_alt_25.ekt"))
   
-  
+  (damp.ekeko.snippets.matching/reset-max-depth)
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/match-set.ekt"))
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  
   (evolve verifiedmatches 100)
-  (inspector-jay.core/inspect matches)
   
   (persistence/snippetgroup-string templategroup)
-  (inspect (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
@@ -660,4 +680,23 @@
       
       (assert (correct-implicit-operands? x1))
       (assert (correct-implicit-operands? x2))))
+  
+  
+  ; Testing matched-ast-count
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/test.ekt"))
+  (matching/reset-count-match)
+  (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+  @matching/matched-ast-count
+  
+  ; Testing filtered Ekeko queries, where we (temporarily) only query certain AST subtrees
+  (let [tg (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
+        matches (templategroup-matches tg) 
+        partialmodel (new PartialJavaProjectModel)
+        ]
+    (.addExistingAST partialmodel (first (first matches)))
+    
+    (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+      (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))
+  
   )
