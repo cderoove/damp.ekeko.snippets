@@ -194,27 +194,30 @@
  
 (defn
   snippet-from-node-and-persisted-directives
-  [node data]
-  (let [result 
-        (reduce
-          (fn [sofar [identifier bounddirectives]]
-            (let [value 
-                  (snippet-value-corresponding-to-identifier sofar identifier)
-          
-                  bounddirectives-with-implicit-operand
-                  (map
-                    (fn [bounddirective]
-                      (directives/make-bounddirective
-                        (directives/bounddirective-directive bounddirective)
-                        (cons 
-                          (directives/make-implicit-operand value)
-                          (directives/bounddirective-operandbindings bounddirective))))
-                    bounddirectives)
-                  ]
-              (snippet/update-bounddirectives sofar value bounddirectives-with-implicit-operand)))
-          (matching/jdt-node-as-snippet node)
-          (seq data))]
-    result))
+  ([node data anchor] ;current persistence
+                      (if-let [snippet (snippet-from-node-and-persisted-directives node data)]
+                        (snippet/update-anchor snippet anchor)))
+  ([node data] ;pre-anchor persistence
+               (let [result 
+                     (reduce
+                       (fn [sofar [identifier bounddirectives]]
+                         (let [value 
+                               (snippet-value-corresponding-to-identifier sofar identifier)
+                               
+                               bounddirectives-with-implicit-operand
+                               (map
+                                 (fn [bounddirective]
+                                   (directives/make-bounddirective
+                                     (directives/bounddirective-directive bounddirective)
+                                     (cons 
+                                       (directives/make-implicit-operand value)
+                                       (directives/bounddirective-operandbindings bounddirective))))
+                                 bounddirectives)
+                               ]
+                           (snippet/update-bounddirectives sofar value bounddirectives-with-implicit-operand)))
+                       (matching/jdt-node-as-snippet node)
+                       (seq data))]
+                 result)))
 
     
 
@@ -227,10 +230,15 @@
   (let [root 
         (snippet/snippet-root snippet)
         directives
-        (snippet-persistable-directives snippet)]
+        (snippet-persistable-directives snippet)
+        anchor
+        (snippet/snippet-anchor snippet)
+        ]
   (.write ^Writer w (str  "#=" `(snippet-from-node-and-persisted-directives 
                            ~root
-                           ~directives)))))
+                           ~directives
+                           ~anchor
+                           )))))
 
 (defmethod 
   clojure.core/print-dup 
