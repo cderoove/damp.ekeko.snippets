@@ -47,13 +47,13 @@
   ([snippet bounddirectivesfilterf]
     (let [ast (snippet/snippet-root snippet)
           query (atom '())]
-      (snippet/walk-snippet-element
+      (snippet/walk-snippet-element-track-depth
         snippet
         ast
-        (fn [val]
+        (fn [val depth]
           (when-not 
             (snippet-value-conditions-already-generated? snippet val)
-            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
+            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf depth)))))
       @query)))
 
 (declare snippet-uservars)

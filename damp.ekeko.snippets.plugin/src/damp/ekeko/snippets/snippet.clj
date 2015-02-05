@@ -390,6 +390,53 @@ damp.ekeko.snippets.snippet
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
+(defn 
+  walk-snippet-element-track-depth
+  "@see walk-snippet-element
+   Also passes the depth of each node on the function that is called on all nodes in the snippet.
+   That is, f takes two arguments: the node itself and its depth in the tree. (where level 0 is the snippet root)"
+  ([snippet element f]
+    (walk-snippet-element-track-depth snippet element f f f f))
+  ([snippet element node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list element) ; worklist
+       depths (list 0)]
+      (when-not (empty? nodes)
+        (let [val (first nodes)
+              others (rest nodes)
+              cur-depth (first depths)
+              other-depths (rest depths)]
+          (cond 
+            (astnode/ast? val)
+            (do
+              (node-f val cur-depth)
+              (let [children (snippet-node-children|conceptually snippet val)
+                    child-depths (for [x children] (inc cur-depth))]
+                (recur 
+                  (concat children others)
+                  (concat child-depths other-depths))))
+            
+            (astnode/lstvalue? val)
+            (do 
+              (list-f val cur-depth)
+              (let [children (snippet-node-children|conceptually snippet val)
+                    child-depths (for [x children] (inc cur-depth))]
+                (recur 
+                  (concat children others)
+                  (concat child-depths other-depths))))
+            
+            (astnode/primitivevalue? val)
+            (do
+              (primitive-f val cur-depth)
+              (recur others other-depths))
+            
+            (astnode/nilvalue? val)
+            (do
+              (null-f val cur-depth)
+              (recur others other-depths))
+            :default
+            (throw (Exception. (str "Don't know how to walk this value:" val)))
+            ))))))
 
 (defn 
   walk-snippets-elements
