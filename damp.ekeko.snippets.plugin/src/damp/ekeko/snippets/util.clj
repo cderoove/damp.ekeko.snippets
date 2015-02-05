@@ -83,66 +83,6 @@
             :default
             (throw (Exception. "Don't know how to walk this value."))))))))
 
-(defn dissoc-in [tmap keys]
-  (let [newmap (dissoc ((first keys) tmap) (fnext keys))]
-    (update-in tmap [(first keys)] (fn [x] newmap))))
-
-(defn
-  convert-string-to-rule
-  "Example: \"add[part-of-name]s\" will be converted to \"add + [?lvar&start-idx&remaining-chars-no] + s\"."
-  [string name lvar]
-  (let [arr-str (seq (.split (.replace (.replace string "[" ";") "]" ";") ";"))
-        prefix (.trim (.get arr-str 0))
-        part-of-name (.trim (.get arr-str 1))
-        suffix (if (< (.size arr-str) 3) "" (.trim (.get arr-str 2)))
-        start-idx (.indexOf name part-of-name)
-        rem-length (- (.length name) (.length part-of-name) start-idx)]
-    (str prefix "+[" lvar "&" start-idx "&" rem-length "]+" suffix))) 
-       
-(defn
-  convert-rule-to-string
-  "Change a rule to string with specific format.
-   Example : \"add + [?lvar&3&0] + s\" with ?lvar = \"getName\" -> \"add[Name]s\".
-   with 3: start idx and 0: remaining chars no."
-  [rule name]
-  (let [arr-rule (seq (.split (.replace rule "+" ";") ";"))
-        prefix (.trim (.get arr-rule 0))
-        suffix (if (< (.size arr-rule) 3) "" (.trim (.get arr-rule 2)))
-        arr-name (seq (.split (.replace (.replace (.trim (.get arr-rule 1)) "[" "") "]" "") "&"))
-        part-of-name (.substring 
-                       name 
-                       (java.lang.Integer/valueOf (.get arr-name 1))
-                       (- (.length name) (java.lang.Integer/valueOf (.get arr-name 2))))]
-    (str prefix "[" part-of-name "]" suffix)))
-
-(defn
-  convert-rule-to-name
-  [rule name]
-  (.replace (.replace (convert-rule-to-string rule name) "[" "") "]" ""))
-
-(defn
-  string-to-keyword
-  [string]
-  (keyword (.replaceFirst string ":" "")))
-
-(defn
-  string-to-list
-  [string]
-  (let [list (seq (.split (.replace (.replace string ")" "") "(" "") " "))]
-    (seq 
-      (map (fn [str] 
-             (if (= (.indexOf str ":") 0)  ;;add if symbol
-               (string-to-keyword str)
-               (.replace str "\"" "")))   ;;remove "" in the string
-           list))))
-
-(defn
-  string-to-list-of-list
-  [string]
-  (seq 
-    (map string-to-list 
-         (filter (fn [x] (not (empty? x))) 
-                 (seq (.split (.replace string "(" "open") "open"))))))   ;cannot use "(" in split
 
 (defn viable-repeat 
   "Keep on applying func until we get cnt results for which test-func is true
@@ -160,3 +100,6 @@
          (if (test-func result)
            result 
            (recur)))))))
+
+
+
