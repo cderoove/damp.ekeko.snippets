@@ -625,11 +625,7 @@
 
 (comment
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/TemplateMethod_alt_25.ekt"))
-  
-  (damp.ekeko.snippets.matching/reset-max-depth)
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches 100)
@@ -698,5 +694,11 @@
     
     (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
       (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))
+  
+  
+  (damp.ekeko.snippets.matching/reset-max-depth)
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   )

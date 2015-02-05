@@ -26,16 +26,17 @@ damp.ekeko.snippets.snippet
 ; - ast: complete AST for the original code snippet
 ; - ast2var: map from an AST node of the snippet to the logic variable that is to be bound to its match
 ; - var2ast: map from a logic variable to the an AST node which is bound to its match
-; - ast2bounddirectives: map from AST node to its matching/rewriting directives 
+; - ast2bounddirectives: map from AST node to its matching/rewriting directives
+; - ast2meta: map from AST node to map with misc. information about that node 
 ; - userquery: TODO
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast userquery anchor]
+  [ast ast2var ast2bounddirectives var2ast ast2meta userquery anchor]
   clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
   (-uninitialized [_]
     (Snippet. 
-      nil nil nil nil nil nil)))
+      nil nil nil nil nil nil nil)))
      
 
 (defn
@@ -43,7 +44,7 @@ damp.ekeko.snippets.snippet
   "For internal use only. 
    Consider matching/snippet-from-string or matching/snippet-from-node instead."
   [node]
-  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} '() nil))
+  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} {} '() nil))
   
 
 (defn 
@@ -90,6 +91,12 @@ damp.ekeko.snippets.snippet
   "Returns all bounddirectives for all nodes of the snippet."
   [snippet]
   (vals (:ast2bounddirectives snippet)))
+
+(defn
+  snippet-meta-for-node
+  "Retrieve a piece of meta-data about a node"
+  [snippet node meta-key]
+  (get-in snippet [:ast2meta node meta-key]))
 
 (defn 
   snippet-nodes
@@ -318,6 +325,12 @@ damp.ekeko.snippets.snippet
              [:ast2bounddirectives node]
              (fn [oldbounddirectives] (remove #{bounddirective} oldbounddirectives))))
 
+(defn
+  update-meta
+  [snippet node meta-key meta-value]
+  (update-in snippet
+             [:ast2meta node]
+             (fn [oldmeta] (assoc oldmeta meta-key meta-value))))
 
 (defn
   update-uservar
@@ -442,6 +455,18 @@ damp.ekeko.snippets.snippet
             :default
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
+
+(defn add-depth-info 
+  "Walks over a snippet to add meta-info about the tree depth of each node
+   (available via (snippet-meta-for-node node :depth) )"
+  [snippet]
+  (let [newsnippet (atom snippet)]
+    (walk-snippet-element-track-depth
+      @newsnippet
+      (snippet-root snippet)
+      (fn [node depth]
+        (swap! newsnippet update-meta node :depth depth)))
+    @newsnippet))
 
 (defn 
   walk-snippets-elements
