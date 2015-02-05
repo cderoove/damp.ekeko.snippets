@@ -59,10 +59,6 @@ public class EkekoSnippetsTest {
 		ClojureOSGi.require(myBundle, "damp.ekeko.snippets");
 	}
 	
-	@Test 
-	public void testPersistence() {
-		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.persistence");
-	}
 
 
 	/*
