@@ -1927,6 +1927,16 @@ damp.ekeko.snippets.matching
                 (default-bounddirectives snippet value))
       (assoc-in [:var2ast lvar] value))))
 
+(defn-
+  jdt-node-anchor
+  [n]
+  (try 
+    (astnode/project-value-identifier n)
+    (catch Exception e 
+      (do 
+        (.printStackTrace e)
+        nil))))
+  
 (defn 
   jdt-node-as-snippet
   "Interpretes a copy of the given ASTNode as a snippet with default matching 
@@ -1935,9 +1945,11 @@ damp.ekeko.snippets.matching
   [n]
   (let [copy (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST ^ASTNode n) n)
         snippet (atom (snippet/make-snippet copy))]
-    (util/walk-jdt-node 
-      copy
-      (fn [val] (swap! snippet add-value-to-snippet val)))
+    (do 
+      (util/walk-jdt-node 
+        copy
+        (fn [val] (swap! snippet add-value-to-snippet val)))
+      (swap! snippet snippet/update-anchor (jdt-node-anchor n)))
     @snippet))
 
 (defn

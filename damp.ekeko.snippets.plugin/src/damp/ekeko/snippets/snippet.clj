@@ -45,7 +45,6 @@ damp.ekeko.snippets.snippet
    Consider matching/snippet-from-string or matching/snippet-from-node instead."
   [node]
   (damp.ekeko.snippets.snippet.Snippet. node {} {} {} {} '() nil))
-  
 
 (defn 
   snippet-root 
@@ -311,6 +310,11 @@ damp.ekeko.snippets.snippet
              (fn [oldbounddirectives] 
                bounddirectives)))
   
+(defn
+  update-anchor 
+  [snippet anchor]
+  (assoc snippet :anchor anchor))
+
 (defn
   add-bounddirective
   [snippet node bounddirective]
