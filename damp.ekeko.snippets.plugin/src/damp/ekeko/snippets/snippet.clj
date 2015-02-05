@@ -31,26 +31,31 @@ damp.ekeko.snippets.snippet
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast userquery]
+  [ast ast2var ast2bounddirectives var2ast userquery anchor]
   clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
   (-uninitialized [_]
     (Snippet. 
-      nil nil nil nil nil)))
+      nil nil nil nil nil nil)))
      
-
 
 (defn
   make-snippet
   "For internal use only. 
    Consider matching/snippet-from-string or matching/snippet-from-node instead."
   [node]
-  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} '()))
+  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} '() nil))
   
 
 (defn 
   snippet-root 
   [snippet]
   (:ast snippet))
+
+(defn
+  snippet-anchor
+  "Returns the anchor of the snippet's root (i.e., its unique identifier in the workspace it originates from)."
+  [snippet]
+  (:anchor snippet))
 
 (defn 
   snippet-var-for-node 
