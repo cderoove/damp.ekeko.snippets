@@ -222,10 +222,10 @@
     partialmodel))
 
 (defn partial-matches [templategroup partialmodel]
-  (matching/reset-count-match)
+  (matching/reset-matched-nodes)
   (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
     (templategroup-matches-nomemo templategroup))
-  @matching/matched-ast-count)
+  (count @matching/matched-nodes))
 
 (defn
   make-fitness-function
