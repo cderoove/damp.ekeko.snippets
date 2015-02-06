@@ -50,13 +50,13 @@ damp.ekeko.snippets.matching
      (ast/has ?keyw ?owner ?value)]))
 
 ;;; TODO - Tinkering with tracking partial matches
-(def matched-ast-count (atom 0))
-(defn count-match []
+(def matched-nodes (atom #{}))
+(defn add-match [node-var]
   (el/succeeds (do 
-                 (swap! matched-ast-count inc)
+                 (swap! matched-nodes (fn [x] (clojure.set/union x #{node-var})))
                  true)))
-(defn reset-count-match []
-  (reset! matched-ast-count 0))
+(defn reset-matched-nodes []
+  (reset! matched-nodes {}))
 
 (def max-depth (atom 0))
 (defn set-depth [depth]
@@ -1993,7 +1993,9 @@ damp.ekeko.snippets.matching
               (directives/snippet-bounddirective-conditions snippet bounddirective))
             bounddirectives-constraining)]
       (concat conditions-grounding conditions-constraining 
-              [`(damp.ekeko.snippets.matching/set-depth 
+              [`(damp.ekeko.snippets.matching/add-match
+                  ~(snippet/snippet-var-for-node snippet ast-or-list))
+               `(damp.ekeko.snippets.matching/set-depth 
                   ~(snippet/snippet-meta-for-node snippet ast-or-list :depth))]))))
 
 

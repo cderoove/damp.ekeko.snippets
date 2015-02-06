@@ -697,8 +697,11 @@
   
   
   (damp.ekeko.snippets.matching/reset-max-depth)
+  (damp.ekeko.snippets.matching/reset-matched-nodes)
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+  (templategroup-matches templategroup)  
+  (count @damp.ekeko.snippets.matching/matched-nodes)
   
   )
