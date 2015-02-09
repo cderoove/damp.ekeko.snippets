@@ -109,6 +109,8 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 	public static Image IMG_RESULTS_REFRESH;
 
+	public static Image IMG_ANCHOR;
+
 
 	static {
 		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
@@ -143,6 +145,9 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_SEARCH = getImageDescriptor("icons/brain.png").createImage();
 		IMG_RESULTS_IMPORT = getImageDescriptor("icons/table-import.png").createImage();
 		IMG_RESULTS_REFRESH = getImageDescriptor("icons/arrow_refresh.png").createImage();
+		
+		
+		IMG_ANCHOR =  getImageDescriptor("icons/anchor.png").createImage();
 				
 	}
 	

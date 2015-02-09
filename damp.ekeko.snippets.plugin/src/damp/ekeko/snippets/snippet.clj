@@ -56,6 +56,13 @@ damp.ekeko.snippets.snippet
   [snippet]
   (:anchor snippet))
 
+
+(defn
+  snippet-anchor|resolved
+  [snippet]
+  (if-let [anchor (snippet-anchor snippet)]
+    (astnode/corresponding-project-value anchor)))
+
 (defn 
   snippet-var-for-node 
   "For the given AST node of the given snippet, returns the name of the logic
@@ -511,8 +518,10 @@ damp.ekeko.snippets.snippet
   
   (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_BOUNDDIRECTIVES_FOR_NODE) snippet-bounddirectives-for-node)
   
-    
-
+  (set! (damp.ekeko.snippets.gui.TemplateEditor/FN_SNIPPET_ANCHOR) snippet-anchor)
+  (set! (damp.ekeko.snippets.gui.TemplateEditor/FN_SNIPPET_ANCHOR_RESOLVED) snippet-anchor|resolved)
+  
+  
   )
 
 (register-callbacks)
