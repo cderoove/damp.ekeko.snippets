@@ -222,10 +222,10 @@
     partialmodel))
 
 (defn partial-matches [templategroup partialmodel]
-  (matching/reset-count-match)
+  (matching/reset-matched-nodes)
   (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
     (templategroup-matches-nomemo templategroup))
-  @matching/matched-ast-count)
+  (count @matching/matched-nodes))
 
 (defn
   make-fitness-function
@@ -625,11 +625,7 @@
 
 (comment
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/TemplateMethod_alt_25.ekt"))
-  
-  (damp.ekeko.snippets.matching/reset-max-depth)
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches 100)
@@ -681,14 +677,6 @@
       (assert (correct-implicit-operands? x1))
       (assert (correct-implicit-operands? x2))))
   
-  
-  ; Testing matched-ast-count
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/test.ekt"))
-  (matching/reset-count-match)
-  (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
-  @matching/matched-ast-count
-  
   ; Testing filtered Ekeko queries, where we (temporarily) only query certain AST subtrees
   (let [tg (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
         matches (templategroup-matches tg) 
@@ -698,5 +686,13 @@
     
     (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
       (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))
+  
+  (damp.ekeko.snippets.matching/reset-max-depth)
+  (damp.ekeko.snippets.matching/reset-matched-nodes)
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+  (templategroup-matches templategroup)  
+  (count @damp.ekeko.snippets.matching/matched-nodes)
   
   )

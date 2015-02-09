@@ -9,6 +9,7 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -29,7 +30,7 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
 
-public class OperatorOperandsViewer extends Composite {
+public class OperatorOperandsViewer extends SashForm {
 
 	
 	private TreeViewer operatorTreeViewer;
@@ -53,7 +54,7 @@ public class OperatorOperandsViewer extends Composite {
 		operatorTreeViewer.setAutoExpandLevel(3);
 		operatorTree = operatorTreeViewer.getTree();
 		GridData gd_operatorTree = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
-		gd_operatorTree.heightHint = 191;
+//		gd_operatorTree.heightHint = 400;
 		operatorTree.setLayoutData(gd_operatorTree);
 		
 		TreeViewerColumn operatorNameColumn = new TreeViewerColumn(operatorTreeViewer, SWT.NONE);
@@ -84,7 +85,7 @@ public class OperatorOperandsViewer extends Composite {
 		
 		operatorLabel = new Label(this, SWT.NONE | SWT.WRAP);
 		GridData gd_operatorLabel = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
-		//gd_tableOpArgs.heightHint = 31;
+//		gd_operatorLabel.heightHint = 31;
 		operatorLabel.setLayoutData(gd_operatorLabel);
 		
 		operandsTableViewer = new TableViewer(this, SWT.BORDER | SWT.FULL_SELECTION);
@@ -114,6 +115,9 @@ public class OperatorOperandsViewer extends Composite {
 		
 		operandValueCol.setLabelProvider(new OperatorOperandBindingLabelProviderValue());
 		operandValueCol.setEditingSupport(new OperatorOperandBindingEditingSupport(this));
+
+		this.setOrientation(SWT.VERTICAL);
+		this.setWeights(new int[] {8,1,3});
 
 	}
 	

@@ -38,22 +38,22 @@
     (matching/snippet-value-orsimple-offspring? snippet value)
     ))
 
-
 (defn
   snippet-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
   ([snippet]
     (snippet-conditions snippet identity))
-  ([snippet bounddirectivesfilterf]
-    (let [ast (snippet/snippet-root snippet)
+  ([snippet-orig bounddirectivesfilterf]
+    (let [snippet (snippet/add-depth-info snippet-orig)
+          ast (snippet/snippet-root snippet)
           query (atom '())]
-      (snippet/walk-snippet-element-track-depth
+      (snippet/walk-snippet-element
         snippet
         ast
-        (fn [val depth]
+        (fn [val]
           (when-not 
             (snippet-value-conditions-already-generated? snippet val)
-            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf depth)))))
+            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
       @query)))
 
 (declare snippet-uservars)
