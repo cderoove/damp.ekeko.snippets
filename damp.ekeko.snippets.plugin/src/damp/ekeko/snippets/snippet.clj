@@ -6,8 +6,11 @@ damp.ekeko.snippets.snippet
              [util :as util]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
-  (:import [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
-  (:import [org.eclipse.jdt.core.dom ASTNode ASTNode$NodeList CompilationUnit]))
+  (:import 
+    [java.io Writer] 
+    [java.util List]
+    [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
+    [org.eclipse.jdt.core.dom ASTNode ASTNode$NodeList CompilationUnit]))
 
 
 ;; Snippet Datatype
@@ -521,6 +524,103 @@ damp.ekeko.snippets.snippet
             :default
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
+
+
+
+;; Snippet value identifiers (see also astnode.clj of Ekeko for identifiers of JDT values)
+;; ---------------------------------------------------------------------------------------
+
+(defrecord 
+  RootIdentifier []) 
+
+(defn
+  make-root-identifier
+  []
+  (RootIdentifier.))
+
+(defmethod 
+  clojure.core/print-dup 
+  RootIdentifier
+  [identifier w]
+  (.write ^Writer w (str  "#=" `(make-root-identifier))))
+
+
+;memoize?
+(defn
+  snippet-value-identifier
+  [snippet value]
+  (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
+        property (astnode/owner-property value)]
+  (cond 
+    ;root
+    (= value (snippet-root snippet))
+    (make-root-identifier)
+    
+    (nil? property)
+    (do 
+      (println "Dit zou niet mogen")
+      (throw (Exception. "Help")))
+
+    
+    ;lists (keep before next clause, do not merge with before-last clause)
+    (astnode/lstvalue? value)
+    (astnode/make-property-value-identifier 
+      (snippet-value-identifier snippet owner)
+      property)
+    
+    ;list members
+    (astnode/property-descriptor-list? property)
+    (let [lst (snippet-list-containing snippet value)
+          lst-raw (astnode/value-unwrapped lst)]
+      (astnode/make-list-element-identifier 
+        (snippet-value-identifier 
+          snippet
+          lst)
+        (.indexOf ^List lst-raw value)))
+    
+    ;non-list members
+    (or 
+      (astnode/ast? value)
+      (astnode/nilvalue? value)
+      (astnode/primitivevalue? value))
+    
+      
+      
+      (astnode/make-property-value-identifier
+        (snippet-value-identifier snippet owner)
+        property)
+    
+    :else
+    (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
+
+
+
+(defn-
+  find-snippet-value-corresponding-to-identifier
+  [snippet identifier]
+  (some 
+    (fn [value] 
+      (let [value-id (snippet-value-identifier snippet value)]
+        (when (= value-id identifier)
+          value)))
+    (snippet-nodes snippet)))
+
+ 
+(defn
+  snippet-value-corresponding-to-identifier
+  [snippet identifier]
+  (let [found (find-snippet-value-corresponding-to-identifier snippet identifier)]
+    (if
+      (nil? found)
+      (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
+      found))) 
+
+
+
+
+
+
+
 
 
 
