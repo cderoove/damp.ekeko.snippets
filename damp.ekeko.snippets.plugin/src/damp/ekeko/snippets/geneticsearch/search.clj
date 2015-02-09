@@ -81,7 +81,9 @@
   "Given a templategroup, look for all of its matches in the code"
   (clojure.core.memoize/memo 
     (fn [templategroup]
-      (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))))
+      (templategroup-matches-nomemo templategroup)
+;      (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))))
+      )))
 
 (defn
   templategroup-matches-nomemo
@@ -214,18 +216,22 @@
     (apply + (for [x snippets]
                (count (snippet/snippet-nodes x))))))
 
-(defn create-partial-model [verifiedmatches]
+(defn create-partial-model
+  "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
+  [verifiedmatches]
   (let [partialmodel (new PartialJavaProjectModel)]
     (doseq [matchgroup (:positives verifiedmatches)]
       (doseq [match matchgroup]
         (.addExistingAST partialmodel match)))
     partialmodel))
 
-(defn partial-matches [templategroup partialmodel]
-  (matching/reset-matched-nodes)
-  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
-    (templategroup-matches-nomemo templategroup))
-  (count @matching/matched-nodes))
+(def partial-matches
+  (clojure.core/memoize
+    (fn [templategroup partialmodel]
+      (matching/reset-matched-nodes)
+      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+        (templategroup-matches-nomemo templategroup))
+      (count @matching/matched-nodes))))
 
 (defn
   make-fitness-function
@@ -289,7 +295,7 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (mapcat identity (repeat 3 id-templates))
+    (mapcat identity (repeat 2 id-templates))
 ;    (concat id-templates
             ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
@@ -312,24 +318,25 @@
             (let [id (operatorsrep/operator-id op)]
               (some #{id} 
                     [
-;                     "replace-by-variable"
+                     "replace-by-variable"
                      "replace-by-wildcard"
                      "remove-node"
                      
                      "add-directive-equals"
 
-;                     "add-directive-invokes"
+                     "add-directive-invokes"
                      "add-directive-invokedby"
                      
-;                     "restrict-scope-to-child"
+                     "restrict-scope-to-child"
                      "relax-scope-to-child+"
-;                     "relax-scope-to-child*"
-;                     "relax-size-to-atleast"
-;                     "relax-scope-to-member"
+                     "relax-scope-to-child*"
+                     "relax-size-to-atleast"
+                     "relax-scope-to-member"
                      "consider-set|lst"
-;                     "add-directive-type"
-;                     "add-directive-type|qname"
-;                     "add-directive-type|sname"
+                     "add-directive-type"
+                     "add-directive-type|qname"
+                     "add-directive-type|sname"
+                     "add-directive-refersto"
                      
                      ;untested:
                      ;"replace-parent"
@@ -571,7 +578,7 @@
                           history
                           (set (map hash population)))]
 ;        (doseq [individual population]
-;          (assert (correct-implicit-operands? individual) ))
+;          (assert (correct-implicit-operands? individual)))
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map fitness population))
@@ -628,7 +635,7 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 100)
+  (evolve verifiedmatches 5)
   
   (persistence/snippetgroup-string templategroup)
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))

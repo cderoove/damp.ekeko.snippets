@@ -52,5 +52,5 @@ Singleton
 	
 	
 	operatoren:
-		- remove directive (degene die geen weerslag hebben op hun kinderen)
+		DONE - remove directive (degene die geen weerslag hebben op hun kinderen)
 		  
