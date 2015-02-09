@@ -76,6 +76,12 @@
            (future-cancel future#)
            nil)))))
 
+(defn
+  templategroup-matches-nomemo
+  "Given a templategroup, look for all of its matches in the code; no memoization."
+  [templategroup]
+  (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+
 ;;;MAGIC CONSTANT! timeout for matching of individual snippet group
 (def
   templategroup-matches
@@ -86,11 +92,7 @@
 ;      (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))))
       )))
 
-(defn
-  templategroup-matches-nomemo
-  "Given a templategroup, look for all of its matches in the code; no memoization."
-  [templategroup]
-  (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+
 
 ; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
 ; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
@@ -647,6 +649,8 @@
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches 0)
   ; end
+  
+  (jay/inspect templategroup)
   
   (persistence/snippetgroup-string templategroup)
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
