@@ -36,12 +36,19 @@ public class EkekoSnippetsTest {
 	public static void ensureTestCasesExist() throws Exception {
 		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "Ekeko-JDT");
 		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "TestCase-EkekoX-Matching");
+		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "TestCase-TypeParameters");
+
 
 	}
 
 	@Test
 	public void testPluginID() {
 		assertEquals(EkekoSnippetsPlugin.PLUGIN_ID, "damp.ekeko.snippets.plugin");		
+	}
+
+	@Test 
+	public void testRequireEkekoSnippets() {
+		ClojureOSGi.require(myBundle, "damp.ekeko.snippets");
 	}
 
 	@Test 
@@ -54,10 +61,15 @@ public class EkekoSnippetsTest {
 		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.operators");
 	}
 
+	
 	@Test 
-	public void testRequireEkekoSnippets() {
-		ClojureOSGi.require(myBundle, "damp.ekeko.snippets");
+	public void testSCAM2014Demo() {
+		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.scam2014");
 	}
+
+	
+	
+	
 	
 
 
