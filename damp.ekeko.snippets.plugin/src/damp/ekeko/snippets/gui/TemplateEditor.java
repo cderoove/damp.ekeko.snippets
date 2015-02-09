@@ -61,7 +61,7 @@ public class TemplateEditor extends EditorPart {
 	protected ToolBar toolBar;
 	
 	public static IFn FN_SNIPPET_ANCHOR;
-	public static IFn FN_SNIPPET_ANCHOR_RESOLVED;
+	public static IFn FN_SNIPPET_VALUE_ANCHOR_RESOLVED;
 
 	private ToolItem tltmRemove;
 
@@ -286,14 +286,14 @@ public class TemplateEditor extends EditorPart {
 		}				
 	}
 
-	public static ASTNode resolvedProjectAnchorOfTemplate(Object template) {
-		if(template == null)
+	public static ASTNode resolvedProjectAnchorOfTemplateValue(Object template, Object templateValue) {
+		if(templateValue == null || template == null)
 			return null;
-		Object anchor = FN_SNIPPET_ANCHOR_RESOLVED.invoke(template);
+		Object anchor = FN_SNIPPET_VALUE_ANCHOR_RESOLVED.invoke(template, templateValue);
 		if(!(anchor instanceof ASTNode)) 
 			return null;
 		return (ASTNode) anchor;
-	}
+	}	
 	
 	public static Object projectAnchorOfTemplate(Object template) {
 		if(template == null)
@@ -325,9 +325,10 @@ public class TemplateEditor extends EditorPart {
 
 	protected void revealProjectAnchor() {
 		Object selectedSnippet = templateGroupViewer.getSelectedSnippet();
-		ASTNode anchorOfTemplate = resolvedProjectAnchorOfTemplate(selectedSnippet);
-		if(anchorOfTemplate != null) { 
-			MarkerUtility.getInstance().createMarkerAndGoto(anchorOfTemplate);		
+		Object selectedSnippetNode = templateGroupViewer.getSelectedSnippetNode();
+		ASTNode anchorOfSelection = resolvedProjectAnchorOfTemplateValue(selectedSnippet, selectedSnippetNode);
+		if(anchorOfSelection != null) { 
+			MarkerUtility.getInstance().createMarkerAndGoto(anchorOfSelection);		
 		}
 	}
 
@@ -378,9 +379,6 @@ public class TemplateEditor extends EditorPart {
 	public void setFocus() {
 		templateGroupViewer.setFocus();
 	}
-
-	
-	
 			
 	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
