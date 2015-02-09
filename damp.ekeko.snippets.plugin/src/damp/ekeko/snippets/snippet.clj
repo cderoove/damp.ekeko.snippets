@@ -7,6 +7,7 @@ damp.ekeko.snippets.snippet
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:import 
+    [damp.ekeko.jdt.astnode RelativeListElementIdentifier RelativePropertyValueIdentifier]
     [java.io Writer] 
     [java.util List]
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
@@ -544,8 +545,6 @@ damp.ekeko.snippets.snippet
   [identifier w]
   (.write ^Writer w (str  "#=" `(make-root-identifier))))
 
-
-;memoize?
 (defn
   snippet-value-identifier
   [snippet value]
@@ -555,13 +554,7 @@ damp.ekeko.snippets.snippet
     ;root
     (= value (snippet-root snippet))
     (make-root-identifier)
-    
-    (nil? property)
-    (do 
-      (println "Dit zou niet mogen")
-      (throw (Exception. "Help")))
-
-    
+        
     ;lists (keep before next clause, do not merge with before-last clause)
     (astnode/lstvalue? value)
     (astnode/make-property-value-identifier 
@@ -616,14 +609,40 @@ damp.ekeko.snippets.snippet
       found))) 
 
 
+(defprotocol 
+  IIdentifiesProjectValueForSnippetValue
+  (corresponding-projectvalue-for-snippetvalue [identifier snippetrootinproject]
+                                               "See snippet-corresponding-projectvalue-for-snippetvalue."))
+
+(extend-protocol 
+  IIdentifiesProjectValueForSnippetValue
+  RootIdentifier
+  (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
+    snippetrootinproject) ;difference with astnode/corresponding-project-value: recursion stops with given astnode, does not retrieve CU for handle
+  RelativePropertyValueIdentifier
+  (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
+    (let [ownerid (:ownerid id)
+          property (:property id)
+          owner (corresponding-projectvalue-for-snippetvalue ownerid snippetrootinproject)]
+        (astnode/node-poperty-value|reified owner property)))
+  RelativeListElementIdentifier
+  (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
+    (let [listid (:listid id)
+          idx (:index id)
+          lst (corresponding-projectvalue-for-snippetvalue listid snippetrootinproject)
+          lst-raw (astnode/value-unwrapped lst)]
+        (.get ^List lst-raw idx))))
 
 
-
-
-
-
-
-
+(defn
+  snippet-corresponding-projectvalue-for-snippetvalue
+  "Returns the JDT value from the snippet's project anchor that corresponds to the given snippet value, if it still exists."
+  [snippet value]
+  (if-let [rootinproject 
+           (snippet-anchor|resolved snippet)]
+    (let [valueid 
+          (snippet-value-identifier snippet value)]
+      (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))
 
 
 (defn
@@ -644,7 +663,7 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_BOUNDDIRECTIVES_FOR_NODE) snippet-bounddirectives-for-node)
   
   (set! (damp.ekeko.snippets.gui.TemplateEditor/FN_SNIPPET_ANCHOR) snippet-anchor)
-  (set! (damp.ekeko.snippets.gui.TemplateEditor/FN_SNIPPET_ANCHOR_RESOLVED) snippet-anchor|resolved)
+  (set! (damp.ekeko.snippets.gui.TemplateEditor/FN_SNIPPET_VALUE_ANCHOR_RESOLVED)  snippet-corresponding-projectvalue-for-snippetvalue)
   
   
   )
