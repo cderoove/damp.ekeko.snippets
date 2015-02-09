@@ -25,7 +25,8 @@
              [operators :as operators]
              [operatorsrep :as operatorsrep]
              [util :as util]
-             [directives :as directives]])
+             [directives :as directives]
+             [transformation :as transformation]])
   (:import [ec.util MersenneTwister]
            [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
 
@@ -252,19 +253,20 @@
             ; The shorter a template-group, the better
             lengthscore (/ 1 (template-size templategroup))
             ; The more ast-relations succeed in the underlying Ekeko-query, the better
-            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
+;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
             ]
         (if (= 0 fscore)
           0
           (+
-            (* 18/20 fscore)
+            (* 20/20 fscore)
             (* 0/20 dirscore)
             (* 0/20 lengthscore)
-            (* 2/20 partialscore)
+;            (* 2/20 partialscore)
             )))
       (catch Exception e
         (do
           (println "!!!" e)
+          (jay/inspect e)
 ;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0))))
     
@@ -295,7 +297,7 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (mapcat identity (repeat 2 id-templates))
+    (mapcat identity (repeat 1 id-templates))
 ;    (concat id-templates
             ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
 ;            (util/viable-repeat 
@@ -320,27 +322,27 @@
                     [
                      "replace-by-variable"
                      "replace-by-wildcard"
-                     "remove-node"
-                     
+;                     "remove-node"
+;                     
                      "add-directive-equals"
-
-                     "add-directive-invokes"
-                     "add-directive-invokedby"
-                     
-                     "restrict-scope-to-child"
-                     "relax-scope-to-child+"
-                     "relax-scope-to-child*"
+;
+;                     "add-directive-invokes"
+;                     "add-directive-invokedby"
+;                     
+;                     "restrict-scope-to-child"
+;                     "relax-scope-to-child+"
+;                     "relax-scope-to-child*"
                      "relax-size-to-atleast"
                      "relax-scope-to-member"
                      "consider-set|lst"
-                     "add-directive-type"
-                     "add-directive-type|qname"
-                     "add-directive-type|sname"
-                     "add-directive-refersto"
-                     
-                     ;untested:
-                     ;"replace-parent"
-                     "erase-comments"
+;                     "add-directive-type"
+;                     "add-directive-type|qname"
+;                     "add-directive-type|sname"
+;                     "add-directive-refersto"
+;                     
+;                     ;untested:
+;                     ;"replace-parent"
+;                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))
@@ -637,6 +639,15 @@
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches 5)
   
+  ; SCAM 2014 test begin
+  ; scam_demo1 is easy peasy! Now for demo2; mkay easy enough too.. ; now for the big one
+  (def templategroup
+    (transformation/transformation-lhs (persistence/slurp-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx")))
+  (def matches (templategroup-matches templategroup))
+  (def verifiedmatches (make-verified-matches matches []))
+  (evolve verifiedmatches 0)
+  ; end
+  
   (persistence/snippetgroup-string templategroup)
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
@@ -679,7 +690,7 @@
           (println x1-match)
           ;          (println (persistence/snippetgroup-string x1))
           ;          (jay/inspect x1)
-          (println "!!!")))
+          (println "!")))
       
       (assert (correct-implicit-operands? x1))
       (assert (correct-implicit-operands? x2))))
