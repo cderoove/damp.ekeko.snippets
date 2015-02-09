@@ -56,7 +56,7 @@
 (def prefixexpressionoperator-for-string astnode/prefixexpressionoperator-for-string)
 (def postfixexpressionoperator-for-string astnode/postfixexpressionoperator-for-string)
 
-
+(def make-root-identifier snippet/make-root-identifier)
 
 (defmethod 
   clojure.core/print-dup 
@@ -83,93 +83,6 @@
     (.write ^Writer w (str  "#=" `(directives/make-directiveoperand-binding ~directiveoperand ~value)))))
 
 
-(defrecord 
-  RootIdentifier []) 
-
-(defn
-  make-root-identifier
-  []
-  (RootIdentifier.))
-
-
-;memoize?
-(defn
-  snippet-value-identifier
-  [snippet value]
-  (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
-        property (astnode/owner-property value)]
-  (cond 
-    ;root
-    (= value (snippet/snippet-root snippet))
-    (make-root-identifier)
-    
-    (nil? property)
-    (do 
-      (println "Dit zou niet mogen")
-      (throw (Exception. "Help")))
-
-    
-    ;lists (keep before next clause, do not merge with before-last clause)
-    (astnode/lstvalue? value)
-    (astnode/make-property-value-identifier 
-      (snippet-value-identifier snippet owner)
-      property)
-    
-    ;list members
-    (astnode/property-descriptor-list? property)
-    (let [lst (snippet/snippet-list-containing snippet value)
-          lst-raw (astnode/value-unwrapped lst)]
-      (astnode/make-list-element-identifier 
-        (snippet-value-identifier 
-          snippet
-          lst)
-        (.indexOf ^List lst-raw value)))
-    
-    ;non-list members
-    (or 
-      (astnode/ast? value)
-      (astnode/nilvalue? value)
-      (astnode/primitivevalue? value))
-    
-      
-      
-      (astnode/make-property-value-identifier
-        (snippet-value-identifier snippet owner)
-        property)
-    
-    :else
-    (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
-
-
-(defn-
-  find-snippet-value-corresponding-to-identifier
-  [snippet identifier]
-  (some 
-    (fn [value] 
-      (let [value-id (snippet-value-identifier snippet value)]
-        (when (= value-id identifier)
-          value)))
-    (snippet/snippet-nodes snippet)))
-
-  
-  
- 
-(defn
-  snippet-value-corresponding-to-identifier
-  [snippet identifier]
-  (let [found (find-snippet-value-corresponding-to-identifier snippet identifier)]
-    (if
-      (nil? found)
-      (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
-      found))) 
-
-(defn
-  snippetgroup-snippet-value-corresponding-to-identifier
-  [snippetgroup identifier]
-  (some 
-    (fn [snippet] (find-snippet-value-corresponding-to-identifier snippet identifier))
-    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-   
 
 (defn
   snippet-persistable-directives
@@ -179,7 +92,7 @@
       (let [bounddirectives
             (snippet/snippet-bounddirectives-for-node snippet value)            
             identifier
-            (snippet-value-identifier snippet value)]
+            (snippet/snippet-value-identifier snippet value)]
         (when (contains? sofar identifier)
           (throw (Exception. (str "While serializing snippet, encountered duplicate identifier among snippet values:" value identifier))))
         (when 
@@ -202,7 +115,7 @@
                      (reduce
                        (fn [sofar [identifier bounddirectives]]
                          (let [value 
-                               (snippet-value-corresponding-to-identifier sofar identifier)
+                               (snippet/snippet-value-corresponding-to-identifier sofar identifier)
                                
                                bounddirectives-with-implicit-operand
                                (map
@@ -220,7 +133,6 @@
                  result)))
 
     
-
 
 
 (defmethod 
@@ -252,12 +164,6 @@
                            ~name 
                            ~snippets)))))
 
-
-(defmethod 
-  clojure.core/print-dup 
-  RootIdentifier
-  [identifier w]
-  (.write ^Writer w (str  "#=" `(make-root-identifier))))
 
 
 (defn
@@ -337,7 +243,6 @@
     copy))
   
 
-
 (def
   copy-snippetgroup
   "Duplicates the given snippet group. 
@@ -410,8 +315,8 @@
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippetgroup)
 
   
-  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet-value-identifier)
-  (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet-value-corresponding-to-identifier)
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet/snippet-value-identifier)
+  (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet/snippet-value-corresponding-to-identifier)
   
   (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_VALUE_IDENTIFIER) astnode/project-value-identifier)
   (set! (damp.ekeko.snippets.gui.IntendedResultsEditor/FN_PROJECT_TUPLE_IDENTIFIER) astnode/project-tuple-identifier)

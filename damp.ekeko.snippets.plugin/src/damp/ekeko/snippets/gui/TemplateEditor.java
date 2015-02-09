@@ -31,12 +31,13 @@ import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.ITextEditor;
 
+import clojure.lang.IFn;
+import baristaui.util.MarkerUtility;
 import damp.ekeko.JavaProjectModel;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
@@ -59,7 +60,13 @@ public class TemplateEditor extends EditorPart {
 
 	protected ToolBar toolBar;
 	
-	
+	public static IFn FN_SNIPPET_ANCHOR;
+	public static IFn FN_SNIPPET_ANCHOR_RESOLVED;
+
+	private ToolItem tltmRemove;
+
+	private ToolItem tltmEditBoundDirectives;
+	private ToolItem tltmRevealAnchor;
 
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
@@ -101,7 +108,7 @@ public class TemplateEditor extends EditorPart {
 		tltmAdd.setToolTipText("Add template");
 				
 		
-		final ToolItem tltmRemove = new ToolItem(toolBar, SWT.NONE);
+		tltmRemove = new ToolItem(toolBar, SWT.NONE);
 		tltmRemove.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -111,10 +118,10 @@ public class TemplateEditor extends EditorPart {
 		tltmRemove.setImage(EkekoSnippetsPlugin.IMG_DELETE);
 		tltmRemove.setDisabledImage(EkekoSnippetsPlugin.IMG_DELETE_DISABLED);
 		tltmRemove.setToolTipText("Delete template");
-		tltmRemove.setEnabled(false);
+		tltmRemove.setEnabled(true);
 
 
-		final ToolItem tltmEditBoundDirectives = new ToolItem(toolBar, SWT.NONE);
+		tltmEditBoundDirectives = new ToolItem(toolBar, SWT.NONE);
 		tltmEditBoundDirectives.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -125,6 +132,20 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
 		tltmEditBoundDirectives.setEnabled(false);
 		
+		
+		
+		tltmRevealAnchor = new ToolItem(toolBar, SWT.NONE);
+		tltmRevealAnchor.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				revealProjectAnchor();
+			}
+		});
+		tltmRevealAnchor.setImage(EkekoSnippetsPlugin.IMG_ANCHOR);
+		tltmRevealAnchor.setToolTipText("Reveal project anchor");
+		tltmRevealAnchor.setEnabled(false);
+
+		
 	
 		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);
 		templateGroupViewer.setParentTemplateEditor(this);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
@@ -133,16 +154,7 @@ public class TemplateEditor extends EditorPart {
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {	
 			@Override
 			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
-				if(event.getSelectedTemplateNode() == null) {
-					tltmRemove.setEnabled(false);
-					tltmEditBoundDirectives.setEnabled(false);
-				} else {
-					tltmEditBoundDirectives.setEnabled(true);
-					if(event.getSelectedTemplateNode().equals(TemplateGroup.getRootOfSnippet(event.getSelectedTemplate())))
-						tltmRemove.setEnabled(true);
-					else
-						tltmRemove.setEnabled(false);
-				}
+				onNodeSelected(event);
 			}
 		});
 					
@@ -250,6 +262,8 @@ public class TemplateEditor extends EditorPart {
 				}
 				*/
 				
+				
+				
 				refreshWorkspaceSelection(part, sel);
 			}
 
@@ -270,6 +284,51 @@ public class TemplateEditor extends EditorPart {
 		} catch (PartInitException e1) {
 			e1.printStackTrace();
 		}				
+	}
+
+	public static ASTNode resolvedProjectAnchorOfTemplate(Object template) {
+		if(template == null)
+			return null;
+		Object anchor = FN_SNIPPET_ANCHOR_RESOLVED.invoke(template);
+		if(!(anchor instanceof ASTNode)) 
+			return null;
+		return (ASTNode) anchor;
+	}
+	
+	public static Object projectAnchorOfTemplate(Object template) {
+		if(template == null)
+			return null;
+		Object anchor = FN_SNIPPET_ANCHOR.invoke(template);
+		return anchor;
+	}
+
+	protected void onNodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
+		Object selectedTemplate = event.getSelectedTemplate();
+		Object anchor = projectAnchorOfTemplate(selectedTemplate);
+		if(anchor != null) {
+			tltmRevealAnchor.setEnabled(true);
+		} else {
+			tltmRevealAnchor.setEnabled(false);
+		}
+		
+		if(event.getSelectedTemplateNode() == null) {
+			tltmRemove.setEnabled(false);
+			tltmEditBoundDirectives.setEnabled(false);
+		} else {
+			tltmEditBoundDirectives.setEnabled(true);
+			if(event.getSelectedTemplateNode().equals(TemplateGroup.getRootOfSnippet(event.getSelectedTemplate())))
+				tltmRemove.setEnabled(true);
+			else
+				tltmRemove.setEnabled(false);
+		}		
+	}
+
+	protected void revealProjectAnchor() {
+		Object selectedSnippet = templateGroupViewer.getSelectedSnippet();
+		ASTNode anchorOfTemplate = resolvedProjectAnchorOfTemplate(selectedSnippet);
+		if(anchorOfTemplate != null) { 
+			MarkerUtility.getInstance().createMarkerAndGoto(anchorOfTemplate);		
+		}
 	}
 
 	//called by workspace listener
