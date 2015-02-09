@@ -333,6 +333,33 @@ damp.ekeko.snippets.operators
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))        
   
 
+(defn
+  generalize-directive
+  "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"
+  [snippet node]
+  (let [bds
+        (snippet/snippet-bounddirectives-for-node snippet node)
+        new-bds
+        (for [bd bds]
+          (let [bdname (directives/directive-name (directives/bounddirective-directive bd))
+                bdops (.getOperandBindings bd)] 
+            (case bdname
+              "child" (directives/make-bounddirective matching/directive-child* bdops)
+              "type" (directives/make-bounddirective matching/directive-subtype* bdops)
+              "type|sname" (directives/make-bounddirective matching/directive-subtype*|sname bdops)
+              "type|qname" (directives/make-bounddirective matching/directive-subtype*|qname bdops)
+              bd)))]
+    (snippet/update-bounddirectives snippet node new-bds)))
+
+(defn
+  remove-directive
+  "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"
+  [snippet node directive-name]
+  (let [new-bds
+        (remove (fn [bd] (= directive-name 
+                            (directives/directive-name (directives/bounddirective-directive bd))))
+                (snippet/snippet-bounddirectives-for-node snippet node))]
+    (snippet/update-bounddirectives snippet node new-bds)))
 
 ;todo: delete template elements other than nodes
 (defn

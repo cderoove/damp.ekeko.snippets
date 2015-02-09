@@ -677,14 +677,6 @@
       (assert (correct-implicit-operands? x1))
       (assert (correct-implicit-operands? x2))))
   
-  
-  ; Testing matched-ast-count
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/test.ekt"))
-  (matching/reset-count-match)
-  (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
-  @matching/matched-ast-count
-  
   ; Testing filtered Ekeko queries, where we (temporarily) only query certain AST subtrees
   (let [tg (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
         matches (templategroup-matches tg) 
@@ -694,7 +686,6 @@
     
     (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
       (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))
-  
   
   (damp.ekeko.snippets.matching/reset-max-depth)
   (damp.ekeko.snippets.matching/reset-matched-nodes)

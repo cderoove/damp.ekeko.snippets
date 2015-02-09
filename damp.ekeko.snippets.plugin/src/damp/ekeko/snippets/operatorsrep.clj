@@ -215,7 +215,6 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet subject operandvalue]
   (= operandvalue subject))
 
-
 (defn
   validity|node
   [snippetgroup snippet value operandvalue]
@@ -265,7 +264,6 @@ damp.ekeko.snippets.operatorsrep
       (and (>= operandvalue 0)
            (< operandvalue (.size lst-raw))))))
 
-
 (defn
   validity|incsubjectlistidx
   [snippetgroup snippet value operandvalue]
@@ -275,8 +273,11 @@ damp.ekeko.snippets.operatorsrep
       (and (>= operandvalue 0)
            (<= operandvalue (.size lst-raw))))))
 
-
-
+(defn validity|directivename
+  [snippetgroup snippet value operandvalue]
+  (some (fn [dir]
+          (= operandvalue (damp.ekeko.snippets.directives/directive-name dir)))
+        (matching/registered-directives)))
 
 (def
   validity|subjectownerpropertytype 
@@ -346,8 +347,6 @@ damp.ekeko.snippets.operatorsrep
   "Checks whether a value is an Operator instance."
   [value]
   (instance? Operator value))
-
-
 
 ;; Operand information
 
@@ -681,6 +680,25 @@ damp.ekeko.snippets.operatorsrep
      "Matches are the corresponding child of the parent match, or nested within it."
      [])
    
+   (Operator. 
+     "generalize-directive"
+     operators/generalize-directive
+     :generalization
+     "Generalize an existing directive"
+     opscope-subject
+     (complement applicability|lst)
+     "Changes an existing directive into its more general variant. (e.g. type becomes type*)"
+     [])
+   
+   (Operator. 
+     "remove-directive"
+     operators/remove-directive
+     :destructive
+     "Remove a directive"
+     opscope-subject
+     applicability|always
+     "Removes a directive, given its name."
+     [(make-operand "Directive name" opscope-string validity|directivename)])
    
    (Operator. 
      "relax-size-to-atleast"
@@ -956,7 +974,6 @@ damp.ekeko.snippets.operatorsrep
    
    ])
 
-
 (defn 
   registered-operators
   "Returns collection of registered operators."
@@ -969,6 +986,13 @@ damp.ekeko.snippets.operatorsrep
   (filter (fn [operator]
             (= category (operator-category operator)))
           operators))
+
+;(defn
+;  validity|operatorid
+;  [snippetgroup snippet subject operandvalue]
+;  (some
+;    (fn [x] (= x operandvalue))
+;    (for [op (registered-operators)] (operator-id op))))
 
 
 
