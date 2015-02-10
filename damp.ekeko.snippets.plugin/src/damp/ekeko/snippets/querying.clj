@@ -108,7 +108,7 @@
     (let [allvars 
           (conj (concat uservars vars) matchvar)
           bodies
-          (partition-all 50 conditions)
+          (partition-all 50 conditions) ;;CUTOFF suffices to avoid "Method too Large" raised by Clojure compiler, but introduces overhead
           maxprednumber
           (count bodies)
           defines
