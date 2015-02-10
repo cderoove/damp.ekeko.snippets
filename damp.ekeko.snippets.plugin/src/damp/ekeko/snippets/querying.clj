@@ -88,7 +88,7 @@
 
 
 (defn
-  snippet-predicate
+  snippet-predicates
   "Returns a logic goal retrieving matches for the given snippet."
   ([snippet]
     (let [root-var
@@ -103,22 +103,48 @@
           (snippet-conditions snippet) 
           userconditions
           (snippet/snippet-userquery snippet)]
-      (snippet-predicate snippet fname root-var uservars-exact vars conditions userconditions)))
+      (snippet-predicates snippet fname root-var uservars-exact vars conditions userconditions)))
   ([snippet fname matchvar uservars vars conditions userconditions]
-    (if 
-      (not-empty vars) 
-      `(defn
-         ~fname 
-         [~matchvar ~@uservars]
-         (cl/fresh [~@vars]
-                   ~@conditions
-                   ~@userconditions))
-      `(defn
-         ~fname 
-         [~matchvar ~@uservars]
-         (cl/all
-           ~@conditions
-           ~@userconditions)))))
+    (let [allvars 
+          (conj (concat uservars vars) matchvar)
+          bodies
+          (partition-all 50 conditions)
+          maxprednumber
+          (count bodies)
+          defines
+          (map-indexed 
+            (fn [idx body]  
+              (let [predname (symbol (str fname "_" idx))
+                    nextpredname (symbol (str fname "_" (inc idx)))]
+                (if 
+                  (< idx (dec maxprednumber))
+                  `(defn
+                     ~predname 
+                     [varvector#]
+                     (cl/fresh [~@allvars]
+                               (cl/== varvector# [~@allvars])
+                               ~@body
+                               (~nextpredname varvector#)))
+                  `(defn
+                     ~predname 
+                     [varvector#]
+                     (cl/fresh [~@allvars]
+                               (cl/== varvector# [~@allvars])
+                               ~@body)))))
+            bodies)
+          revdefines
+          (reverse defines)
+          predname 
+          (symbol (str fname "_" 0))
+          define
+          `(defn
+             ~fname 
+             [~matchvar ~@uservars]
+             (cl/fresh [varvector# ~@vars]
+                       (cl/== varvector# [~@allvars])
+                       (~predname varvector#)
+                       ~@userconditions))]
+      `(~@revdefines ~define))))
 
 (defn
   snippet-predicatecall 
@@ -140,9 +166,11 @@
   (let [root-var
         (snippet/snippet-var-for-root snippet)
         uservars-exact
-        (snippet-uservars snippet)]
-    `(do
-       ~(snippet-predicate snippet)
+        (snippet-uservars snippet)
+        defines
+        (snippet-predicates snippet)]
+    `(do 
+       ~@defines
        (~ekekolaunchersymbol 
          [~root-var ~@uservars-exact]
          ~(snippet-predicatecall snippet)))))
@@ -205,7 +233,7 @@
   (let [snippets
         (snippetgroup/snippetgroup-snippetlist snippetgroup)
         predicates
-        (map snippet-predicate snippets)
+        (mapcat snippet-predicates snippets)
         calls
         (map snippet-predicatecall snippets)
         root-vars 
@@ -250,136 +278,6 @@
 ; Converting snippet group to rewrite query
 ;------------------------------------------
 
-;BEGIN OLD VERSION based on entire template
-
-(comment
-  
-(defn
-  template-root|projected-eager 
-  "Projects a template replacing each of its variables by a clone of their binding.
-   All variables have to be bound."
-  [template variables values]
-  (let [var2value
-        (zipmap variables values)
-        node2var
-        (damp.ekeko.snippets.matching/snippet-replacement-node2var template)
-        
-        val2exp 
-        (damp.ekeko.snippets.matching/snippet-replacement-node2exp template)
-        
-        root
-        (snippet/snippet-root template)
-        ;either root or the value it should be replaced by (in case the root itself was replaced by a variable)
-        ;(although this seems impossible, once replaced .. not sure what will happen with the other replacements)
-        projected
-        (if 
-          (contains? node2var root)
-          (get var2value (str (get node2var root)))
-          root)]
-      (doseq [[node var] node2var
-              :when (not= node root)] ;already taken care of above
-        (let [varstr (str var)]
-          (when-not (contains? var2value varstr)
-            (throw (IllegalArgumentException. (str "While instantiating template, encountered unbound variable: " varstr))))
-          (let [value (get var2value varstr)]
-            (cond 
-               
-              (astnode/ast? value)
-              (damp.ekeko.snippets.operators/snippet-jdt-replace 
-                template
-                node 
-                (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST projected) 
-                                                              value))
-              (astnode/lstvalue? value)
-              (damp.ekeko.snippets.operators/snippet-jdtlist-replace 
-                template
-                node 
-                (org.eclipse.jdt.core.dom.ASTNode/copySubtrees (.getAST projected)
-                                                               (astnode/value-unwrapped value)))
-              (or 
-                (astnode/primitivevalue? value)
-                (astnode/nilvalue? value))
-              (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
-                                                                      node
-                                                                      value)
-              :else
-              (throw (IllegalArgumentException.
-                       (str "While instantiating template, encountered illegal binding for variable: " varstr "->" value)))))))
-      (doseq [[val exp] val2exp] ;arf .. somehow need to get variables out of here, and passed to this thing
-        (let [newvalue (eval (read-string exp))]
-          (damp.ekeko.snippets.operators/snippet-jdtvalue-replace template
-                                                                  val
-                                                                  newvalue)))
-      projected))
-          
-
-(defn
-  newnode-from-template
-  [template]
-  (let [root
-        (snippet/snippet-root template)
-        
-        var-match 
-        (snippet/snippet-var-for-node template root)
-        
-        replacement-vars|strings
-        (matching/snippet-replacement-vars template) 
-        
-        replacement-vars|quotedstrings
-        (map matching/to-literal-string replacement-vars|strings)
-        
-        replacement-vars|symbols
-        (map symbol replacement-vars|strings)
-        
-        stemplate
-        (persistence/snippet-as-persistent-string template)
-        
-        runtime-template-var  
-        (util/gen-readable-lvar-for-value root)
-        ]
-    `((cl/fresh [~runtime-template-var] 
-                (cl/== ~runtime-template-var
-                       (persistence/snippet-from-persistent-string ~stemplate))
-                
-                ;(cl/== ~runtime-template-var ~template)
-                (cl/project [~runtime-template-var ~@replacement-vars|symbols]
-                            (cl/== ~var-match 
-                                   (template-root|projected 
-                                     ~runtime-template-var
-                                     [~@replacement-vars|quotedstrings]
-                                     [~@replacement-vars|symbols])
-                                   )
-                                   )
-                ))))
-
-
-
-
-
-;(defn-
-;  snippet-conditions|rewrite
-;  [snippet]
-;  (let [root 
- ;       (snippet/snippet-root snippet)
- ;       conditions-codegeneration
-;        (newnode-from-template snippet)
-;        ;rewrite directives only feature at the root of a template
-;        root-bounddirectives
-;        (filter 
-;          (fn [bounddirective]
-;            (rewriting/registered-rewriting-directive? (directives/bounddirective-directive bounddirective)))
-;          (snippet/snippet-bounddirectives-for-node snippet root))
-;        conditions-rewriting
-;        (mapcat
-;          (fn [bounddirective]
-;            (directives/snippet-bounddirective-conditions snippet bounddirective))
-;          root-bounddirectives)]
-;    (concat conditions-codegeneration conditions-rewriting)))
-
-
-   
-); END OLD VERSION based on entire template
-
 
 (defn
   newnode-from-template
@@ -407,9 +305,6 @@
         (directives/snippet-bounddirective-conditions snippet bounddirective))
       rewriting-bounddirectives)))
 
-
-
-    
 
 (defn
   snippet-node-conditions|replacedby
@@ -449,8 +344,7 @@
       )))
 
 
-  
-
+ 
 (defn 
   snippet-node-conditions+|rewritingandreplacedby
   [snippet node snippetruntimevar]
@@ -589,32 +483,6 @@
   )
 
 
-
-;user vars need to have been declared already in lexical scope
-;(defn
-; match
-; [?var ?template]
-; (cl/fresh [?solutions ?solution]
-;           substition-map
-;   (fresh [?varseq]
-;          (el/equals ?varseq (concat [?var] (snippet-uservars ?template)))
-;          (el/equals nil (map println (map  
-;          
-;          )
-;   
-;   (el/equals ?solutions (eval (snippet-query ?template 'damp.ekeko/ekeko)))
-;   (el/contains ?solutions ?solution)
-;   (el/equals nil (println (count ?solution)))
-;   ;(cl/== ?varseq ?solution)
-;   (uservars ?template)
-;   
-;           ))
-
-
-
-
-
-
 (defn
   snippetgroup-matchvariables|normalized
   [snippetgroup]
@@ -623,9 +491,6 @@
     (snippetgroup/snippetgroup-rootvars snippetgroup)))
   
 
-(def
-  t 
-  (matching/jdt-node-as-snippet (parsing/parse-string-expression "3")))
 
 
 
@@ -640,5 +505,9 @@
   
 
 (register-callbacks)
+
+
+
+
 
 
