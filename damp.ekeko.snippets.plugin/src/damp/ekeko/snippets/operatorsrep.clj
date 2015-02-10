@@ -664,7 +664,7 @@ damp.ekeko.snippets.operatorsrep
      "relax-scope-to-child+"
      operators/relax-scope-to-child+
      :generalization
-     "Use child as matching scope."
+     "Use child+ as matching scope."
      opscope-subject
      (complement applicability|lst)
      "Match is nested within the corresponding child of the parent match."
@@ -674,7 +674,7 @@ damp.ekeko.snippets.operatorsrep
      "relax-scope-to-child*"
      operators/relax-scope-to-child*
      :generalization
-     "Use child as matching scope (child or child+)."
+     "Use child* as matching scope (child or child+)."
      opscope-subject
      (complement applicability|lst)
      "Matches are the corresponding child of the parent match, or nested within it."
