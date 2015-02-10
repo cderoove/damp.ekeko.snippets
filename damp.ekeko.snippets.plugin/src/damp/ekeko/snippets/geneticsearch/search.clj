@@ -267,8 +267,16 @@
             )))
       (catch Exception e
         (do
-          (println "!!!" e)
-          (jay/inspect e)
+          (print "!")
+          (spit "error-log.txt" 
+                (str "!!!" e
+                     "\nTemplate\n"
+                     (persistence/snippetgroup-string templategroup)
+                     "Last operation applied:" 
+                     (:mutation-operator (meta templategroup))
+                     "--------\n\n") 
+                :append true)
+;          (jay/inspect e)
 ;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0))))
     
@@ -324,24 +332,24 @@
                     [
                      "replace-by-variable"
                      "replace-by-wildcard"
-;                     "remove-node"
-;                     
+                     "remove-node"
+                     
                      "add-directive-equals"
-;
-;                     "add-directive-invokes"
-;                     "add-directive-invokedby"
-;                     
-;                     "restrict-scope-to-child"
-;                     "relax-scope-to-child+"
-;                     "relax-scope-to-child*"
+
+                     "add-directive-invokes"
+                     "add-directive-invokedby"
+                     
+                     "restrict-scope-to-child"
+                     "relax-scope-to-child+"
+                     "relax-scope-to-child*"
                      "relax-size-to-atleast"
                      "relax-scope-to-member"
                      "consider-set|lst"
-;                     "add-directive-type"
-;                     "add-directive-type|qname"
-;                     "add-directive-type|sname"
-;                     "add-directive-refersto"
-;                     
+                     "add-directive-type"
+                     "add-directive-type|qname"
+                     "add-directive-type|sname"
+                     "add-directive-refersto"
+                     
 ;                     ;untested:
 ;                     ;"replace-parent"
 ;                     "erase-comments"
@@ -607,12 +615,12 @@
                 (concat
                   ; Random reselect from initial population
                   (util/viable-repeat
-                    (* 1/8 (count population))
+                    (* 0/8 (count population))
                     #(rand-nth initial-pop)
                     (fn [x] true))
                   ; Mutation
                   (util/viable-repeat 
-                    (* 2/4 (count population))
+                    (* 3/4 (count population))
                     #(mutate (select population tournament-size)) 
                     is-viable)
                   ; Crossover (Note that each crossover operation produces a pair)
@@ -639,7 +647,7 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 5)
+  (evolve verifiedmatches 10)
   
   ; SCAM 2014 test begin
   ; scam_demo1 is easy peasy! Now for demo2; mkay easy enough too.. ; now for the big one
@@ -650,7 +658,6 @@
   (evolve verifiedmatches 0)
   ; end
   
-  (jay/inspect templategroup)
   
   (persistence/snippetgroup-string templategroup)
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
