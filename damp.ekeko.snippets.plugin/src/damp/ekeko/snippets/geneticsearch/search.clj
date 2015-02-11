@@ -30,8 +30,6 @@
   (:import [ec.util MersenneTwister]
            [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
 
-(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
-
 ; Replace Java's pseudo-random number generator for MersenneTwister
 (def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
 (defn 
@@ -76,11 +74,26 @@
            (future-cancel future#)
            nil)))))
 
+;(defn
+;  templategroup-matches-nomemo
+;  "Given a templategroup, look for all of its matches in the code; no memoization."
+;  [templategroup]
+;  (into #{} 
+;        (eval (querying/snippetgroup-query|usingpredicates 
+;                templategroup 'damp.ekeko/ekeko 
+;                [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
+;                '() true))))
+
 (defn
   templategroup-matches-nomemo
   "Given a templategroup, look for all of its matches in the code; no memoization."
   [templategroup]
-  (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)))))
+  (into #{} 
+        (with-timeout 10000 
+          (eval (querying/snippetgroup-query|usingpredicates 
+                  templategroup 'damp.ekeko/ekeko 
+                  [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
+                  '() true)))))
 
 ;;;MAGIC CONSTANT! timeout for matching of individual snippet group
 (def
@@ -231,10 +244,14 @@
 (def partial-matches
   (clojure.core/memoize
     (fn [templategroup partialmodel]
-      (matching/reset-matched-nodes)
-      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+;      (matching/reset-matched-nodes)
+      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
+;                damp.ekeko.snippets.matching/matched-nodes (atom #{})
+                ]
         (templategroup-matches-nomemo templategroup))
-      (count @matching/matched-nodes))))
+      (/ 
+        (count @matching/matched-nodes)
+        (count (snippetgroup/snippetgroup-nodes templategroup))))))
 
 (defn
   make-fitness-function
@@ -247,35 +264,37 @@
       (let [matches (templategroup-matches templategroup)
             ; The more desired matches, the better
             fscore (fmeasure matches verifiedmatches)
-;            fscore (/ 
-;                     (count (truep matches verifiedmatches)) 
-;                     (count (:positives verifiedmatches)))
             ; The fewer directives, the better
             dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ; The shorter a template-group, the better
             lengthscore (/ 1 (template-size templategroup))
             ; The more ast-relations succeed in the underlying Ekeko-query, the better
 ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
+            partialscore (partial-matches templategroup partialmodel)
             ]
+        (util/log
+          (str (persistence/snippetgroup-string templategroup)
+               "\nF-score:" fscore
+               "\nPartial:" partialscore)
+          "fitness")
         (if (= 0 fscore)
           0
           (+
-            (* 20/20 fscore)
+            (* 19/20 fscore)
             (* 0/20 dirscore)
             (* 0/20 lengthscore)
-;            (* 2/20 partialscore)
+            (* 1/20 partialscore)
             )))
       (catch Exception e
         (do
           (print "!")
-          (spit "error-log.txt" 
-                (str "!!!" e
-                     "\nTemplate\n"
-                     (persistence/snippetgroup-string templategroup)
-                     "Last operation applied:" 
-                     (:mutation-operator (meta templategroup))
-                     "--------\n\n") 
-                :append true)
+          (util/log "error"
+                    (str "!!!" e
+                         "\nTemplate\n"
+                         (persistence/snippetgroup-string templategroup)
+                         "Last operation applied:" 
+                         (:mutation-operator (meta templategroup))
+                         "--------\n\n"))
 ;          (jay/inspect e)
 ;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0))))
@@ -336,23 +355,23 @@
                      
                      "add-directive-equals"
 
-                     "add-directive-invokes"
-                     "add-directive-invokedby"
+;                     "add-directive-invokes"
+;                     "add-directive-invokedby"
                      
-                     "restrict-scope-to-child"
-                     "relax-scope-to-child+"
+;                     "restrict-scope-to-child"
+;                     "relax-scope-to-child+"
                      "relax-scope-to-child*"
-                     "relax-size-to-atleast"
+;                     "relax-size-to-atleast"
                      "relax-scope-to-member"
                      "consider-set|lst"
-                     "add-directive-type"
-                     "add-directive-type|qname"
-                     "add-directive-type|sname"
+;                     "add-directive-type"
+;                     "add-directive-type|qname"
+;                     "add-directive-type|sname"
                      "add-directive-refersto"
                      
 ;                     ;untested:
 ;                     "replace-parent"
-                     "erase-comments"
+;                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))
@@ -573,7 +592,7 @@
     [fitness (make-fitness-function verifiedmatches) ;(clojure.core.memoize/memo (make-fitness-function verifiedmatches))
      popsize (count verifiedmatches)
      initial-pop (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)
-     tournament-size 2] 
+     tournament-size 7] 
     (loop 
       [generation 0
        population initial-pop
@@ -659,7 +678,7 @@
                               (nth matches 3)
                               (nth matches 7)])
   (def verifiedmatches (make-verified-matches cherry-picked-matches []))
-  (evolve verifiedmatches 105)
+  (evolve verifiedmatches 1)
   ; end
   
   (persistence/snippetgroup-string templategroup)

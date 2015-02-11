@@ -38,6 +38,8 @@
     (matching/snippet-value-orsimple-offspring? snippet value)
     ))
 
+
+
 (defn
   snippet-conditions
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
@@ -54,6 +56,9 @@
           (when-not 
             (snippet-value-conditions-already-generated? snippet val)
             (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
+      
+      ; Partial matching CCC; reset the counter if we reach the end of the query
+;      (swap! query concat [`(el/succeeds (do (matching/reset-matched-nodes) true))])
       @query)))
 
 (declare snippet-uservars)
@@ -233,7 +238,7 @@
   (let [snippets
         (snippetgroup/snippetgroup-snippetlist snippetgroup)
         predicates
-        (mapcat snippet-predicates snippets)
+        (concat (mapcat snippet-predicates snippets))
         calls
         (map snippet-predicatecall snippets)
         root-vars 
