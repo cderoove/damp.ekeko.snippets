@@ -91,7 +91,8 @@ damp.ekeko.snippets.operatorsrep
     (applicability|node snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)
     (astnode/expression? value)
-    (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))))
+    (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
+    (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
 
 (defn 
   applicability|lst

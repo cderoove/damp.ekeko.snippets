@@ -351,8 +351,8 @@
                      "add-directive-refersto"
                      
 ;                     ;untested:
-;                     ;"replace-parent"
-;                     "erase-comments"
+;                     "replace-parent"
+                     "erase-comments"
                      ]
                     )))
           (operatorsrep/registered-operators)))
@@ -647,17 +647,20 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 10)
+  (evolve verifiedmatches 1)
   
   ; SCAM 2014 test begin
   ; scam_demo1 is easy peasy! Now for demo2; mkay easy enough too.. ; now for the big one
   (def templategroup
     (transformation/transformation-lhs (persistence/slurp-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx")))
-  (def matches (templategroup-matches templategroup))
-  (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 0)
+  (def matches (into [] (templategroup-matches templategroup)))
+  (def cherry-picked-matches [(nth matches 0) ; Chose some of the shorter snippets to speed up the process..
+                              (nth matches 1)
+                              (nth matches 3)
+                              (nth matches 7)])
+  (def verifiedmatches (make-verified-matches cherry-picked-matches []))
+  (evolve verifiedmatches 105)
   ; end
-  
   
   (persistence/snippetgroup-string templategroup)
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
@@ -688,7 +691,7 @@
     (templategroup-matches m2))
   
   ; Testing mutation
-  (persistence/snippetgroup-string (mutate m1))
+  (persistence/snippetgroup-string (mutate templategroup))
   
   ; Testing crossover
   (doseq [x (range 0 1)]
