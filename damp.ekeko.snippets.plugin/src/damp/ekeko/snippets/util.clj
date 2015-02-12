@@ -101,5 +101,19 @@
            result 
            (recur)))))))
 
+(defmacro dbg
+  "Identity function, that prints x as a side-effect"
+  [x] 
+  `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
+(def log-enabled true)
 
+(defmacro log
+  "Identity function, that writes x to file y.txt as a side-effect.
+   If the file already exists, x is appended."
+  [x y]
+  (if log-enabled
+    `(let [x# ~x] 
+      (spit (str ~y ".txt") (str x# "\n") :append true)
+      x#)
+    `~x))
