@@ -25,18 +25,21 @@ public class TransformationEditorActionBarContributor extends MultiPageEditorAct
 	public void setActiveEditor(IEditorPart activeEditor) {
 		super.setActiveEditor(activeEditor);
 		if(activeEditor instanceof TransformationEditor)
-			activeTransformationEditor = (TransformationEditor) activeEditor;		 
+			activeTransformationEditor = (TransformationEditor) activeEditor;
+		
 	}
 
 	@Override
 	public void setActivePage(IEditorPart activeEditor) {
 		if(activeEditor instanceof TemplateEditor)
 			activeTemplateEditor = (TemplateEditor) activeEditor;		 
+		/* better to keep them always on
 		if(activeEditor instanceof SubjectsTemplateEditor) {
 			enableLHSActions(true);
 		} else {
 			enableLHSActions(false);
 		}
+		*/
 	}
 
 	private void enableLHSActions(boolean enabled) {
@@ -56,32 +59,39 @@ public class TransformationEditorActionBarContributor extends MultiPageEditorAct
 					activeTransformationEditor.onExecuteTransformation();
 			}
 		};
-		transformAction.setText("Execute transformation");
-		transformAction.setToolTipText("Applies the rewrite actions to all transformation subjects");
+		transformAction.setText("Execute search-and-replace.");
+		transformAction.setToolTipText("Executes search-and-replace. Code will be changed.");
 		transformAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TRANSFORM));
 		actions.add(transformAction);
 		
 		
-		matchTemplateAction = new Action("Match LHS template") {
+		matchTemplateAction = new Action("Execute search.") {
 			public void run() {
+				/*
 				if(activeTemplateEditor instanceof SubjectsTemplateEditor)
 					activeTemplateEditor.runQuery();
+				*/
+				if(activeTransformationEditor != null) {
+					activeTransformationEditor.getSubjectsEditor().runQuery();
+				}
 			}
 		};
 
 		matchTemplateAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_MATCH));
-		matchTemplateAction.setToolTipText("Match LHS template");
+		matchTemplateAction.setToolTipText("Matches search templates. Code will remain unchanged.");
 		actions.add(matchTemplateAction);
 
-		inspectQueryAction = new Action("Inspect query for LHS template") {
+		/*
+		inspectQueryAction = new Action("Inspect query for search templates") {
 			public void run() {
 				if(activeTemplateEditor instanceof SubjectsTemplateEditor)
 					activeTemplateEditor.viewQuery();
 			}
 		};
 		inspectQueryAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
-		inspectQueryAction.setToolTipText("Inspect query corresponding to LHS template");
+		inspectQueryAction.setToolTipText("Inspect query corresponding to search template");
 		actions.add(inspectQueryAction);
+		*/
 	}
 
 	@Override

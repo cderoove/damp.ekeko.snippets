@@ -187,7 +187,7 @@ public class TransformationEditor extends MultiPageEditorPart {
 		rewritesEditor = new RewritesTemplateEditor();
 		rewritesEditorPageIndex = addPage(rewritesEditor, getRewritesEditorInput());
 		rewritesEditor.setGroup(rhsTemplateGroup);
-		setPageText(rewritesEditorPageIndex, "RHS Change Actions");
+		setPageText(rewritesEditorPageIndex, "Replacement Templates");
 		setPageImage(rewritesEditorPageIndex, EkekoSnippetsPlugin.IMG_TRANSFORMATION);
 		rewritesEditor.setTransformationEditor(this);
 	}
@@ -197,7 +197,7 @@ public class TransformationEditor extends MultiPageEditorPart {
 		subjectsEditor = new SubjectsTemplateEditor();
 		subjectsEditorPageIndex = addPage(subjectsEditor, getSubjectsEditorInput());
 		subjectsEditor.setGroup(lhsTemplateGroup);
-		setPageText(subjectsEditorPageIndex, "LHS Change Subjects");
+		setPageText(subjectsEditorPageIndex, "Search Templates");
 		setPageImage(subjectsEditorPageIndex, EkekoSnippetsPlugin.IMG_TEMPLATE);
 	}
 	
