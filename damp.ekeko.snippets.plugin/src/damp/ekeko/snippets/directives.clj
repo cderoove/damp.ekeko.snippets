@@ -67,7 +67,15 @@
 (defn
   make-directiveoperand-binding
   [directiveoperand value]
-  (damp.ekeko.snippets.DirectiveOperandBinding. directiveoperand value))
+   ;;;temporary fix for user-defined vars that have been persisted as a string rather than symbol
+   (let [cleanedvalue 
+         (if
+           (and 
+             (string? value)
+             (= (first value) \?))
+           (symbol value)
+           value)]
+     (damp.ekeko.snippets.DirectiveOperandBinding. directiveoperand cleanedvalue)))
 
 (defn
   directiveoperandbinding-directiveoperand

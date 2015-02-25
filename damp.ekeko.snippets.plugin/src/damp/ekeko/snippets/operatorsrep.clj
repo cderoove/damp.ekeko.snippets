@@ -225,9 +225,8 @@ damp.ekeko.snippets.operatorsrep
   validity|variable
   [snippetgroup snippet value operandvalue]
   (and 
-    (string? operandvalue)
-    (= (first operandvalue) \?)))
-
+    (symbol operandvalue)
+    (= (first (str operandvalue)) \?)))
 
 (defn
   instance-of-classkeyword-assignable-to-property?
@@ -1033,8 +1032,6 @@ damp.ekeko.snippets.operatorsrep
 ;; Operand validation
 ;; ------------------
 
-
-
 (defn
   validate-newvalue-for-operandbinding
   [snippetgroup snippet node operator binding value]
@@ -1132,14 +1129,14 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   (if
     (= (operator-id operator) "add-directive-equals")
-    [(str (util/gen-lvar))]
+    [(util/gen-lvar)]
     (let [uservars
           (apply concat (map 
                           matching/snippet-vars-among-directivebindings
                           (snippetgroup/snippetgroup-snippetlist snippetgroup)))]
       (if (empty? uservars)
-        [(str (util/gen-readable-lvar-for-value node))]
-        (map str uservars)))
+        [(util/gen-readable-lvar-for-value node)]
+        uservars))
     ))
 
 (defmethod

@@ -356,16 +356,17 @@
   
   
   ;conversion from JLS4 to JLS8 based templates
-  (doseq [file (file-seq (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/TestCase-JDT-CompositeVisitor-Templates/"))]
-    (when-not (nil? file)
+  (doseq [file (file-seq (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications-DesignPatterns/"))]
+    (when 
+      (and 
+        (not (nil? file))
+        (.isFile file))
       (try 
         (let [snippet (damp.ekeko.snippets.persistence/slurp-snippetgroup file)]
           (damp.ekeko.snippets.persistence/spit-snippetgroup  file snippet))
         (catch Exception e (println e)))))
   
-  
-  
-  
+
   
   
   )

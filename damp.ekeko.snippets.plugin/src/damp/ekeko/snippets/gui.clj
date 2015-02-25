@@ -253,7 +253,13 @@ damp.ekeko.snippets.gui
   operandbinding-celleditor
   operatorsrep/opscope-variable 
   [opviewer table group template subject operator operandbinding]
-  (let [editor (org.eclipse.jface.viewers.TextCellEditor. table)]
+  (let [editor 
+        (proxy 
+          [org.eclipse.jface.viewers.TextCellEditor] [table]
+          (doSetValue [value]
+            (proxy-super doSetValue (str value)))
+          (doGetValue []
+            (symbol (proxy-super doGetValue))))]
     editor))
 
 
