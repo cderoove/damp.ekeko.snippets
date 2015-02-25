@@ -39,13 +39,52 @@
   rand-int
   [n]
   (int (rand n)))
-(defn 
+(defn
   rand-nth
   [coll]
   (nth coll (rand-int (count coll))))
 
-;; Problem representation
-;; State corresponds to templategroup (can use sequence of operators later, problem is that there arguments cannot easily cross over)
+(def
+  registered-operators|search
+  (filter (fn [op] 
+            (let [id (operatorsrep/operator-id op)]
+              (some #{id} 
+                    [
+                     "replace-by-variable"
+                     "replace-by-wildcard"
+                     "remove-node"
+                     "add-directive-equals"
+;                     "add-directive-invokes"
+;                     "add-directive-invokedby"
+;                     "restrict-scope-to-child"
+;                     "relax-scope-to-child+"
+                     "relax-scope-to-child*"
+;                     "relax-size-to-atleast"
+                     "relax-scope-to-member"
+                     "consider-set|lst"
+;                     "add-directive-type"
+;                     "add-directive-type|qname"
+;                     "add-directive-type|sname"
+                     "add-directive-refersto"
+                     
+;                     ;untested:
+;                     "replace-parent"
+;                     "erase-comments"
+                     ]
+                    )))
+          (operatorsrep/registered-operators)))
+
+(def config-default
+  {:max-generations 50
+   :population-size 100
+   :selection-weight 1/4
+   :mutation-weight 3/4
+   :crossover-weight 0/4
+   :fitness-weights [19/20 1/20]
+   
+   :match-timeout 10000
+   :tournament-rounds 7
+   :mutation-operators registered-operators|search})
 
 ; Specifies our "oracle" for testing the fitness of templates produced by our search algorithm
 ; The entries in :positives are snippet groups that a template must match.
@@ -63,7 +102,7 @@
   (VerifiedMatches. (into #{} positives)
                     (into #{} negatives)))
 
-;http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
+; Source: http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
 (defmacro with-timeout [millis & body]
   `(let [future# (future ~@body)]
      (try
@@ -74,19 +113,9 @@
            (future-cancel future#)
            nil)))))
 
-;(defn
-;  templategroup-matches-nomemo
-;  "Given a templategroup, look for all of its matches in the code; no memoization."
-;  [templategroup]
-;  (into #{} 
-;        (eval (querying/snippetgroup-query|usingpredicates 
-;                templategroup 'damp.ekeko/ekeko 
-;                [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
-;                '() true))))
-
-(defn
-  templategroup-matches-nomemo
-  "Given a templategroup, look for all of its matches in the code; no memoization."
+;;;MAGIC CONSTANT! timeout for matching of individual snippet group
+(defn templategroup-matches
+  "Given a templategroup, look for all of its matches in the code"
   [templategroup]
   (into #{} 
         (with-timeout 10000 
@@ -95,49 +124,25 @@
                   [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
                   '() true)))))
 
-;;;MAGIC CONSTANT! timeout for matching of individual snippet group
-(def
-  templategroup-matches
-  "Given a templategroup, look for all of its matches in the code"
-  (clojure.core.memoize/memo 
-    (fn [templategroup]
-      (templategroup-matches-nomemo templategroup)
-;      (into #{} (with-timeout 10000 (eval (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))))
-      )))
 
-
-
-; (Using the picture on http://en.wikipedia.org/wiki/Precision_and_recall as a reference here... )
-; There's an important nuance to consider here! What about the results that are neither in :positives or :negatives .. the results in the gray zone?
-; Do we consider them relevant, or irrelevant? (i.e. is it okay to match too much .. as long as it's not in :negatives
-; .. or should such matches be rejected too?)
-; They're considered irrelevant now.. 
-
-; Actually, in this case the notion of :negatives isn't of much use.. 
-; If you don't want a particular pattern to match, it simply shouldn't be in positives..
 
 (defn 
   truep
   "True positives; how many results were correctly considered relevant"
   [matches verifiedmatches]
-  (clojure.set/intersection matches (:positives verifiedmatches))
-  ; (clojure.set/difference matches (:negatives verifiedmatches)) ; If gray zone is considered relevant 
-  )
+  (clojure.set/intersection matches (:positives verifiedmatches)))
 
 (defn 
   falsep
   "False positives; how many results were incorrectly considered relevant"
   [matches verifiedmatches]
-  (clojure.set/difference matches (:positives verifiedmatches))
-  ;(clojure.set/intersection matches (:negatives verifiedmatches))) ; If gray zone is considered relevant
-  )
+  (clojure.set/difference matches (:positives verifiedmatches)))
 
 (defn
   falsen
   "False negatives; how many results were incorrectly considered irrelevant"
   [matches verifiedmatches]
   (clojure.set/difference (:positives verifiedmatches) matches))
-  ; Hmm.. if gray zone were considered relevant, falsen always is infinity as the number of relevant stuff is infinite..
   
 (defn 
   precision
@@ -164,33 +169,32 @@
   [matches verifiedmatches]
   (let [p (precision matches verifiedmatches)
         r (recall matches verifiedmatches)]
-    (if 
-      (= (+ p r) 0)
+    (if (= (+ p r) 0)
       0
       (* 2 (/ (* p r) (+ p r))))))
 
-(defn count-directives
-  "Count the number of directives used in a snippet group (excluding default directives)"
-  [snippetgroup]
-  (reduce + 
-          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
-
-(defn directive-count-measure
-  "Produce a score in [0,1] to reflect how complex a template looks,
-   which is based on how many directives are used in the template"
-  [templategroup]
-  (/ 1 (inc (* 1/2 (count-directives templategroup)))))
-
-(defn simple-measure
-  "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
-   Produces a number in [0-1], such that higher means more correct (positive or negative) results"
-  [matches verifiedmatches]
-  (let [correct-positives (clojure.set/intersection matches (:positives verifiedmatches))
-        correct-negatives (clojure.set/difference (:negatives verifiedmatches) matches)]
-    (/ 
-      (+ (count correct-positives) (count correct-negatives))
-      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))))
+;(defn count-directives
+;  "Count the number of directives used in a snippet group (excluding default directives)"
+;  [snippetgroup]
+;  (reduce + 
+;          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
+;            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
+;
+;(defn directive-count-measure
+;  "Produce a score in [0,1] to reflect how complex a template looks,
+;   which is based on how many directives are used in the template"
+;  [templategroup]
+;  (/ 1 (inc (* 1/2 (count-directives templategroup)))))
+;
+;(defn simple-measure
+;  "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
+;   Produces a number in [0-1], such that higher means more correct (positive or negative) results"
+;  [matches verifiedmatches]
+;  (let [correct-positives (clojure.set/intersection matches (:positives verifiedmatches))
+;        correct-negatives (clojure.set/difference (:negatives verifiedmatches) matches)]
+;    (/ 
+;      (+ (count correct-positives) (count correct-negatives))
+;      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))))
 
 (defn- snippetgroup|hasequals?
   "Count the number of directives used in a snippet group (excluding default directives)"
@@ -220,17 +224,17 @@
   ;    :rest nil)
   )
 
-(defn
-  template-size
-  [templategroup]
-  (.length (persistence/snippetgroup-string templategroup)))
+;(defn
+;  template-size
+;  [templategroup]
+;  (.length (persistence/snippetgroup-string templategroup)))
 
-(defn
-  ast-node-count
-  [templategroup]
-  (let [snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
-    (apply + (for [x snippets]
-               (count (snippet/snippet-nodes x))))))
+;(defn
+;  ast-node-count
+;  [templategroup]
+;  (let [snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
+;    (apply + (for [x snippets]
+;               (count (snippet/snippet-nodes x))))))
 
 (defn create-partial-model
   "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
@@ -248,7 +252,7 @@
       (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
 ;                damp.ekeko.snippets.matching/matched-nodes (atom #{})
                 ]
-        (templategroup-matches-nomemo templategroup))
+        (templategroup-matches templategroup))
       (/ 
         (count @matching/matched-nodes)
         (count (snippetgroup/snippetgroup-nodes templategroup))))))
@@ -265,9 +269,9 @@
             ; The more desired matches, the better
             fscore (fmeasure matches verifiedmatches)
             ; The fewer directives, the better
-            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
+;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ; The shorter a template-group, the better
-            lengthscore (/ 1 (template-size templategroup))
+;            lengthscore (/ 1 (template-size templategroup))
             ; The more ast-relations succeed in the underlying Ekeko-query, the better
 ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
             partialscore (partial-matches templategroup partialmodel)
@@ -281,10 +285,7 @@
           0
           (+
             (* 19/20 fscore)
-            (* 0/20 dirscore)
-            (* 0/20 lengthscore)
-            (* 1/20 partialscore)
-            )))
+            (* 1/20 partialscore))))
       (catch Exception e
         (do
           (print "!")
@@ -295,8 +296,6 @@
                          "Last operation applied:" 
                          (:mutation-operator (meta templategroup))
                          "--------\n\n"))
-;          (jay/inspect e)
-;          (jay/inspect [e templategroup (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true)])
           0))))
     
     
@@ -308,7 +307,6 @@
 
 ;; Search
 
-;;assumes: arity of tuple corresponds to number of templategroups required
 (defn
   templategroup-from-tuple
   ([tuple]
@@ -326,55 +324,10 @@
           (fn [idx tuple] 
             (templategroup-from-tuple tuple (str "Offspring of tuple " idx)))
           matches)]
-    (mapcat identity (repeat 1 id-templates))
-;    (concat id-templates
-            ;[(persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")]
-;            (util/viable-repeat 
-;              (* 1 (count id-templates)) 
-;              #(mutate (select id-templates 2)) 
-;              (fn [templategroup]
-;                (try
-;                  (let [matches (templategroup-matches templategroup)]
-;                    (pos? (count matches)))
-;                  (catch Exception e
-;                    false))
-;                ))
-;            )
-    ))
+    (mapcat identity (repeat 1 id-templates))))
 
 
-(def
-  registered-operators|search
-  (filter (fn [op] 
-            (let [id (operatorsrep/operator-id op)]
-              (some #{id} 
-                    [
-                     "replace-by-variable"
-                     "replace-by-wildcard"
-                     "remove-node"
-                     
-                     "add-directive-equals"
 
-;                     "add-directive-invokes"
-;                     "add-directive-invokedby"
-                     
-;                     "restrict-scope-to-child"
-;                     "relax-scope-to-child+"
-                     "relax-scope-to-child*"
-;                     "relax-size-to-atleast"
-                     "relax-scope-to-member"
-                     "consider-set|lst"
-;                     "add-directive-type"
-;                     "add-directive-type|qname"
-;                     "add-directive-type|sname"
-                     "add-directive-refersto"
-                     
-;                     ;untested:
-;                     "replace-parent"
-;                     "erase-comments"
-                     ]
-                    )))
-          (operatorsrep/registered-operators)))
 
 (defn- rand-snippet [snippetgroup]
   (-> snippetgroup
@@ -386,7 +339,8 @@
   "Perform a mutation operation on a snippet group. A random node is chosen among the snippets,
    and a random operation is applied to it, in order to mutate the snippet."
   [snippetgroup]
-  (let [group-copy (persistence/copy-snippetgroup snippetgroup)
+  (let [;group-copy (persistence/copy-snippetgroup snippetgroup)
+        group-copy snippetgroup
         snippet (rand-snippet group-copy)
         
         pick-operator
@@ -681,8 +635,8 @@
   (evolve verifiedmatches 1)
   ; end
   
-  (persistence/snippetgroup-string templategroup)
-  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+;  (persistence/snippetgroup-string templategroup)
+;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   
   (= 1 (precision matches verifiedmatches))
   (= 1 (recall matches verifiedmatches))
@@ -745,5 +699,7 @@
 ;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   (templategroup-matches templategroup)  
   (count @damp.ekeko.snippets.matching/matched-nodes)
+  
+  
   
   )

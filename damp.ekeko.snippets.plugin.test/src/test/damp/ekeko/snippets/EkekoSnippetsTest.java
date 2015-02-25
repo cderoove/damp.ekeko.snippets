@@ -61,6 +61,10 @@ public class EkekoSnippetsTest {
 		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.operators");
 	}
 
+	@Test 
+	public void testGeneticSearch() {
+		EkekoTestHelper.testClojureNamespace(myBundle, "test.damp.ekeko.snippets.geneticsearch");
+	}
 	
 	@Test 
 	public void testSCAM2014Demo() {
@@ -69,9 +73,6 @@ public class EkekoSnippetsTest {
 
 	
 	
-	
-	
-
 
 	/*
 	//disabled because exception is not caught by junit 
