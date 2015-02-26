@@ -32,16 +32,11 @@
 
 ; Replace Java's pseudo-random number generator for MersenneTwister
 (def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
-(defn 
-  rand
+(defn rand
   ([n] (.nextInt *twister* n)))
-(defn
-  rand-int
-  [n]
+(defn rand-int [n]
   (int (rand n)))
-(defn
-  rand-nth
-  [coll]
+(defn rand-nth [coll]
   (nth coll (rand-int (count coll))))
 
 (def
@@ -75,13 +70,13 @@
           (operatorsrep/registered-operators)))
 
 (def config-default
-  {:max-generations 50
+  {:max-generations 5
    :population-size 100
    :selection-weight 1/4
    :mutation-weight 3/4
    :crossover-weight 0/4
    :fitness-weights [19/20 1/20]
-   
+   :fitness-threshold 0.95
    :match-timeout 10000
    :tournament-rounds 7
    :mutation-operators registered-operators|search})
@@ -113,12 +108,12 @@
            (future-cancel future#)
            nil)))))
 
-;;;MAGIC CONSTANT! timeout for matching of individual snippet group
 (defn templategroup-matches
-  "Given a templategroup, look for all of its matches in the code"
-  [templategroup]
+  "Given a templategroup, look for all of its matches in the code
+   (An exception is thrown if matching takes longer than timeout milliseconds..)"
+  [templategroup timeout]
   (into #{} 
-        (with-timeout 10000 
+        (with-timeout timeout 
           (eval (querying/snippetgroup-query|usingpredicates 
                   templategroup 'damp.ekeko/ekeko 
                   [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
@@ -261,11 +256,11 @@
   make-fitness-function
   "Return a fitness function, used to measure how good/fit an individual is
    0 is worst fitness; 1 is the best"
-  [verifiedmatches]
+  [verifiedmatches config]
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
     (try
-      (let [matches (templategroup-matches templategroup)
+      (let [matches (templategroup-matches templategroup (:match-timeout config))
             ; The more desired matches, the better
             fscore (fmeasure matches verifiedmatches)
             ; The fewer directives, the better
@@ -275,6 +270,7 @@
             ; The more ast-relations succeed in the underlying Ekeko-query, the better
 ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
             partialscore (partial-matches templategroup partialmodel)
+            weights (:fitness-weights config)
             ]
         (util/log
           (str (persistence/snippetgroup-string templategroup)
@@ -284,8 +280,8 @@
         (if (= 0 fscore)
           0
           (+
-            (* 19/20 fscore)
-            (* 1/20 partialscore))))
+            (* (nth weights 0) fscore)
+            (* (nth weights 1) partialscore))))
       (catch Exception e
         (do
           (print "!")
@@ -338,14 +334,14 @@
   mutate
   "Perform a mutation operation on a snippet group. A random node is chosen among the snippets,
    and a random operation is applied to it, in order to mutate the snippet."
-  [snippetgroup]
+  [snippetgroup operators]
   (let [;group-copy (persistence/copy-snippetgroup snippetgroup)
         group-copy snippetgroup
         snippet (rand-snippet group-copy)
         
         pick-operator
         (fn []
-          (let [operator (rand-nth registered-operators|search)
+          (let [operator (rand-nth operators)
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [node] 
@@ -355,12 +351,7 @@
                                                 (directives/bounddirective-for-directive
                                                   (snippet/snippet-bounddirectives-for-node snippet node)
                                                   (operator-directive (operatorsrep/operator-id operator)))))))
-                                  (snippet/snippet-nodes snippet)
-;                                  (filter
-;                                    (fn [node] (astnode/ast? node))
-;                                    (snippet/snippet-nodes snippet))
-                                  )
-                ]
+                                  (snippet/snippet-nodes snippet))]
             (if (empty? all-valid-nodes)
               (recur)
               [operator (rand-nth all-valid-nodes)])))
@@ -524,29 +515,29 @@
     (nth population
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
-(defn- correct-implicit-operands?
-  [snippetgroup]
-  (reduce (fn [sofar node]
-            (and 
-              sofar
-              (every? (fn [bd]
-                        (let [implOp (first (.getOperandBindings bd))]
-                          (= (.getValue implOp) node)))
-                      (snippet/snippet-bounddirectives-for-node node))))
-          true
-          (mapcat snippet/snippet-nodes snippetgroup)))
+;(defn- correct-implicit-operands?
+;  [snippetgroup]
+;  (reduce (fn [sofar node]
+;            (and 
+;              sofar
+;              (every? (fn [bd]
+;                        (let [implOp (first (.getOperandBindings bd))]
+;                          (= (.getValue implOp) node)))
+;                      (snippet/snippet-bounddirectives-for-node node))))
+;          true
+;          (mapcat snippet/snippet-nodes snippetgroup)))
 
 (defn
   evolve
   "Look for a template that is able to match with a number of snippets, using genetic search
    @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
-   @param max-generations  Stop searching if we haven't found a good solution after this number of generations"
-  [verifiedmatches max-generations]
+   @param config           A map containing configuration parameters; see config-default for an example."
+  [verifiedmatches config]
   (let
     [fitness (make-fitness-function verifiedmatches) ;(clojure.core.memoize/memo (make-fitness-function verifiedmatches))
      popsize (count verifiedmatches)
      initial-pop (sort-by-fitness (population-from-tuples (:positives verifiedmatches)) fitness)
-     tournament-size 7] 
+     tournament-size (:tournament-rounds config)] 
     (loop 
       [generation 0
        population initial-pop
@@ -562,8 +553,6 @@
             new-history (clojure.set/union
                           history
                           (set (map hash population)))]
-;        (doseq [individual population]
-;          (assert (correct-implicit-operands? individual)))
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map fitness population))
@@ -577,36 +566,31 @@
 ;                          ;(snippetgroup/snippetgroup-snippetlist individual)
 ;                          (persistence/snippetgroup-string individual)]) 
 ;                       population))
-        (when (< generation max-generations)
+        (when (< generation (:max-generations config))
           (if
-            (> best-fitness 0.95)
+            (> best-fitness (:fitness-threshold config))
             (println "Success:" (persistence/snippetgroup-string best))
             (recur 
               (inc generation)
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
-                  ; Random reselect from initial population
-                  (util/viable-repeat
-                    (* 0/8 (count population))
-                    #(rand-nth initial-pop)
-                    (fn [x] true))
                   ; Mutation
-                  (util/viable-repeat 
-                    (* 3/4 (count population))
-                    #(mutate (select population tournament-size)) 
+                  (util/viable-repeat
+                    (* (:mutation-weight config) (count population))
+                    #(mutate (select population tournament-size) (:mutation-operators config)) 
                     is-viable)
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
                          (util/viable-repeat 
-                           (* 0/8 (count population))
+                           (* (/ (:crossover-weight config) 2) (count population))
                            #(crossover
                               (select population tournament-size)
                               (select population tournament-size))
                            (fn [x] (and (is-viable (first x)) (is-viable (second x))))))
                   ; Selection
                   (util/viable-repeat 
-                    (* 1/4 (count population)) 
+                    (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
                     (fn [x] true)))
                 fitness)
@@ -620,86 +604,12 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches 1)
+  (evolve verifiedmatches config-default)
   
-  ; SCAM 2014 test begin
-  ; scam_demo1 is easy peasy! Now for demo2; mkay easy enough too.. ; now for the big one
-  (def templategroup
-    (transformation/transformation-lhs (persistence/slurp-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx")))
-  (def matches (into [] (templategroup-matches templategroup)))
-  (def cherry-picked-matches [(nth matches 0) ; Chose some of the shorter snippets to speed up the process..
-                              (nth matches 1)
-                              (nth matches 3)
-                              (nth matches 7)])
-  (def verifiedmatches (make-verified-matches cherry-picked-matches []))
-  (evolve verifiedmatches 1)
-  ; end
-  
-;  (persistence/snippetgroup-string templategroup)
-;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
-  
-  (= 1 (precision matches verifiedmatches))
-  (= 1 (recall matches verifiedmatches))
-  (fmeasure matches verifiedmatches)
-  ((make-fitness-function verifiedmatches) matches)
-  
-  (pmap (make-fitness-function verifiedmatches) (population-from-tuples matches))
-  
-  ;MethodDeclaration - MethodInvocation (vars sorted .. cannot compare otherwise)
-  (map (fn [tuples] (map (fn [tuple] (map class tuple)) tuples))
-       (map templategroup-matches (population-from-tuples matches)))
-  
-  ; Testing crossover
-  (def m1
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
-  (def m2
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m2.ekt"))
-  
-  (println (persistence/snippetgroup-string m1))
-  (println (persistence/snippetgroup-string m2))
-  
-  (def match1 
-    (templategroup-matches m1))
-  (def match2 
-    (templategroup-matches m2))
-  
-  ; Testing mutation
-  (persistence/snippetgroup-string (mutate templategroup))
-  
-  ; Testing crossover
-  (doseq [x (range 0 1)]
-    (let [[x1 x2] (crossover m1 m2)
-          x1-match (templategroup-matches x1)]
-      (println "---" (meta x1))
-      
-      (if (not (empty? x1-match))
-        (do
-          (println x1-match)
-          ;          (println (persistence/snippetgroup-string x1))
-          ;          (jay/inspect x1)
-          (println "!")))
-      
-      (assert (correct-implicit-operands? x1))
-      (assert (correct-implicit-operands? x2))))
-  
-  ; Testing filtered Ekeko queries, where we (temporarily) only query certain AST subtrees
-  (let [tg (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
-        matches (templategroup-matches tg) 
-        partialmodel (new PartialJavaProjectModel)
-        ]
-    (.addExistingAST partialmodel (first (first matches)))
-    
-    (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
-      (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))
-  
-  (damp.ekeko.snippets.matching/reset-max-depth)
   (damp.ekeko.snippets.matching/reset-matched-nodes)
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
 ;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   (templategroup-matches templategroup)  
   (count @damp.ekeko.snippets.matching/matched-nodes)
-  
-  
-  
   )

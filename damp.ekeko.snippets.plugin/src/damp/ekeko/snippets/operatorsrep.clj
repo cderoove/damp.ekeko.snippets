@@ -228,6 +228,48 @@ damp.ekeko.snippets.operatorsrep
     (string? operandvalue)
     (= (first operandvalue) \?)))
 
+;(defn
+;  validity|variable-typed
+;  [snippetgroup snippet value operandvalue expected-type]
+;  (let
+;    [; Like the map function, but removes nil results..
+;     map-trim (fn [f coll]
+;                (remove nil? (map f coll)))
+;      
+;     
+;     inferred-type
+;     (map-trim
+;       
+;       (fn [node]
+;         (let [bds 
+;               (snippet/snippet-bounddirectives-for-node snippet node)
+;               
+;               inferred-type 
+;               (map-trim
+;                 (fn [bd]
+;                   (if (= (directives/directive-name (bounddirective-directive bd)) "equals")
+;                     (let [uservar 
+;                           (directives/directiveoperandbinding-value
+;                             (first
+;                               (directives/bounddirective-operandbindings bounddirective)))]
+;                       (if (= operand-value uservar)
+;                         (astnode/value-unwrapped node)
+;                         
+;                         
+;                         ))))
+;                 bds)
+;               
+;               ]
+;           
+;           ))
+;       (snippet/snippet-nodes snippet))])
+;  
+;  
+;  (and 
+;    (string? operandvalue)
+;    (= (first operandvalue) \?)))
+
+
 
 (defn
   instance-of-classkeyword-assignable-to-property?

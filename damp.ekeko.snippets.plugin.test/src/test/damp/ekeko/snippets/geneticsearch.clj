@@ -12,6 +12,7 @@
              [parsing :as parsing]
              [util :as util]
              [persistence :as persistence]
+             [transformation :as transformation]
              ])
   (:require [damp.ekeko.snippets.geneticsearch
              [search :as search]])
@@ -23,6 +24,7 @@
   (:require [damp.ekeko 
              [logic :as el]
              [snippets :as snippets]])
+  (:import [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]) 
   (:use clojure.test))
 
 
@@ -35,17 +37,65 @@
 ;; ----------------
 
 (deftest
-  ^{:doc "Precision and recall should be 1 for the oracle template"}
+  ^{:doc "Precision, recall and F-score should be 1 for the oracle template"}
   precision-recall 
   (let [templategroup (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
         matches (search/templategroup-matches templategroup)
         verifiedmatches (search/make-verified-matches matches [])
         ]
     (is (= 1 (search/precision matches verifiedmatches)))
-    (is (= 1 (search/recall matches verifiedmatches)))))
+    (is (= 1 (search/recall matches verifiedmatches)))
+    (is (= 1 (search/fmeasure matches verifiedmatches)))))
+
+(deftest
+  ^{:doc "Filtered Ekeko query (used when determining partial matches),
+          where we only query among a given set of AST nodes"}
+  filtered-query
+  (let [templategroup (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
+        matches (search/templategroup-matches templategroup)
+        partialmodel (new PartialJavaProjectModel)]
+    (.addExistingAST partialmodel (first (first matches)))
+    (is (= 2 (count (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+                   (damp.ekeko/ekeko [?cu] (damp.ekeko.jdt.ast/ast :Statement ?cu))))))))
 
 
-                    
+;; Crossover and mutations
+;; -----------------------
+
+; Testing crossover
+;  (def m1 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m1.ekt"))
+;  (def m2 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/m2.ekt"))
+;  (def match1 (templategroup-matches m1))
+;  (def match2 (templategroup-matches m2))
+;  
+;  (doseq [x (range 0 1)]
+;    (let [[x1 x2] (crossover m1 m2)
+;          x1-match (templategroup-matches x1)]
+;      (println "---" (meta x1))
+;      
+;      (if (not (empty? x1-match))
+;        (do
+;          (println x1-match)))))
+
+
+;; SCAM 2014
+;; ---------
+; Given the concrete matches of a template (used in SCAM 2014),
+; try to infer the template from the matches using genetic search
+
+(deftest
+  ^{:doc "Try to infer scam_demo1.ekx's left-hand-side template"}
+  scam-demo1 
+  (let [templategroup (transformation/transformation-lhs (snippetgroup-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx"))
+        matches (into [] (search/templategroup-matches templategroup))
+        cherry-picked-matches [(nth matches 0) ; Choose some of the shorter snippets to speed up the process..
+                               (nth matches 1)
+                               (nth matches 3)
+                               (nth matches 7)]
+        verifiedmatches (search/make-verified-matches cherry-picked-matches [])]
+    (search/evolve verifiedmatches 10)))
+
+
 ;; Test suite
 ;; ----------
 
@@ -54,8 +104,7 @@
    (let [testproject "TestCase-JDT-CompositeVisitor"
          matchproject "TestCase-EkekoX-Matching"]
      (test/against-project-named testproject false precision-recall)
-    
-     ))
+     (test/against-project-named testproject false filtered-query)))
 
 (defn test-ns-hook []
   (test/with-ekeko-disabled test-suite))

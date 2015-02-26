@@ -114,6 +114,6 @@
   [x y]
   (if log-enabled
     `(let [x# ~x] 
-      (spit (str ~y ".txt") (str x# "\n") :append true)
+      (spit (str ~y ".txt") (str x# "\n") :append true :create true)
       x#)
     `~x))
