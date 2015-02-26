@@ -42,7 +42,7 @@ damp.ekeko.snippets.operators
     (make-directiveoperand-for-match)
     node))
 
-;note: cannot phyisically delete the node's children, as some might be mandatory which is checked by the AST delete operations
+;note: cannot physically delete the node's children, as some might be mandatory which is checked by the AST delete operations
 ;could replace mandatories by newly created nodes (of which missing information will show up as MISSNG when printed),
 ;but there is no benefit over keeping the original nodes
 (defn 
@@ -608,6 +608,63 @@ damp.ekeko.snippets.operators
   [snippet node]
   (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
     (replace-node-with snippet parent-node snippet node)))
+
+(defn
+  generalize-references|vardec
+  "Generalizes all references to given variable declaration node in the snippet."
+  [snippet node binding]
+  (let [referredvar (util/gen-lvar "vardec")]
+    (replace-by-variable 
+      (reduce 
+        (fn [snippetsofar resolvingnode]
+          (if 
+            (or 
+              (= node resolvingnode)
+              (some #{resolvingnode} (snippet/snippet-node-children|conceptually snippet node))) ;e.g., simplename of a vardecfragment
+            snippetsofar
+            (add-directive-refersto 
+              (replace-by-wildcard snippetsofar resolvingnode)
+              resolvingnode referredvar)))
+        snippet
+        (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))
+      node
+      referredvar)))
+
+(defn
+  generalize-references|name
+  "Generalizes all references to given variable declaration node in the snippet."
+  [snippet node binding]
+  (let [referredvar (util/gen-lvar "vardecname")]
+    (replace-by-variable 
+      (reduce 
+        (fn [snippetsofar resolvingnode]
+          (if 
+            (or 
+              (= node resolvingnode)
+              (= resolvingnode (snippet/snippet-node-parent|conceptually snippet node))) ;e.g., vardecfragment parent of simplename
+            snippetsofar
+            (add-directive-refersto 
+              (replace-by-wildcard snippetsofar resolvingnode)
+              resolvingnode referredvar)))
+        snippet
+        (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))
+      node
+      referredvar)))
+
+
+
+(defn
+  generalize-references
+  "Generalizes all references in the snippet o given variable declaration node or its name."
+  [snippet node]
+  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+    (when 
+      (astnode/binding-variable? binding)
+      (if 
+        (some #{(astnode/ekeko-keyword-for-class-of node)} [:SimpleName :QualifiedName])
+        (generalize-references|name snippet node binding)
+        (generalize-references|vardec snippet node binding)))))
+
 
 (defn
   newvalue|string

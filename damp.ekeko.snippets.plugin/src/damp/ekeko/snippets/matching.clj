@@ -118,9 +118,8 @@ damp.ekeko.snippets.matching
   (= (snippet/snippet-root snippet) value))
 
 
-
 (defn
-  string-represents-variable?
+  represents-variable?
   [string]
   (@#'el/ekeko-lvar-sym? string))
 
@@ -376,12 +375,12 @@ damp.ekeko.snippets.matching
                              (aststructure/ast|type-type ~var-match ~var-match-type)
                              (structure/type-name|qualified|string ~var-match-type ~val-string))])))))
 
-(declare string-represents-variable?)
+(declare represents-variable?)
 
 (defn 
   conditions-variables
   [conditions]
-  (filter string-represents-variable? (flatten conditions)))
+  (filter represents-variable? (flatten conditions)))
 
 (declare  snippet-node-conditions*)
 
@@ -694,7 +693,7 @@ damp.ekeko.snippets.matching
             (util/gen-lvar "itype")
             resolvedstringorvar
             (if 
-              (string-represents-variable? stringorvar)
+              (represents-variable? stringorvar)
               (symbol stringorvar)
               stringorvar)]
         `((cl/fresh [~var-type]
@@ -983,10 +982,9 @@ damp.ekeko.snippets.matching
   (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
     (mapcat
       (fn [bounddirective]
-        (map symbol
-             (filter string-represents-variable?
-                     (map directives/directiveoperandbinding-value 
-                          (directives/bounddirective-operandbindings bounddirective)))))
+        (filter represents-variable?
+                (map directives/directiveoperandbinding-value 
+                     (directives/bounddirective-operandbindings bounddirective))))
       bds)))
 
 (defn

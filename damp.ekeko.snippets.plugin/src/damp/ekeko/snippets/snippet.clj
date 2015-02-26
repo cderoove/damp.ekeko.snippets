@@ -645,6 +645,37 @@ damp.ekeko.snippets.snippet
       (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))
 
 
+
+(defn
+  snippet-node-resolvedbinding
+  "Resolves binding for given node using the snippet's project anchor."
+  [snippet node]  
+  (if-let [projectnode (snippet-corresponding-projectvalue-for-snippetvalue snippet node)]
+    (let [nodetype (astnode/ekeko-keyword-for-class-of projectnode)]
+      (when (some #{nodetype} astnode/ekeko-keywords-for-resolveable-ast-classes)
+        (.resolveBinding projectnode)))))
+    
+(defn
+  snippet-children-resolvingto
+  "Recursive descent through a snippet that is anchored to a project,
+   starting from root (inclusively), 
+   in search for nodes that resolve in to the given binding."
+  [snippet root binding] 
+  (let [children (atom '())] 
+    (walk-snippet-element 
+      snippet
+      root 
+      (fn [node] 
+        (if-let [nodebinding (snippet-node-resolvedbinding snippet node)]
+          (when (.isEqualTo nodebinding binding)
+            (swap! children conj node))))
+      (fn [list])
+      (fn [prim])
+      (fn [null]))
+    @children))
+
+
+
 (defn
   register-callbacks
   []

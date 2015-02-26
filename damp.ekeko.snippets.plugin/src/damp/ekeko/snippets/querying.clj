@@ -378,7 +378,8 @@
 (defn
   snippet-uservars
   [snippet]
-  (sort (into #{}  (matching/snippet-vars-among-directivebindings snippet))))
+  (sort (into #{} 
+              (matching/snippet-vars-among-directivebindings snippet))))
   
 (defn
   snippetgroup-uservars

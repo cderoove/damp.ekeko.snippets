@@ -198,7 +198,25 @@ damp.ekeko.snippets.operatorsrep
   (and 
     (applicability|node snippetgroup snippet value)
     (> (count (clojure.string/split (.toString value) #"\.")) 1)))
-  
+
+(defn
+  applicability|name
+  [snippetgroup snippet value]  
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (some #{(astnode/ekeko-keyword-for-class-of value)} [:SimpleName :QualifiedName])))
+          
+(defn
+  applicability|vardeclaration
+  [snippetgroup snippet value]  
+  (and
+    (applicability|node snippetgroup snippet value)
+    (or
+      (some #{(astnode/ekeko-keyword-for-class-of value)}
+            [:VariableDeclarationFragment :SingleVariableDeclaration])
+      (and
+        (applicability|name snippetgroup snippet value)
+        (applicability|vardeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))))
 
 
 (defn
@@ -224,9 +242,9 @@ damp.ekeko.snippets.operatorsrep
 (defn
   validity|variable
   [snippetgroup snippet value operandvalue]
-  (and 
-    (string? operandvalue)
-    (= (first operandvalue) \?)))
+  (and
+    (symbol operandvalue)
+    (= (first (str operandvalue)) \?)))
 
 ;(defn
 ;  validity|variable-typed
@@ -268,8 +286,6 @@ damp.ekeko.snippets.operatorsrep
 ;  (and 
 ;    (string? operandvalue)
 ;    (= (first operandvalue) \?)))
-
-
 
 (defn
   instance-of-classkeyword-assignable-to-property?
@@ -597,7 +613,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive referred-by."
      opscope-subject
-     applicability|always
+     applicability|vardeclaration
      "Requires matches to be referred to lexically by the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
@@ -1015,6 +1031,18 @@ damp.ekeko.snippets.operatorsrep
      )
    
    
+   (Operator. 
+     "generalize-references"
+     operators/generalize-references
+     :generalization
+     "Generalize variable references."
+     opscope-subject
+     applicability|vardeclaration
+     "Generalizes all references to given variable declaration node in the snippet."
+     [])
+   
+     
+   
    ])
 
 (defn 
@@ -1074,8 +1102,6 @@ damp.ekeko.snippets.operatorsrep
 
 ;; Operand validation
 ;; ------------------
-
-
 
 (defn
   validate-newvalue-for-operandbinding
@@ -1174,14 +1200,14 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node operator operand]
   (if
     (= (operator-id operator) "add-directive-equals")
-    [(str (util/gen-lvar))]
+    [(util/gen-lvar)]
     (let [uservars
           (apply concat (map 
                           matching/snippet-vars-among-directivebindings
                           (snippetgroup/snippetgroup-snippetlist snippetgroup)))]
       (if (empty? uservars)
-        [(str (util/gen-readable-lvar-for-value node))]
-        (map str uservars)))
+        [(util/gen-readable-lvar-for-value node)]
+        uservars))
     ))
 
 (defmethod
