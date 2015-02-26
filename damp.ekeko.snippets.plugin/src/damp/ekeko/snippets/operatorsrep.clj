@@ -198,7 +198,25 @@ damp.ekeko.snippets.operatorsrep
   (and 
     (applicability|node snippetgroup snippet value)
     (> (count (clojure.string/split (.toString value) #"\.")) 1)))
-  
+
+(defn
+  applicability|name
+  [snippetgroup snippet value]  
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (some #{(astnode/ekeko-keyword-for-class-of value)} [:SimpleName :QualifiedName])))
+          
+(defn
+  applicability|vardeclaration
+  [snippetgroup snippet value]  
+  (and
+    (applicability|node snippetgroup snippet value)
+    (or
+      (some #{(astnode/ekeko-keyword-for-class-of value)}
+            [:VariableDeclarationFragment :SingleVariableDeclaration])
+      (and
+        (applicability|name snippetgroup snippet value)
+        (applicability|vardeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))))
 
 
 (defn
@@ -554,7 +572,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive referred-by."
      opscope-subject
-     applicability|always
+     applicability|vardeclaration
      "Requires matches to be referred to lexically by the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)])
    
@@ -971,6 +989,18 @@ damp.ekeko.snippets.operatorsrep
      []
      )
    
+   
+   (Operator. 
+     "generalize-references"
+     operators/generalize-references
+     :generalization
+     "Generalize variable references."
+     opscope-subject
+     applicability|vardeclaration
+     "Generalizes all references to given variable declaration node in the snippet."
+     [])
+   
+     
    
    ])
 
