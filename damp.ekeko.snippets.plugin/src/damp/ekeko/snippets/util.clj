@@ -117,3 +117,17 @@
       (spit (str ~y ".txt") (str x# "\n") :append true :create true)
       x#)
     `~x))
+
+; Source: http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
+(defmacro with-timeout
+  "Execute the given body in a new future.
+   A TimeoutException is thrown if the execution takes longer than a certain amount of milliseconds."
+  [millis & body]
+  `(let [future# (future ~@body)]
+     (try
+       (.get future# ~millis java.util.concurrent.TimeUnit/MILLISECONDS)
+       (catch java.util.concurrent.TimeoutException x# 
+         (do
+           (println "Timed out!!")
+           (future-cancel future#)
+           nil)))))
