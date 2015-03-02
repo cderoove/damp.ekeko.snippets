@@ -60,7 +60,7 @@ damp.ekeko.snippets.matching
                  (swap! matched-nodes (fn [x] (clojure.set/union x #{node-var})))
                  true)))
 (defn reset-matched-nodes []
-  (println (count @matched-nodes))
+;  (println (count @matched-nodes))
   (reset! matched-nodes {}))
 
 ;(def max-depth (atom 0))

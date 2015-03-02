@@ -22,34 +22,40 @@
   "Compute the fitness of an individual (if this hasn't been done before)
    and return the individual with its fitness values filled in."
   [individual fitness-func]
-  (if (nil? (:fitness-overall individual))
-    (let [[overall components] (fitness-func (:templategroup individual))]
-      (assoc
-        (assoc individual :fitness-overall overall)
-        :fitness-components components))
-    individual))
+  (try  (if (nil? (:fitness-overall individual))
+         (let [[overall components] (fitness-func (:templategroup individual))]
+           (-> individual
+             (assoc :fitness-overall overall)
+             (assoc :fitness-components components)))
+         individual)
+    
+    (catch Exception e
+      (println "!!!")
+      (inspector-jay.core/inspect individual)
+      )
+    ))
 
-(defn get-templategroup 
+(defn individual-templategroup 
   [individual]
   (:templategroup individual))
 
-(defn get-fitness
+(defn individual-fitness
   [individual]
   (:fitness-overall individual))
 
-(defn get-fitness-components
+(defn individual-fitness-components
   [individual]
   (:fitness-components individual))
 
-(defn get-all-info
+(defn individual-all-info
   [individual]
   (:info individual))
 
-(defn get-info
+(defn individual-info
   [individual key]
   (key (:info individual)))
 
-(defn add-info
+(defn individual-add-info
   [individual info-map]
   (let [old-info (:info individual)
         new-info (merge old-info info-map)]

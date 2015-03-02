@@ -56,8 +56,8 @@
              "add-directive-invokes"
              "add-directive-invokedby"
              "restrict-scope-to-child"
-             "relax-scope-to-child+"
-             "relax-scope-to-child*"
+            ; "relax-scope-to-child+"
+            ; "relax-scope-to-child*"
              "relax-size-to-atleast"
              "relax-scope-to-member"
              "consider-set|lst"
@@ -81,6 +81,7 @@
    :mutation-weight 3/4
    :crossover-weight 0/4
    
+   :fitness-function fitness/make-fitness-function
    :fitness-weights [19/20 1/20]
    :fitness-threshold 0.95
    
@@ -153,7 +154,7 @@
   "Perform a mutation operation on a template group. A random node is chosen among the snippets,
    and a random operation is applied to it, in order to mutate the snippet."
   [individual operators]
-  (let [snippetgroup (individual/get-templategroup individual)
+  (let [snippetgroup (individual/individual-templategroup individual)
         ;group-copy (persistence/copy-snippetgroup snippetgroup)
         group-copy snippetgroup
         snippet (rand-snippet group-copy)
@@ -251,8 +252,8 @@
    Returns a vector containing the two crossed-over snippets"
   [ind1 ind2]
   (let
-    [snippetgroup1 (individual/get-templategroup ind1)
-     snippetgroup2 (individual/get-templategroup ind2)
+    [snippetgroup1 (individual/individual-templategroup ind1)
+     snippetgroup2 (individual/individual-templategroup ind2)
      group-copy1 (persistence/copy-snippetgroup snippetgroup1)
      group-copy2 (persistence/copy-snippetgroup snippetgroup2)
      ; Get two random snippets
@@ -298,73 +299,98 @@
   evolve
   "Look for a template that is able to match with a number of snippets, using genetic search
    @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
-   @param config           A map containing configuration parameters; see config-default for an example."
-  [verifiedmatches config]
+   @param conf             Configuration keyword arguments; see config-default for all default values"
+  [verifiedmatches & {:as conf}]
   (let
-    [fitness (fitness/make-fitness-function verifiedmatches config)
+    [config (merge config-default conf)
+     fitness ((:fitness-function config) verifiedmatches config)
      set-fit (fn [individual] (individual/compute-fitness individual fitness))
      sort-by-fitness (fn [population]
                        (sort-by
-                         (fn [x] (individual/get-fitness x))
+                         (fn [x] (individual/individual-fitness x))
                          (map (fn [ind] (individual/compute-fitness ind fitness)) 
                               population)))
      initial-pop (sort-by-fitness (population-from-snippets (:positives verifiedmatches))) 
      tournament-size (:tournament-rounds config)] 
-    (loop 
+    (loop
       [generation 0
        population initial-pop
        history #{}]
-      (let [best (last population)
-            best-fitness (individual/get-fitness best)
-            is-viable (fn [individual]
-                        (and  
-                          ; We ignore the individuals we've seen before
-                          (not (contains? history (hash individual)))
-                          ; .. and those with fitness 0
-                          (pos? (individual/get-fitness individual))))
-            new-history (clojure.set/union
-                          history
-                          (set (map hash population)))]
+      (let [new-history (atom history)
+            best (last population)
+            best-fitness (individual/individual-fitness best)
+            history-hash (fn [individual] 
+                           (hash (individual/individual-templategroup individual)))
+            in-history (fn [individual]
+                         (contains? @new-history (history-hash individual)))
+            
+            preprocess (fn [individual]
+                         (if (not (in-history individual))
+                           (let
+                             [ind (individual/compute-fitness individual fitness)]
+                             (swap! new-history
+                                    (fn [x] (clojure.set/union x #{(history-hash individual)})))
+                             (if (pos? (individual/individual-fitness ind)) 
+                               ind))))
+            
+            ;            is-viable (fn [individual]
+            ;                        (and
+            ;                          ; We ignore the individuals we've seen before
+            ;                          (not (contains? history (history-hash individual)))
+            ;                          ; .. and those with fitness 0
+            ;                          (util/dbg (pos? (individual/individual-fitness individual)))
+            ;                          ))
+            ;            
+            ;            new-history (clojure.set/union
+            ;                          history
+            ;                          (set (map history-hash population)))
+            ]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
-        (println "Fitnesses:" (map individual/get-fitness population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/get-templategroup best)))
-
+        (println "Fitnesses:" (map individual/individual-fitness population))
+        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
+        
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
-            (println "Success:" (persistence/snippetgroup-string (individual/get-templategroup best)))
-            (recur 
+            (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
+            (recur
               (inc generation)
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
-                   ; Mutation
-                   (util/viable-repeat
-                     (* (:mutation-weight config) (count population))
-                     #(set-fit (mutate (select population tournament-size) (:mutation-operators config))) 
-                     is-viable)
-                   ; Crossover (Note that each crossover operation produces a pair)
-                   (apply concat
-                          (util/viable-repeat 
-                            (* (/ (:crossover-weight config) 2) (count population))
-                            #(crossover
-                               (set-fit (select population tournament-size))
-                               (set-fit (select population tournament-size)))
-                            (fn [x] (and (is-viable (first x)) (is-viable (second x))))))
-                   ; Selection
-                   (util/viable-repeat 
-                     (* (:selection-weight config) (count population)) 
-                     #(select population tournament-size) 
-                     (fn [x] true))))
-              new-history)))))))
+                  ; Mutation
+                  (util/viable-repeat
+                    (* (:mutation-weight config) (count population))
+                    #(preprocess (mutate (select population tournament-size) (:mutation-operators config)))
+                    (fn [x] (not (nil? x))))
+                  
+                  ; Crossover (Note that each crossover operation produces a pair)
+                  (apply concat
+                         (util/viable-repeat 
+                           (* (/ (:crossover-weight config) 2) (count population))
+                           #(map preprocess
+                                 (crossover
+                                   (select population tournament-size)
+                                   (select population tournament-size)))
+                           (fn [x] (not (some? nil? x)))))
+                  
+                  ; Selection
+                  (util/viable-repeat 
+                    (* (:selection-weight config) (count population)) 
+                    #(select population tournament-size) 
+                    (fn [x] true))))
+              @new-history)))))))
 
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (fitness/templategroup-matches templategroup 10000))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches (merge config-default {:max-generations 25}))
+  (evolve verifiedmatches
+          :max-generations 25
+          :fitness-weights [20/20 0/20]
+          :match-timeout 2000)
   
   (damp.ekeko.snippets.matching/reset-matched-nodes)
   (def templategroup

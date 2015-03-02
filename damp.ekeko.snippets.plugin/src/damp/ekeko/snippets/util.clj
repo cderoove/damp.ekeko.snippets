@@ -109,14 +109,14 @@
 (def log-enabled true)
 
 (defmacro log
-  "Identity function, that writes x to file y.txt as a side-effect.
-   If the file already exists, x is appended."
-  [x y]
+  "Identity function, that writes msg to file-name.txt as a side-effect.
+   If the file already exists, msg is appended."
+  [file-name msg]
   (if log-enabled
-    `(let [x# ~x] 
-      (spit (str ~y ".txt") (str x# "\n") :append true :create true)
-      x#)
-    `~x))
+    `(let [msg# ~msg] 
+      (spit (str ~file-name ".txt") (str msg# "\n") :append true :create true)
+      msg#)
+    `~msg))
 
 ; Source: http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
 (defmacro with-timeout

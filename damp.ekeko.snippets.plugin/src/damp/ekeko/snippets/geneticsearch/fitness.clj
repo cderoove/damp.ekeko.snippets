@@ -174,11 +174,6 @@
               ;            lengthscore (/ 1 (template-size templategroup))
               ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
               ]
-          ;        (util/log
-          ;          (str (persistence/snippetgroup-string templategroup)
-          ;               "\nF-score:" fscore
-          ;               "\nPartial:" partialscore)
-          ;          "fitness")
           [(+
              (* (nth weights 0) fscore)
              (* (nth weights 1) partialscore))
@@ -191,6 +186,6 @@
                            "\nTemplate\n"
                            (persistence/snippetgroup-string templategroup)
                            "Last operation applied:" 
-                           (:mutation-operator (meta templategroup))
+;                           (:mutation-operator (meta templategroup))
                            "--------\n\n"))
             0))))))
