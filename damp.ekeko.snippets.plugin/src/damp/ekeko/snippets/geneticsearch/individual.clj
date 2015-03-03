@@ -4,6 +4,7 @@
   damp.ekeko.snippets.geneticsearch.individual)
 
 (defrecord 
+  ^{:doc "An individual in a population"}
   Individual
   [templategroup
    fitness-overall    ; Overall fitness value
@@ -31,7 +32,7 @@
     
     (catch Exception e
       (println "!!!")
-      (inspector-jay.core/inspect individual)
+      ;(inspector-jay.core/inspect individual)
       )
     ))
 

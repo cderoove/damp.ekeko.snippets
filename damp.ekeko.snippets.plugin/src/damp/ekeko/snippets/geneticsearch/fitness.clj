@@ -14,7 +14,6 @@
             [damp.ekeko.jdt
              [astnode :as astnode]
              [rewrites :as rewrites]])
-  (:require [inspector-jay [core :as jay]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -27,21 +26,17 @@
              [directives :as directives]
              [transformation :as transformation]])
   (:import [ec.util MersenneTwister]
-           [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel])
-  )
-
-
-
+           [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
 
 (defn templategroup-matches
   "Given a templategroup, look for all of its matches in the code
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
   [templategroup timeout]
-  (into #{} 
+  (into #{}
         (util/with-timeout timeout 
           (eval (querying/snippetgroup-query|usingpredicates 
                   templategroup 'damp.ekeko/ekeko 
-                  [`(damp.ekeko.logic/succeeds (do (matching/reset-matched-nodes) true))]
+                  [`(damp.ekeko.logic/succeeds (do (new-match) true))]
                   '() true)))))
 
 (defn 
@@ -135,6 +130,58 @@
 ;    (apply + (for [x snippets]
 ;               (count (snippet/snippet-nodes x))))))
 
+
+
+(defrecord MatchedNodes
+  [in-progress ; Set of nodes that have matched in the current attempt to match with a snippet
+   done        ; List of how many nodes matched in the previous attempts
+   ])
+
+(def ^:dynamic matched-nodes (atom (MatchedNodes. #{} [])))
+
+(defn partialmatch-score
+  "Compute the partial matching score of the last templategroup that we tried to match
+   @param node-count number of nodes in that last templategroup"
+  [node-count]
+  (let [partial-matches
+        (remove 
+          (fn [x] (= x node-count))
+          (:done @matched-nodes))]
+    (if (empty? partial-matches)
+      0
+      (/ (apply max partial-matches) node-count))))
+
+(defn register-match [match]
+  (swap! matched-nodes 
+         (fn [x]
+           (assoc x :in-progress
+                  (clojure.set/union (:in-progress x) #{match})))))
+
+(defn add-match [node-var]
+  ; !!! Very subtle! node-var will not be projected to a node because it doesn't start with a ?
+  ; ... The logic variable is what we want! It's trickier to map a node to a unique identifier..
+  (damp.ekeko.logic/perform (register-match (:oname node-var))))
+
+(defn new-match []
+  (swap! matched-nodes (fn [x]
+                         (-> x
+                           (assoc :done (conj (:done x) (count (:in-progress x))))
+                           (assoc :in-progress #{})))))
+
+(defn reset-matched-nodes []
+  (reset! matched-nodes (MatchedNodes. #{} [])))
+
+;(def max-depth (atom 0))
+;(defn set-depth [depth]
+;  (el/succeeds (do
+;                 (if (> depth @max-depth)
+;                   (swap! max-depth (fn [x] depth))) 
+;                 true)))
+;(defn reset-max-depth []
+;  (reset! max-depth 0))
+
+
+
 (defn create-partial-model
   "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
   [verifiedmatches]
@@ -144,17 +191,26 @@
         (.addExistingAST partialmodel match)))
     partialmodel))
 
-(def partial-matches
-  (clojure.core/memoize
-    (fn [templategroup partialmodel]
-;      (matching/reset-matched-nodes)
-      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
-;                damp.ekeko.snippets.matching/matched-nodes (atom #{})
-                ]
-        (templategroup-matches templategroup 10000))
-      (/ 
-        (count @matching/matched-nodes)
-        (count (snippetgroup/snippetgroup-nodes templategroup))))))
+;(def partial-matches-old
+;  (clojure.core/memoize
+;    (fn [templategroup partialmodel]
+;      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
+;
+;                ]
+;        (templategroup-matches templategroup 10000))
+;      (/ 
+;        (count @matching/matched-nodes)
+;        (count (snippetgroup/snippetgroup-nodes templategroup))))))
+
+
+(defn partial-matches
+  [templategroup partialmodel timeout]
+  (reset-matched-nodes)
+;  (templategroup-matches templategroup timeout)
+  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+    (templategroup-matches templategroup timeout))
+  (new-match)
+  (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))
 
 (defn
   make-fitness-function
@@ -168,7 +224,7 @@
       (try
         (let [matches (templategroup-matches templategroup (:match-timeout config))
               fscore (fmeasure matches verifiedmatches)
-              partialscore (partial-matches templategroup partialmodel)
+              partialscore (partial-matches templategroup partialmodel (:match-timeout config))
               weights (:fitness-weights config)
               ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
               ;            lengthscore (/ 1 (template-size templategroup))

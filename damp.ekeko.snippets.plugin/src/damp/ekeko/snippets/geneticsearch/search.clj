@@ -75,7 +75,7 @@
   ^{:doc "Default configuration options in the genetic search algorithm"}
   config-default
   {:max-generations 5
-   :population-size 100
+   :population-size 10
    
    :selection-weight 1/4
    :mutation-weight 3/4
@@ -116,14 +116,17 @@
 
 (defn
   population-from-snippets
-  "Generate an initial population of individuals based on the desired matches"
-  [matches]
+  "Generate an initial population of individuals based on the desired matches
+   (In case population-size is larger than the number of matches,
+    we cycle through the matches again until the population is filled..)"
+  [matches population-size]
   (let [id-templates 
         (map-indexed
           (fn [idx snippet] 
             (individual-from-snippet snippet (str "Offspring of snippet " idx)))
           matches)]
-    (mapcat identity (repeat 1 id-templates))))
+    (for [x (range 0 population-size)]
+      (nth id-templates (mod x (count matches))))))
 
 (defn- rand-snippet [snippetgroup]
   (-> snippetgroup
@@ -155,8 +158,8 @@
    and a random operation is applied to it, in order to mutate the snippet."
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
-        ;group-copy (persistence/copy-snippetgroup snippetgroup)
-        group-copy snippetgroup
+        group-copy (persistence/copy-snippetgroup snippetgroup)
+        ;group-copy snippetgroup ; I think we still need to make a copy to be safe.. Otherwise we can get stuck mutating a template over and over and it always has fitness 0..
         snippet (rand-snippet group-copy)
         
         pick-operator
@@ -177,6 +180,8 @@
               [operator (rand-nth all-valid-nodes)])))
         
         [operator value] (pick-operator)
+        
+;        tmp (println (operatorsrep/operator-id operator))
         operands (operatorsrep/operator-operands operator)
         
         operandvalues
@@ -310,7 +315,7 @@
                          (fn [x] (individual/individual-fitness x))
                          (map (fn [ind] (individual/compute-fitness ind fitness)) 
                               population)))
-     initial-pop (sort-by-fitness (population-from-snippets (:positives verifiedmatches))) 
+     initial-pop (sort-by-fitness (population-from-snippets (:positives verifiedmatches) (:population-size config))) 
      tournament-size (:tournament-rounds config)] 
     (loop
       [generation 0
@@ -330,25 +335,12 @@
                              [ind (individual/compute-fitness individual fitness)]
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
-                             (if (pos? (individual/individual-fitness ind)) 
-                               ind))))
-            
-            ;            is-viable (fn [individual]
-            ;                        (and
-            ;                          ; We ignore the individuals we've seen before
-            ;                          (not (contains? history (history-hash individual)))
-            ;                          ; .. and those with fitness 0
-            ;                          (util/dbg (pos? (individual/individual-fitness individual)))
-            ;                          ))
-            ;            
-            ;            new-history (clojure.set/union
-            ;                          history
-            ;                          (set (map history-hash population)))
-            ]
+                             (if (pos? (first (individual/individual-fitness-components ind))) 
+                               ind))))]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
-        (println "Fitnesses:" (map individual/individual-fitness population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
+        (println "Fitnesses:" (map individual/individual-fitness-components population))
+;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
         
         (when (< generation (:max-generations config))
           (if
@@ -389,15 +381,29 @@
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
           :max-generations 25
-          :fitness-weights [20/20 0/20]
-          :match-timeout 2000)
+          :fitness-weights [18/20 2/20]
+          :match-timeout 2000
+          :selection-weight 1/4
+          :mutation-weight 3/4
+          :population-size 10)
   
-  (damp.ekeko.snippets.matching/reset-matched-nodes)
+  (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
 ;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
-  (templategroup-matches templategroup 10000)  
-  (count @damp.ekeko.snippets.matching/matched-nodes)
+  (fitness/templategroup-matches templategroup 10000) 
+  @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
+  (count (snippetgroup/snippetgroup-nodes templategroup))
+  
+  (damp.ekeko.snippets.matching/reset-matched-nodes)
+  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
+  @damp.ekeko.snippets.matching/matched-nodes
+  (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
+  
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
+                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
+  
+  
   )
 
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)

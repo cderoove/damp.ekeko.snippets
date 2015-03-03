@@ -15,6 +15,7 @@
              [transformation :as transformation]
              ])
   (:require [damp.ekeko.snippets.geneticsearch
+             [fitness :as fitness]
              [search :as search]])
   (:require [test.damp [ekeko :as test]])
   (:require [damp.ekeko.jdt 
@@ -40,19 +41,19 @@
   ^{:doc "Precision, recall and F-score should be 1 for the oracle template"}
   precision-recall 
   (let [templategroup (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
-        matches (search/templategroup-matches templategroup)
+        matches (fitness/templategroup-matches templategroup)
         verifiedmatches (search/make-verified-matches matches [])
         ]
-    (is (= 1 (search/precision matches verifiedmatches)))
-    (is (= 1 (search/recall matches verifiedmatches)))
-    (is (= 1 (search/fmeasure matches verifiedmatches)))))
+    (is (= 1 (fitness/precision matches verifiedmatches)))
+    (is (= 1 (fitness/recall matches verifiedmatches)))
+    (is (= 1 (fitness/fmeasure matches verifiedmatches)))))
 
 (deftest
   ^{:doc "Filtered Ekeko query (used when determining partial matches),
           where we only query among a given set of AST nodes"}
   filtered-query
   (let [templategroup (snippetgroup-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
-        matches (search/templategroup-matches templategroup)
+        matches (fitness/templategroup-matches templategroup)
         partialmodel (new PartialJavaProjectModel)]
     (.addExistingAST partialmodel (first (first matches)))
     (is (= 2 (count (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
@@ -85,15 +86,18 @@
 
 (deftest
   ^{:doc "Try to infer scam_demo1.ekx's left-hand-side template"}
-  scam-demo1 
+  scam-demo 
   (let [templategroup (transformation/transformation-lhs (snippetgroup-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx"))
-        matches (into [] (search/templategroup-matches templategroup))
+        matches (into [] (fitness/templategroup-matches templategroup 10000))
         cherry-picked-matches [(nth matches 0) ; Choose some of the shorter snippets to speed up the process..
                                (nth matches 1)
                                (nth matches 3)
                                (nth matches 7)]
         verifiedmatches (search/make-verified-matches cherry-picked-matches [])]
-    (search/evolve verifiedmatches 10)))
+    (search/evolve verifiedmatches
+                   :max-generations 50
+                   :fitness-weights [20/20 0/20]
+                   :match-timeout 10000)))
 
 
 ;; Test suite
@@ -102,9 +106,11 @@
 (deftest
    test-suite
    (let [testproject "TestCase-JDT-CompositeVisitor"
+         metamodel "TestCase-TypeParameters"
          matchproject "TestCase-EkekoX-Matching"]
      (test/against-project-named testproject false precision-recall)
-     (test/against-project-named testproject false filtered-query)))
+     (test/against-project-named testproject false filtered-query)
+     (test/against-project-named metamodel false scam-demo)))
 
 (defn test-ns-hook []
   (test/with-ekeko-disabled test-suite))

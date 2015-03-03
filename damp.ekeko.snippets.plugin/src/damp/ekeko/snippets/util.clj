@@ -83,7 +83,7 @@
             :default
             (throw (Exception. "Don't know how to walk this value."))))))))
 
-
+; TODO: Maybe throw an exception after we retried X times? To avoid infinite recursions..
 (defn viable-repeat 
   "Keep on applying func until we get cnt results for which test-func is true
    @param cnt  We want this many viable results

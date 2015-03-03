@@ -56,9 +56,6 @@
           (when-not 
             (snippet-value-conditions-already-generated? snippet val)
             (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
-      
-      ; Partial matching CCC; reset the counter if we reach the end of the query
-;      (swap! query concat [`(el/succeeds (do (matching/reset-matched-nodes) true))])
       @query)))
 
 (declare snippet-uservars)
@@ -276,8 +273,7 @@
         (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
         additionalconditions)
       additionalrootvars
-      hideuservars
-      )))
+      hideuservars)))
 
 
 ; Converting snippet group to rewrite query
