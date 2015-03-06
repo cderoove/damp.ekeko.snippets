@@ -655,7 +655,7 @@ damp.ekeko.snippets.operators
 
 (defn
   generalize-references
-  "Generalizes all references in the snippet o given variable declaration node or its name."
+  "Generalizes all references in the snippet to the given variable declaration node or its name."
   [snippet node]
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when 
@@ -664,6 +664,39 @@ damp.ekeko.snippets.operators
         (some #{(astnode/ekeko-keyword-for-class-of node)} [:SimpleName :QualifiedName])
         (generalize-references|name snippet node binding)
         (generalize-references|vardec snippet node binding)))))
+
+
+(defn 
+  generalize-types|type 
+  [snippet node]
+  "Generalizes all references in the snippet that refer to the same type as the given type reference."
+  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+    (when (astnode/binding-type? binding)
+      (let [typevar (util/gen-lvar "type")]
+        (reduce
+          (fn [snippetsofar resolvingnode]
+            (add-directive-type
+              (replace-by-wildcard snippetsofar resolvingnode)
+              resolvingnode typevar))
+          snippet
+          (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))))))
+    
+
+(defn
+  generalize-types
+  "Generalizes all references in the snippet to the same type as the given type reference."
+  [snippet typenode]
+  (generalize-types|type snippet typenode))
+
+
+
+
+  
+
+;todo:
+;generalize-commonsupertype (subtype toevoegen)
+  
+
 
 
 (defn
