@@ -634,16 +634,16 @@ damp.ekeko.snippets.snippet
         (.get ^List lst-raw idx))))
 
 
-(defn
+(def
   snippet-corresponding-projectvalue-for-snippetvalue
   "Returns the JDT value from the snippet's project anchor that corresponds to the given snippet value, if it still exists."
-  [snippet value]
-  (if-let [rootinproject 
-           (snippet-anchor|resolved snippet)]
-    (let [valueid 
-          (snippet-value-identifier snippet value)]
-      (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))
-
+  (memoize 
+    (fn [snippet value]
+      (if-let [rootinproject 
+               (snippet-anchor|resolved snippet)]
+        (let [valueid 
+              (snippet-value-identifier snippet value)]
+          (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))))
 
 
 (defn
