@@ -1080,6 +1080,16 @@ damp.ekeko.snippets.operatorsrep
      "Generalizes all references to given type in the snippet."
      [])
    
+   (Operator. 
+     "generalize-types|qname"
+     operators/generalize-types|qname
+     :generalization
+     "Generalize type references, preserve qualified name."
+     opscope-subject
+     applicability|typeortypename
+     "Generalizes all references to given type in the snippet, while preserving its qualified name."
+     [])
+
    ])
 
 (defn 
@@ -1202,9 +1212,11 @@ damp.ekeko.snippets.operatorsrep
                                       (apply-operator-to-snippetgroup snippetgroup subject-template subject-node operator bindings)))
   ([snippetgroup snippet value operator bindings] ;regular call 
                                                   (validate-operandbindings snippetgroup snippet value operator bindings) 
-                                                  (let [newsnippet
-                                                        (apply-operator snippet (operator-operator operator) value (map binding-value (rest bindings)))]
-                                                    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet))))
+                                                  ;;some operators return nil if something goes wrong
+                                                  (if-let [newsnippet 
+                                                           (apply-operator snippet (operator-operator operator) value (map binding-value (rest bindings)))]
+                                                    (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet)
+                                                    snippetgroup)))
 
 
 
