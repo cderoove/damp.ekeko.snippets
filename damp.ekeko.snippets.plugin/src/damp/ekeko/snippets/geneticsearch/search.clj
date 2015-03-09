@@ -76,6 +76,7 @@
   config-default
   {:max-generations 5
    :population-size 10
+   :initial-population nil ; If nil, the initial population is generated from the verified matches
    
    :selection-weight 1/4
    :mutation-weight 3/4
@@ -96,25 +97,25 @@
   VerifiedMatches
   [positives negatives])
 
-(defn make-verified-templates
+(defn make-verified-matches
   [positives negatives]
   (VerifiedMatches. (into #{} positives)
                     (into #{} negatives)))
 
-(defn
-  make-verified-matches
-  "Create a record of verified matches, consisting of a number of positive and negative matches.
-   The positive ones are those that the resulting template must match;
-   the negative one are those it may not match."
-  [positives negatives]
-  (let [to-templates 
-        (fn [matches]
-          (map-indexed
-            (fn [idx snippet]
-              (snippetgroup/make-snippetgroup 
-                (str "Offspring of snippet " idx) (map matching/snippet-from-node snippet)))
-            matches))]
-    (make-verified-templates (to-templates positives) (to-templates negatives))))
+;(defn
+;  make-verified-matches
+;  "Create a record of verified matches, consisting of a number of positive and negative matches.
+;   The positive ones are those that the resulting template must match;
+;   the negative one are those it may not match."
+;  [positives negatives]
+;  (let [to-templates 
+;        (fn [matches]
+;          (map-indexed
+;            (fn [idx snippet]
+;              (snippetgroup/make-snippetgroup 
+;                (str "Offspring of snippet " idx) (map matching/snippet-from-node snippet)))
+;            matches))]
+;    (make-verified-templates (to-templates positives) (to-templates negatives))))
 
 
 
@@ -128,21 +129,26 @@
        name (map matching/snippet-from-node snippet)))))
 
 (defn
+  population-from-snippets
+  "Generate an initial population of individuals based on the desired matches
+   (In case population-size is larger than the number of matches,
+    we cycle through the matches again until the population is filled..)"
+  [matches population-size]
+  (let [id-templates 
+        (map-indexed
+          (fn [idx snippet] 
+            (individual-from-snippet snippet (str "Offspring of snippet " idx)))
+          matches)]
+    (for [x (range 0 population-size)]
+      (nth id-templates (mod x (count matches))))))
+
+(defn
   population-from-templates
   "Generate an initial population of individuals based on the desired templates
    (In case population-size is larger than the number of matches,
     we cycle through the matches again until the population is filled..)"
   [templates population-size]
-  (let [id-templates 
-        (map individual/make-individual templates)
-        
-;        (map-indexed
-;          (fn [idx snippet]
-;            (if (snippetgroup/snippetgroup? snippet)
-;              (util/dbg snippet) ; If it's already a template group..
-;              (util/dbg (individual-from-snippet snippet (str "Offspring of snippet " idx)))))
-;          matches)
-        ]
+  (let [id-templates (map individual/make-individual templates)]
     (for [x (range 0 population-size)]
       (nth id-templates (mod x (count templates))))))
 
@@ -333,7 +339,9 @@
                          (fn [x] (individual/individual-fitness x))
                          (map (fn [ind] (individual/compute-fitness ind fitness)) 
                               population)))
-     initial-pop (sort-by-fitness (population-from-templates (:positives verifiedmatches) (:population-size config))) 
+     initial-pop (sort-by-fitness (if (nil? (:initial-population config))
+                                    (population-from-snippets (:positives verifiedmatches) (:population-size config))
+                                    (:initial-population config))) 
      tournament-size (:tournament-rounds config)] 
     (loop
       [generation 0
@@ -415,13 +423,13 @@
   @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
   (count (snippetgroup/snippetgroup-nodes templategroup))
   
-;  (damp.ekeko.snippets.matching/reset-matched-nodes)
-;  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
-;  @damp.ekeko.snippets.matching/matched-nodes
-;  (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
-;  
-;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
-;                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
+  (damp.ekeko.snippets.matching/reset-matched-nodes)
+  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
+  @damp.ekeko.snippets.matching/matched-nodes
+  (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
+  
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
+                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
   
   (inspector-jay.core/inspect (clojure.xml/parse (new java.io.File "P-MARt.xml")))
   

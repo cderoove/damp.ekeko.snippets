@@ -105,14 +105,19 @@
 (deftest
   ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}
   singleton-experiment
-  (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt")
+  (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt") 
         singleton2 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt")
-        verifiedmatches (search/make-verified-templates [singleton1 singleton2] [])]
+        matches (concat 
+                  (into [] (fitness/templategroup-matches singleton1 10000))
+                  (into [] (fitness/templategroup-matches singleton2 10000)))
+        verifiedmatches (search/make-verified-matches matches [])]
+    (println "Starting...")
     (search/evolve verifiedmatches
-                   :max-generations 0
-                   :population-size 10
+                   :max-generations 5
+                   :initial-population (search/population-from-templates [singleton1 singleton2] 10)
                    :fitness-weights [20/20 0/20]
-                   :match-timeout 10000)))
+                   :match-timeout 10000)
+    ))
 
 ;; Test suite
 ;; ----------
