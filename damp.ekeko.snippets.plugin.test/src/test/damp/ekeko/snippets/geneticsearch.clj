@@ -99,6 +99,20 @@
                    :fitness-weights [20/20 0/20]
                    :match-timeout 10000)))
 
+;; Design patterns experiments
+;; ---------------------------
+
+(deftest
+  ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}
+  singleton-experiment
+  (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt")
+        singleton2 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt")
+        verifiedmatches (search/make-verified-templates [singleton1 singleton2] [])]
+    (search/evolve verifiedmatches
+                   :max-generations 0
+                   :population-size 10
+                   :fitness-weights [20/20 0/20]
+                   :match-timeout 10000)))
 
 ;; Test suite
 ;; ----------
@@ -107,10 +121,13 @@
    test-suite
    (let [testproject "TestCase-JDT-CompositeVisitor"
          metamodel "TestCase-TypeParameters"
-         matchproject "TestCase-EkekoX-Matching"]
+         matchproject "TestCase-EkekoX-Matching"
+         designpatterns "DesignPatterns"
+         jhotdraw "JHotDraw51"]
      (test/against-project-named testproject false precision-recall)
      (test/against-project-named testproject false filtered-query)
-     (test/against-project-named metamodel false scam-demo)))
+     (test/against-project-named metamodel false scam-demo)
+     (test/against-projects-named [jhotdraw designpatterns] false singleton-experiment)))
 
 (defn test-ns-hook []
   (test/with-ekeko-disabled test-suite))

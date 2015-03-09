@@ -187,8 +187,11 @@
   [verifiedmatches]
   (let [partialmodel (new PartialJavaProjectModel)]
     (doseq [matchgroup (:positives verifiedmatches)]
-      (doseq [match matchgroup]
-        (.addExistingAST partialmodel match)))
+      (let [ast-group 
+            (for [template (snippetgroup/snippetgroup-snippetlist matchgroup)]
+              (snippet/snippet-root template))]
+        (doseq [ast ast-group]
+          (.addExistingAST partialmodel ast))))
     partialmodel))
 
 ;(def partial-matches-old

@@ -32,6 +32,9 @@ damp.ekeko.snippets.snippetgroup
   [snippetgroup]
   (:snippetlist snippetgroup))
 
+(defn snippetgroup?
+  [snippetgroup]
+  (instance? SnippetGroup snippetgroup))
 
 (defn 
   snippetgroup-snippets-userqueries
