@@ -624,7 +624,7 @@ damp.ekeko.snippets.operators
       []
       nodes)))
   
-
+;todo: also for var references rather than simply their declarations
 (defn
   generalize-references
   "Generalizes all references to given variable declaration (name) node in the snippet."
@@ -633,7 +633,11 @@ damp.ekeko.snippets.operators
     (when 
       (astnode/binding-variable? binding)
       (let [resolvingnodes
-            (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+            (snippet/snippet-children-resolvingto 
+              snippet 
+              (snippet/snippet-root snippet) 
+              (fn [nodebinding]
+                (.isEqualTo binding nodebinding)))
             lowestlevelresolvingnodes
             (withoutimmediateparents snippet resolvingnodes)
             referredvar (util/gen-lvar "vardec")]
@@ -653,7 +657,6 @@ damp.ekeko.snippets.operators
             referredvar))))))
 
 
-
 (defn 
   generalize-types 
   [snippet node]
@@ -661,7 +664,11 @@ damp.ekeko.snippets.operators
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
       (let [resolvingnodes
-            (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+            (snippet/snippet-children-resolvingto 
+              snippet 
+              (snippet/snippet-root snippet) 
+              (fn [nodebinding]
+                (.isEqualTo binding nodebinding)))
             lowestlevelresolvingnodes
             (withoutimmediateparents snippet resolvingnodes)
             typevar 
@@ -694,10 +701,20 @@ damp.ekeko.snippets.operators
 
 ;todo:
 ;generalize-commonsupertype (subtype toevoegen)
+
+
+(defn 
+  generalize-types|commonsupertype 
+  [snippet node]
+  "Generalizes all references in the snippet that refer to the same type as the given type reference."
+  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+    (when (astnode/binding-type? binding)
+
   
 ;resolve type van node, 
 ;voor type en supertypes: snippet-children-resolvingto subtype (equality argument)
 ;stop voor eerste supertype (!= Object) waarvoor je meer dan 1 ref terugvindt
+
 
 
 

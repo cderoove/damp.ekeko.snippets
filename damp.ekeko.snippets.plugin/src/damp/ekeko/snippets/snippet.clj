@@ -659,15 +659,15 @@ damp.ekeko.snippets.snippet
   snippet-children-resolvingto
   "Recursive descent through a snippet that is anchored to a project,
    starting from root (inclusively), 
-   in search for nodes that resolve in to the given binding."
-  [snippet root binding] 
+   in search for nodes that resolve to a binding for which the given predicate succeeds."
+  [snippet root bindingpredicate]
   (let [children (atom '())] 
     (walk-snippet-element 
       snippet
       root 
       (fn [node] 
         (if-let [nodebinding (snippet-node-resolvedbinding snippet node)]
-          (when (.isEqualTo nodebinding binding)
+          (when (bindingpredicate nodebinding) 
             (swap! children conj node))))
       (fn [list])
       (fn [prim])
