@@ -666,21 +666,53 @@ damp.ekeko.snippets.operators
         (generalize-references|vardec snippet node binding)))))
 
 
+(defn-
+  withoutimmediateparents
+  "Removes the parents of the elements in the given seq of nodes."
+  [snippet nodes]
+  (let [nodesset (set nodes)]
+    (reduce 
+      (fn [sofar node]
+        (let [childrenset (set (snippet/snippet-node-children|conceptually snippet node))]
+          (if 
+            (empty? (clojure.set/intersection nodesset childrenset))
+            (conj sofar node)
+            sofar)))
+      []
+      nodes)))
+  
+
 (defn 
   generalize-types|type 
   [snippet node]
   "Generalizes all references in the snippet that refer to the same type as the given type reference."
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
-      (let [typevar (util/gen-lvar "type")]
-        (reduce
-          (fn [snippetsofar resolvingnode]
-            (add-directive-type
-              (replace-by-wildcard snippetsofar resolvingnode)
-              resolvingnode typevar))
-          snippet
-          (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))))))
-    
+     (let [resolvingnodes
+           (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+           typevar 
+           (util/gen-lvar "type")]
+       (reduce
+         (fn [snippetsofar resolvingnode]
+           ;(when 
+           ;  (some #{resolvingnode} 
+                       
+                      (add-directive-type
+                        ;(replace-by-wildcard snippetsofar resolvingnode)
+                        snippetsofar
+                        resolvingnode typevar))
+         snippet
+         ;strategy: always apply generalization to lowest-level nodes only
+         ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
+         (withoutimmediateparents snippet resolvingnodes))))))
+
+
+   
+;todo: 
+;-alleen toepassen als er meer dan 1 ref is
+;-----
+;-applicability niet van toepassing op nodes die al verdwenen zijn?
+
 
 (defn
   generalize-types
