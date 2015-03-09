@@ -436,8 +436,6 @@
         (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
         allvarsexceptrootsandlhsandusers
         (clojure.set/difference vars lhsuservars)]
-    (println changes)
-
     `((cl/fresh [~@snippetsruntimevars ~@rootvars  ~@allvarsexceptrootsandlhsandusers] 
            ~@instantiations
            ~@conditions-on-instantiations-without-grounding-of-root-node
@@ -456,33 +454,9 @@
           (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
           (snippetgroup-uservars snippetgroup|rhs)
           false)]
-    (clojure.pprint/pprint q)
+   ; (clojure.pprint/pprint q)
     q))
 
-
-(defn
-  uservars
-  [template]
-  (fn [a]
-    (let [snippet
-          (clojure.core.logic.protocols/walk a template)
-          uservars 
-          (snippet-uservars snippet)]
-      
-      (doseq [uservar  uservars]
-        (println
-          (clojure.core.logic.protocols/walk
-            a
-            (cl/lvar uservar false))))
-      
-      
-          
-      
-    
-    
-      ))
-  
-  )
 
 
 (defn
