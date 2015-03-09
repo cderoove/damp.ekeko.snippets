@@ -690,26 +690,24 @@ damp.ekeko.snippets.operators
     (when (astnode/binding-type? binding)
      (let [resolvingnodes
            (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+           lowestlevelresolvingnodes
+           (withoutimmediateparents snippet resolvingnodes)
            typevar 
            (util/gen-lvar "type")]
-       (reduce
-         (fn [snippetsofar resolvingnode]
-           ;(when 
-           ;  (some #{resolvingnode} 
-                       
-                      (add-directive-type
-                        ;(replace-by-wildcard snippetsofar resolvingnode)
-                        snippetsofar
-                        resolvingnode typevar))
-         snippet
-         ;strategy: always apply generalization to lowest-level nodes only
-         ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
-         (withoutimmediateparents snippet resolvingnodes))))))
-
-
+       (when 
+         (> 1 (count lowestlevelresolvingnodes))
+         (reduce
+           (fn [snippetsofar resolvingnode]
+             (add-directive-type
+               (replace-by-wildcard snippetsofar resolvingnode)
+               snippetsofar
+               resolvingnode typevar))
+           snippet
+           ;strategy: always apply generalization to lowest-level nodes only
+           ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
+           lowestlevelresolvingnodes))))))
    
 ;todo: 
-;-alleen toepassen als er meer dan 1 ref is
 ;-----
 ;-applicability niet van toepassing op nodes die al verdwenen zijn?
 
