@@ -18,10 +18,7 @@
              [gui]
              [runtime]
              [transformation]
-             [rewriting :as rewriting]
-             [public]
-             ;todo: fix
-             ;[datastore]
+             [rewriting :as rewriting] 
              ])
   (:require [damp.ekeko.snippets.geneticsearch 
              [search :as search]])
@@ -37,7 +34,7 @@
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]
   (let [q (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko*)]
-    (clojure.pprint/pprint q)
+    ;(clojure.pprint/pprint q)
     (eval q)))
 
 
@@ -46,7 +43,7 @@
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
   (let [q (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko)]
-    (clojure.pprint/pprint q)
+    ;(clojure.pprint/pprint q)
     (eval q)))
 
 (defn
@@ -54,7 +51,7 @@
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
   (let [q (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko* false)]
-    (clojure.pprint/pprint q)
+    ;(clojure.pprint/pprint q)
     (eval q)))
    
     
