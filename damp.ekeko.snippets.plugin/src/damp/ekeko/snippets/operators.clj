@@ -625,36 +625,56 @@ damp.ekeko.snippets.operators
       nodes)))
   
 ;todo: also for var references rather than simply their declarations
+
+
+
 (defn
   generalize-references
   "Generalizes all references to given variable declaration (name) node in the snippet."
-  [snippet node]
-  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
-    (when 
-      (astnode/binding-variable? binding)
-      (let [resolvingnodes
-            (snippet/snippet-children-resolvingto 
-              snippet 
-              (snippet/snippet-root snippet) 
-              (fn [nodebinding]
-                (.isEqualTo binding nodebinding)))
-            lowestlevelresolvingnodes
-            (withoutimmediateparents snippet resolvingnodes)
-            referredvar (util/gen-lvar "vardec")]
-        (when (> (count lowestlevelresolvingnodes) 1) 
-          (replace-by-variable 
-            (reduce 
-              (fn [snippetsofar resolvingnode]
-                (if 
-                  (= node resolvingnode)
-                  snippetsofar
-                  (add-directive-refersto 
-                    (replace-by-wildcard snippetsofar resolvingnode)
-                    resolvingnode referredvar)))
-              snippet
-              lowestlevelresolvingnodes)
-            node
-            referredvar))))))
+  [snippetgroup snippet node]
+  (let [vardecnodename 
+        (if 
+          (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
+          node
+          (.getName node))] ;to push replacement to lowest-level node (in line with other generalize-* operators)
+    (letfn [(addreferences [template bindingtoresolveto referredvar]
+              (let [resolvingnodes
+                    (snippet/snippet-children-resolvingto 
+                      template 
+                      (snippet/snippet-root template) 
+                      (fn [nodebinding]
+                        (.isEqualTo bindingtoresolveto nodebinding)))
+                    lowestlevelresolvingnodes
+                    (withoutimmediateparents template resolvingnodes)]
+                [;new template
+                 (reduce 
+                   (fn [snippetsofar resolvingnode]
+                     (if 
+                       (= vardecnodename resolvingnode)
+                       ;vardec parent of simplename
+                       (replace-by-variable 
+                         snippetsofar
+                         resolvingnode
+                         referredvar)
+                       (add-directive-refersto 
+                         (replace-by-wildcard snippetsofar resolvingnode)
+                         resolvingnode referredvar)))
+                   template
+                   lowestlevelresolvingnodes)
+                 ;number of references in template
+                 (count lowestlevelresolvingnodes)]))]
+      (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+        (when 
+          (astnode/binding-variable? binding)
+          (let [referredvar
+                (util/gen-lvar "vardec")
+                newtemplatesandcounts 
+                (map (fn [snippet] (addreferences snippet binding referredvar))
+                     (snippetgroup/snippetgroup-snippetlist snippetgroup))
+                counts
+                (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
+            (when (> (apply + counts) 1) 
+              (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
 
 
 (defn 
@@ -702,13 +722,12 @@ damp.ekeko.snippets.operators
 ;todo:
 ;generalize-commonsupertype (subtype toevoegen)
 
-
-(defn 
-  generalize-types|commonsupertype 
-  [snippet node]
-  "Generalizes all references in the snippet that refer to the same type as the given type reference."
-  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
-    (when (astnode/binding-type? binding)
+;(defn 
+;  generalize-types|commonsupertype 
+;  [snippet node]
+ ; "Generalizes all references in the snippet that refer to the same type as the given type reference."
+ ;; (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+ ;   (when (astnode/binding-type? binding)
 
   
 ;resolve type van node, 

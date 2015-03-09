@@ -113,6 +113,10 @@ damp.ekeko.snippets.snippetgroup
     (update-in group [:snippetlist] (fn [x] newlist))))
 
 
+(defn
+  snippetgroup-update-snippetlist
+  [snippetgroup snippetlist]
+  (assoc snippetgroup :snippetlist snippetlist))
 
 (defn 
   snippetgroup-remove-bounddirective
