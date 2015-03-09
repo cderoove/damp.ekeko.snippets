@@ -683,43 +683,40 @@ damp.ekeko.snippets.operators
   
 
 (defn 
-  generalize-types|type 
+  generalize-types 
   [snippet node]
   "Generalizes all references in the snippet that refer to the same type as the given type reference."
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
-     (let [resolvingnodes
-           (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
-           lowestlevelresolvingnodes
-           (withoutimmediateparents snippet resolvingnodes)
-           typevar 
-           (util/gen-lvar "type")]
-       (when 
-         (> 1 (count lowestlevelresolvingnodes))
-         (reduce
-           (fn [snippetsofar resolvingnode]
-             (add-directive-type
-               (replace-by-wildcard snippetsofar resolvingnode)
-               snippetsofar
-               resolvingnode typevar))
-           snippet
-           ;strategy: always apply generalization to lowest-level nodes only
-           ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
-           lowestlevelresolvingnodes))))))
-   
-;todo: 
-;-----
-;-applicability niet van toepassing op nodes die al verdwenen zijn?
+      (let [resolvingnodes
+            (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+            lowestlevelresolvingnodes
+            (withoutimmediateparents snippet resolvingnodes)
+            typevar 
+            (util/gen-lvar "type")]
+        (when 
+          (> (count lowestlevelresolvingnodes) 1)
+          (reduce
+            (fn [snippetsofar resolvingnode]
+              (add-directive-type
+                (replace-by-wildcard snippetsofar resolvingnode)  
+                resolvingnode 
+                typevar))
+            snippet
+            ;strategy: always apply generalization to lowest-level nodes only
+            ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
+            lowestlevelresolvingnodes))))))
 
 
 (defn
-  generalize-types
-  "Generalizes all references in the snippet to the same type as the given type reference."
-  [snippet typenode]
-  (generalize-types|type snippet typenode))
-
-
-
+  generalize-types|qname  
+  [snippet node] 
+  (if-let [generalizedsnippet (generalize-types snippet node)] ;returns nil if application wasn't possible
+    (let [binding (snippet/snippet-node-resolvedbinding snippet node) ;proven non-nil by generalize-types
+          itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
+          qnamestring (.getFullyQualifiedName itype)] 
+      (add-directive-type|qname generalizedsnippet node qnamestring))))
+            
 
   
 
