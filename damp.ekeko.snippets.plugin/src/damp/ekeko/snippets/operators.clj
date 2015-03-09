@@ -609,63 +609,6 @@ damp.ekeko.snippets.operators
   (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
     (replace-node-with snippet parent-node snippet node)))
 
-(defn
-  generalize-references|vardec
-  "Generalizes all references to given variable declaration node in the snippet."
-  [snippet node binding]
-  (let [referredvar (util/gen-lvar "vardec")]
-    (replace-by-variable 
-      (reduce 
-        (fn [snippetsofar resolvingnode]
-          (if 
-            (or 
-              (= node resolvingnode)
-              (some #{resolvingnode} (snippet/snippet-node-children|conceptually snippet node))) ;e.g., simplename of a vardecfragment
-            snippetsofar
-            (add-directive-refersto 
-              (replace-by-wildcard snippetsofar resolvingnode)
-              resolvingnode referredvar)))
-        snippet
-        (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))
-      node
-      referredvar)))
-
-(defn
-  generalize-references|name
-  "Generalizes all references to given variable declaration node in the snippet."
-  [snippet node binding]
-  (let [referredvar (util/gen-lvar "vardecname")]
-    (replace-by-variable 
-      (reduce 
-        (fn [snippetsofar resolvingnode]
-          (if 
-            (or 
-              (= node resolvingnode)
-              (= resolvingnode (snippet/snippet-node-parent|conceptually snippet node))) ;e.g., vardecfragment parent of simplename
-            snippetsofar
-            (add-directive-refersto 
-              (replace-by-wildcard snippetsofar resolvingnode)
-              resolvingnode referredvar)))
-        snippet
-        (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding))
-      node
-      referredvar)))
-
-
-
-(defn
-  generalize-references
-  "Generalizes all references in the snippet to the given variable declaration node or its name."
-  [snippet node]
-  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
-    (when 
-      (astnode/binding-variable? binding)
-      (if 
-        (some #{(astnode/ekeko-keyword-for-class-of node)} [:SimpleName :QualifiedName])
-        (generalize-references|name snippet node binding)
-        (generalize-references|vardec snippet node binding)))))
-
-
 (defn-
   withoutimmediateparents
   "Removes the parents of the elements in the given seq of nodes."
@@ -681,6 +624,35 @@ damp.ekeko.snippets.operators
       []
       nodes)))
   
+
+(defn
+  generalize-references
+  "Generalizes all references to given variable declaration (name) node in the snippet."
+  [snippet node]
+  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+    (when 
+      (astnode/binding-variable? binding)
+      (let [resolvingnodes
+            (snippet/snippet-children-resolvingto snippet (snippet/snippet-root snippet) binding)
+            lowestlevelresolvingnodes
+            (withoutimmediateparents snippet resolvingnodes)
+            referredvar (util/gen-lvar "vardec")]
+        (when (> (count lowestlevelresolvingnodes) 1) 
+          (replace-by-variable 
+            (reduce 
+              (fn [snippetsofar resolvingnode]
+                (if 
+                  (= node resolvingnode)
+                  snippetsofar
+                  (add-directive-refersto 
+                    (replace-by-wildcard snippetsofar resolvingnode)
+                    resolvingnode referredvar)))
+              snippet
+              lowestlevelresolvingnodes)
+            node
+            referredvar))))))
+
+
 
 (defn 
   generalize-types 
@@ -723,6 +695,10 @@ damp.ekeko.snippets.operators
 ;todo:
 ;generalize-commonsupertype (subtype toevoegen)
   
+;resolve type van node, 
+;voor type en supertypes: snippet-children-resolvingto subtype (equality argument)
+;stop voor eerste supertype (!= Object) waarvoor je meer dan 1 ref terugvindt
+
 
 
 
