@@ -295,10 +295,10 @@
      new-snippet1 (operators/replace-node-with snippet1 node1 snippet2 node2)
      new-snippet2 (operators/replace-node-with snippet2 node2 snippet1 node1)]
     [(individual/make-individual
-       (snippetgroup/snippetgroup-replace-snippet group-copy1 snippet1 new-snippet1)
+       (snippetgroup/replace-snippet group-copy1 snippet1 new-snippet1)
        {:crossover-old node1 :crossover-new node2})
      (individual/make-individual
-       (snippetgroup/snippetgroup-replace-snippet group-copy2 snippet2 new-snippet2)
+       (snippetgroup/replace-snippet group-copy2 snippet2 new-snippet2)
        {:crossover-old node2 :crossover-new node1})]))
 
 (defn 

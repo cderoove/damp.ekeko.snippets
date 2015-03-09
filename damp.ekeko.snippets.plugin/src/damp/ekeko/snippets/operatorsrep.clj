@@ -1104,7 +1104,7 @@ damp.ekeko.snippets.operatorsrep
      "Generalize variable references."
      opscope-subject
      applicability|vardeclaration
-     "Generalizes all references to given variable declaration node in the snippet."
+     "Generalizes all references to given variable declaration node in the template group."
      []
      true)
    
@@ -1116,9 +1116,9 @@ damp.ekeko.snippets.operatorsrep
      "Generalize type references."
      opscope-subject
      applicability|typeortypename
-     "Generalizes all references to given type in the snippet."
+     "Generalizes all references to given type in template group."
      []
-     false)
+     true)
    
    (Operator. 
      "generalize-types|qname"
@@ -1127,9 +1127,9 @@ damp.ekeko.snippets.operatorsrep
      "Generalize type references, preserve qualified name."
      opscope-subject
      applicability|typeortypename
-     "Generalizes all references to given type in the snippet, while preserving its qualified name."
+     "Generalizes all references to given type in the template group, while preserving its qualified name."
      []
-     false)
+     true)
 
    ])
 
@@ -1263,7 +1263,7 @@ damp.ekeko.snippets.operatorsrep
                                                         newsnippetgroup
                                                         snippetgroup)
                                                       (if-let [newsnippet (apply-operator snippet operatof value args)]
-                                                        (snippetgroup/snippetgroup-replace-snippet snippetgroup snippet newsnippet)
+                                                        (snippetgroup/replace-snippet snippetgroup snippet newsnippet)
                                                         snippetgroup)))))
 
 

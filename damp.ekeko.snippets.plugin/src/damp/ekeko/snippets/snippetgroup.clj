@@ -92,9 +92,9 @@ damp.ekeko.snippets.snippetgroup
     (assoc snippetgroup :snippetlist new-snippetlist)))
 
 (defn
-  update-snippet
+  update-snippet|ui
   "Updates the given snippet in this snippet group with the result of the given function.
-   Returns array of new snippetgroup, new snippet."
+   Returns array of new snippetgroup, new snippet. Called from UI."
   [snippetgroup snippet updater]
   (let [newsnippet (updater snippet)]
     (to-array 
@@ -106,12 +106,13 @@ damp.ekeko.snippets.snippetgroup
                 newsnippet))
        newsnippet])))
 
+                     
 (defn
-  snippetgroup-replace-snippet
+  replace-snippet
   [group oldsnippet newsnippet]
+  "Replaces oldsnippet in group by newsnippet."
   (let [newlist (replace {oldsnippet newsnippet} (:snippetlist group))]
-    (update-in group [:snippetlist] (fn [x] newlist))))
-
+    (assoc group :snippetlist newlist)))            
 
 (defn
   snippetgroup-update-snippetlist
@@ -119,20 +120,20 @@ damp.ekeko.snippets.snippetgroup
   (assoc snippetgroup :snippetlist snippetlist))
 
 (defn 
-  snippetgroup-remove-bounddirective
+  snippetgroup-remove-bounddirective|ui
   "Returns array of new snippetgroup, new snippet."
   [snippetgroup snippet node bounddirective]
-  (update-snippet snippetgroup
+  (update-snippet|ui snippetgroup
                   snippet
                   (fn [snippet] (snippet/remove-bounddirective snippet node bounddirective))))
 
 (defn 
-  snippetgroup-add-directive
+  snippetgroup-add-directive|ui
   "Returns array of new snippetgroup, new snippet."
   [snippetgroup snippet node directive]
   (let [bounddirective 
         (directives/bind-directive-with-defaults directive snippet node)]
-    (update-snippet snippetgroup
+    (update-snippet|ui snippetgroup
                     snippet
                     (fn [snippet] (snippet/add-bounddirective snippet node bounddirective)))))
                                       
@@ -165,10 +166,10 @@ damp.ekeko.snippets.snippetgroup
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPET_FOR_NODE) snippetgroup-snippet-for-node)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_SNIPPET_TO_SNIPPETGROUP) add-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP) remove-snippet)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_UPDATE_SNIPPET_IN_SNIPPETGROUP) update-snippet)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_UPDATE_SNIPPET_IN_SNIPPETGROUP) update-snippet|ui)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_SNIPPETS) snippetgroup-snippetlist)
-  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE) snippetgroup-remove-bounddirective)
-  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_ADD_DIRECTIVE_TO_NODE) snippetgroup-add-directive)
+  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE) snippetgroup-remove-bounddirective|ui)
+  (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_GROUP_ADD_DIRECTIVE_TO_NODE) snippetgroup-add-directive|ui)
   
   )
 

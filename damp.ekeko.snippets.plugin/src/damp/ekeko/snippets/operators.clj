@@ -625,12 +625,12 @@ damp.ekeko.snippets.operators
       nodes)))
   
 ;todo: also for var references rather than simply their declarations
-
+  
 
 
 (defn
   generalize-references
-  "Generalizes all references to given variable declaration (name) node in the snippet."
+  "Generalizes all references to given variable declaration (name) node in the snippetgroup."
   [snippetgroup snippet node]
   (let [vardecnodename 
         (if 
@@ -677,45 +677,85 @@ damp.ekeko.snippets.operators
               (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
 
 
+
+(defn-
+  generic-generalize-types 
+  [snippetgroup snippet node snippetnodesreducerf]
+  (letfn [(addtypes [template bindingtoresolveto]
+            (let [resolvingnodes
+                  (snippet/snippet-children-resolvingto 
+                    template 
+                    (snippet/snippet-root template) 
+                    (fn [nodebinding]
+                      (.isEqualTo bindingtoresolveto nodebinding)))
+                  ;strategy: always apply generalization to lowest-level nodes only
+                  ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
+                  lowestlevelresolvingnodes
+                  (withoutimmediateparents template resolvingnodes)]
+              [(reduce snippetnodesreducerf template lowestlevelresolvingnodes)
+               (count lowestlevelresolvingnodes)]))]
+    (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+      (when (astnode/binding-type? binding)
+        (let [newtemplatesandcounts 
+              (map (fn [snippet] (addtypes snippet binding))
+                   (snippetgroup/snippetgroup-snippetlist snippetgroup))
+              counts
+              (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
+          (when (> (apply + counts) 1)
+            (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts))))))))
+
+          
 (defn 
   generalize-types 
-  [snippet node]
-  "Generalizes all references in the snippet that refer to the same type as the given type reference."
+  [snippetgroup snippet node]
+  "Generalizes all references in the snippetgroup that refer to the same type as the given type reference."
+  (let [typevar (util/gen-lvar "type")]
+    (generic-generalize-types snippetgroup snippet node
+                              (fn [snippetsofar resolvingnode]
+                                (add-directive-type
+                                  (replace-by-wildcard snippetsofar resolvingnode)  
+                                  resolvingnode 
+                                  typevar)))))
+
+(defn 
+  generalize-types|qname 
+  [snippetgroup snippet node]
+  "Generalizes all references in the snippetgroup that refer to the same type as the given type reference."
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
-      (let [resolvingnodes
-            (snippet/snippet-children-resolvingto 
-              snippet 
-              (snippet/snippet-root snippet) 
-              (fn [nodebinding]
-                (.isEqualTo binding nodebinding)))
-            lowestlevelresolvingnodes
-            (withoutimmediateparents snippet resolvingnodes)
-            typevar 
-            (util/gen-lvar "type")]
-        (when 
-          (> (count lowestlevelresolvingnodes) 1)
-          (reduce
-            (fn [snippetsofar resolvingnode]
-              (add-directive-type
-                (replace-by-wildcard snippetsofar resolvingnode)  
-                resolvingnode 
-                typevar))
-            snippet
-            ;strategy: always apply generalization to lowest-level nodes only
-            ;this way: entire type/typedeclaration won't be replaced by ... , but its name will
-            lowestlevelresolvingnodes))))))
+      (let [itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
+            qnamestring (.getFullyQualifiedName itype)
+            typevar (util/gen-lvar "type")]
+        (generic-generalize-types snippetgroup snippet node
+                                  (fn [snippetsofar resolvingnode] ;only lowest-level resolving nodes
+                                    (let [newsnippet
+                                          (add-directive-type
+                                            (replace-by-wildcard snippetsofar resolvingnode)  
+                                            resolvingnode 
+                                            typevar)]
+                                      (if 
+                                        (or (= node resolvingnode)
+                                            ;otherwise directive-type|qname can be added to parent of the one to which type was added before 
+                                            (= node (snippet/snippet-node-parent|conceptually snippet resolvingnode))) 
+                                        (add-directive-type|qname newsnippet resolvingnode qnamestring)
+                                        newsnippet))))))))
+                                    
+                    
+                            
 
 
-(defn
-  generalize-types|qname  
-  [snippet node] 
-  (if-let [generalizedsnippet (generalize-types snippet node)] ;returns nil if application wasn't possible
-    (let [binding (snippet/snippet-node-resolvedbinding snippet node) ;proven non-nil by generalize-types
-          itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
-          qnamestring (.getFullyQualifiedName itype)] 
-      (add-directive-type|qname generalizedsnippet node qnamestring))))
-            
+;todo: not so pretty, node to which
+;(defn
+;  generalize-types|qname  
+;  [snippetgroup snippet node] 
+;  (if-let [generalizedsnippetgroup (generalize-types snippetgroup snippet node)] ;returns nil if application wasn't possible
+;    (let [binding (snippet/snippet-node-resolvedbinding snippet node) ;proven non-nil by generalize-types
+;          itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
+;          qnamestring (.getFullyQualifiedName itype)
+ ;         generalizedsnippet (snippetgroup/snippetgroup-snippet-for-node generalizedsnippetgroup node)]
+ ;;     (snippetgroup/replace-snippet generalizedsnippetgroup 
+ ;                                   generalizedsnippet
+ ;                                   (add-directive-type|qname generalizedsnippet node qnamestring)))))
 
   
 
