@@ -1,0 +1,47 @@
+[PropertyInfo]
+attributeNames,Enumeration,false,false, , ,true,<default>
+authType,String,false,false, , ,true,<default>
+boundary,String,false,false, , ,true,<default>
+characterEncoding,String,false,false, , ,true,<default>
+contentLength,int,false,false, , ,true,<default>
+contentType,String,false,false, , ,true,<default>
+contextPath,String,false,false, , ,true,<default>
+cookies,Cookie[],false,false, , ,true,<default>
+endOfData,boolean,false,false, , ,true,<default>
+headerNames,Enumeration,false,false, , ,true,<default>
+inputStream,ServletInputStream,false,false, , ,true,<default>
+locale,Locale,false,false, , ,true,<default>
+locales,Enumeration,false,false, , ,true,<default>
+maxFileSize,int,false,false, , ,true,<default>
+method,String,false,false, , ,true,<default>
+parameterMap,Map,false,false, , ,true,<default>
+parameterNames,Enumeration,false,false, , ,true,<default>
+pathInfo,String,false,false, , ,true,<default>
+pathTranslated,String,false,false, , ,true,<default>
+protocol,String,false,false, , ,true,<default>
+queryString,String,false,false, , ,true,<default>
+reader,BufferedReader,false,false, , ,true,<default>
+remoteAddr,String,false,false, , ,true,<default>
+remoteHost,String,false,false, , ,true,<default>
+remoteUser,String,false,false, , ,true,<default>
+request,HttpServletRequest,false,false, , ,true,<default>
+requestedSessionId,String,false,false, , ,true,<default>
+requestedSessionIdFromCookie,boolean,false,false, , ,true,<default>
+requestedSessionIdFromURL,boolean,false,false, , ,true,<default>
+requestedSessionIdFromUrl,boolean,false,false, , ,true,<default>
+requestedSessionIdValid,boolean,false,false, , ,true,<default>
+requestURI,String,false,false, , ,true,<default>
+requestURL,StringBuffer,false,false, , ,true,<default>
+scheme,String,false,false, , ,true,<default>
+secure,boolean,false,false, , ,true,<default>
+serverName,String,false,false, , ,true,<default>
+serverPort,int,false,false, , ,true,<default>
+servletPath,String,false,false, , ,true,<default>
+session,HttpSession,false,false, , ,true,<default>
+userPrincipal,Principal,false,false, , ,true,<default>
+maxLineLength,int,false,false,maxLineLength,maxLineLength,true,<default>
+[IconNames]
+
+
+
+

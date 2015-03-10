@@ -1,0 +1,8 @@
+[PropertyInfo]
+templateName,String,false,false,templateName,templateName,true,<default>
+context,org.apache.velocity.VelocityContext,false,false,context,context,true,<default>
+[IconNames]
+
+
+
+

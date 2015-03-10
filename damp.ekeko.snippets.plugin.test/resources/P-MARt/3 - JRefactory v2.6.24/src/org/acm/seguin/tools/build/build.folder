@@ -1,0 +1,5 @@
+.\src\org\acm\seguin\tools\build\CodeStoreBuilder.java
+.\src\org\acm\seguin\tools\build\JarDirectoryBuilder.java
+.\src\org\acm\seguin\tools\build\JavadocBuilder.java
+.\src\org\acm\seguin\tools\build\CreateVersion.java
+.\src\org\acm\seguin\tools\build\CleanClassFiles.java

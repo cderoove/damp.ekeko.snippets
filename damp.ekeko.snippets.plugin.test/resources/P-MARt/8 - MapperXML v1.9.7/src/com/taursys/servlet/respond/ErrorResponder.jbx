@@ -1,0 +1,9 @@
+[PropertyInfo]
+servletForm,ServletForm,false,false, , ,true,<default>
+statusCode,int,false,false,statusCode,statusCode,true,<default>
+message,String,false,false,message,message,true,<default>
+[IconNames]
+
+
+
+

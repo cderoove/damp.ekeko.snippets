@@ -1,0 +1,17 @@
+<HTML>
+<BODY>
+Contains the type refactorings.  The refactorings in this
+package are type based refactorings, for instance move
+a class to a different package or rename a class.<P>
+
+This package also contains a number of different visitors
+that traverse the entire tree of source files, since
+type based operations have the possibility of changing
+all the source files in the system.<P>
+
+Beneath that are TransformAST objects which perform a
+single unit operation such as renaming a type.  The
+actual work isusually done by the associated visitor
+object.<P>
+</BODY>
+</HTML>

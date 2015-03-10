@@ -1,0 +1,9 @@
+[PropertyInfo]
+name,String,false,false, , ,true,<default>
+value,String,false,false, , ,true,<default>
+map,java.util.Map,false,false,map,map,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+
+<ruleset name="Import Rules">
+  <description>
+These rules deal with different problems that can occur with a class' import statements.
+  </description>
+
+  <rule name="DuplicateImports"
+        message="Avoid duplicate imports such as ''{0}''"
+        class="net.sourceforge.pmd.rules.DuplicateImportsRule">
+    <description>
+    Avoid duplicate import statements.
+    </description>
+      <priority>4</priority>
+
+    <example>
+<![CDATA[
+// this is bad
+import java.io.File;
+import java.io.File;
+public class Foo {}
+
+// --- in another source code file...
+
+// this is bad
+import java.io.*;
+import java.io.File;
+
+public class Foo {}
+]]>
+    </example>
+    </rule>
+
+  <rule name="DontImportJavaLang"
+        message="Avoid importing anything from the package 'java.lang'"
+        class="net.sourceforge.pmd.rules.XPathRule">
+    <description>
+    Avoid importing anything from the package 'java.lang'.  These classes are automatically imported (JLS 7.5.3).
+    </description>
+      <properties>
+          <property name="xpath">
+              <value>
+                  <![CDATA[
+//ImportDeclaration
+ [starts-with(Name/@Image, 'java.lang')]
+ [not(starts-with(Name/@Image, 'java.lang.ref'))]
+ [not(starts-with(Name/@Image, 'java.lang.reflect'))]
+                ]]>
+              </value>
+          </property>
+       </properties>
+      <priority>4</priority>
+
+    <example>
+<![CDATA[
+// this is bad
+import java.lang.String;
+public class Foo {}
+
+// --- in another source code file...
+
+// this is bad
+import java.lang.*;
+
+public class Foo {}
+]]>
+    </example>
+    </rule>
+
+  <rule name="UnusedImports"
+        message="Avoid unused imports such as ''{0}''"
+        class="net.sourceforge.pmd.rules.UnusedImportsRule">
+    <description>
+    Avoid unused import statements.
+    </description>
+      <priority>4</priority>
+
+    <example>
+<![CDATA[
+// this is bad
+import java.io.File;
+public class Foo {}
+]]>
+    </example>
+    </rule>
+
+    <rule name="ImportFromSamePackage"
+         message="No need to import a type that's in the same package"
+         class="net.sourceforge.pmd.rules.ImportFromSamePackageRule">
+     <description>
+     No need to import a type that's in the same package.
+     </description>
+        <priority>3</priority>
+     <example>
+ <![CDATA[
+ package foo;
+ import foo.Buz; // no need for this
+ public class Bar{}
+ ]]>
+     </example>
+     </rule>
+
+</ruleset>
+
+
+

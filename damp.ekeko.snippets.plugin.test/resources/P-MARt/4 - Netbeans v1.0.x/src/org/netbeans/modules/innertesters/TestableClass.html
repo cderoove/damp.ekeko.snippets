@@ -1,0 +1,23 @@
+<!--
+  --                 Sun Public License Notice
+  -- 
+  -- The contents of this file are subject to the Sun Public License
+  -- Version 1.0 (the "License"). You may not use this file except in
+  -- compliance with the License. A copy of the License is available at
+  -- http://www.sun.com/
+  -- 
+  -- The Original Code is Forte for Java, Community Edition. The Initial
+  -- Developer of the Original Code is Sun Microsystems, Inc. Portions
+  -- Copyright 1997-2000 Sun Microsystems, Inc. All Rights Reserved.
+  -->
+
+<HTML><BODY>
+An example class with private functionality that can be unit-tested
+via a static inner testing class.
+
+<p>Its default compiler will move the classfile for the <code>TEST</code>
+inner class to a scratch directory outside of Filesystems.
+Its default executor will likewise run the <code>TEST</code> class's <code>main</code>
+method rather than the outer class, and will include the scratch directory in
+the execution classpath.
+</BODY></HTML>

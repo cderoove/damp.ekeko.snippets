@@ -1,0 +1,7 @@
+OpenIDE-Module: org.netbeans.examples.modules.microed
+OpenIDE-Module-Name: Micro Editor
+OpenIDE-Module-Install: org/netbeans/examples/modules/microed/Install.class
+OpenIDE-Module-Specification-Version: 1.1
+
+Name: org/netbeans/examples/modules/microed/Settings.class
+OpenIDE-Module-Class: Option

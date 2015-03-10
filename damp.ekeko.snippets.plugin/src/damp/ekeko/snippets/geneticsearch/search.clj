@@ -405,7 +405,6 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (fitness/templategroup-matches templategroup 10000))
   (def verifiedmatches (make-verified-matches matches []))
-  (inspector-jay.core/inspect verifiedmatches)
   (evolve verifiedmatches
           :max-generations 25
           :fitness-weights [18/20 2/20]
@@ -435,6 +434,5 @@
   
   
   )
-
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  

@@ -1,0 +1,32 @@
+
+<html><head>
+<title> Error Page </title>
+</head>
+
+<!-- This JSP page is generated from the JSP Page Wizard  -->
+<!-- The order of the $$BEGIN... $$END... Tags are important. Please don't delete. -->
+
+<!-- $$BEGIN PAGE DIRECTIVE -->
+<!-- $$END PAGE DIRECTIVE -->
+
+<!-- $$BEGIN USE BEAN -->
+<!-- $$END USE BEAN -->
+
+<!-- $$BEGIN POST/GET VALIDATION -->
+<!-- $$END POST/GET VALIDATION -->
+
+<!-- $$BEGIN EXEC BIZ METHODS -->
+<!-- $$END EXEC BIZ METHODS -->
+
+<body>
+ 
+<h1> Error Page </h1> 
+
+<b> An uncaught exception occurred on this page. <b>
+<br> <hr> <%= exception.getMessage() %> <br><hr><br>
+ 
+<!-- $$BEGIN DYNAMIC FORM -->
+<!-- $$END DYNAMIC FORM -->  
+
+</body>
+</html>

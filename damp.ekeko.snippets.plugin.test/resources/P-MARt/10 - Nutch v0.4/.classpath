@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="src"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="lib" path="lib/commons-net-1.2.0-dev.jar"/>
+    <classpathentry kind="lib" path="lib/dom4j-1.4.jar"/>
+    <classpathentry kind="lib" path="lib/jaf-1.0.2.jar"/>
+    <classpathentry kind="lib" path="lib/jakarta-oro-2.0.7.jar"/>
+    <classpathentry kind="lib" path="lib/junit-3.8.1.jar"/>
+    <classpathentry kind="lib" path="lib/lucene-1.4-rc4-dev.jar"/>
+    <classpathentry kind="lib" path="lib/nekohtml-0.8.1.jar"/>
+    <classpathentry kind="lib" path="lib/servlet.jar"/>
+    <classpathentry kind="lib" path="lib/taglibs-i18n.jar"/>
+    <classpathentry kind="lib" path="lib/xerces-2_2_1.jar"/>
+    <classpathentry kind="lib" path="lib/xerces-apis-2_2_1.jar"/>
+    <classpathentry kind="output" path="bin"/>
+</classpath>

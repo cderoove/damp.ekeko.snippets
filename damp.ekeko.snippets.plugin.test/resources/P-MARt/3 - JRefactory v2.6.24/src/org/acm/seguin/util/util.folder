@@ -1,0 +1,9 @@
+.\src\org\acm\seguin\util\TextFormatter.java
+.\src\org\acm\seguin\util\InsertionSortArray.java
+.\src\org\acm\seguin\util\BackupTraversal.java
+.\src\org\acm\seguin\util\Comparator.java
+.\src\org\acm\seguin\util\Settings.java
+.\src\org\acm\seguin\util\MissingSettingsException.java
+.\src\org\acm\seguin\util\SettingNotFoundException.java
+.\src\org\acm\seguin\util\FileSettings.java
+.\src\org\acm\seguin\util\NoSettingsFileException.java

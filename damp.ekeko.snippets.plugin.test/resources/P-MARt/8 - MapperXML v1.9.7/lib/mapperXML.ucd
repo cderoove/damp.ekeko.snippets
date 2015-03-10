@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<editmodel:ClassDiagramEditModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:editmodel="editmodel.xmi" id="blc24iroumontrealcangjanice9MapperXMLv1970" metadata="nsuml-1.4" initialized="true" showWireOptions="7">
+  <children xsi:type="editmodel:PackageEditModel" location="269,1616" size="161,120" id="blc24iroumontrealcangjanice9MapperXMLv1971">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,873" size="187,140" id="blc24iroumontrealcangjanice9MapperXMLv1972">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,2452" size="140,105" id="blc24iroumontrealcangjanice9MapperXMLv1973">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="257,1961" size="157,117" id="blc24iroumontrealcangjanice9MapperXMLv1974">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="259,1792" size="159,119" id="blc24iroumontrealcangjanice9MapperXMLv1975">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,2291" size="148,111" id="blc24iroumontrealcangjanice9MapperXMLv1976">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,2607" size="80,60" id="blc24iroumontrealcangjanice9MapperXMLv1977">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1251" size="180,135" id="blc24iroumontrealcangjanice9MapperXMLv1978">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="315,262" size="206,154" id="blc24iroumontrealcangjanice9MapperXMLv1979">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1616" size="169,126" id="blc24iroumontrealcangjanice9MapperXMLv19710">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,50" size="216,162" id="blc24iroumontrealcangjanice9MapperXMLv19711">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="296,676" size="192,144" id="blc24iroumontrealcangjanice9MapperXMLv19712">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1063" size="185,138" id="blc24iroumontrealcangjanice9MapperXMLv19713">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="280,1251" size="175,131" id="blc24iroumontrealcangjanice9MapperXMLv19714">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="251,2128" size="148,111" id="blc24iroumontrealcangjanice9MapperXMLv19715">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1792" size="159,119" id="blc24iroumontrealcangjanice9MapperXMLv19716">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="285,1063" size="183,137" id="blc24iroumontrealcangjanice9MapperXMLv19717">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,262" size="215,161" id="blc24iroumontrealcangjanice9MapperXMLv19718">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="248,2291" size="143,107" id="blc24iroumontrealcangjanice9MapperXMLv19719">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,676" size="196,147" id="blc24iroumontrealcangjanice9MapperXMLv19720">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,2128" size="151,113" id="blc24iroumontrealcangjanice9MapperXMLv19721">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="287,873" size="187,140" id="blc24iroumontrealcangjanice9MapperXMLv19722">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="240,2452" size="116,87" id="blc24iroumontrealcangjanice9MapperXMLv19723">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="406,2452" size="80,60" id="blc24iroumontrealcangjanice9MapperXMLv19724">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="304,473" size="201,150" id="blc24iroumontrealcangjanice9MapperXMLv19725">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1436" size="174,130" id="blc24iroumontrealcangjanice9MapperXMLv19726">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="274,1436" size="174,130" id="blc24iroumontrealcangjanice9MapperXMLv19727">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,473" size="204,153" id="blc24iroumontrealcangjanice9MapperXMLv19728">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <children xsi:type="editmodel:PackageEditModel" location="50,1961" size="157,117" id="blc24iroumontrealcangjanice9MapperXMLv19729">
+    <packagePreferences xsi:type="editmodel:UMLClassDiagramPackagePreference" showStereotype="true"/>
+  </children>
+  <classDiagramPreferences xsi:type="editmodel:UMLClassDiagramPreference" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true" showInterfaceStereotype="true" showClassStereotype="true" showPackageStereotype="true"/>
+</editmodel:ClassDiagramEditModel>

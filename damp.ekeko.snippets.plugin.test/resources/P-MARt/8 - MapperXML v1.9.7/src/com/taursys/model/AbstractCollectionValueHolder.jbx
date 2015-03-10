@@ -1,0 +1,13 @@
+[PropertyInfo]
+alias,String,false,false, , ,true,<default>
+collection,Collection,false,false, , ,true,<default>
+empty,boolean,false,false, , ,true,<default>
+object,Object,false,false, , ,true,<default>
+objectValueHolder,com.taursys.model.ObjectValueHolder,false,false,valueHolder,valueHolder,true,<default>
+parentPropertyName,String,false,false, , ,true,<default>
+parentValueHolder,ValueHolder,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

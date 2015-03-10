@@ -1,0 +1,12 @@
+[PropertyInfo]
+clones,Collection,false,false, , ,true,<default>
+parentNode,Node,false,false, , ,true,<default>
+removed,boolean,false,false,removed,removed,true,<default>
+siblingNode,Node,false,false, , ,true,<default>
+template,Template,false,false, , ,true,<default>
+currentRow,int,false,false,currentRow,currentRow,true,<default>
+[IconNames]
+
+
+
+

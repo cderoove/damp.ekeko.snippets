@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+
+<ruleset name="Strings Rules">
+  <description>
+These rules deal with different problems that can occur with String manipulation.
+  </description>
+
+
+    <rule name="AvoidDuplicateLiterals"
+        message="The same String literal appears {0} times in this file; the first occurrence is on line {1}"
+        class="net.sourceforge.pmd.rules.AvoidDuplicateLiteralsRule">
+    <description>
+Code containing duplicate String literals can usually be improved by declaring the String as a constant field.
+    </description>
+        <priority>3</priority>
+   <properties>
+    <property name="threshold" value="4"/>
+   </properties>
+    <example>
+<![CDATA[
+public class Foo {
+ private void bar() {
+    buz("Howdy");
+    buz("Howdy");
+    buz("Howdy");
+    buz("Howdy");
+ }
+ private void buz(String x) {}
+}
+]]>
+    </example>
+  </rule>
+
+
+    <rule name="StringInstantiation"
+        message="Avoid instantiating String objects; this is usually unnecessary."
+        class="net.sourceforge.pmd.rules.XPathRule">
+    <description>
+    Avoid instantiating String objects; this is usually unnecessary.
+    </description>
+       <properties>
+           <property name="xpath">
+               <value>
+                   <![CDATA[
+    //AllocationExpression[Name/@Image='String'][count(.//Expression) < 2][not(ArrayDimsAndInits)]
+                    ]]>
+               </value>
+           </property>
+       </properties>
+       <priority>2</priority>
+
+    <example>
+<![CDATA[
+public class Foo {
+ private String bar = new String("bar"); // just do a String bar = "bar";
+}
+]]>
+    </example>
+    </rule>
+
+
+
+   <rule name="StringToString"
+        message="Avoid calling toString() on String objects; this is unnecessary"
+        class="net.sourceforge.pmd.rules.StringToStringRule">
+    <description>
+    Avoid calling toString() on String objects; this is unnecessary
+    </description>
+       <priority>3</priority>
+
+    <example>
+<![CDATA[
+public class Foo {
+ private String baz() {
+  String bar = "howdy";
+  return bar.toString();
+ }
+}
+]]>
+    </example>
+    </rule>
+
+</ruleset>
+
+
+

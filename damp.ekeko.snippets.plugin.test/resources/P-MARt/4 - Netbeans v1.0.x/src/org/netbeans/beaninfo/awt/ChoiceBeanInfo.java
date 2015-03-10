@@ -1,0 +1,80 @@
+/*
+ *                 Sun Public License Notice
+ * 
+ * The contents of this file are subject to the Sun Public License
+ * Version 1.0 (the "License"). You may not use this file except in
+ * compliance with the License. A copy of the License is available at
+ * http://www.sun.com/
+ * 
+ * The Original Code is Forte for Java, Community Edition. The Initial
+ * Developer of the Original Code is Sun Microsystems, Inc. Portions
+ * Copyright 1997-2000 Sun Microsystems, Inc. All Rights Reserved.
+ */
+
+package org.netbeans.beaninfo.awt;
+
+import java.awt.Image;
+import java.beans.*;
+
+/** A BeanInfo for java.awt.Choice.
+*
+* @author Ales Novak
+* @version 0.10, August 04, 1998
+*/
+public class ChoiceBeanInfo extends ComponentBeanInfo {
+
+    /** icon */
+    private static Image icon;
+    /** icon32 */
+    private static Image icon32;
+
+    /** Array of property descriptors. */
+    private static PropertyDescriptor[] desc;
+
+    /** no-arg */
+    public ChoiceBeanInfo() {
+        if (icon == null) {
+            icon = loadImage("/org/netbeans/beaninfo/awt/choice.gif"); // NOI18N
+            icon32 = icon;
+        }
+    }
+
+    /**
+    * Claim there are no icons available.  You can override
+    * this if you want to provide icons for your bean.
+    */
+    public Image getIcon(int type) {
+        if ((type == java.beans.BeanInfo.ICON_COLOR_16x16) || (type == java.beans.BeanInfo.ICON_MONO_16x16))
+            return icon;
+        else
+            return icon32;
+    }
+
+    /** @return Propertydescriptors */
+    public PropertyDescriptor[] getPropertyDescriptors() {
+        if (desc == null) {
+            synchronized (ChoiceBeanInfo.class) {
+                if (desc == null) {
+                    PropertyDescriptor[] inh = super.getPropertyDescriptors();
+                    desc = new PropertyDescriptor[inh.length + 5];
+                    System.arraycopy(inh, 0, desc, 0, inh.length);
+                    try {
+                        desc[inh.length] = new PropertyDescriptor("selectedObjects", java.awt.Choice.class, "getSelectedObjects", null); // NOI18N
+                        desc[inh.length + 1] = new PropertyDescriptor("selectedIndex", java.awt.Choice.class, "getSelectedIndex", null); // NOI18N
+                        desc[inh.length + 2] = new PropertyDescriptor("itemCount", java.awt.Choice.class, "getItemCount", null); // NOI18N
+                        desc[inh.length + 3] = new PropertyDescriptor("item", java.awt.Choice.class, "getItem", null); // NOI18N
+                        desc[inh.length + 4] = new PropertyDescriptor("selectedItem", java.awt.Choice.class, "getSelectedItem", null); // NOI18N
+                    } catch (IntrospectionException ex) {
+                        desc = super.getPropertyDescriptors();
+                    }
+                }
+            }
+        }
+        return (PropertyDescriptor[]) desc.clone();
+    }
+
+}
+
+/*
+ * Log
+ */

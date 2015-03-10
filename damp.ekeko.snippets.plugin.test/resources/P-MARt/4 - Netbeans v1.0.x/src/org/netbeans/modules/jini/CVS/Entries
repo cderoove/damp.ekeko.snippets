@@ -1,0 +1,36 @@
+/AbstractAdmin.java/1.1/Sat Apr 10 00:17:18 2004//
+/Admin.java/1.1/Sat Apr 10 00:17:19 2004//
+/AdminAction.java/1.1/Sat Apr 10 00:17:18 2004//
+/AdminClass.java/1.1/Sat Apr 10 00:17:18 2004//
+/AdminCookie.java/1.1/Sat Apr 10 00:17:18 2004//
+/BrowserEvent.java/1.1/Sat Apr 10 00:17:18 2004//
+/BrowserModel.java/1.1/Sat Apr 10 00:17:18 2004//
+/Bundle.properties/1.1/Sat Apr 10 00:17:18 2004//
+/Bundle_ja.properties/1.1/Sat Apr 10 00:17:18 2004//
+/CodeCookie.java/1.1/Sat Apr 10 00:17:18 2004//
+/CreateClientAction.java/1.1/Sat Apr 10 00:17:18 2004//
+/DefaultNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/GroupNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/Groups.java/1.1/Sat Apr 10 00:17:18 2004//
+/InterfaceNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/JiniModule.java/1.1/Sat Apr 10 00:17:18 2004//
+/JiniNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/LocatorNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/LookupChildren.java/1.1/Sat Apr 10 00:17:18 2004//
+/RefreshAction.java/1.1/Sat Apr 10 00:17:18 2004//
+/RefreshCookie.java/1.1/Sat Apr 10 00:17:18 2004//
+/RegistrarPanel.form/1.1/Sat Apr 10 00:17:18 2004/-kb/
+/RegistrarPanel.java/1.1/Sat Apr 10 00:17:18 2004//
+/SaveInterfaceAction.java/1.1/Sat Apr 10 00:17:18 2004//
+/SelectGroups.form/1.1/Sat Apr 10 00:17:18 2004/-kb/
+/SelectGroups.java/1.1/Sat Apr 10 00:17:18 2004//
+/ServiceChildren.java/1.1/Sat Apr 10 00:17:18 2004//
+/ServiceItemExt.java/1.1/Sat Apr 10 00:17:18 2004//
+/ServiceNode.java/1.1/Sat Apr 10 00:17:18 2004//
+/ServiceTemplateAction.java/1.1/Sat Apr 10 00:17:18 2004//
+/ServiceTemplateCookie.java/1.1/Sat Apr 10 00:17:18 2004//
+/Util.java/1.1/Sat Apr 10 00:17:18 2004//
+D/admins////
+D/resources////
+D/settings////
+D/toinstall////

@@ -1,0 +1,248 @@
+
+
+  // -- Inner classes. --
+
+  /** Node representing one registry, i.e. pair hostname:port 
+   */
+  public abstract class RegistryItemNode extends AbstractNode implements Node.Cookie, RefreshCookie {
+    public RegistryItemNode(Children children) {
+      super(children);
+      
+      systemActions = new SystemAction[] { 
+        SystemAction.get(org.netbeans.modules.rmi.registry.RMIRegistryRefreshAction.class),
+        null,
+        SystemAction.get(org.openide.actions.DeleteAction.class),
+        null,
+        SystemAction.get(org.openide.actions.ToolsAction.class),
+        SystemAction.get(org.openide.actions.PropertiesAction.class),
+      };
+      getCookieSet().add(this);
+      setIconBase(SERVER_ICON_BASE);
+    }
+
+    /** Getter for outer RegistryItem.
+     * @return RegistryItem represnted by the node.
+     */
+    public RegistryItem getItem() {
+      return RegistryItem.this;
+    }
+    
+    public void destroy() throws IOException {
+      RMIRegistryPool.getDefault().remove(RegistryItem.this);
+      RMIRegistryNode.getNode().refresh(false);
+    }
+    
+    public boolean canDestroy() {
+      return true;
+    }
+    
+    public void refresh() {
+      RMIRegistryNode.getNode().refresh(RegistryItem.this);
+    }
+  }
+
+  /** Class representing responding registry
+   */
+  public class ValidItemNode extends RegistryItemNode {
+    public ValidItemNode() throws RemoteException, AccessException {
+      super(new ServiceChildren());
+      setName(MSG_VALID.format(getItemObjects()));
+    }
+  }
+
+   /** Class representing non responding registry .
+    */
+  public class InvalidItemNode extends RegistryItemNode {
+    public InvalidItemNode() {
+      super(Children.LEAF);
+      setName(MSG_INVALID.format(getItemObjects()));    
+    }
+  }
+
+  /** Services.
+   */
+  protected class ServiceChildren extends Children.Keys {
+
+    public ServiceChildren() throws RemoteException, AccessException {
+      update();
+    }
+
+    public void update() throws RemoteException, AccessException {
+      setKeys(getServices());
+    }
+
+    protected Node[] createNodes(Object key) {
+      ServiceNode node;
+      
+      // if url == null or any exception return ServiceNode(name)
+      try {
+	Remote ro = getRegistry().lookup((String) key);
+	return new Node[] {new ServiceNode((String) key, ro)};
+      } catch (Exception ex) {
+	// in the case of any exception, return node with no interface
+	// ex.printStackTrace();
+      }
+      return new Node[] {new ServiceNode((String) key)};
+    }
+  }
+
+  /** Class representing one service.
+   */
+  public class ServiceNode extends AbstractNode {
+    String name;
+    String annotation;
+    
+    public ServiceNode(String name) {
+      super(Children.LEAF);
+      this.name = name;
+      init();
+    }
+
+    public ServiceNode(String name, Remote ro) {
+      super(new InterfaceChildren(name, ro.getClass()));
+      this.name = name;
+      annotation = RMIClassLoader.getClassAnnotation(ro.getClass());
+      CookieSet cookies = getCookieSet();
+      cookies.add(new InstanceSupport.Instance(ro));
+      init();
+      
+      // add class annotation property
+      try {
+        Sheet sheet = getSheet();
+        Sheet.Set expert;
+        if ((expert = sheet.get(Sheet.EXPERT)) == null) {
+          expert = Sheet.createExpertSet();
+          sheet.put(expert);
+        }
+        Node.Property p = new PropertySupport.Reflection(ServiceNode.this, String.class, "getClassAnnotation", null);
+        p.setName("ClassAnnotation");
+        p.setDisplayName(RegistryItem.this.getString("PROP_classAnnotation"));
+        p.setShortDescription(RegistryItem.this.getString("HINT_classAnnotation"));
+        expert.put(p);
+      } catch (NoSuchMethodException ex) {
+        // Problem, no property. That's life ...
+        // ex.printStackTrace();
+      }
+    }
+    
+    protected void init() {
+      setName(name);
+      setIconBase(SERVICE_ICON_BASE);
+      systemActions = new SystemAction[] { 
+        SystemAction.get(org.openide.actions.CustomizeBeanAction.class),
+        null,
+        SystemAction.get(org.openide.actions.DeleteAction.class),
+        null,
+        SystemAction.get(org.openide.actions.ToolsAction.class),
+        SystemAction.get(org.openide.actions.PropertiesAction.class),
+      };
+    }
+    
+    /** Returns the class annotation (representing the location for a class) 
+    * that RMI will use to annotate the call stream
+    * when marshalling objects of the given class.
+    * @return class annotation
+    */
+    public String getClassAnnotation() {
+      return annotation;
+    }
+    
+    public void destroy() throws IOException {
+      // call unbind
+      try {
+        Registry registry = RegistryItem.this.getRegistry();
+        registry.unbind(name);
+      } catch (AccessException ex) {
+        // if this operation is not permitted (if originating from a non-local host, for example)
+        TopManager.getDefault().notify(new NotifyDescriptor.Message(ex.getMessage(), NotifyDescriptor.ERROR_MESSAGE));
+      } catch (RemoteException ex) {
+        // Access can be encapsulated in RemoteException
+        Throwable detail = ex.detail;
+        if (detail instanceof AccessException) {
+          TopManager.getDefault().notify(new NotifyDescriptor.Message(detail.getMessage(), NotifyDescriptor.ERROR_MESSAGE));
+        } else {
+          throw ex;
+        }
+      } catch (NotBoundException ex) {
+        // just refresh
+      } finally {
+        RMIRegistryNode.getNode().refresh(RegistryItem.this);
+      }
+    }
+    
+    public boolean canDestroy() {
+      return true;  
+    }
+  }
+
+  /** Interfaces.
+   */
+  class InterfaceChildren extends Children.Keys {
+
+    String service;
+    Class clazz;
+
+    public InterfaceChildren(String service, Class clazz) {
+      this.service = service;
+      this.clazz = clazz;
+    }
+
+    protected void addNotify() {
+      RequestProcessor.postRequest(new Runnable() {
+	public void run() {
+	  update();
+	}
+      });
+    }
+
+    public void update() {
+      // get remote object and its types. Then filter out everything
+      // except subclasses of java.rmi.Remote
+      Class[] classes = clazz.getInterfaces();
+      List list = new ArrayList(classes.length);
+
+      for(int i = 0; i < classes.length; i++) {
+	if (java.rmi.Remote.class.isAssignableFrom(classes[i])) {
+	  list.add(classes[i]);
+	}
+      }
+      setKeys(list);
+    }
+
+    protected Node[] createNodes(Object key) {
+//      return new Node[] { new InterfaceNode(service, (Class) key) };
+      ClassElement ce = ClassElement.forClass((Class)key);
+      InterfaceNode inode = new InterfaceNode(service, (Class) key, ce);
+      return new Node[] { inode };
+    }
+  }
+
+  /** Class representing one interface.
+   */
+  public class InterfaceNode extends ClassElementNode implements Node.Cookie {
+    String service;
+    Class cl;
+    
+    public InterfaceNode(String service, Class cl, ClassElement ce) {
+      super(ce, new ClassChildren(ce), false);
+      this.service = service;
+      this.cl = cl;
+      
+      systemActions = new SystemAction[] { 
+        SystemAction.get(org.netbeans.modules.rmi.registry.CreateClientAction.class),
+        SystemAction.get(org.netbeans.modules.rmi.registry.SaveInterfaceAction.class),
+        null,
+        SystemAction.get(org.openide.actions.ToolsAction.class),
+        SystemAction.get(org.openide.actions.PropertiesAction.class),
+      };
+      getCookieSet().add(this);    
+    }
+    
+    public Class getInterface() {
+      return cl;
+    }
+
+    public String getURLString() {
+      return RegistryItem.this.getURLString() + service;
+    }
+  }

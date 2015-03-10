@@ -1,0 +1,38 @@
+StarTeam 3.0 FAQ
+
+Q: How can I add new directory to the project ?
+A: StarTeam 3.0 does not allow you to do this via command 
+   line interface. Do it with Windows StarTeam client, 
+   then isuue the Refresh command.
+
+Q: What values should I use for login/password/hostname/port ?
+A: Ask yout StarTeam administrator.
+
+Q: What should I put into 'Root directory' field  and to 
+   WORKING_DIR/PROJECT variables ?
+A: You must know the 'Project/View' name from your StarTeam 
+   administrator. (No way to figure it out using cmdline 
+   interface.)
+
+   Project specification has the following format:
+   user[:password]@host[:port]/Project/View/PathName
+   E.g. if your Project=Corona
+                View=Gandalf
+                PathName=Development
+   and your Development directory can be found at w:/Development
+   then set up:
+    - Root directory=w:/Development
+    - WORKING_DIR=w:/  
+    - PROJECT=user:password@host:port/Corona/Gandalf/Development
+
+   Setting up these three variables is the crucial point of the
+   configuration.
+
+Q: Why is it so slow ?
+A: Ask StarTeam. {:)
+
+
+#end of file
+
+
+

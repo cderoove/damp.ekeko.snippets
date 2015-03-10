@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<ruleset name="JUnit Rules">
+  <description>
+These rules deal with different problems that can occur with JUnit tests.
+  </description>
+
+    <rule name="JUnitStaticSuite"
+          message="You have a suite() method that is not both public and static, so JUnit won't call it to get your TestSuite.  Is that what you wanted to do?"
+          class="net.sourceforge.pmd.rules.XPathRule">
+      <description>
+      The suite() method in a JUnit test needs to be both public and static.
+      </description>
+        <properties>
+        <property name="xpath">
+            <value>
+                <![CDATA[
+  //MethodDeclaration[not(@Static='true') or not(@Public='true')]
+   [MethodDeclarator/@Image='suite']
+   [MethodDeclarator/FormalParameters/@ParameterCount=0]
+                ]]>
+            </value>
+        </property>
+        </properties>
+        <priority>3</priority>
+
+      <example>
+  <![CDATA[
+  import junit.framework.*;
+  public class Foo extends TestCase {
+   public void suite() {} // oops, should be static
+   private static void suite() {} // oops, should be public
+  }
+  ]]>
+      </example>
+      </rule>
+
+
+  <rule name="JUnitSpelling"
+        message="You may have misspelled a JUnit framework method (setUp or tearDown)"
+        class="net.sourceforge.pmd.rules.XPathRule">
+    <description>
+    Some JUnit framework methods are easy to misspell.
+    </description>
+      <properties>
+      <property name="xpath">
+          <value>
+              <![CDATA[
+//MethodDeclarator[(not(@Image = 'setUp') 
+ and translate(@Image, 'SETuP', 'setUp') = 'setUp') 
+ or (not(@Image = 'tearDown') 
+ and translate(@Image, 'TEARdOWN', 'tearDown') = 'tearDown')]
+ [FormalParameters[count(*) = 0]]
+              ]]>
+          </value>
+      </property>
+      </properties>
+      <priority>3</priority>
+
+    <example>
+<![CDATA[
+import junit.framework.*;
+public class Foo extends TestCase {
+ public void setup() {} // oops, should be setUp
+ public void TearDown() {} // oops, should be tearDown
+}
+]]>
+    </example>
+    </rule>
+
+    <rule name="JUnitAssertionsShouldIncludeMessageRule"
+          message="JUnit assertions should include a message"
+          class="net.sourceforge.pmd.rules.junit.JUnitAssertionsShouldIncludeMessageRule">
+      <description>
+      JUnit assertions should include a message - i.e., use the three argument version of
+          assertEquals(), not the two argument version.
+      </description>
+        <priority>3</priority>
+
+      <example>
+  <![CDATA[
+  public class Foo extends TestCase {
+    public void testSomething() {
+        assertEquals("foo", "bar");
+        // not good!  use the form:
+        // assertEquals("Foo does not equals bar", "foo", "bar");
+        // instead
+    }
+  }
+  ]]>
+      </example>
+    </rule>
+
+
+</ruleset>
+
+
+

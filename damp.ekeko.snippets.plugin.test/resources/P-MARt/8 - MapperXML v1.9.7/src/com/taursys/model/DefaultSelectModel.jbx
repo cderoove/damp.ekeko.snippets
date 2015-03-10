@@ -1,0 +1,16 @@
+[PropertyInfo]
+displayOptionList,Collection,false,false, , ,true,<default>
+displayPropertyName,String,false,false,listDisplayPropertyName,listDisplayPropertyName,true,<default>
+list,com.taursys.model.CollectionValueHolder,false,false,list,list,true,<default>
+listPropertyNames,String[],false,false,listValuePropertyName,listValuePropertyName,true,<default>
+nullAllowed,boolean,false,false,nullAllowed,nullAllowed,true,<default>
+nullDisplay,String,false,false,nullDisplay,nullDisplay,true,<default>
+propertyName,String,false,false, , ,false, 
+propertyNames,String[],false,false,propertyNames,propertyNames,true,<default>
+selectedItem,Object,false,false, , ,true,<default>
+text,String,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

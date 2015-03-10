@@ -1,0 +1,16 @@
+[PropertyInfo]
+nullAllowed,boolean,false,false, , ,true,<default>
+nullDisplay,String,false,false, , ,true,<default>
+optionListPropertyName,String,false,false,optionListPropertyName,optionListPropertyName,true,<default>
+optionListPropertyNames,String[],false,false,optionListPropertyNames,optionListPropertyNames,true,<default>
+optionListValueHolder,com.taursys.model.ListValueHolder,false,false,optionList,optionList,true,<default>
+propertyName,String,false,false,propertyName,propertyName,true,<default>
+propertyNames,String[],false,false,propertyNames,propertyNames,true,<default>
+selectedItem,Object,false,false, , ,true,<default>
+size,int,false,false, , ,true,<default>
+valueHolder,ValueHolder,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

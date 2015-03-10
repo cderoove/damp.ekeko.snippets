@@ -1,0 +1,9 @@
+[PropertyInfo]
+attributeName,String,false,false, , ,true,<default>
+id,String,false,false, , ,true,<default>
+earlyInputNotify,boolean,false,false,earlyInputNotify,notify of input at same time as Parameters,true,<default>
+[IconNames]
+
+
+
+

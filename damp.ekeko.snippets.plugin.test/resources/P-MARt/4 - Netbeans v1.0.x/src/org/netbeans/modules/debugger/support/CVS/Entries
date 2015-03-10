@@ -1,0 +1,43 @@
+/AbstractDebugger.java/1.1/Sat Apr 10 00:17:28 2004//
+/AbstractThread.java/1.1/Sat Apr 10 00:17:28 2004//
+/AbstractThreadGroup.java/1.1/Sat Apr 10 00:17:28 2004//
+/AbstractVariable.java/1.1/Sat Apr 10 00:17:28 2004//
+/AbstractWatch.java/1.1/Sat Apr 10 00:17:28 2004//
+/ActionTIEditor.java/1.1/Sat Apr 10 00:17:28 2004//
+/ActionTIPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/Bundle.properties/1.1/Sat Apr 10 00:17:28 2004//
+/Bundle_ja.properties/1.1/Sat Apr 10 00:17:28 2004//
+/CallStackFrame.java/1.1/Sat Apr 10 00:17:28 2004//
+/ClassBreakpointEvent.java/1.1/Sat Apr 10 00:17:28 2004//
+/ClassBreakpointPanel.form/1.1/Sat Apr 10 00:17:28 2004/-kb/
+/ClassBreakpointPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/CoreBreakpoint.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerAdapter.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerInfoProducer.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerListener.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerModule.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerSettings.java/1.1/Sat Apr 10 00:17:28 2004//
+/DebuggerSettingsBeanInfo.java/1.1/Sat Apr 10 00:17:28 2004//
+/LineBreakpointEvent.java/1.1/Sat Apr 10 00:17:28 2004//
+/LineBreakpointPanel.form/1.1/Sat Apr 10 00:17:28 2004/-kb/
+/LineBreakpointPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/MethodBreakpointEvent.java/1.1/Sat Apr 10 00:17:28 2004//
+/MethodBreakpointPanel.form/1.1/Sat Apr 10 00:17:28 2004/-kb/
+/MethodBreakpointPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/PrintAction.java/1.1/Sat Apr 10 00:17:28 2004//
+/PrintActionPanel.form/1.1/Sat Apr 10 00:17:28 2004/-kb/
+/PrintActionPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/ProcessDebuggerInfo.java/1.1/Sat Apr 10 00:17:28 2004//
+/ProcessDebuggerType.java/1.1/Sat Apr 10 00:17:28 2004//
+/ProcessDebuggerTypeBeanInfo.java/1.1/Sat Apr 10 00:17:28 2004//
+/StopAction.java/1.1/Sat Apr 10 00:17:28 2004//
+/StopActionPanel.form/1.1/Sat Apr 10 00:17:28 2004/-kb/
+/StopActionPanel.java/1.1/Sat Apr 10 00:17:28 2004//
+/StopEvent.java/1.1/Sat Apr 10 00:17:28 2004//
+/ThreadGroupAdapter.java/1.1/Sat Apr 10 00:17:28 2004//
+/ThreadGroupListener.java/1.1/Sat Apr 10 00:17:28 2004//
+/VariableImpl.java/1.1/Sat Apr 10 00:17:28 2004//
+/WorkspaceEditor.java/1.1/Sat Apr 10 00:17:28 2004//
+D/actions////
+D/nodes////
+D/util////

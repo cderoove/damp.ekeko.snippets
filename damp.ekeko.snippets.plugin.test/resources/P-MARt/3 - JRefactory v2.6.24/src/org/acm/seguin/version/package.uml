@@ -1,0 +1,7 @@
+V[1.1:org.acm.seguin.version]
+S[org.acm.seguin.version:SourceSafe,org.acm.seguin.version:VersionControl]{2:(459,202),(488,152)}
+S[org.acm.seguin.version:UserDirectedVersionControl,org.acm.seguin.version:VersionControl]{2:(610,187),(583,152)}
+P[org.acm.seguin.version:SourceSafe]{190,202}
+P[org.acm.seguin.version:VersionControl]{430,10}
+P[org.acm.seguin.version:VersionControlCache]{775,21}
+P[org.acm.seguin.version:UserDirectedVersionControl]{555,187}

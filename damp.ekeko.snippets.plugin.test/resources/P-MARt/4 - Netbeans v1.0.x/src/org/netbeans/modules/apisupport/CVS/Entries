@@ -1,0 +1,35 @@
+/APIModule.java/1.1/Sat Apr 10 00:17:19 2004//
+/APISettings.java/1.1/Sat Apr 10 00:17:19 2004//
+/APISettingsBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/BeanTester.java/1.1/Sat Apr 10 00:17:19 2004//
+/BeanTesterBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/CategoryNode.java/1.1/Sat Apr 10 00:17:19 2004//
+/CompilerTypeTester.java/1.1/Sat Apr 10 00:17:19 2004//
+/CompilerTypeTesterBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/ExecutorTester.java/1.1/Sat Apr 10 00:17:19 2004//
+/ExecutorTesterBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/InstallModuleExecutor.java/1.1/Sat Apr 10 00:17:19 2004//
+/InstallModuleExecutorBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/InstanceNode.java/1.1/Sat Apr 10 00:17:19 2004//
+/JavaHelpDataLoader.java/1.1/Sat Apr 10 00:17:19 2004//
+/JavaHelpDataLoaderBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/LocalDocsLinkAction.java/1.1/Sat Apr 10 00:17:19 2004//
+/ManifestDataLoader.java/1.1/Sat Apr 10 00:17:19 2004//
+/ManifestDataLoaderBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/ManifestDataNode.java/1.1/Sat Apr 10 00:17:19 2004//
+/ManifestDataObject.java/1.1/Sat Apr 10 00:17:19 2004//
+/ManifestProvider.java/1.1/Sat Apr 10 00:17:19 2004//
+/ModuleDataLoader.java/1.1/Sat Apr 10 00:17:19 2004//
+/ModuleDataLoaderBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/ModuleDataNode.java/1.1/Sat Apr 10 00:17:19 2004//
+/ModuleDataObject.java/1.1/Sat Apr 10 00:17:19 2004//
+/PresenterTester.java/1.1/Sat Apr 10 00:17:19 2004//
+/PresenterTesterBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/ShowAPIJavadocAction.java/1.1/Sat Apr 10 00:17:19 2004//
+/SystemActionTester.java/1.1/Sat Apr 10 00:17:19 2004//
+/SystemActionTesterBeanInfo.java/1.1/Sat Apr 10 00:17:19 2004//
+/TemplateWizardHelperAction.java/1.1/Sat Apr 10 00:17:19 2004//
+/Tester.java/1.1/Sat Apr 10 00:17:19 2004//
+D/beanbrowser////
+D/help////
+D/resources////

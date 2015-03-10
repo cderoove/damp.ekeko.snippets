@@ -1,0 +1,59 @@
+package ${packageName};
+
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
+
+/**
+ * Value Object
+ * @author ${_author}
+ * @version 1.0
+ */
+public class ${className} implements Serializable {
+#foreach( $property in $propertyList )
+  ${property.getInstanceVarDeclSourceCode()};
+#end
+
+  /**
+   * Constructs a new ${className} with default values.
+   */
+  public ${className}() {
+  }
+
+  /**
+   * Constructs a new ${className} with given values.
+#foreach( $property in $propertyList )
+   * @param ${property.getPropertyName()} ${property.getGetSetDescription()}.
+#end
+   */
+  public ${className}(
+#set( $prefix="")
+#foreach( $property in $propertyList )
+      ${prefix}${property.getPropertyType()} ${property.getPropertyName()}
+#set( $prefix=",")
+#end
+      ) {
+#foreach( $property in $propertyList )
+    this.${property.getPropertyName()} = ${property.getPropertyName()};
+#end
+  }
+
+#foreach( $property in $propertyList )
+  /**
+   * Set ${property.getGetSetDescription()}.
+   * @param ${property.getPropertyName()} ${property.getGetSetDescription()}.
+   */
+  public void set${property.getPropertyNameCapitalized()}(${property.getPropertyType()} ${property.getPropertyName()}) {
+    this.${property.getPropertyName()} = ${property.getPropertyName()};
+  }
+
+  /**
+   * Get ${property.getGetSetDescription()}.
+   * @return ${property.getGetSetDescription()}.
+   */
+  public ${property.getPropertyType()} get${property.getPropertyNameCapitalized()}() {
+    return ${property.getPropertyName()};
+  }
+
+#end
+}

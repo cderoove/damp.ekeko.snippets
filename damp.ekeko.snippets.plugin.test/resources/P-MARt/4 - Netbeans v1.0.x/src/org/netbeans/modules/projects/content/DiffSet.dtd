@@ -1,0 +1,34 @@
+<!--
+    Typical usage:
+
+    <?xml version="1.0"?>
+
+    <!DOCTYPE diffset SYSTEM "DiffSet.dtd">
+
+    <diffset>
+    ...
+    </diffset>
+-->
+
+  <!ELEMENT remove EMPTY>
+  <!ATTLIST remove
+    name CDATA #IMPLIED
+  >
+
+  <!ELEMENT reorder EMPTY>
+  <!ATTLIST reorder
+    permutation CDATA #IMPLIED
+  >
+
+  <!ELEMENT add EMPTY>
+  <!ATTLIST add
+    value CDATA #IMPLIED
+    name CDATA #IMPLIED
+  >
+
+  <!ELEMENT diffset (#PCDATA|remove|reorder|add)*>
+  <!ATTLIST diffset
+    version CDATA #IMPLIED
+    clear CDATA #IMPLIED
+  >
+

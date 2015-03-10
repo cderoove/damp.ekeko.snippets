@@ -144,12 +144,12 @@
           cluster-no 3
           cluster (get ast-nodes (nth (keys ast-nodes) cluster-no))
           cluster-files (get files (nth (keys files) cluster-no))
-          tgroups (search/population-from-tuples (set (for [x cluster] [x])))
+          tgroups (search/population-from-snippets (set (for [x cluster] [x])))
           ; Note that you can't directly use the AST nodes from the .csv file as verified-matches..
           ; I should first turn each node into a template, then match it..
           ; I'm guessing this is because the .csv's AST nodes are objects not listed in Ekeko's database?..
           verified-matches (search/make-verified-matches
-                             (for [x tgroups] (first (search/templategroup-matches-nomemo x)))
+                             (for [x tgroups] (first (damp.ekeko.snippets.geneticsearch.fitness/templategroup-matches x)))
                              [])
           disabled-units (disable-other-compilation-units! cluster-files)]
       

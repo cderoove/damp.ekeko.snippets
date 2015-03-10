@@ -1,0 +1,6 @@
+OpenIDE-Module: org.netbeans.examples.modules.editastext
+OpenIDE-Module-Name: Edit as Text
+OpenIDE-Module-Specification-Version: 0.1
+
+Name: org/netbeans/examples/modules/editastext/EditAsTextAction.class
+OpenIDE-Module-Class: Action

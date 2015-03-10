@@ -1,0 +1,10 @@
+[PropertyInfo]
+ascendingOrder,boolean,false,false,ordering,ordering,true,<default>
+ascendingOrders,boolean[],false,false,orderings,orderings,true,<default>
+propertyName,String,false,false,propertyName,propertyName,true,<default>
+propertyNames,String[],false,false,propertyNames,propertyNames,true,<default>
+[IconNames]
+
+
+
+

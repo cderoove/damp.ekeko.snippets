@@ -1,0 +1,13 @@
+[PropertyInfo]
+columnCount,int,false,false, , ,true,<default>
+columnNames,String[],false,false,columnNames,columnNames,true,<default>
+list,List,false,false, , ,true,<default>
+listSelectionModel,javax.swing.ListSelectionModel,false,false,listSelectionModel,listSelectionModel,true,<default>
+listValueHolder,com.taursys.model.ListValueHolder,false,false,listValueHolder,listValueHolder,true,<default>
+rowCount,int,false,false, , ,true,<default>
+valueObjectClass,Class,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

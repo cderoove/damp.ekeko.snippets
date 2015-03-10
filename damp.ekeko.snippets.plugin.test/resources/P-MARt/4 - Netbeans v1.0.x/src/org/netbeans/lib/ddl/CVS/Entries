@@ -1,0 +1,28 @@
+/Argument.java/1.1/Sat Apr 10 00:17:40 2004//
+/CheckConstraintDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/ColumnOperationCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/CommandNotSupportedException.java/1.1/Sat Apr 10 00:17:40 2004//
+/CommentOperationCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/CreateProcedureCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/CreateTableCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/CreateTriggerCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/CreateViewCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/DBConnection.java/1.1/Sat Apr 10 00:17:40 2004//
+/DDLCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/DDLException.java/1.1/Sat Apr 10 00:17:40 2004//
+/DatabaseProductNotFoundException.java/1.1/Sat Apr 10 00:17:40 2004//
+/DatabaseSpecification.java/1.1/Sat Apr 10 00:17:40 2004//
+/DatabaseSpecificationFactory.java/1.1/Sat Apr 10 00:17:40 2004//
+/DriverProductNotFoundException.java/1.1/Sat Apr 10 00:17:40 2004//
+/DriverSpecificationFactory.java/1.1/Sat Apr 10 00:17:40 2004//
+/ForeignKeyConstraintDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/FunctionDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/OwnedObjectCommand.java/1.1/Sat Apr 10 00:17:40 2004//
+/ProcedureDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/TableColumnDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/TableConstraintDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+/TriggerDescriptor.java/1.1/Sat Apr 10 00:17:40 2004//
+D/adaptors////
+D/impl////
+D/resources////
+D/util////

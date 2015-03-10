@@ -1,0 +1,123 @@
+/*
+ *                 Sun Public License Notice
+ * 
+ * The contents of this file are subject to the Sun Public License
+ * Version 1.0 (the "License"). You may not use this file except in
+ * compliance with the License. A copy of the License is available at
+ * http://www.sun.com/
+ * 
+ * The Original Code is NetBeans. The Initial Developer of the Original
+ * Code is Sun Microsystems, Inc. Portions Copyright 1997-2001 Sun
+ * Microsystems, Inc. All Rights Reserved.
+ */
+
+{
+// ****************************************************
+// default
+// ****************************************************
+  "DefaultDriver" = {
+    DriverName = "DefaultDriver";
+    get_Catalog = true;
+    get_Schema = true;
+    
+    getTables_TableNamePattern = null;
+    getTables_Types = true;
+    
+    getProcedures_ProcedureNamePattern = null;
+    
+//    getPrimaryKeys_Table = true;
+
+//    getExportedKeys_Table = true;
+    
+//    getIndexInfo_Table = true;
+    getIndexInfo_Unique = true;
+    getIndexInfo_Approximate = false;
+
+//    getColumns_TableNamePattern = true;
+//    getColumns_Schema = true;
+
+//    getProcedureColumns_ProcedureSchemaPattern = true;
+    getProcedureColumns_ColumnNamePattern = null;
+  };
+  
+// ****************************************************
+// Cloudscape Embedded JDBC Driver
+// ****************************************************
+  "Cloudscape Embedded JDBC Driver" = {
+    DriverName = "Cloudscape Embedded JDBC Driver";
+  };  
+
+// ****************************************************
+// InstantDB JDBC Driver
+// ****************************************************
+  "InstantDB JDBC Driver" = {
+    DriverName = "InstantDB JDBC Driver";
+  };  
+  
+// ****************************************************
+// MS SQLServer - Sprinta JDBC driver
+// ****************************************************
+  "Sprinta JDBC driver" = {
+    DriverName = "Sprinta JDBC driver";
+    get_Schema = null;
+  };
+
+// ****************************************************
+// MySQL JDBC-ODBC bridge
+// ****************************************************
+  "JDBC-ODBC Bridge (myodbc.dll)" = {
+    DriverName = "JDBC-ODBC Bridge (myodbc.dll)";
+    get_Schema = null;
+  };
+  
+// ****************************************************
+// MySQL Mark Matthews' Driver
+// ****************************************************
+  "Mark Matthews' MySQL Driver" = {
+    DriverName = "Mark Matthews' MySQL Driver";
+  };
+  
+// ****************************************************
+// Oracle JDBC driver
+// ****************************************************
+  "Oracle JDBC driver" = {
+    DriverName = "Oracle JDBC driver";
+  };
+
+// ****************************************************
+// Oracle JDBC-ODBC Bridge (Oracle)
+// ****************************************************
+  "JDBC-ODBC Bridge (SQORA32.DLL)" = {
+    DriverName = "JDBC-ODBC Bridge (SQORA32.DLL)";
+  };
+
+// ****************************************************
+// Oracle JDBC-ODBC Bridge (Microsoft)
+// ****************************************************
+  "JDBC-ODBC Bridge (msorcl32.dll)" = {
+    DriverName = "JDBC-ODBC Bridge (msorcl32.dll)";
+  };
+  
+// ****************************************************
+// PointBase JDBC driver
+// ****************************************************
+  "PointBase JDBC Driver" = {
+    DriverName = "PointBase JDBC Driver";
+  };
+  
+// ****************************************************
+// Sybase JDBC-ODBC bridge
+// ****************************************************
+  "JDBC-ODBC Bridge (DBODBC6W.DLL)" = {
+    DriverName = "JDBC-ODBC Bridge (DBODBC6W.DLL)";
+    getIndexInfo_Unique = false;
+  };
+  
+// ****************************************************
+// Sybase jConnect driver
+// ****************************************************
+  "jConnect (TM) for JDBC (TM)" = {
+    DriverName = "jConnect (TM) for JDBC (TM)";
+  };
+
+}

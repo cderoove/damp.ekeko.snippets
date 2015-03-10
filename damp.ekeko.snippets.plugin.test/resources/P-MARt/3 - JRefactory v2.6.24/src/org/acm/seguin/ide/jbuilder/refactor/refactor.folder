@@ -1,0 +1,16 @@
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderAddParentClassAction.java
+.\src\org\acm\seguin\ide\jbuilder\ProjectViewRefactorings.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderRenameClassAction.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderSelectedFileSet.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderAddChildClassAction.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\FileCloser.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderExtractInterfaceAction.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\MenuBuilder.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderRemoveClassAction.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderCurrentSummary.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderRenameClassRefactoring.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderRemoveEmptyClassRefactoring.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderMoveClassRefactoring.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\CVS\CVS.folder
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderMoveClassAction.java
+.\src\org\acm\seguin\ide\jbuilder\refactor\JBuilderRefactoringFactory.java

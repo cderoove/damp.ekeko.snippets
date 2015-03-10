@@ -1,0 +1,10 @@
+[PropertyInfo]
+text,String,false,false, , ,true,<default>
+selected,boolean,false,false,selected,selected,true,<default>
+selectedValue,String,false,false,selectedValue,selectedValue,true,<default>
+unselectedValue,String,false,false,unselectedValue,unselectedValue,true,<default>
+[IconNames]
+
+
+
+

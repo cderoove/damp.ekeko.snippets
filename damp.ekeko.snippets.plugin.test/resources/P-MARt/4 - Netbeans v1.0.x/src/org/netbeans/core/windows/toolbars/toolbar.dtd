@@ -1,0 +1,8 @@
+  <!ELEMENT Configuration (Row+)>
+  <!ELEMENT Row (Toolbar*)>
+  <!ELEMENT Toolbar EMPTY>
+  <!ATTLIST Toolbar
+    name CDATA #REQUIRED
+    position CDATA #IMPLIED
+    visible (true | false) #IMPLIED
+  >

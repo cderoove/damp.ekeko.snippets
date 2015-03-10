@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.0//EN" "http://www.netbeans.org/dtds/filesystem-1_0.dtd">
+
+<filesystem>
+    <!-- Installing JRefactory menu actions: -->
+    <folder name="Menu">
+        <folder name="Tools">
+            <file name="org-acm-seguin-ide-netbeans-PrettyPrinterAction.instance"/>
+            <!-- Position after Options... -->
+            <attr name="org-netbeans-modules-projects-settings-OptionsAction.instance/org-acm-seguin-ide-netbeans-PrettyPrinterAction.instance" boolvalue="true"/>
+            <file name="org-acm-seguin-ide-netbeans-ExtractMethodAction.instance"/>
+            <attr name="org-acm-seguin-ide-netbeans-PrettyPrinterAction.instance/org-acm-seguin-ide-netbeans-ExtractMethodAction.instance" boolvalue="true"/>
+        </folder>
+    </folder>
+</filesystem>

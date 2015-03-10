@@ -1,0 +1,11 @@
+[PropertyInfo]
+propertyDataType,String,false,false, , ,true,<default>
+propertyName,String,false,false, , ,true,<default>
+givenValue,String,false,false,givenValue,givenValue,true,<default>
+formatClass,String,false,false,formatClass,formatClass,true,<default>
+formatPattern,String,false,false,formatPattern,formatPattern,true,<default>
+[IconNames]
+
+
+
+

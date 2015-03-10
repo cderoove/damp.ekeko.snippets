@@ -1,0 +1,9 @@
+[PropertyInfo]
+defaultFormName,String,false,false,defaultFormName,defaultFormName,true,<default>
+servletFormSuffix,String,false,false,servletFormSuffix,servletFormSuffix,true,<default>
+defaultClassLoader,ClassLoader,false,false,defaultClassLoader,defaultClassLoader,true,<default>
+[IconNames]
+
+
+
+

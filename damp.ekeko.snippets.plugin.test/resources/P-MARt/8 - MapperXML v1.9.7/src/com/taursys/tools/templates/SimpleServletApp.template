@@ -1,0 +1,46 @@
+package ${packageName};
+
+import com.taursys.servlet.*;
+import com.taursys.debug.*;
+import javax.servlet.ServletException;
+import javax.servlet.ServletConfig;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * ${className} is the main ServletApp for this application.
+ * It acts as dispatcher for application ServletForms.
+ * @author ${_author}
+ * @version 1.0
+ */
+public class ${className} extends ServletApp {
+
+  /**
+   * Constructs a new ${className} and initializes component properties.
+   */
+  public ${className}() {
+  }
+
+  /**
+   * Initialize ServletFormFactory
+   */
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
+    getFactory().addPackage("/","com.taursys.examples.simpleweb");
+    getFactory().setDefaultFormName("com.taursys.examples.simpleweb.FirstPage");
+    // Set defaultClassLoader if mapperxml.jar is shared & not in your app's .war
+    getFactory().setDefaultClassLoader(getClass().getClassLoader());
+    // Set default logging
+    Debug.setLoggerAdapter(new SimpleLogger(Debug.DEBUG));
+  }
+
+  /**
+   * Service request but first add any applications resources
+   */
+  public void doGet(HttpServletRequest request, HttpServletResponse response)
+      throws ServletException, IOException {
+//    request.setAttribute("myResource", myResource);
+    super.doGet(request, response);
+  }
+}
