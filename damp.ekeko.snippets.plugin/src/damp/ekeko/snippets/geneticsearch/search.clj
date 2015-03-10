@@ -428,11 +428,6 @@
   (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
   
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
-                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
-  
-  (inspector-jay.core/inspect (clojure.xml/parse (new java.io.File "P-MARt.xml")))
-  
-  
-  )
+                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true)))
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
