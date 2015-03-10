@@ -602,6 +602,10 @@ damp.ekeko.snippets.operators
           (swap! newsnippet snippet/update-bounddirectives  destval destbds))))
     @newsnippet))
 
+
+
+
+
 (defn
   replace-parent
   "Make an expression node replace its parent."
@@ -739,20 +743,53 @@ damp.ekeko.snippets.operators
                                             (= node (snippet/snippet-node-parent|conceptually snippet resolvingnode))) 
                                         (add-directive-type|qname newsnippet resolvingnode qnamestring)
                                         newsnippet))))))))
-              
 
-;;mogelijke varianten
+;;mogelijke varianten voor in de toekomst
 ;;1ste: overal type* ipv type inserten, vraag: object zou niet teruggeven mogen worden door type*?, nut? type->type* kan ook atomisch gebeuren
 ;;2de: resolvingnodes hebben gemeenschappelijk supertype, vooral belangrijk als je er meteen een qname bijzet
-;(defn
-;  generalize-subtypes
-;  [snippetgroup snippet node]
-;  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
-;    (when (astnode/binding-type? binding)
-;     
-;     
-;      )))
 
+
+(defn
+  extract-template
+  "Extract the given node into a new template. Node itself is replaced by a variable that links old and new templates together."
+  [snippetgroup snippet node]
+  (let [;create new snippet from node
+        destination (atom (matching/snippet-from-node node))
+        extractedvar (util/gen-readable-lvar-for-value node)
+        ;replace node by variable in original snippet
+        source (replace-by-variable snippet node extractedvar)]
+    ;transfer bound directives
+    (snippet/walk-snippets-elements
+      @destination
+      (snippet/snippet-root @destination)
+      snippet
+      node
+      (fn [[destval srcval]] 
+        (let [srcbds
+              (snippet/snippet-bounddirectives-for-node snippet srcval) 
+              destbds
+              (map
+                (fn [bounddirective]
+	                 (directives/make-bounddirective
+                    (directives/bounddirective-directive bounddirective)
+                    (cons 
+                      (directives/make-implicit-operand destval)
+                      (rest (directives/bounddirective-operandbindings bounddirective)))))
+                   srcbds)]
+          (swap! destination snippet/update-bounddirectives  destval destbds))))
+    (snippetgroup/snippetgroup-update-snippetlist
+      snippetgroup
+      (conj 
+        ;replace original snippet by one in which variable substitutes for a node
+        (snippetgroup/snippetgroup-snippetlist
+          (snippetgroup/replace-snippet snippetgroup snippet source))
+        ;add new snippet to group
+        (add-directive-equals @destination (snippet/snippet-root @destination) extractedvar)))
+    ))
+  
+  
+                     
+                     
 
 
 

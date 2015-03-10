@@ -1131,6 +1131,18 @@ damp.ekeko.snippets.operatorsrep
      []
      true)
 
+   (Operator. 
+     "extract-template"
+     operators/extract-template
+     :neutral
+     "Extract node as new template."
+     opscope-subject
+     applicability|node|nonroot
+     "Extracts selected node into an additional template for this node only."
+     []
+     true)
+   
+   
    ])
 
 (defn 
