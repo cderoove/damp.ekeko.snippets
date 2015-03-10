@@ -1,0 +1,27 @@
+<!--
+  --                 Sun Public License Notice
+  -- 
+  -- The contents of this file are subject to the Sun Public License
+  -- Version 1.0 (the "License"). You may not use this file except in
+  -- compliance with the License. A copy of the License is available at
+  -- http://www.sun.com/
+  -- 
+  -- The Original Code is Forte for Java, Community Edition. The Initial
+  -- Developer of the Original Code is Sun Microsystems, Inc. Portions
+  -- Copyright 1997-2000 Sun Microsystems, Inc. All Rights Reserved.
+  -->
+
+<html>
+<head>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html;charset=EUC-JP">
+</head>
+<body>
+
+Java で必要なパッケージやクラスにアクセスするには、<samp>CLASSPATH</samp> に正しいディレクトリ階層とアーカイブを含める必要がありますが、これと同様に IDE の<strong>ファイルシステム (Filesystems)</strong>中で新しいファイルをマウントする位置も大変重要です。
+
+<p>デフォルトのパッケージが含まれているディレクトリは必ずマウントしてください。たとえば、パッケージ <code>com.yoyodyne.spreadsheet</code> 中に自分で作成したクラスがあり、そのクラスがディレクトリ <code>C:\JavaDevel\source\com\yoyodyne\spreadsheet\</code> に含まれている場合、必ず <code>C:\JavaDevel\source\</code> ディレクトリをマウントしてください。
+
+<p>同様に、JAR ファイルを使用する場合は、Java パッケージと JAR ファイル中のクラスの位置が合致していなければなりません。これらの設定は Java では必須条件なので、IDE でも習慣付けることをお勧めします。
+
+</body>
+</html>

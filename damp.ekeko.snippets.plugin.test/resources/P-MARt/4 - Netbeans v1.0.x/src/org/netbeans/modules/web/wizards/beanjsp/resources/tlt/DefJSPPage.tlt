@@ -1,0 +1,30 @@
+
+
+<html><head>
+<title> JSP Page </title>
+</head>
+
+<!-- This JSP page is generated from the JSP Page Wizard  -->
+<!-- The order of the $$BEGIN... $$END... Tags are important. Please don't delete. -->
+
+<!-- $$BEGIN PAGE DIRECTIVE -->
+<!-- $$END PAGE DIRECTIVE -->
+
+<!-- $$BEGIN USE BEAN -->
+<!-- $$END USE BEAN -->
+
+<!-- $$BEGIN POST/GET VALIDATION -->
+<!-- $$END POST/GET VALIDATION -->
+
+<!-- $$BEGIN EXEC BIZ METHODS -->
+<!-- $$END EXEC BIZ METHODS -->
+
+<body>
+
+<h1> This is a JSP Page </h1>
+ 
+<!-- $$BEGIN DYNAMIC FORM -->
+<!-- $$END DYNAMIC FORM -->  
+
+</body>
+</html>

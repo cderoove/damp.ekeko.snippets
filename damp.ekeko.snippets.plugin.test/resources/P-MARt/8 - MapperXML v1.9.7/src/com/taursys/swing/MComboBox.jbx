@@ -1,0 +1,19 @@
+[PropertyInfo]
+displayPropertyName,String,false,false, , ,true,com.taursys.beans.editors.ClassPropertyNameEditor
+format,java.text.Format,false,false, , ,true,com.taursys.beans.editors.FormatEditor
+formatPattern,String,false,false, , ,true,<default>
+MListCellRenderer,MListCellRenderer,false,false, , ,true,<default>
+model,ComboBoxModel,false,false, , ,true,<default>
+nullAllowed,boolean,false,false, , ,true,<default>
+nullDisplay,String,false,false, , ,true,<default>
+optionListPropertyName,String,false,false, , ,true,<default>
+optionListPropertyNames,String[],false,false, , ,true,<default>
+optionListValueHolder,ListValueHolder,false,false, , ,true,<default>
+propertyName,String,false,false, , ,true,<default>
+propertyNames,String[],false,false, , ,true,<default>
+valueHolder,ValueHolder,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,16 @@
+[PropertyInfo]
+propertyName,String,false,false,propertyName,propertyName,true,<default>
+propertyType,String,false,false,propertyType,propertyType,true,<default>
+binding,int,false,false,binding,binding,true,<default>
+getter,boolean,false,false,getter,getter,true,<default>
+setter,boolean,false,false,setter,setter,true,<default>
+expose,boolean,false,false,expose,expose,true,<default>
+displayName,String,false,false,displayName,displayName,true,<default>
+toolTip,String,false,false,toolTip,toolTip,true,<default>
+getSetDescription,String,false,false,getSetDescription,getSetDescription,true,<default>
+longDescription,String,false,false,longDescription,longDescription,true,<default>
+[IconNames]
+
+
+
+

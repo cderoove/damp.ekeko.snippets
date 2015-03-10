@@ -1,0 +1,254 @@
+May 19, 2004 - 1.8:
+New rules: ExceptionAsFlowControlRule, BadComparisonRule, AvoidThrowingCertainExceptionTypesRule, AvoidCatchingNPERule, OptimizableToArrayCallRule
+Major grammar changes - lots of new node types added, many superfluous nodes removed from the runtime AST.  Bug 786611 - http://sourceforge.net/tracker/index.php?func=detail&aid=786611&group_id=56262&atid=479921 - explains it a bit more.
+Fixed bug 786611 - Expressions are no longer over-expanded in the AST
+Fixed bug 874284 - The AST now contains tokens for bitwise or expressions - i.e., "|"
+
+April 22, 2004 - 1.7:
+Moved development environment to Maven 1.0-RC2.
+Fixed bug 925840 - Messages were no longer getting variable names plugged in correctly
+Fixed bug 919308 - XMLRenderer was still messed up; 'twas missing a quotation mark.
+Fixed bug 923410 - PMD now uses the default platform character set encoding; optionally, you can pass in a character encoding to use.
+Implemented RFE 925839 - Added some more detail to the UseSingletonRule.
+Added an optional 'failuresPropertyName' attribute to the Ant task.
+Refactored away duplicate copies of XPath rule definitions in regress/, yay!
+Removed manifest from jar file; it was only there for the Main-class attribute, and it's not very useful now since PMD has several dependencies.
+
+March 15, 2004 - 1.6:
+Fixed bug 895661 - XML reports containing error elements no longer have malformed XML.
+Fixed a bug in UnconditionalIfStatement - it no longer flags things like "if (x==true)".
+Applied Steve Hawkins' improvements to CPD:
+- Various optimizations; now it runs about 4 times faster!
+- fixed "single match per file" bug
+- tweaked source code slicing
+- CSV renderer
+Added two new renderers - SummaryHTMLRenderer and PapariTextRenderer.
+Moved development environment to Ant 1.6 and JavaCC 3.2.
+
+February 2, 2004 - 1.5:
+New rules: DontImportSunRule, EmptyFinalizer, EmptyStaticInitializer, AvoidDollarSigns, FinalizeOnlyCallsSuperFinalize, FinalizeOverloaded, FinalizeDoesNotCallSuperFinalize, MethodWithSameNameAsEnclosingClass, ExplicitCallToFinalize, NonStaticInitializer, DefaultLabelNotLastInSwitchStmt, NonCaseLabelInSwitchStatement, SuspiciousHashcodeMethodName, EmptyStatementNotInLoop, SuspiciousOctalEscapeRule
+FinalizeShouldBeProtected moved from design.xml to finalizers.xml.
+Added isTrue() to ASTBooleanLiteral.
+Added UnaryExpression to the AST.
+Added isPackagePrivate() to AccessNode.
+
+January 7, 2004 - 1.4:
+New rules: AbstractNamingRule, ProperCloneImplementationRule
+Fixed bug 840926 - AvoidReassigningParametersRule no longer reports a false positive when assigning a value to an array slot when the array is passed as a parameter to a method
+Fixed bug 760520 - RuleSetFactory is less strict about whitespace in ruleset.xml files.
+Fixed bug 826805 - JumbledIncrementorRule no longer reports a false positive when a outer loop incrementor is used as an array index
+Fixed bug 845343 - AvoidDuplicateLiterals now picks up cases when a duplicate literal appears in field declarations.
+Fixed bug 853409 - VariableNamingConventionsRule no longer requires that non-static final fields be capitalized
+Fixed a bug in OverrideBothEqualsAndHashcodeRule; it no longer reports a false positive when equals() is passed the fully qualified name of Object.
+Implemented RFE 845348 - UnnecessaryReturn yields more useful line numbers now
+Added a ruleset DTD and a ruleset XML Schema.
+Added 'ExplicitExtends' and 'ExplicitImplements' attributes to UnmodifiedClassDeclaration nodes.
+
+October 23, 2003 - 1.3:
+Relicensed under a BSD-style license.
+Fixed bug 822245 - VariableNamingConventionsRule now handles interface fields correctly.
+Added new rules: EmptySynchronizedBlock, UnnecessaryReturn
+ASTType now has an getDimensions() method.
+
+October 06, 2003 - 1.2.2:
+Added new rule: CloseConnectionRule
+Fixed bug 782246 - FinalFieldCouldBeStatic no longer flags fields in interfaces.
+Fixed bug 782235 - "ant -version" now prints more details when a file errors out.
+Fixed bug 779874 - LooseCouplingRule no longer triggers on ArrayList
+Fixed bug 781393 - VariableNameDeclaration no longer throws ClassCastExpression since ASTLocalVariableDeclaration now subclasses AccessNode
+Fixed bug 797243 - CPD XML report can no longer contain ]]> (CDEnd)
+Fixed bug 690196 - PMD now handles both JDK 1.3 and 1.4 code - i.e., usage of "assert" as an identifier.
+Fixed bug 805092 - VariableNamingConventionsRule no longer flags serialVersionUID as a violation
+Fixed bug - Specifying a non-existing rule format on the command line no longer results in a ClassNotFoundException.
+XPath rules may now include pluggable parameters.  This feature is very limited.  For now.
+Tweaked CPD time display field
+Made CPD text fields uneditable
+Added more error checking to CPD GUI input
+Added "dialog cancelled" check to CPD "Save" function
+Added Boris Gruschko's AST viewer.
+Added Jeff Epstein's TextPad integration.
+ASTType now has an isArray() method.
+
+August 1, 2003 - 1.2.1:
+Fixed bug 781077 - line number "-1" no longer appears for nodes with siblings.
+
+July 30, 2003 - 1.2:
+Added new rules: VariableNamingConventionsRule, MethodNamingConventionsRule, ClassNamingConventionsRule, AvoidCatchingThrowable, ExceptionSignatureDeclaration, ExceptionTypeChecking, BooleanInstantiation
+Fixed bug 583047 - ASTName column numbers are now correct
+Fixed bug 761048 - Symbol table now creates a scope level for anonymous inner classes
+Fixed bug 763529 - AccessorClassGenerationRule no longer crashes when given a final inner class
+Fixed bug 771943 - AtLeastOneConstructorRule and UnnecessaryConstructorRule no longer reports false positives on inner classes.
+Applied patch from Chris Webster to fix another UnnecessaryConstructorRule problem.
+Added ability to accept a comma-delimited string of files and directories on the command line.
+Added a CSVRenderer.
+Added a "-shortfilenames" argument to the PMD command line interface.
+Modified grammer to provide information on whether an initializer block is static.
+ASTViewer now shows node images and modifiers
+ASTViewer now saves last edited text to ~/.pmd_astviewer
+Moved the PMD Swing UI into a separate module - pmd-swingui.
+Updated license.txt to point to new location.
+
+June 19, 2003 - 1.1:
+Added new rules: FinalizeShouldBeProtected, FinalFieldCouldBeStatic, BeanMembersShouldSerializeRule
+Removed "verbose" attribute from PMD and CPD Ant tasks; now they use built in logging so you can do a "ant -verbose cpd" or "ant -verbose pmd".  Thanks to Philippe T'Seyen for the code.
+Added "excludes" feature to rulesets; thanks to Gael Marziou for the suggestion.
+Removed "LinkedList" from LooseCouplingRule checks; thx to Randall Schulz for the suggestion.
+CPD now processes PHP code.
+Added VBHTMLRenderer; thanks to Vladimir Bossicard for the code.
+Added "Save" item to CPD GUI; thanks to mcclain looney for the patch.
+Fixed bug 732592 - Ant task now accepts a nested classpath element.
+Fixed bug 744915 - UseSingletonRule no longer fires on abstract classes, thanks to Pablo Casado for the bug report.
+Fixed bugs 735396 and 735399 - false positives from ConstructorCallsOverridableMethodRule
+Fixed bug 752809 - UnusedPrivateMethodRule now catches unused private static methods, thanks to Conrad Roche for the bug report.
+
+April 17, 2003 - 1.05:
+Added new rules: ReturnFromFinallyBlock, SimplifyBooleanExpressions
+Added a new Ant task for CPD; thanks to Andy Glover for the code.
+Added ability to specify a class name as a renderer on the command line or in the formatter "type" attribute of the Ant task.
+Brian Ewins completely rewrote CPD using a portion of the Burrows-Wheeler Transform - it's much, much, much faster now.
+Rebuilt parser with JavaCC 3.0; made several parser optimizations.
+The Ant task now accepts a <classpath> element to aid in loading custom rulesets.  Thanks to Luke Francl for the suggestion.
+Fixed several bugs in UnnecessaryConstructorRule; thanks to Adam Nemeth for the reports and fixes.
+All test-data classes have been inlined into their respective JUnit tests.
+
+March 21, 2003 - 1.04
+Added new rules: ConstructorCallsOverridableMethodRule, AtLeastOneConstructorRule, JUnitAssertionsShouldIncludeMessageRule, DoubleCheckedLockingRule, ExcessivePublicCountRule, AccessorClassGenerationRule
+The Ant task has been updated; if you set "verbose=true" full stacktraces are printed.  Thx to Paul Roebuck for the suggestion.
+Moved JUnit rules into their own package - "net.sourceforge.pmd.rules.junit".
+Incorporated new ResourceLoader; thanks to Dave Fuller
+Incorporated new XPath-based rule definitions; thanks to Dan Sheppard for the excellent work.
+Fixed bug 697187 - Problem with nested ifs
+Fixed bug 699287 - Grammar bug; good catch by David Whitmore
+
+February 11, 2003 - 1.03
+Added new rules: CyclomaticComplexityRule, AssignmentInOperandRule
+Added numbering to the HTMLRenderer; thx to Luke Francl for the code.
+Added an optional Ant task attribute 'failOnRuleViolation'.  This stops the build if any rule violations are found.
+Added an XSLT script for processing the PMD XML report; thx to Mats for the code.
+The Ant task now determines whether the formatter toFile attribute is absolute or relative and routes the report appropriately.
+Moved several rules into a new "controversial" ruleset.
+Fixed bug 672742 - grammar typo was hosing up ASTConstructorDeclaration which was hosing up UseSingletonRule
+Fixed bug 674393 - OnlyOneReturn rule no longer counts returns that are inside anonymous inner classes as being inside the containing method.  Thx to C. Lamont Gilbert for the bug report.
+Fixed bug 674420 - AvoidReassigningParametersRule no longer counts parameter field reassignment as a violation.  Thx to C. Lamont Gilbert for the bug report.
+Fixed bug 673662 - The Ant task's "failOnError" attribute works again.  Changed the semantics of this attribute, though, so it fails the build if errors occurred.  A new attribute 'failOnRuleViolation' serves the purpose of stopping the build if rule violations are found.
+Fixed bug 676340 - Symbol table now creates new scope level when it encounters a switch statement.  See the bug for code details; generally, this bug would have triggered runtime exceptions on certain blocks of code.
+Fixed bug 683465 - JavaCC parser no longer has ability to throw java.lang.Error; now it only throws java.lang.RuntimeExceptions.  Thx to Gunnlaugur Thor Briem for a good discussion on this topic.
+Fixed bug in OverrideBothEqualsAndHashcodeRule - it no longer bails out with a NullPtrException on interfaces that declare a method signature "equals(Object)".  Thx to Don Leckie for catching that.
+
+January 22, 2003 - 1.02:
+Added new rules: ImportFromSamePackageRule, SwitchDensityRule, NullAssignmentRule, UnusedModifierRule, ForLoopShouldBeWhileLoopRule
+Updated LooseCouplingRule to check for usage of Vector; thx to Vladimir for the good catch.
+Updated AvoidDuplicateLiteralsRule to report the line number of the first occurrence of the duplicate String.
+Modified Ant task to use a formatter element; this lets you render a report in several formats without having to rerun PMD.
+Added a new Ant task attribute - shortFilenames.
+Modified Ant task to ignore whitespace in the ruleset attribute
+Added rule priority settings.
+Added alternate row colorization to HTML renderer.
+Fixed bug 650623 - the Ant task now uses relative directories for the report file
+Fixed bug 656944 - PMD no longer prints errors to System.out, instead it just rethrows any exceptions
+Fixed bug 660069 - this was a symbol table bug; thanks to mcclain looney for the report.
+Fixed bug 668119 - OverrideBothEqualsAndHashcodeRule now checks the signature on equals(); thanks to mcclain looney for the report.
+
+November 07 2002 - 1.01:
+Fixed bug 633879: EmptyFinallyBlockRule now handles multiple catch blocks followed by a finally block.
+Fixed bug 633892: StringToStringRule false positive exposed problem in symbol table usage to declaration code.
+Fixed bug 617971: Statistical rules no longer produce tons of false positives due to accumulated results.
+Fixed bug 633209: OnlyOneReturn rule no longer requires the return stmt to be the last statement.
+Enhanced EmptyCatchBlockRule to flag multiple consecutive empty catch blocks.
+Renamed AvoidStringLiteralsRule to AvoidDuplicateLiteralsRule.
+Modified Ant task to truncate file paths to make the HTML output neater.
+
+November 04 2002 - 1.0:
+Added new rules: StringToStringRule, AvoidReassigningParametersRule, UnnecessaryConstructorRule, AvoidStringLiteralsRule
+Fixed bug 631010: AvoidDeeplyNestedIfStmtsRule works correctly with if..else stmts now
+Fixed bug 631605: OnlyOneReturn handles line spillover now.
+Moved AvoidDeeplyNestedIfStmts from the braces ruleset to the design ruleset.
+Moved several rules from the design ruleset to the codesize ruleset.
+Added a new "favorites" ruleset.
+
+October 04 2002 - 1.0rc3:
+Added new rules: OnlyOneReturnRule, JumbledIncrementerRule, AvoidDeeplyNestedIfStmtsRule
+PMD is now built and tested with JUnit 3.8.1 and Ant 1.5.
+Added support for IntelliJ's IDEAJ.
+Fixed bug 610018 - StringInstantiationRule now allows for String(byte[], int, int) usage.
+Fixed bug 610693 - UnusedPrivateInstanceVariable handles parameter shadowing better.
+Fixed bug 616535 - Command line interface input checking is better now.
+Fixed bug 616615 - Command line interface allows the text renderer to be used now
+Fixed a bug - the statistics rules now handle interfaces better.
+
+September 12 2002 - 1.0rc2:
+Added new rules: JUnitSpellingRule, JUnitStaticSuiteRule, StringInstantiationRule
+Added new rulesets - junit, strings.
+Added a printToConsole attribute to the Ant task so that you can see the report right there in the Ant output.
+Fixed bug in PMD GUI - rules are now saved correctly.
+Fixed bug 597916 - CPD line counts are accurate now.
+
+September 09 2002 - 1.0rc1:
+Added new rules: UnusedImportsRule, EmptySwitchStmtRule, SwitchStmtsShouldHaveDefaultRule, IfStmtsMustUseBracesRule
+Fixed bug 597813 - Rule properties are now parsed correctly
+Fixed bug 597905 - UseSingletonRule now resets its state correctly
+Moved several rules into a new ruleset - braces.
+Improved CPD by removing import statements and package statements from the token set.
+Added Metrics API to the Report.
+Updated PMD GUI.
+
+August 16 2002 - 0.9:
+Added new rules: LongParameterListRule, SimplifyBooleanReturnsRule
+Enhanced statistics rules to support various ways of triggering rule violations
+Added rule customization via XML parameters
+Enhanced CopyAndPasteDetector; added a GUI
+Fixed bug 592060 - UnusedPrivateInstanceVariable handles explicitly referenced statics correctly
+Fixed bug 593849 - UnusedPrivateInstanceVariable handles nested classes better
+
+July 30 2002 - 0.8:
+Added new rule: UnusedFormalParameterRule
+Fixed bug 588083 - ForLoopsNeedBraces rule correctly handles a variety of for statement formats
+Added prototype of the copy and paste detector
+
+July 25 2002 - 0.7:
+Added new rules: UnusedPrivateMethodRule, WhileLoopsMustUseBracesRule, ForLoopsMustUseBracesRule, LooseCouplingRule
+Fixed bug 583482 - EmptyCatchBlock and EmptyFinallyBlock no longer report an incorrect line number.
+
+July 18 2002 - 0.6:
+Added new rules: ExcessiveClassLength, ExcessiveMethodLength
+DuplicateImportsRule now reports the correct line number.
+Fixed bug 582639 - Rule violations are now reported on the proper line
+Fixed bug 582509 - Removed unneeded throws clause
+Fixed bug 583009 - Now rulesets.properties is in the jar file
+
+July 15 2002 - 0.5:
+Added new rules: DontImportJavaLangRule, DuplicateImportsRule
+Added new ruleset: rulesets/imports.xml
+Changed sorting of RuleViolations to group Files together.
+Changed XML Renderer to improved format.
+Created DVSL Stylesheet for the new format.
+Moved the Cougaar rules out of the PMD core.
+Fixed bug 580093 - OverrideBothEqualsAndHashcodeRule reports a more correct line number.
+Fixed bug 581853 - UnusedLocalVariableRule now handles anonymous inner classes correctly.
+Fixed bug 580278 - this was a side effect of bug 581853.
+Fixed bug 580123 - UnusedPrivateInstanceVariable now checks for instance variable usage in inner classes.
+
+July 10 2002 - 0.4:
+Added new rules: OverrideBothEqualsAndHashcodeRule, EmptyTryBlock, EmptyFinallyBlock
+Reports are now sorted by line number
+RuleSets can now reference rules in other RuleSets
+Fixed bug 579718 - made 'ruleset not found' error message clearer.
+
+July 03 2002 - 0.3:
+Added new rules: UseSingletonRule, ShortVariableRule, LongVariableRule, ShortMethodNameRule
+Moved rules into RuleSets which are defined in XML files in the ruleset directory
+Ant task:
+-Added a 'failonerror' attribute
+-Changed 'rulesettype' to 'rulesetfiles'
+-Removed 'text' report format; only 'html' and 'xml' are available now
+
+June 27 2002 - 0.2:
+Added new rules: IfElseStmtsMustUseBracesRule, EmptyWhileStmtRule
+Modified command line interface to accept a rule set
+Fixed bug in EmptyCatchBlockRule
+Fixed typo in UnnecessaryConversionTemporaryRule
+Moved Ant task to the net.sourceforge.pmd.ant package
+Added new HTML report format
+
+June 25 2002 - 0.1:
+Initial release

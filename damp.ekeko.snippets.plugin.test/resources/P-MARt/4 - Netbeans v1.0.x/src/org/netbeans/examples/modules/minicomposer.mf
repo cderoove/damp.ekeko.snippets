@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+OpenIDE-Module: org.netbeans.examples.modules.minicomposer
+OpenIDE-Module-Name: Mini-Composer
+OpenIDE-Module-Install: org/netbeans/examples/modules/minicomposer/ComposerModule.class
+OpenIDE-Module-Specification-Version: 0.1
+
+Name: org/netbeans/examples/modules/minicomposer/ComposerSettings
+ .class
+OpenIDE-Module-Class: Option
+
+Name: org/netbeans/examples/modules/minicomposer/ScoreDataLoader.class
+OpenIDE-Module-Class: Loader
+
+Name: org/netbeans/examples/modules/minicomposer/InternalPlayer.class
+OpenIDE-Module-Class: Service
+
+Name: org/netbeans/examples/modules/minicomposer/ExternalPlayer.class
+OpenIDE-Module-Class: Service

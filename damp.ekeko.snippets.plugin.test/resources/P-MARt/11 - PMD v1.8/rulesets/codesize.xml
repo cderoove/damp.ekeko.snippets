@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+
+<ruleset name="Code Size Rules">
+  <description>
+The Code Size Ruleset contains a collection of rules that find code size related problems.
+  </description>
+
+
+ <rule name="ExcessiveMethodLength"
+       message="Avoid really long methods."
+       class="net.sourceforge.pmd.rules.design.LongMethodRule">
+   <description>
+Excessive Method Length usually means that the method is doing
+too much.  There is usually quite a bit of Cut and Paste there
+as well.  Try to reduce the method size by creating helper methods,
+and removing cut and paste.
+
+Default value is 2.5 sigma greater than the mean.
+
+There are three parameters available:
+minimum - Minimum Length before reporting.
+sigma - Std Deviations away from the mean before reporting.
+topscore - The Maximum Number of reports to generate.
+
+At this time, only one can be used at a time.
+
+   </description>
+     <priority>3</priority>
+   <properties>
+    <property name="minimum" value="100"/>
+   </properties>
+   <example>
+<![CDATA[
+public void doSomething() {
+  System.out.println("I am a fish.");
+  System.out.println("I am a fish.");
+  System.out.println("I am a fish.");
+  System.out.println("I am a fish.");
+  System.out.println("I am a fish.");
+  // 495 copies omitted for brevity.
+}
+]]>
+   </example>
+
+ </rule>
+
+
+ <rule name="ExcessiveParameterList"
+       message="Avoid really long parameter lists."
+       class="net.sourceforge.pmd.rules.design.LongParameterListRule">
+   <description>
+This checks to make sure that the Parameter Lists in the project aren't
+getting too long.  If there are long parameter lists, then that is
+generally indicative that another object is hiding around there.
+
+Basically, try to group the parameters together.
+
+Default value is 2.5 sigma greater than the mean.
+
+NOTE:  In version 0.9 and higher, their are three parameters available:
+minimum - Minimum Length before reporting.
+sigma - Std Deviations away from the mean before reporting.
+topscore - The Maximum Number of reports to generate.
+
+At this time, only one can be used at a time.
+
+   </description>
+     <priority>3</priority>
+   <properties>
+    <property name="minimum" value="10"/>
+   </properties>
+   <example>
+<![CDATA[
+public void addData(
+  int p00, int p01, int p02, int p03, int p04, int p05,
+  int p05, int p06, int p07, int p08, int p09, int p10) {
+
+  }
+}
+]]>
+   </example>
+
+ </rule>
+
+
+ <rule name="ExcessiveClassLength"
+       message="Avoid really long Classes."
+       class="net.sourceforge.pmd.rules.design.LongClassRule">
+   <description>
+Long Class files are indications that the class may be trying to
+do too much.  Try to break it down, and reduce the size to something
+managable.
+
+Default value is 2.5 sigma greater than the mean.
+
+NOTE:  In version 0.9 and higher, their are three parameters available:
+minimum - Minimum Length before reporting.
+sigma - Std Deviations away from the mean before reporting.
+topscore - The Maximum Number of reports to generate.
+
+At this time, only one can be used at a time.
+
+   </description>
+     <priority>3</priority>
+   <properties>
+    <property name="minimum" value="1000"/>
+   </properties>
+   <example>
+<![CDATA[
+public class Foo {
+  public void bar() {
+    // 500 lines of code
+  }
+
+  public void baz() {
+    // 500 more lines of code
+  }
+}
+]]>
+   </example>
+ </rule>
+
+
+    <rule name="CyclomaticComplexityRule"
+      message = "The {0} ''{1}'' has a Cyclomatic Complexity of {2}."
+      class="net.sourceforge.pmd.rules.CyclomaticComplexityRule">
+   <description>
+Complexity is determined by the number of decision points in a method plus one for the
+method entry.  The decision points are 'if', 'while', 'for', and 'case labels'.  Scale:
+1-4 (low complexity)   5-7 (moderate complexity)   8-10 (high complexity)   10+ (very high complexity)
+   </description>
+   <priority>3</priority>
+   <properties>
+      <property name="reportLevel" value="10"/>
+   </properties>
+   <example>
+<![CDATA[
+Cyclomatic Complexity = 12
+
+public class Foo
+{
+1   public void example()
+    {
+2       if (a == b)
+        {
+3           if (a1 == b1)
+            {
+                do something;
+            }
+4           else if a2 == b2)
+            {
+                do something;
+            }
+            else
+            {
+                do something;
+            }
+        }
+5       else if (c == d)
+        {
+6           while (c == d)
+            {
+                do something;
+            }
+        }
+7       else if (e == f)
+        {
+8           for (int n = 0; n < h; n++)
+            {
+                do something;
+            }
+        }
+        else
+        {
+            switch (z)
+            {
+9               case 1:
+                    do something;
+                    break;
+
+10              case 2:
+                    do something;
+                    break;
+
+11              case 3:
+                    do something;
+                    break;
+
+12              default:
+                    do something;
+                    break;
+            }
+        }
+    }
+}
+]]>
+   </example>
+</rule>
+
+    <rule name="ExcessivePublicCountRule"
+    message="A high number of public methods and attributes in an object can indicate the class may need to be broken up for exhaustive testing may prove difficult."
+    class="net.sourceforge.pmd.rules.ExcessivePublicCountRule">
+    <description>
+    A large amount of public methods and attributes declared in an object can indicate the class may need
+    to be broken up as increased effort will be required to thoroughly test such a class.
+    </description>
+    <priority>3</priority>
+    <properties>
+    <property name="minimum" value="45"/>
+    </properties>
+    <example>
+    <![CDATA[
+
+    public class Foo {
+    public String value;
+    public Bar something;
+    public Variable var;
+    //more public attributes
+    public void doWork() {}
+    public void doMoreWork() {}
+    public void doWorkAgain() {}
+    public void doWorking() {}
+    public void doWorkIt() {}
+    public void doWorkingAgain() {}
+    public void doWorkAgainAgain() {}
+    public void doWorked() {}
+
+    }
+    ]]>
+    </example>
+    </rule>
+
+
+</ruleset>
+
+
+

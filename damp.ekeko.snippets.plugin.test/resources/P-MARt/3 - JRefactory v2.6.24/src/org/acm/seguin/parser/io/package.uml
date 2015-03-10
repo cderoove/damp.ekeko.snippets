@@ -1,0 +1,10 @@
+V[1.1:org.acm.seguin.parser.io]
+S[org.acm.seguin.parser.io:ASCII_UCodeESC_CharStream,org.acm.seguin.parser.io:CharStream]{2:(477,757),(698,464)}
+S[org.acm.seguin.parser.io:ASCII_CharStream,org.acm.seguin.parser.io:CharStream]{2:(778,757),(778,601)}
+S[org.acm.seguin.parser.io:UCode_CharStream,org.acm.seguin.parser.io:CharStream]{2:(1067,757),(859,469)}
+S[org.acm.seguin.parser.io:CharStream,java.lang:Object]{2:(859,341),(1654,176)}
+P[org.acm.seguin.parser.io:ASCII_UCodeESC_CharStream]{-3,757}
+P[org.acm.seguin.parser.io:ASCII_CharStream]{542,757}
+P[org.acm.seguin.parser.io:UCode_CharStream]{1032,757}
+P[org.acm.seguin.parser.io:CharStream]{698,115}
+P[java.lang:Object]{1654,20}

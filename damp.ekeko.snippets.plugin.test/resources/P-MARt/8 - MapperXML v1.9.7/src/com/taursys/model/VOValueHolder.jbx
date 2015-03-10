@@ -1,0 +1,11 @@
+[PropertyInfo]
+alias,String,false,false,alias,alias,true,<default>
+parentValueHolder,VOValueHolder,false,false, , ,true,<default>
+propertyAccessors,Map,false,false, , ,true,<default>
+valueObject,Object,false,false, , ,true,<default>
+valueObjectClass,Class,false,false, , ,true,com.taursys.beans.editors.ClassEditor
+[IconNames]
+
+
+
+

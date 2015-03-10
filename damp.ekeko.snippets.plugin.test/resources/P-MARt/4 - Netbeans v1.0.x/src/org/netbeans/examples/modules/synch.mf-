@@ -1,0 +1,6 @@
+OpenIDE-Module: 0.1
+OpenIDE-Module-Name: Node Selection Synchronizer
+
+Name: org/netbeans/examples/modules/synch/MainNode.class
+OpenIDE-Module-Class: Node
+Type: Environment

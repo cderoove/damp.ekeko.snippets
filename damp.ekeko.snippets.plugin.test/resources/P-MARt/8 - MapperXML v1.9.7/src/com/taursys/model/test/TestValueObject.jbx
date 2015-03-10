@@ -1,0 +1,15 @@
+[PropertyInfo]
+active,boolean,false,false,active,active,true,<default>
+birthdate,java.util.Date,false,false,birthdate,birthdate,true,<default>
+createDate,java.util.Date,false,false,createDate,createDate,true,<default>
+dependents,int,false,false,dependents,dependents,true,<default>
+fullName,String,false,false,fullName,fullName,true,<default>
+homeAddress,com.taursys.model.test.TestAddressValueObject,false,false,homeAddress,homeAddress,true,<default>
+salary,java.math.BigDecimal,false,false,salary,salary,true,<default>
+supervisor,com.taursys.model.test.TestValueObject,false,false,supervisor,supervisor,true,<default>
+anInteger,Integer,false,false,anInteger,anInteger,true,<default>
+[IconNames]
+
+
+
+

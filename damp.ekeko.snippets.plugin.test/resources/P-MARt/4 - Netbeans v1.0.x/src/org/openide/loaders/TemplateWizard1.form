@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+
+<Form version="1.0" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+  <NonVisualComponents>
+    <Component class="org.openide.explorer.view.NodeTreeModel" name="templatesModel">
+
+      <AuxValues>
+        <AuxValue name="JavaCodeGenerator_CreateCodeCustom" value="-84,-19,0,5,116,0,22,110,101,119,32,84,101,109,112,108,97,116,101,115,77,111,100,101,108,32,40,41,59"/>
+      </AuxValues>
+    </Component>
+  </NonVisualComponents>
+  <SyntheticProperties>
+    <SyntheticProperty name="formSize" value="-84,-19,0,5,115,114,0,18,106,97,118,97,46,97,119,116,46,68,105,109,101,110,115,105,111,110,65,-114,-39,-41,-84,95,68,20,2,0,2,73,0,6,104,101,105,103,104,116,73,0,5,119,105,100,116,104,120,112,0,0,0,-56,0,0,1,44"/>
+    <SyntheticProperty name="formPosition" value="-84,-19,0,5,115,114,0,14,106,97,118,97,46,97,119,116,46,80,111,105,110,116,-74,-60,-118,114,52,126,-56,38,2,0,2,73,0,1,120,73,0,1,121,120,112,0,0,0,0,0,0,0,0"/>
+    <SyntheticProperty name="formSizePolicy" value="-84,-19,0,5,115,114,0,17,106,97,118,97,46,108,97,110,103,46,73,110,116,101,103,101,114,18,-30,-96,-92,-9,-127,-121,56,2,0,1,73,0,5,118,97,108,117,101,120,114,0,16,106,97,118,97,46,108,97,110,103,46,78,117,109,98,101,114,-122,-84,-107,29,11,-108,-32,-117,2,0,0,120,112,0,0,0,2"/>
+    <SyntheticProperty name="generatePosition" value="-84,-19,0,5,115,114,0,17,106,97,118,97,46,108,97,110,103,46,66,111,111,108,101,97,110,-51,32,114,-128,-43,-100,-6,-18,2,0,1,90,0,5,118,97,108,117,101,120,112,1"/>
+    <SyntheticProperty name="generateSize" value="-84,-19,0,5,115,114,0,17,106,97,118,97,46,108,97,110,103,46,66,111,111,108,101,97,110,-51,32,114,-128,-43,-100,-6,-18,2,0,1,90,0,5,118,97,108,117,101,120,112,1"/>
+    <SyntheticProperty name="generateCenter" value="-84,-19,0,5,115,114,0,17,106,97,118,97,46,108,97,110,103,46,66,111,111,108,101,97,110,-51,32,114,-128,-43,-100,-6,-18,2,0,1,90,0,5,118,97,108,117,101,120,112,1"/>
+    <SyntheticProperty name="encoding" value="-84,-19,0,5,116,0,0"/>
+  </SyntheticProperties>
+
+  <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+    <Property name="rows" type="int" value="1"/>
+    <Property name="columns" type="int" value="2"/>
+    <Property name="horizontalGap" type="int" value="8"/>
+  </Layout>
+  <SubComponents>
+    <Container class="javax.swing.JPanel" name="templatesPanel">
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+          <BorderConstraints direction="Center"/>
+        </Constraint>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
+          <AbsoluteConstraints height="180" width="530" x="30" y="0"/>
+        </Constraint>
+      </Constraints>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
+      <SubComponents>
+        <Container class="javax.swing.JScrollPane" name="templatesScroll">
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+              <BorderConstraints direction="Center"/>
+            </Constraint>
+          </Constraints>
+
+          <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+          <SubComponents>
+            <Component class="javax.swing.JTree" name="templatesTree">
+              <Properties>
+                <Property name="model" type="javax.swing.tree.TreeModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection component="templatesModel" type="bean"/>
+                </Property>
+                <Property name="cellRenderer" type="javax.swing.tree.TreeCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new org.openide.explorer.view.NodeRenderer ()" type="code"/>
+                </Property>
+              </Properties>
+
+              <Events>
+                <EventHandler event="valueChanged" handler="templatesTreeValueChanged"/>
+              </Events>
+              <Constraints>
+                <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout" value="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout$BorderConstraintsDescription">
+                  <BorderConstraints direction="Center"/>
+                </Constraint>
+              </Constraints>
+            </Component>
+          </SubComponents>
+        </Container>
+      </SubComponents>
+    </Container>
+    <Container class="javax.swing.JPanel" name="browserPanel">
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridLayout$GridConstraintsDescription"/>
+      </Constraints>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignCardLayout"/>
+      <SubComponents>
+        <Container class="org.openide.awt.HtmlBrowser" name="browser">
+          <Properties>
+            <Property name="toolbarVisible" type="boolean" editor="sun.beans.editors.BoolEditor" value="false"/>
+            <Property name="statusLineVisible" type="boolean" editor="sun.beans.editors.BoolEditor" value="false"/>
+            <Property name="name" type="java.lang.String" editor="org.netbeans.beaninfo.editors.StringEditor" value="browser"/>
+          </Properties>
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignCardLayout" value="org.netbeans.modules.form.compat2.layouts.DesignCardLayout$CardConstraintsDescription">
+              <CardConstraints cardName="browser"/>
+            </Constraint>
+          </Constraints>
+
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout"/>
+        </Container>
+        <Component class="javax.swing.JLabel" name="noBrowser">
+          <Properties>
+            <Property name="horizontalAlignment" type="int" editor="org.openide.util.SwingEditors$HorizontalPropertyEditor" value="0"/>
+          </Properties>
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignCardLayout" value="org.netbeans.modules.form.compat2.layouts.DesignCardLayout$CardConstraintsDescription">
+              <CardConstraints cardName="noBrowser"/>
+            </Constraint>
+          </Constraints>
+        </Component>
+      </SubComponents>
+    </Container>
+  </SubComponents>
+</Form>

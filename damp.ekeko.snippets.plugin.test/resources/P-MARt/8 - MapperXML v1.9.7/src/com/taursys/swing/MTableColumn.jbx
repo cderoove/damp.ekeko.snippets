@@ -1,0 +1,13 @@
+[PropertyInfo]
+format,java.text.Format,false,false, , ,true,com.taursys.beans.editors.FormatEditor
+formatPattern,String,false,false, , ,true,<default>
+horizontalAlignment,int,false,false, , ,true,<default>
+MTableCellRenderer,MTableCellRenderer,false,false, , ,true,<default>
+propertyName,String,false,false, , ,true,<default>
+valueHolder,com.taursys.model.ValueHolder,false,false,valueHolder,valueHolder,true,<default>
+displayHeading,String,false,false,displayHeading,displayHeading,true,<default>
+[IconNames]
+
+
+
+

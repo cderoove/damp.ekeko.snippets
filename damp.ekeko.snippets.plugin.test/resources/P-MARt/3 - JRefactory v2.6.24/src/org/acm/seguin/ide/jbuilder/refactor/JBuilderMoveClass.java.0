@@ -1,0 +1,24 @@
+/*
+ *  Author:  Chris Seguin
+ *
+ *  This software has been developed under the copyleft
+ *  rules of the GNU General Public License.  Please
+ *  consult the GNU General Public License for more
+ *  details about use and distribution of this software.
+ */
+package org.acm.seguin.ide.jbuilder.refactor;
+import org.acm.seguin.refactor.type.MoveClass;
+/**
+ *  Description of the Class
+ *
+ *@author    Chris Seguin
+ */
+class JBuilderMoveClass extends MoveClass {
+	/**
+	 *  Constructor for the JBuilderMoveClass object
+	 */
+	protected JBuilderMoveClass()
+	{
+		super();
+	}
+}

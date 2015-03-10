@@ -1,0 +1,15 @@
+[PropertyInfo]
+defaultValue,String,false,false,defaultValue,default value if no input received,true,<default>
+format,java.text.Format,false,false,format,format for parsing and displaying,true,com.taursys.beans.editors.FormatEditor
+formatPattern,String,false,false,formatPattern,pattern used for format,true,<default>
+model,TextModel,false,false,model,model for component,true,<default>
+parameter,String,false,false,parameter,name of parameter,true,<default>
+propertyName,String,false,false,propertyName,propertyName for valueHolder,true,<default>
+text,String,false,false, , ,false,<default>
+value,Object,false,false, , ,false,<default>
+valueHolder,com.taursys.model.ValueHolder,false,false,valueHolder,valueHolder for model,true,<default>
+[IconNames]
+
+
+
+

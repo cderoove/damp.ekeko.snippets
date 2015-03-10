@@ -1,0 +1,8 @@
+[PropertyInfo]
+servletForm,ServletForm,false,false, , ,true,<default>
+redirectURL,String,false,false,redirectURL,redirectURL,true,<default>
+[IconNames]
+
+
+
+

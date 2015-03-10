@@ -1,0 +1,9 @@
+[PropertyInfo]
+cause,Throwable,false,false, , ,true,<default>
+localizedMessage,String,false,false, , ,true,<default>
+userFriendlyMessage,String,false,false,userFriendlyMessage,userFriendlyMessage,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<editmodel:ClassDiagramEditModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:editmodel="editmodel.xmi" size="980,538" id="blc24iroumontrealcangjanice9MapperXMLv19725" metadata="nsuml-1.4" initialized="true" showWireOptions="7">
+  <children xsi:type="editmodel:ClassEditModel" location="50,50" size="275,337" id="blc24iroumontrealcangjanice9MapperXMLv197795" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv197804;blc24iroumontrealcangjanice9MapperXMLv197807;blc24iroumontrealcangjanice9MapperXMLv197811;blc24iroumontrealcangjanice9MapperXMLv197831;blc24iroumontrealcangjanice9MapperXMLv197847;blc24iroumontrealcangjanice9MapperXMLv197825;blc24iroumontrealcangjanice9MapperXMLv197819;blc24iroumontrealcangjanice9MapperXMLv197823;blc24iroumontrealcangjanice9MapperXMLv197837;blc24iroumontrealcangjanice9MapperXMLv197829;blc24iroumontrealcangjanice9MapperXMLv197851;blc24iroumontrealcangjanice9MapperXMLv197817;blc24iroumontrealcangjanice9MapperXMLv197821;blc24iroumontrealcangjanice9MapperXMLv197796;blc24iroumontrealcangjanice9MapperXMLv197835;blc24iroumontrealcangjanice9MapperXMLv197815;blc24iroumontrealcangjanice9MapperXMLv197800;blc24iroumontrealcangjanice9MapperXMLv197827;blc24iroumontrealcangjanice9MapperXMLv197839;blc24iroumontrealcangjanice9MapperXMLv197841;blc24iroumontrealcangjanice9MapperXMLv197809;blc24iroumontrealcangjanice9MapperXMLv197798;blc24iroumontrealcangjanice9MapperXMLv197813;blc24iroumontrealcangjanice9MapperXMLv197856;blc24iroumontrealcangjanice9MapperXMLv197802;blc24iroumontrealcangjanice9MapperXMLv197833">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="252,288">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197804"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197827"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197825"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197823"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197813"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197811"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197839"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197837"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197831"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197833"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197835"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197815"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197829"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197821"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197819"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv197817"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <classDiagramPreferences xsi:type="editmodel:UMLClassDiagramPreference" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true" showInterfaceStereotype="true" showClassStereotype="true" showPackageStereotype="true"/>
+</editmodel:ClassDiagramEditModel>

@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<editmodel:ClassDiagramEditModel xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:editmodel="editmodel.xmi" size="2866,4463" id="blc24iroumontrealcangjanice9MapperXMLv19722" metadata="nsuml-1.4" initialized="true" showWireOptions="7" scrolledY="3928">
+  <children xsi:type="editmodel:ClassEditModel" location="50,4142" size="285,301" id="blc24iroumontrealcangjanice9MapperXMLv1972222" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972226;blc24iroumontrealcangjanice9MapperXMLv1972234;blc24iroumontrealcangjanice9MapperXMLv1972223;blc24iroumontrealcangjanice9MapperXMLv1972246;blc24iroumontrealcangjanice9MapperXMLv1972242;blc24iroumontrealcangjanice9MapperXMLv1972248;blc24iroumontrealcangjanice9MapperXMLv1972238;blc24iroumontrealcangjanice9MapperXMLv1972256;blc24iroumontrealcangjanice9MapperXMLv1972254;blc24iroumontrealcangjanice9MapperXMLv1972232;blc24iroumontrealcangjanice9MapperXMLv1972236;blc24iroumontrealcangjanice9MapperXMLv1972250;blc24iroumontrealcangjanice9MapperXMLv1972252;blc24iroumontrealcangjanice9MapperXMLv1972228;blc24iroumontrealcangjanice9MapperXMLv1972240;blc24iroumontrealcangjanice9MapperXMLv1972244;blc24iroumontrealcangjanice9MapperXMLv1972230">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="262,252">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972223"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972252"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972254"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972230"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972236"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972246"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972248"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972250"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972238"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972244"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972242"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972240"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972234"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972232"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="2605,1207" size="241,198" id="blc24iroumontrealcangjanice9MapperXMLv1972014" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972023;blc24iroumontrealcangjanice9MapperXMLv1972025;blc24iroumontrealcangjanice9MapperXMLv1972018;blc24iroumontrealcangjanice9MapperXMLv1972029;blc24iroumontrealcangjanice9MapperXMLv1972035;blc24iroumontrealcangjanice9MapperXMLv1972020;blc24iroumontrealcangjanice9MapperXMLv1972031;blc24iroumontrealcangjanice9MapperXMLv1972017;blc24iroumontrealcangjanice9MapperXMLv1972016;blc24iroumontrealcangjanice9MapperXMLv1972027;blc24iroumontrealcangjanice9MapperXMLv1972015;blc24iroumontrealcangjanice9MapperXMLv1972033;blc24iroumontrealcangjanice9MapperXMLv1972037">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="192,108">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972020"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972035"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972033"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972029"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972031"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972027"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel" size="132,31"/>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972052" connectionRouterKind="Manhattan" source="//@children.1" target="//@children.11" targetEnd="//@children.1/@sourceConnections.0/@children.1" sourceEnd="//@children.1/@sourceConnections.0/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972015" connectionRouterKind="Manhattan" source="//@children.1" target="//@children.2" targetEnd="//@children.1/@sourceConnections.1/@children.0" sourceEnd="//@children.1/@sourceConnections.1/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972015" navigable="true" flags="4" multiplicityLabel="//@children.1/@sourceConnections.1/@children.0/@children.1" roleLabel="//@children.1/@sourceConnections.1/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="54,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972017" connectionRouterKind="Manhattan" source="//@children.1" target="//@children.11" targetEnd="//@children.1/@sourceConnections.2/@children.0" sourceEnd="//@children.1/@sourceConnections.2/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972017" navigable="true" flags="4" multiplicityLabel="//@children.1/@sourceConnections.2/@children.0/@children.1" roleLabel="//@children.1/@sourceConnections.2/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="69,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972060" connectionRouterKind="Manhattan" source="//@children.1" target="//@children.2" targetEnd="//@children.1/@sourceConnections.3/@children.1" sourceEnd="//@children.1/@sourceConnections.3/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="2364,1980" size="338,29" targetConnections="//@children.1/@sourceConnections.1 //@children.1/@sourceConnections.3" id="blc24iroumontrealcangjanice9MapperXMLv1972016" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972041;blc24iroumontrealcangjanice9MapperXMLv1972043;blc24iroumontrealcangjanice9MapperXMLv1972046">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="1367,2652" size="267,463" id="blc24iroumontrealcangjanice9MapperXMLv1972067" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972095;blc24iroumontrealcangjanice9MapperXMLv1972107;blc24iroumontrealcangjanice9MapperXMLv1972070;blc24iroumontrealcangjanice9MapperXMLv1972119;blc24iroumontrealcangjanice9MapperXMLv1972121;blc24iroumontrealcangjanice9MapperXMLv1972083;blc24iroumontrealcangjanice9MapperXMLv1972091;blc24iroumontrealcangjanice9MapperXMLv1972072;blc24iroumontrealcangjanice9MapperXMLv1972097;blc24iroumontrealcangjanice9MapperXMLv1972105;blc24iroumontrealcangjanice9MapperXMLv1972085;blc24iroumontrealcangjanice9MapperXMLv1972117;blc24iroumontrealcangjanice9MapperXMLv1972074;blc24iroumontrealcangjanice9MapperXMLv1972123;blc24iroumontrealcangjanice9MapperXMLv1972081;blc24iroumontrealcangjanice9MapperXMLv1972099;blc24iroumontrealcangjanice9MapperXMLv1972103;blc24iroumontrealcangjanice9MapperXMLv1972101;blc24iroumontrealcangjanice9MapperXMLv1972115;blc24iroumontrealcangjanice9MapperXMLv1972125;blc24iroumontrealcangjanice9MapperXMLv1972087;blc24iroumontrealcangjanice9MapperXMLv1972068;blc24iroumontrealcangjanice9MapperXMLv1972113;blc24iroumontrealcangjanice9MapperXMLv1972079;blc24iroumontrealcangjanice9MapperXMLv1972093;blc24iroumontrealcangjanice9MapperXMLv1972077;blc24iroumontrealcangjanice9MapperXMLv1972109;blc24iroumontrealcangjanice9MapperXMLv1972089;blc24iroumontrealcangjanice9MapperXMLv1972111">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="244,414">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972074"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972115"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972121"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972119"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972117"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972123"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972095"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972103"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972105"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972109"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972101"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972099"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972111"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972097"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972107"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972113"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972085"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972089"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972091"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972083"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972081"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972087"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972093"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972157" connectionRouterKind="Manhattan" source="//@children.3" target="//@children.10" targetEnd="//@children.3/@sourceConnections.0/@children.1" sourceEnd="//@children.3/@sourceConnections.0/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972132" connectionRouterKind="Manhattan" source="//@children.3" target="//@children.9" targetEnd="//@children.3/@sourceConnections.1/@children.1" sourceEnd="//@children.3/@sourceConnections.1/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="50,1186" size="316,29" targetConnections="//@children.5/@sourceConnections.1 //@children.5/@sourceConnections.3" id="blc24iroumontrealcangjanice9MapperXMLv1971677" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971708;blc24iroumontrealcangjanice9MapperXMLv1971710;blc24iroumontrealcangjanice9MapperXMLv1971705;blc24iroumontrealcangjanice9MapperXMLv1971703">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="394,445" size="215,198" id="blc24iroumontrealcangjanice9MapperXMLv1971675" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971697;blc24iroumontrealcangjanice9MapperXMLv1971693;blc24iroumontrealcangjanice9MapperXMLv1971676;blc24iroumontrealcangjanice9MapperXMLv1971687;blc24iroumontrealcangjanice9MapperXMLv1971699;blc24iroumontrealcangjanice9MapperXMLv1971682;blc24iroumontrealcangjanice9MapperXMLv1971695;blc24iroumontrealcangjanice9MapperXMLv1971677;blc24iroumontrealcangjanice9MapperXMLv1971685;blc24iroumontrealcangjanice9MapperXMLv1971678;blc24iroumontrealcangjanice9MapperXMLv1971691;blc24iroumontrealcangjanice9MapperXMLv1971680;blc24iroumontrealcangjanice9MapperXMLv1971689">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="192,108">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971682"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971697"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971695"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971691"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971693"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971689"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel" size="141,31"/>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971678" connectionRouterKind="Manhattan" source="//@children.5" target="//@children.11" targetEnd="//@children.5/@sourceConnections.0/@children.0" sourceEnd="//@children.5/@sourceConnections.0/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971678" navigable="true" flags="4" multiplicityLabel="//@children.5/@sourceConnections.0/@children.0/@children.1" roleLabel="//@children.5/@sourceConnections.0/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="69,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971676" connectionRouterKind="Manhattan" source="//@children.5" target="//@children.4" targetEnd="//@children.5/@sourceConnections.1/@children.0" sourceEnd="//@children.5/@sourceConnections.1/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971676" navigable="true" flags="4" multiplicityLabel="//@children.5/@sourceConnections.1/@children.0/@children.1" roleLabel="//@children.5/@sourceConnections.1/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="84,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971721" connectionRouterKind="Manhattan" source="//@children.5" target="//@children.11" targetEnd="//@children.5/@sourceConnections.2/@children.1" sourceEnd="//@children.5/@sourceConnections.2/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971728" connectionRouterKind="Manhattan" source="//@children.5" target="//@children.4" targetEnd="//@children.5/@sourceConnections.3/@children.1" sourceEnd="//@children.5/@sourceConnections.3/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="2117,322" size="329,29" targetConnections="//@children.8/@sourceConnections.1 //@children.8/@sourceConnections.3" id="blc24iroumontrealcangjanice9MapperXMLv1971957" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971993;blc24iroumontrealcangjanice9MapperXMLv1971988;blc24iroumontrealcangjanice9MapperXMLv1971990">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="340,2091" size="177,85" id="blc24iroumontrealcangjanice9MapperXMLv1972199" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972209;blc24iroumontrealcangjanice9MapperXMLv1972200;blc24iroumontrealcangjanice9MapperXMLv1972207;blc24iroumontrealcangjanice9MapperXMLv1972203;blc24iroumontrealcangjanice9MapperXMLv1972205">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="154,36">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972200"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972207"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972220" connectionRouterKind="Manhattan" source="//@children.7" target="//@children.10" targetEnd="//@children.7/@sourceConnections.0/@children.1" sourceEnd="//@children.7/@sourceConnections.0/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="-1,0" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="1342,50" size="247,252" id="blc24iroumontrealcangjanice9MapperXMLv1971955" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971982;blc24iroumontrealcangjanice9MapperXMLv1971959;blc24iroumontrealcangjanice9MapperXMLv1971956;blc24iroumontrealcangjanice9MapperXMLv1971974;blc24iroumontrealcangjanice9MapperXMLv1971964;blc24iroumontrealcangjanice9MapperXMLv1971978;blc24iroumontrealcangjanice9MapperXMLv1971984;blc24iroumontrealcangjanice9MapperXMLv1971980;blc24iroumontrealcangjanice9MapperXMLv1971970;blc24iroumontrealcangjanice9MapperXMLv1971957;blc24iroumontrealcangjanice9MapperXMLv1971968;blc24iroumontrealcangjanice9MapperXMLv1971976;blc24iroumontrealcangjanice9MapperXMLv1971972;blc24iroumontrealcangjanice9MapperXMLv1971958;blc24iroumontrealcangjanice9MapperXMLv1971961;blc24iroumontrealcangjanice9MapperXMLv1971966">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="224,162">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971961"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971976"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971980"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971978"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971982"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971970"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971968"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971972"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971974"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel" size="141,31"/>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972002" connectionRouterKind="Manhattan" source="//@children.8" target="//@children.11" targetEnd="//@children.8/@sourceConnections.0/@children.1" sourceEnd="//@children.8/@sourceConnections.0/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971956" connectionRouterKind="Manhattan" source="//@children.8" target="//@children.6" targetEnd="//@children.8/@sourceConnections.1/@children.0" sourceEnd="//@children.8/@sourceConnections.1/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971956" navigable="true" flags="4" multiplicityLabel="//@children.8/@sourceConnections.1/@children.0/@children.1" roleLabel="//@children.8/@sourceConnections.1/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="84,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:AssociationEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971958" connectionRouterKind="Manhattan" source="//@children.8" target="//@children.11" targetEnd="//@children.8/@sourceConnections.2/@children.0" sourceEnd="//@children.8/@sourceConnections.2/@children.1">
+      <children xsi:type="editmodel:AssociationEndEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971958" navigable="true" flags="4" multiplicityLabel="//@children.8/@sourceConnections.2/@children.0/@children.1" roleLabel="//@children.8/@sourceConnections.2/@children.0/@children.0">
+        <children xsi:type="editmodel:LabelEditModel" size="69,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+        <children xsi:type="editmodel:LabelEditModel" size="19,13" fontInfo="Arial-8-0" anchorKind="LastPart"/>
+      </children>
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+    </sourceConnections>
+    <sourceConnections xsi:type="editmodel:DependencyEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972005" connectionRouterKind="Manhattan" source="//@children.8" target="//@children.6" targetEnd="//@children.8/@sourceConnections.3/@children.1" sourceEnd="//@children.8/@sourceConnections.3/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="1403,3845" size="188,247" targetConnections="//@children.3/@sourceConnections.1" id="blc24iroumontrealcangjanice9MapperXMLv1972130" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1972159;blc24iroumontrealcangjanice9MapperXMLv1972189;blc24iroumontrealcangjanice9MapperXMLv1972165;blc24iroumontrealcangjanice9MapperXMLv1972187;blc24iroumontrealcangjanice9MapperXMLv1972161;blc24iroumontrealcangjanice9MapperXMLv1972169;blc24iroumontrealcangjanice9MapperXMLv1972177;blc24iroumontrealcangjanice9MapperXMLv1972191;blc24iroumontrealcangjanice9MapperXMLv1972171;blc24iroumontrealcangjanice9MapperXMLv1972163;blc24iroumontrealcangjanice9MapperXMLv1972174;blc24iroumontrealcangjanice9MapperXMLv1972179;blc24iroumontrealcangjanice9MapperXMLv1972185">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="146,198">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972163"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972185"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972189"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972174"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972177"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972169"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972179"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972191"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972187"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972165"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1972171"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="1322,1944" size="223,643" targetConnections="//@children.3/@sourceConnections.0 //@children.7/@sourceConnections.0" id="blc24iroumontrealcangjanice9MapperXMLv1971845" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971930;blc24iroumontrealcangjanice9MapperXMLv1971908;blc24iroumontrealcangjanice9MapperXMLv1971869;blc24iroumontrealcangjanice9MapperXMLv1971896;blc24iroumontrealcangjanice9MapperXMLv1971918;blc24iroumontrealcangjanice9MapperXMLv1971888;blc24iroumontrealcangjanice9MapperXMLv1971926;blc24iroumontrealcangjanice9MapperXMLv1971849;blc24iroumontrealcangjanice9MapperXMLv1971901;blc24iroumontrealcangjanice9MapperXMLv1971850;blc24iroumontrealcangjanice9MapperXMLv1971872;blc24iroumontrealcangjanice9MapperXMLv1971859;blc24iroumontrealcangjanice9MapperXMLv1971894;blc24iroumontrealcangjanice9MapperXMLv1971920;blc24iroumontrealcangjanice9MapperXMLv1971883;blc24iroumontrealcangjanice9MapperXMLv1971890;blc24iroumontrealcangjanice9MapperXMLv1971867;blc24iroumontrealcangjanice9MapperXMLv1971846;blc24iroumontrealcangjanice9MapperXMLv1971924;blc24iroumontrealcangjanice9MapperXMLv1971852;blc24iroumontrealcangjanice9MapperXMLv1971881;blc24iroumontrealcangjanice9MapperXMLv1971892;blc24iroumontrealcangjanice9MapperXMLv1971912;blc24iroumontrealcangjanice9MapperXMLv1971862;blc24iroumontrealcangjanice9MapperXMLv1971854;blc24iroumontrealcangjanice9MapperXMLv1971865;blc24iroumontrealcangjanice9MapperXMLv1971848;blc24iroumontrealcangjanice9MapperXMLv1971898;blc24iroumontrealcangjanice9MapperXMLv1971922;blc24iroumontrealcangjanice9MapperXMLv1971856;blc24iroumontrealcangjanice9MapperXMLv1971878;blc24iroumontrealcangjanice9MapperXMLv1971875;blc24iroumontrealcangjanice9MapperXMLv1971886;blc24iroumontrealcangjanice9MapperXMLv1971928;blc24iroumontrealcangjanice9MapperXMLv1971906;blc24iroumontrealcangjanice9MapperXMLv1971910">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="200,594">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971850"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971867"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971852"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971892"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971869"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971872"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971875"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971881"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971878"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971854"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971883"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971886"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971888"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971890"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971894"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971865"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971896"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971908"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971928"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971906"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971910"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971918"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971912"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971901"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971922"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971924"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971926"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971920"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971898"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971930"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971856"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971862"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971859"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <sourceConnections xsi:type="editmodel:GeneralizationEditModel" connectionRouterKind="Manual" source="//@children.10" target="//@children.11" targetEnd="//@children.10/@sourceConnections.0/@children.1" sourceEnd="//@children.10/@sourceConnections.0/@children.0">
+      <children xsi:type="editmodel:AssociationEndEditModel" location="0,-1" attachSource="true"/>
+      <children xsi:type="editmodel:AssociationEndEditModel"/>
+    </sourceConnections>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <children xsi:type="editmodel:ClassEditModel" location="1352,1323" size="163,571" targetConnections="//@children.5/@sourceConnections.0 //@children.5/@sourceConnections.2 //@children.10/@sourceConnections.0 //@children.8/@sourceConnections.0 //@children.1/@sourceConnections.0 //@children.8/@sourceConnections.2 //@children.1/@sourceConnections.2" id="blc24iroumontrealcangjanice9MapperXMLv1971679" runTimeClassModel="blc24iroumontrealcangjanice9MapperXMLv1971765;blc24iroumontrealcangjanice9MapperXMLv1971779;blc24iroumontrealcangjanice9MapperXMLv1971788;blc24iroumontrealcangjanice9MapperXMLv1971800;blc24iroumontrealcangjanice9MapperXMLv1971790;blc24iroumontrealcangjanice9MapperXMLv1971736;blc24iroumontrealcangjanice9MapperXMLv1971760;blc24iroumontrealcangjanice9MapperXMLv1971817;blc24iroumontrealcangjanice9MapperXMLv1971771;blc24iroumontrealcangjanice9MapperXMLv1971756;blc24iroumontrealcangjanice9MapperXMLv1971802;blc24iroumontrealcangjanice9MapperXMLv1971797;blc24iroumontrealcangjanice9MapperXMLv1971738;blc24iroumontrealcangjanice9MapperXMLv1971783;blc24iroumontrealcangjanice9MapperXMLv1971767;blc24iroumontrealcangjanice9MapperXMLv1971749;blc24iroumontrealcangjanice9MapperXMLv1971794;blc24iroumontrealcangjanice9MapperXMLv1971744;blc24iroumontrealcangjanice9MapperXMLv1971812;blc24iroumontrealcangjanice9MapperXMLv1971804;blc24iroumontrealcangjanice9MapperXMLv1971775;blc24iroumontrealcangjanice9MapperXMLv1971769;blc24iroumontrealcangjanice9MapperXMLv1971763;blc24iroumontrealcangjanice9MapperXMLv1971814;blc24iroumontrealcangjanice9MapperXMLv1971752;blc24iroumontrealcangjanice9MapperXMLv1971786;blc24iroumontrealcangjanice9MapperXMLv1971809;blc24iroumontrealcangjanice9MapperXMLv1971781;blc24iroumontrealcangjanice9MapperXMLv1971777;blc24iroumontrealcangjanice9MapperXMLv1971740">
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <children xsi:type="editmodel:CompartmentEditModel" size="140,522">
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971738"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971740"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971744"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971760"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971763"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971765"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971767"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971769"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971771"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971797"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971800"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971749"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971817"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971756"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971752"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971775"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971783"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971809"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971786"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971788"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971804"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971812"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971777"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971779"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971781"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971802"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971794"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971790"/>
+      <children xsi:type="editmodel:MethodEditModel" id="blc24iroumontrealcangjanice9MapperXMLv1971814"/>
+    </children>
+    <children xsi:type="editmodel:CompartmentEditModel"/>
+    <classifierPreferences xsi:type="editmodel:UMLClassDiagramClassifierPreference" showStereotype="true" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true"/>
+  </children>
+  <classDiagramPreferences xsi:type="editmodel:UMLClassDiagramPreference" attributeSorter="Natural" methodSorter="Natural" innerClassSorter="Natural" showPublicAttributes="true" showPackageAttributes="true" showPublicMethods="true" showPackageMethods="true" showPublicInnerClasses="true" showPackageInnerClasses="true" showInterfaceStereotype="true" showClassStereotype="true" showPackageStereotype="true"/>
+</editmodel:ClassDiagramEditModel>

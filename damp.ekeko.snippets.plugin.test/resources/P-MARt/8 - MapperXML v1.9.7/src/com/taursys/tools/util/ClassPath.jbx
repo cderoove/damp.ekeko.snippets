@@ -1,0 +1,11 @@
+[PropertyInfo]
+classPathString,String,false,false, , ,true,<default>
+classTree,DefaultMutableTreeNode,false,false, , ,true,<default>
+packageTree,DefaultMutableTreeNode,false,false, , ,true,<default>
+paths,ArrayList,false,false, , ,true,<default>
+entries,java.util.TreeSet,false,false,entries,entries,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,24 @@
+[PropertyInfo]
+document,org.w3c.dom.Document,false,false,document,document,false,<default>
+documentAdapter,DocumentAdapter,false,false, , ,false,<default>
+enableActions,boolean,false,false,enableActions,enableActions,true,<default>
+enableInput,boolean,false,false,enableInput,enableInput,true,<default>
+initialized,boolean,false,false,initialized,initialized,true,<default>
+inputDispatcher,Dispatcher,false,false, , ,true,<default>
+parameterDispatcher,Dispatcher,false,false, , ,true,<default>
+recycleDispatcher,RecycleDispatcher,false,false, , ,true,<default>
+renderDispatcher,RenderDispatcher,false,false, , ,true,<default>
+request,HttpServletRequest,false,false, , ,true,<default>
+responder,Responder,false,false, , ,true,<default>
+response,HttpServletResponse,false,false, , ,true,<default>
+servletInputDispatcher,com.taursys.servlet.ServletInputDispatcher,false,false, , ,true,<default>
+servletParameterDispatcher,ServletParameterDispatcher,false,false, , ,true,<default>
+servletTriggerDispatcher,ServletTriggerDispatcher,false,false, , ,true,<default>
+triggerDispatcher,Dispatcher,false,false, , ,true,<default>
+xmlWriter,AbstractWriter,false,false, , ,true,<default>
+parameterMap,java.util.Map,false,false,parameterMap,parameterMap,true,<default>
+[IconNames]
+
+
+
+

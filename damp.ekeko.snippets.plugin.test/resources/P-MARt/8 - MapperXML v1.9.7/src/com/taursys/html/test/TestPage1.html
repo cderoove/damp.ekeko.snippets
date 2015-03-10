@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <title>Test Page 1</title>
+  </head>
+  <body>
+    <h1>Test Page 1</h1>
+    <h2>Information for <span id="Person__fullName">xxx</span></h2>
+    <p>Dear <span id="Person__fullName__2">xxx</span>,</p>
+    <p id="__">Bad ID 1</p>
+    <p id="Person__">Bad ID 2</p>
+    <p id="UnknownHolder__fullName">Unknown Holder</p>
+    <table>
+      <tr>
+        <td>Invoice No</td>
+        <td>Date</td>
+        <td>Customer No</td>
+      </tr>
+      <tr id="Invoice__TEMPLATE_NODE">
+        <td id="Invoice__invoiceNumber">NUMBER:0000000</td>
+        <td id="Invoice__issueDate">DATE:MM/dd/yyyy</td>
+        <td id="Invoice__customerID">MSG:CustNo={0}</td>
+      </tr>
+    </table>
+    <hr/>
+    <form action="/" method="get">
+      <p>Last name: <input type="text" id="Person__lastName" name="lastName" value="MSG:{0}"/></p>
+      <p>First name: <input type="text" id="Person__firstName" name="firstName"/></p>
+      <p>Active: <input type="checkbox" id="Person__active" name="active" value="Y"/></p>
+      <p><input type="submit" id="SaveButton" name="action" value="Save"/></p>
+    </form>
+    <a href="MSG:http://localhost/mypage.mxform?pid={0}" id="Person__personID">
+      Person
+    </a>
+  </body>
+</html>

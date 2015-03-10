@@ -1,0 +1,12 @@
+[PropertyInfo]
+document,Document,false,false, , ,true,<default>
+format,java.text.Format,false,false, , ,true,com.taursys.beans.editors.FormatEditor
+formatPattern,String,false,false, , ,true,<default>
+propertyName,String,false,false, , ,true,<default>
+secondaryInputVerifier,InputVerifier,false,false, , ,true,<default>
+valueHolder,com.taursys.model.ValueHolder,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

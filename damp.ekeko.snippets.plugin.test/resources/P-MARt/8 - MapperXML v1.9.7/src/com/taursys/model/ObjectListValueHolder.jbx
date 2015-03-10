@@ -1,0 +1,12 @@
+[PropertyInfo]
+alias,String,false,false, , ,true,<default>
+empty,boolean,false,false, , ,true,<default>
+object,Object,false,false, , ,true,<default>
+position,int,false,false, , ,true,<default>
+rowCount,int,false,false, , ,true,<default>
+list,java.util.List,false,false,list,list,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,14 @@
+.\src\org\acm\seguin\JRefactoryVersion.java
+.\src\org\acm\seguin\ide\ide.folder
+.\src\org\acm\seguin\pretty\pretty.folder
+.\src\org\acm\seguin\version\version.folder
+.\src\org\acm\seguin\uml\uml.folder
+.\src\org\acm\seguin\tools\tools.folder
+.\src\org\acm\seguin\refactor\refactor.folder
+.\src\org\acm\seguin\io\io.folder
+.\src\org\acm\seguin\awt\awt.folder
+.\src\org\acm\seguin\metrics\metrics.folder
+.\src\org\acm\seguin\print\print.folder
+.\src\org\acm\seguin\parser\parser.folder
+.\src\org\acm\seguin\summary\summary.folder
+.\src\org\acm\seguin\util\util.folder

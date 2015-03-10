@@ -1,0 +1,7 @@
+OpenIDE-Module: org.netbeans.examples.modules.globalactions
+OpenIDE-Module-Name: Global Actions Test
+OpenIDE-Module-Install: org/netbeans/examples/modules/globalactions/Install.class
+OpenIDE-Module-Specification-Version: 1.1
+
+Name: org/netbeans/examples/modules/globalactions/TestServiceAction.class
+OpenIDE-Module-Class: Action

@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<project>
+  <pomVersion>3</pomVersion>
+  <id>pmd</id>
+  <name>PMD</name>
+  <currentVersion>1.8</currentVersion>
+  <organization>
+    <name>Project Ultra*Log @ DARPA</name>
+    <url>http://pmd.sourceforge.net/</url>
+    <logo>http://sourceforge.net/sflogo.php?group_id=56262&amp;type=5</logo>
+  </organization>
+  <logo>/images/pmd_logo_small.jpg</logo>
+  <inceptionYear>2002</inceptionYear>
+  <package>net.sourceforge.pmd</package>
+	<shortDescription>Java Static Analysis Tool</shortDescription>
+  <description>
+<![CDATA[
+<p>PMD scans Java source code and looks for potential problems like:</p>
+<ul>
+  <li>Unused local variables</li>
+  <li>Empty catch blocks</li>
+  <li>Unused parameters</li>
+  <li>Empty 'if' statements</li>
+  <li>Duplicate import statements</li>
+  <li>Unused private methods</li>
+  <li>Classes which could be Singletons</li>
+  <li>Short/long variable and method names</li>
+</ul>
+<p>PMD has plugins for JDeveloper, JEdit, JBuilder, NetBeans/Sun ONE Studio, IntelliJ IDEA, TextPad, Maven, Ant, Eclipse,
+Gel, and Emacs.  You can <a href="http://sourceforge.net/project/showfiles.php?group_id=56262">download everything from here</a>.</p>
+<p>Thanks to the <a href="http://cougaar.org/index.php?referrer=pmd">Cougaar</a> program for sponsoring PMD!</p>
+  ]]>
+</description>
+  <shortDescription>PMD Source Checker</shortDescription>
+
+  <url>http://pmd.sourceforge.net/</url>
+  <issueTrackingUrl>http://www.sourceforge.net/tracker/?group_id=56262</issueTrackingUrl>
+  <siteAddress>pmd.sourceforge.net</siteAddress>
+  <siteDirectory>/home/groups/p/pm/pmd/htdocs</siteDirectory>
+  <distributionDirectory>/home/groups/p/pm/pmd/</distributionDirectory>
+
+  <repository>
+    <connection>scm:cvs:pserver:anonymous@cvs.sourceforge.net:/cvsroot/pmd:pmd</connection>
+    <url>http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/pmd/</url>
+  </repository>
+
+  <versions>
+    <version>
+      <id>1.8</id>
+      <name>1.8</name>
+      <tag>pmd_release_1_8</tag>
+    </version>
+    <version>
+      <id>dev</id>
+      <name>dev</name>
+      <tag>HEAD</tag>
+    </version>
+  </versions>
+
+  <branches>
+  </branches>
+
+  <mailingLists>
+    <mailingList>
+        <name>PMD development</name>
+        <subscribe>http://lists.sourceforge.net/lists/listinfo/pmd-devel</subscribe>
+        <unsubscribe>http://lists.sourceforge.net/lists/listinfo/pmd-devel</unsubscribe>
+        <archive>http://www.geocrawler.com/lists/3/SourceForge/23403/0/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <name>Tom Copeland</name>
+      <id>tomcopeland</id>
+      <email>tom@infoether.com</email>
+      <organization>InfoEther</organization>
+      <roles><role>Developer</role></roles>
+    </developer>
+
+    <developer>
+      <name>David Dixon-Peugh</name>
+      <id>dpeugh</id>
+      <email>ddp@apache.org</email>
+      <organization>Lockheed Martin Corporation</organization>
+      <roles><role>Developer</role></roles>
+    </developer>
+
+    <developer>
+      <name>David Craine</name>
+      <id>dcraine</id>
+      <email>dave@infoether.com</email>
+      <organization>InfoEther</organization>
+      <roles><role>Developer</role></roles>
+    </developer>
+
+    <developer>
+      <name>Don Leckie</name>
+      <id>donleckie</id>
+      <email>donleckie@users.sourceforge.net</email>
+      <roles><role>Developer</role></roles>
+    </developer>
+
+    <developer>
+      <name>Ole-Martin Mork</name>
+      <id>olemartin</id>
+      <email>olemartin@users.sourceforge.net</email>
+      <roles><role>Developer</role></roles>
+       <organization>Bekk Consulting</organization>
+    </developer>
+
+      <developer>
+        <name>Tom Burke</name>
+        <id>tomburke</id>
+        <email>tomburke@users.sourceforge.net</email>
+        <roles><role>Developer</role></roles>
+      </developer>
+
+      <developer>
+        <name>Philippe Herlin</name>
+        <id>phherlin</id>
+        <email>phherlin@users.sourceforge.net</email>
+        <roles><role>Developer</role></roles>
+      </developer>
+
+      <developer>
+        <name>Gunnlaugur Thor Briem</name>
+        <id>gthb</id>
+        <email>gthb@users.sourceforge.net</email>
+        <roles><role>Developer</role></roles>
+      </developer>
+
+      <developer>
+        <name>Jiger Patel</name>
+        <id>jigerjava</id>
+        <email>jigerjava@users.sourceforge.net</email>
+        <roles><role>Developer</role></roles>
+      </developer>
+
+   </developers>
+
+  <contributors>
+    </contributors>
+
+  <!-- Need to mark these as compile-time/run-time -->
+
+  <dependencies>
+    <dependency>
+      <id>junit</id>
+      <version>3.8.1</version>
+    </dependency>
+
+    <dependency>
+      <id>ant</id>
+      <version>1.6</version>
+    </dependency>
+
+    <dependency>
+      <id>xml-apis</id>
+      <version>2.0.2</version>
+    </dependency>
+
+      <dependency>
+        <id>jaxen</id>
+        <version>1.0-FCS-full</version>
+      </dependency>
+
+      <dependency>
+        <id>saxpath</id>
+        <version>1.0-FCS</version>
+      </dependency>
+
+  </dependencies>
+
+  <build>
+    <nagEmailAddress>tom@infoether.com</nagEmailAddress>
+    <sourceDirectory>src</sourceDirectory>
+    <unitTestSourceDirectory>regress</unitTestSourceDirectory>
+    <integrationUnitTestSourceDirectory />
+    <aspectSourceDirectory></aspectSourceDirectory>
+
+    <unitTest>
+      <includes>
+        <include>**/*Test.java</include>
+      </includes>
+    </unitTest>
+
+    <resources>
+      <includes>
+        <include>*.java</include>
+	<include>*.xml</include>
+      </includes>
+    </resources>
+
+    <jars>
+    </jars>
+  </build>
+</project>

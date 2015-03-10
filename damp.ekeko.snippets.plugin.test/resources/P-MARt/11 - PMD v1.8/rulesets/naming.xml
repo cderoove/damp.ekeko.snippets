@@ -1,0 +1,278 @@
+<?xml version="1.0"?>
+
+<ruleset name="Naming Rules">
+  <description>
+The Naming Ruleset contains a collection of rules about names - too long, too short, and so forth.
+  </description>
+
+
+  <rule name="ShortVariable"
+        message="Avoid variables with short names like {0}"
+        class="net.sourceforge.pmd.rules.XPathRule">
+    <description>
+Detects when a field, local or parameter has a short name.
+    </description>
+      <properties>
+          <property name="xpath" pluginname="true">
+              <value>
+                  <![CDATA[
+    //VariableDeclaratorId[string-length(@Image) < 3]
+     [not(ancestor::ForInit)]
+     [not((ancestor::FormalParameter) and (ancestor::TryStatement))]
+                  ]]>
+              </value>
+          </property>
+      </properties>
+      <priority>3</priority>
+    <example>
+<![CDATA[
+public class Something {
+  private int q = 15; // VIOLATION - Field
+
+  public static void main( String as[] ) {  // VIOLATION - Formal
+    int r = 20 + q; // VIOLATION - Local
+
+    for (int i = 0; i < 10; i++) { // Not a Violation (inside FOR)
+      r += q;
+    }
+  }
+}
+]]>
+    </example>
+  </rule>
+
+  <rule name="LongVariable"
+        message="Avoid excessively long variable names like {0}"
+        class="net.sourceforge.pmd.rules.XPathRule">
+    <description>
+Detects when a field, formal or local variable is declared with a long name.
+    </description>
+      <priority>3</priority>
+      <properties>
+          <property name="xpath" pluginname="true">
+              <value>
+                  <![CDATA[
+    //VariableDeclaratorId[string-length(@Image) > 12]
+                  ]]>
+              </value>
+          </property>
+      </properties>
+    <example>
+<![CDATA[
+public class Something {
+  int reallyLongIntName = -3;  // VIOLATION - Field
+
+  public static void main( String argumentsList[] ) { // VIOLATION - Formal
+    int otherReallyLongName = -5; // VIOLATION - Local
+
+    for (int interestingIntIndex = 0;  // VIOLATION - For
+             interestingIntIndex < 10;
+             interestingIntIndex ++ ) {
+
+    }
+}
+
+]]>
+    </example>
+  </rule>
+
+  <rule name="ShortMethodNameRule"
+        message="Avoid using short method names"
+        class="net.sourceforge.pmd.rules.XPathRule">
+     <description>
+Detects when very short method names are used.
+     </description>
+      <priority>3</priority>
+      <properties>
+          <property name="xpath">
+              <value>
+                  <![CDATA[
+    //MethodDeclarator[string-length(@Image) < 3]
+                  ]]>
+              </value>
+          </property>
+      </properties>
+     <example>
+<![CDATA[
+public class ShortMethod {
+  public void a( int i ) { // Violation
+  }
+}
+]]>
+     </example>
+  </rule>
+
+
+    <rule name="VariableNamingConventionsRule"
+    message="{0} variable {1} should begin with {2}"
+    class="net.sourceforge.pmd.rules.VariableNamingConventionsRule">
+        <description>
+    A variable naming conventions rule - customize this to your liking
+    Final variables should be all caps
+    Non-final variables should not include underscores
+        </description>
+        <priority>1</priority>
+        <example>
+<![CDATA[
+public class Foo {
+    public static final int MY_NUM = 0;
+    public String myTest = "";
+    DataModule dmTest = new DataModule();
+}
+]]>
+        </example>
+    </rule>
+
+    <rule name="MethodNamingConventions"
+              message="Method name does not begin with a lower case character."
+              class="net.sourceforge.pmd.rules.MethodNamingConventionsRule">
+          <description>
+              Method names should always begin with a lower case character, and should not contain underscores.
+          </description>
+          <priority>1</priority>
+          <example>
+<![CDATA[
+public class Foo {
+        public void fooStuff() {
+        }
+}
+]]>
+          </example>
+        </rule>
+
+
+    <rule name="ClassNamingConventionsRule"
+          message="Class names should begin with an uppercase character and not include underscores"
+          class="net.sourceforge.pmd.rules.ClassNamingConventionsRule">
+      <description> Class names should always begin with an upper case character, and should not contain underscores.
+      </description>
+      <priority>1</priority>
+      <example>
+<![CDATA[
+public class Foo {}
+]]>
+      </example>
+    </rule>
+
+    <rule name="AbstractNamingRule"
+          message="Abstract classes should be named 'AbstractXXX'"
+          class="net.sourceforge.pmd.rules.XPathRule">
+       <description>
+  Abstract classes should be named 'AbstractXXX'.
+       </description>
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+//ClassDeclaration[@Abstract='true']
+ /UnmodifiedClassDeclaration[starts-with(@Image,'Abstract') = 0]
+                    ]]>
+                </value>
+            </property>
+        </properties>
+       <example>
+<![CDATA[
+public abstract class Foo { // should be AbstractFoo
+}
+]]>
+       </example>
+    </rule>
+
+    <rule name="AvoidDollarSigns"
+           message="Avoid using dollar signs in variable/method/class/interface names"
+           class="net.sourceforge.pmd.rules.XPathRule">
+       <description>
+       Avoid using dollar signs in variable/method/class/interface names.
+       </description>
+         <properties>
+             <property name="xpath">
+                 <value>
+<![CDATA[
+//UnmodifiedClassDeclaration[contains(@Image, '$')]
+|
+//VariableDeclaratorId[contains(@Image, '$')]
+|
+//UnmodifiedInterfaceDeclaration[contains(@Image, '$')]
+|
+//MethodDeclarator[contains(@Image, '$')]
+ ]]>
+                 </value>
+             </property>
+         </properties>
+         <priority>3</priority>
+       <example>
+   <![CDATA[
+ public class Fo$o {  // yikes!
+ }
+   ]]>
+       </example>
+     </rule>
+
+    <rule name="MethodWithSameNameAsEnclosingClass"
+          message="Classes should not have non-constructor methods with the same name as the class"
+          class="net.sourceforge.pmd.rules.XPathRule">
+       <description>
+       Non-constructor methods should not have the same name as the enclosing class.
+       </description>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+   //UnmodifiedClassDeclaration[@Image = //MethodDeclarator/@Image]
+]]>
+                </value>
+            </property>
+        </properties>
+        <priority>3</priority>
+       <example>
+    <![CDATA[
+public class MyClass {
+// this is bad because it is a method
+public void MyClass() {}
+// this is OK because it is a constructor
+public MyClass() {}
+}
+    ]]>
+       </example>
+     </rule>
+
+    <rule name="SuspiciousHashcodeMethodName"
+          message="The method name and return type are suspiciously close to hashCode()"
+          class="net.sourceforge.pmd.rules.XPathRule">
+       <description>
+       The method name and return type are suspiciously close to hashCode(), which
+       may mean you are trying (and failing) to override the hashCode() method.
+       </description>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//MethodDeclaration
+ [ResultType
+  //PrimitiveType
+   [@Image='int']
+   [//MethodDeclarator
+    [@Image='hashcode' or @Image='HashCode' or @Image='Hashcode']
+    [not(FormalParameters/*)]
+]]>
+                </value>
+            </property>
+        </properties>
+        <priority>3</priority>
+       <example>
+    <![CDATA[
+public class Foo {
+ public int hashcode() {
+ // oops, this probably was supposed to be hashCode
+ }
+}
+    ]]>
+       </example>
+     </rule>
+
+
+</ruleset>
+
+
+

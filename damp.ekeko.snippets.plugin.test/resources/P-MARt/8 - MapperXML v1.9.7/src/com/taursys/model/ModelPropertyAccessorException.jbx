@@ -1,0 +1,14 @@
+[PropertyInfo]
+givenValueObjectClassName,String,false,false,givenValueObjectClassName,givenValueObjectClassName,true,<default>
+methodName,String,false,false,methodName,methodName,true,<default>
+propertyDataType,String,false,false,propertyDataType,propertyDataType,true,<default>
+propertyDataType,int,false,false, , ,true,<default>
+propertyName,String,false,false,propertyName,propertyName,true,<default>
+valueObjectClassName,String,false,false,valueObjectClass,valueObjectClass,true,<default>
+valueObjectClassName,Class,false,false, , ,true,<default>
+givenValueDataType,String,false,false,givenValueDataType,givenValueDataType,true,<default>
+[IconNames]
+
+
+
+

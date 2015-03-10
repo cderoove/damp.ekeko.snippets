@@ -1,0 +1,12 @@
+[PropertyInfo]
+components,Component[],false,false, , ,true,<default>
+documentAdapter,DocumentAdapter,false,false, , ,true,<default>
+inputDispatcher,Dispatcher,false,false, , ,true,<default>
+parameterDispatcher,Dispatcher,false,false, , ,true,<default>
+renderDispatcher,Dispatcher,false,false, , ,true,<default>
+triggerDispatcher,Dispatcher,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

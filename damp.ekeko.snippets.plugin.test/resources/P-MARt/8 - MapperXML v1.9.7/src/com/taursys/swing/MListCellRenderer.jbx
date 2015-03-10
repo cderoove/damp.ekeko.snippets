@@ -1,0 +1,9 @@
+[PropertyInfo]
+format,java.text.Format,false,false, , ,true,<default>
+formatPattern,String,false,false, , ,true,<default>
+displayPropertyName,String,false,false,displayPropertyName,displayPropertyName,true,<default>
+[IconNames]
+
+
+
+

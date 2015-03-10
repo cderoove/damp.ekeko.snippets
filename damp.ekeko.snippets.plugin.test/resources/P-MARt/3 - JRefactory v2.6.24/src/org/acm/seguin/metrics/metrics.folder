@@ -1,0 +1,17 @@
+.\src\org\acm\seguin\metrics\CommaDelimitedReport.java
+.\src\org\acm\seguin\metrics\GatherData.java
+.\src\org\acm\seguin\metrics\LCTraversal.java
+.\src\org\acm\seguin\metrics\LineCounter.java
+.\src\org\acm\seguin\metrics\MethodMetrics.java
+.\src\org\acm\seguin\metrics\MethodMetricsFrame.java
+.\src\org\acm\seguin\metrics\MetricsFrame.java
+.\src\org\acm\seguin\metrics\MetricsReport.java
+.\src\org\acm\seguin\metrics\MetricsTableCellRenderer.java
+.\src\org\acm\seguin\metrics\PackageMetrics.java
+.\src\org\acm\seguin\metrics\PackageMetricsFrame.java
+.\src\org\acm\seguin\metrics\ProjectMetrics.java
+.\src\org\acm\seguin\metrics\ProjectMetricsFrame.java
+.\src\org\acm\seguin\metrics\Summarize.java
+.\src\org\acm\seguin\metrics\TextReport.java
+.\src\org\acm\seguin\metrics\TypeMetrics.java
+.\src\org\acm\seguin\metrics\TypeMetricsFrame.java

@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+OpenIDE-Module: org.netbeans.examples.modules.audioloader
+OpenIDE-Module-Name: Audio Loader
+OpenIDE-Module-Specification-Version: 0.1
+Class-Path: jmf.jar sound.jar
+
+Name: org/netbeans/examples/modules/audioloader/AudioDataLoader.class
+OpenIDE-Module-Class: Loader

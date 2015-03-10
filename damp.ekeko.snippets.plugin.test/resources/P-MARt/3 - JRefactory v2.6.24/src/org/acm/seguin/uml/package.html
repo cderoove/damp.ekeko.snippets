@@ -1,0 +1,20 @@
+<HTML>
+<BODY>
+Responsible for drawing the UML class diagrams.  This package
+contains all the various components to draw the UML class
+diagram.  The main pieces are the UMLPackage, which serves
+as a background.  UMLClass holds a particular class, and
+UMLField, UMLMethod, and UMLNestedClass are each lines in the
+UMLClass.<P>
+
+To add more items to the menu that pops up on the class diagrams,
+edit UMLPopupMenu.  This menu has been broken into a number
+of methods each generating a particular submenu.  The ActionListener
+that is invoked are stored either in org.acm.seguin.uml.refactor
+if it is a refactoring, or org.acm.seguin.ide.common.<P>
+
+The reason to place it in ide.common is that we want to isolate
+changes that are specific to a particular release of an editor.
+This makes it easier to add the feature to other editors.<P>
+</BODY>
+</HTML>

@@ -1,0 +1,244 @@
+<?xml version="1.0"?>
+
+<ruleset name="Controversial Rules">
+  <description>
+The Controversial Ruleset contains rules that, for whatever reason, are considered controversial.  They
+are separated out here to allow people to include as they see fit via custom rulesets.  This ruleset was
+initially created in response to discussions over UnnecessaryConstructorRule which Tom likes but
+most people really dislike :-)
+  </description>
+
+    <rule name="UnnecessaryConstructorRule"
+          message="Avoid unnecessary constructors - the compiler will generate these for you"
+          class="net.sourceforge.pmd.rules.XPathRule">
+      <description>
+  Unnecessary constructor detects when a constructor is not necessary; i.e., when there's only one constructor,
+  it's public, has an empty body, and takes no arguments.
+      </description>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+//UnmodifiedClassDeclaration
+/ClassBody[count(ClassBodyDeclaration/ConstructorDeclaration)=1]
+/ClassBodyDeclaration/ConstructorDeclaration
+[@Public='true']
+[not(FormalParameters/*)]
+[not(BlockStatement)]
+[not(NameList)]
+[count(ExplicitConstructorInvocation/Arguments/ArgumentList/Expression)=0]
+                    ]]>
+                </value>
+            </property>
+        </properties>
+        <priority>3</priority>
+      <example>
+  <![CDATA[
+  public class Foo {
+   public Foo() {}
+  }
+  ]]>
+      </example>
+    </rule>
+
+
+
+    <rule name="NullAssignment"
+          message="Assigning an Object to null is a code smell.  Consider refactoring."
+          class="net.sourceforge.pmd.rules.design.NullAssignmentRule">
+      <description>
+ Assigning a "null" to a variable (outside of its declaration) is usually in
+ bad form.  Some times, the assignment is an indication that the programmer doesn't
+ completely understand what is going on in the code.  NOTE: This sort of assignment
+ may in rare cases be useful to encourage garbage collection.  If that's what you're using
+ it for, by all means, disregard this rule :-)
+      </description>
+        <priority>3</priority>
+      <example>
+ <![CDATA[
+ public class Foo {
+   public void bar() {
+     Object x = null; // This is OK.
+     x = new Object();
+     // Big, complex piece of code here.
+     x = null; // This is BAD.
+     // Big, complex piece of code here.
+   }
+ }
+
+ ]]>
+      </example>
+
+    </rule>
+    <rule name="OnlyOneReturn"
+         message="A method should have only one exit point, and that should be the last statement in the method"
+         class="net.sourceforge.pmd.rules.design.OnlyOneReturnRule">
+     <description>
+     A method should have only one exit point, and that should be the last statement in the method.
+     </description>
+        <priority>3</priority>
+
+     <example>
+ <![CDATA[
+ public class OneReturnOnly1 {
+  public void foo(int x) {
+   if (x > 0) {
+    return "hey";   // oops, multiple exit points!
+   }
+   return "hi";
+  }
+ }
+ ]]>
+     </example>
+     </rule>
+
+    <rule name="UnusedModifier"
+         message="Avoid modifiers which are implied by the context"
+         class="net.sourceforge.pmd.rules.XPathRule">
+     <description>
+     Fields in interfaces are automatically public static final, and
+     methods are public abstract.
+     Classes or interfaces nested in an interface are automatically public
+     and static (all nested interfaces are automatically static).
+     For historical reasons, modifiers which are implied by the context
+     are accepted by the compiler, but are superfluous.
+     </description>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+    //UnmodifiedInterfaceDeclaration//MethodDeclaration[@Public = 'true' or @Abstract = 'true']
+|   //UnmodifiedInterfaceDeclaration//FieldDeclaration[@Public = 'true' or @Static = 'true' or @Final = 'true']
+|   //UnmodifiedInterfaceDeclaration//NestedClassDeclaration[@Public = 'true' or @Static = 'true']
+|   //UnmodifiedInterfaceDeclaration//NestedInterfaceDeclaration[@Public = 'true' or @Static = 'true']
+|   //UnmodifiedClassDeclaration//NestedInterfaceDeclaration[@Static = 'true']
+                    ]]>
+                </value>
+            </property>
+        </properties>
+        <priority>3</priority>
+     <example>
+ <![CDATA[
+    public interface Foo {
+     public abstract void bar(); // both abstract and public are ignored by the compiler
+     public static final int X = 0; // public, static, and final all ignored
+     public static class Bar {} // public, static ignored
+     public static interface Baz {} // ditto
+    }
+    public class Bar {
+     public static interface Baz {} // static ignored
+    }
+ ]]>
+     </example>
+     </rule>
+
+    <rule name="AssignmentInOperandRule"
+      message="Avoid assigments in operands"
+      class="net.sourceforge.pmd.rules.XPathRule">
+  <description>
+  Avoid assigments in operands; this can make code more complicated and harder to read.
+  </description>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+//*[name()='WhileStatement' or name()='IfStatement'][Expression//AssignmentOperator]
+                    ]]>
+                </value>
+            </property>
+         </properties>
+    <priority>3</priority>
+  <example>
+  <![CDATA[
+  public class Foo {
+   public void bar() {
+int x = 2;
+if ((x = getX()) == 3) {
+ System.out.println("3!");
+}
+   }
+   private int getX() {
+return 3;
+   }
+  }
+
+  ]]>
+  </example>
+</rule>
+
+    <rule name="AtLeastOneConstructor"
+      message="Each class should declare at least one constructor"
+      class="net.sourceforge.pmd.rules.AtLeastOneConstructorRule">
+  <description>
+  Each class should declare at least one constructor.
+  </description>
+    <priority>3</priority>
+
+  <example>
+  <![CDATA[
+  public class Foo {
+   // no constructor!  not good!
+  }
+  ]]>
+  </example>
+</rule>
+
+    <rule name="DontImportSunRule"
+       message="Avoid importing anything from the 'sun.*' packages"
+       class="net.sourceforge.pmd.rules.XPathRule">
+       <description>
+          Avoid importing anything from the 'sun.*' packages.  These packages are not portable and are likely to change.
+       </description>
+       <properties>
+          <property name="xpath">
+               <value>
+<![CDATA[
+   //ImportDeclaration
+   [starts-with(Name/@Image, 'sun.')]
+   [not(starts-with(Name/@Image, 'sun.misc.Signal'))]
+]]>
+
+               </value>
+          </property>
+       </properties>
+       <priority>4</priority>
+
+       <example>
+<![CDATA[
+   import sun.misc.foo;
+   public class Foo {}
+]]>
+       </example>
+    </rule>
+
+    <rule name="SuspiciousOctalEscapeRule"
+       message="Suspicious decimal characters following octal escape in string literal"
+          class="net.sourceforge.pmd.rules.SuspiciousOctalEscapeRule">
+      <description>
+      A suspicious octal escape sequence was found inside a String literal.
+      The Java language specification (section 3.10.6) says an octal
+      escape sequence inside a literal String shall consist of a backslash
+      followed by:
+
+           OctalDigit | OctalDigit OctalDigit | ZeroToThree OctalDigit OctalDigit
+
+      Any octal escape sequence followed by non-octal digits can be confusing,
+      e.g. "\038" is interpreted as the octal escape sequence "\03" followed by
+      the literal character "8".
+      </description>
+      <priority>3</priority>
+      <example>
+<![CDATA[
+ public class Foo {
+    public void foo() {
+       // interpreted as octal 12, followed by character '8'
+       System.out.println("suspicious: \128");
+    }
+ }
+]]>
+      </example>
+    </rule>
+</ruleset>
+
+
+

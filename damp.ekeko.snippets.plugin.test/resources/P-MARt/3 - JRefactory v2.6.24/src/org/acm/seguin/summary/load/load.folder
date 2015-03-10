@@ -1,0 +1,6 @@
+.\src\org\acm\seguin\summary\load\TextLoadStatus.java
+.\src\org\acm\seguin\summary\load\SwingLoadStatus.java
+.\src\org\acm\seguin\summary\load\SilentLoadStatus.java
+.\src\org\acm\seguin\summary\load\RapidLoader.java
+.\src\org\acm\seguin\summary\load\LoadStatus.java
+.\src\org\acm\seguin\summary\load\FlashLoader.java

@@ -1,0 +1,5 @@
+.\src\org\acm\seguin\parser\query\CompareParseTreeVisitor.java
+.\src\org\acm\seguin\parser\query\Search.java
+.\src\org\acm\seguin\parser\query\PackageNameGetter.java
+.\src\org\acm\seguin\parser\query\EqualTree.java
+.\src\org\acm\seguin\parser\query\Found.java

@@ -1,0 +1,28 @@
+<HTML>
+<BODY>
+The undo package is responsible for being able to undo
+the refactoring operations.  This package currently consists
+of two objects.  One is the stack that maintains a list of
+all the undo actions.  The second is the specific action
+that can be undone.<P>
+
+There is no support yet for redoing actions.<P>
+
+Undoing a particular change to a specific file are stored
+by renaming the current file with an extension,
+.java.# where # is the number of times the file has been changed
+by the refactoring tool.  Let's call this method of
+storing the previous incarnations of a file an indexed
+file.<P>
+
+An undo action then has a number of indexed files associated
+with them.  It also has a description of the refactoring
+so that a user interface component can display a list of
+refactorings to undo.<P>
+
+The undo stack then holds all the undo action objects.
+It uses a singleton pattern to insure that only a single
+instance of the undo stack is present in the editor at
+a time.<P>
+</BODY>
+</HTML>

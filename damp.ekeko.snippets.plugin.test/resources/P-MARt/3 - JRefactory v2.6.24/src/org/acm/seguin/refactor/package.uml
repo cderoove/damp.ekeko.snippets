@@ -1,0 +1,13 @@
+V[1.1:org.acm.seguin.refactor]
+S[org.acm.seguin.refactor:AddImportTransform,org.acm.seguin.refactor:TransformAST]{2:(608,162),(652,87)}
+S[org.acm.seguin.refactor:EliminatePackageImportVisitor,org.acm.seguin.refactor.type:TypeChangeVisitor]{2:(2253,354),(2256,430)}
+S[org.acm.seguin.refactor:RemoveImportTransform,org.acm.seguin.refactor:TransformAST]{2:(808,162),(714,87)}
+P[org.acm.seguin.refactor:AddImportTransform]{399,162}
+P[org.acm.seguin.refactor:ComplexTransform]{1290,13}
+P[org.acm.seguin.refactor:EliminatePackageImportVisitor]{2000,20}
+P[org.acm.seguin.refactor:Refactoring]{61,13}
+P[org.acm.seguin.refactor:RefactoringException]{1010,20}
+P[org.acm.seguin.refactor:RefactoringFactory]{1646,20}
+P[org.acm.seguin.refactor:RemoveImportTransform]{745,162}
+P[org.acm.seguin.refactor:TransformAST]{588,19}
+P[org.acm.seguin.refactor.type:TypeChangeVisitor]{2010,430}

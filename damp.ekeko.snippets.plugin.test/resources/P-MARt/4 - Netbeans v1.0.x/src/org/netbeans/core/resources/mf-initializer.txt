@@ -1,0 +1,62 @@
+OpenIDE-Module: org.netbeans.core/1
+OpenIDE-Module-Name: IDE Initializer
+
+Name: org/netbeans/core/IDESettings.class
+OpenIDE-Module-Class: Option
+
+Name: org/netbeans/core/output/OutputSettings.class
+OpenIDE-Module-Class: Option
+
+Name: org/openide/explorer/propertysheet/PropertySheetSettings.class
+OpenIDE-Module-Class: Option
+
+Name: org/netbeans/core/execution/ExecutionSettings.class
+OpenIDE-Module-Class: Option
+
+Name: org/openide/src/nodes/SourceOptions.class
+OpenIDE-Module-Class: Option
+
+Name: org/openide/text/PrintSettings.class
+OpenIDE-Module-Class: Option
+
+Name: org/netbeans/core/execution/ProcessNode.class
+OpenIDE-Module-Class: Node
+Type: Environment
+
+
+Name: org/netbeans/core/DesktopNode$TemplatesNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/MenuFolderNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/ToolbarFolderNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/ActionsPoolNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/DesktopNode$StartupNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/DesktopNode$ObjectTypesNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/netbeans/core/ModuleNode.class
+OpenIDE-Module-Class: Node
+Type: Session
+
+Name: org/openide/execution/ProcessExecutor.class
+OpenIDE-Module-Class: Service
+Display-Name: External
+Default: true
+
+Name: org/openide/execution/ThreadExecutor.class
+OpenIDE-Module-Class: Service
+Display-Name: Internal

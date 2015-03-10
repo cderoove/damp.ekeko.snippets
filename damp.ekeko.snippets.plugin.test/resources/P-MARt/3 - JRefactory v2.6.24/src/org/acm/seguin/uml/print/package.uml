@@ -1,0 +1,12 @@
+V[1.1:org.acm.seguin.uml.print]
+S[org.acm.seguin.uml.print:PrintingThread,java.lang:Thread]{2:(534,515),(610,490)}
+S[org.acm.seguin.uml.print:UMLPagePrinter,org.acm.seguin.print:PagePrinter]{2:(741,105),(1307,157)}
+S[org.acm.seguin.uml.print:PrintAdapter,java.awt.event:ActionListener]{2:(321,106),(291,140)}
+S[org.acm.seguin.uml.print:PrintSetupAdapter,java.awt.event:ActionListener]{2:(149,87),(198,140)}
+P[org.acm.seguin.uml.print:PrintAdapter]{257,19}
+P[org.acm.seguin.uml.print:PrintingThread]{343,503}
+P[org.acm.seguin.uml.print:UMLPagePrinter]{29,343}
+P[org.acm.seguin.uml.print:PrintSetupAdapter]{15,19}
+P[java.lang:Thread]{610,11}
+P[org.acm.seguin.print:PagePrinter]{1307,20}
+P[java.awt.event:ActionListener]{145,140}

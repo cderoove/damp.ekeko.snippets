@@ -1,0 +1,6 @@
+OpenIDE-Module: org.netbeans.examples.modules.objectview/3
+OpenIDE-Module-Name: Object View
+OpenIDE-Module-Specification-Version: 1.1
+
+Name: org/netbeans/examples/modules/objectview/ObjectViewAction.class
+OpenIDE-Module-Class: Action

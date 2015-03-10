@@ -1,0 +1,14 @@
+.\src\org\acm\seguin\uml\line\ScalablePanel.java
+.\src\org\acm\seguin\uml\line\TextInfo.java
+.\src\org\acm\seguin\uml\line\LinedPanel.java
+.\src\org\acm\seguin\uml\line\AssociationRelationship.java
+.\src\org\acm\seguin\uml\line\LabelSizeComputation.java
+.\src\org\acm\seguin\uml\line\SizableLabel.java
+.\src\org\acm\seguin\uml\line\Segment.java
+.\src\org\acm\seguin\uml\line\InheretenceRelationship.java
+.\src\org\acm\seguin\uml\line\ImplementsRelationship.java
+.\src\org\acm\seguin\uml\line\EndPointPanel.java
+.\src\org\acm\seguin\uml\line\DragPanelAdapter.java
+.\src\org\acm\seguin\uml\line\SegmentedLine.java
+.\src\org\acm\seguin\uml\line\LineMouseAdapter.java
+.\src\org\acm\seguin\uml\line\Vertex.java

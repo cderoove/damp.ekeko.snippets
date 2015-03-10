@@ -1,0 +1,12 @@
+[PropertyInfo]
+address1,String,false,false,address1,address1,true,<default>
+address2,String,false,false,address2,address2,true,<default>
+city,String,false,false,city,city,true,<default>
+state,String,false,false,state,state,true,<default>
+zip,String,false,false,zip,zip,true,<default>
+createDate,java.util.Date,false,false,createDate,createDate,true,<default>
+[IconNames]
+
+
+
+

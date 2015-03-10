@@ -1,0 +1,45 @@
+/AbstractNewPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/BindingCopyAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/Bundle.properties/1.1/Sat Apr 10 00:17:20 2004//
+/Bundle_ja.properties/1.1/Sat Apr 10 00:17:20 2004//
+/EditPropertyAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/GridBagPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiAbstractNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiChildren.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiDataType.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiDirContext.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiDisabledNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiException.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiFailedNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiIcons.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiKey.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiLeafNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiModule.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiObjectCreator.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiObjectNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiProperty.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiProvidersNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/JndiRootNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/LookupCopyAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/NewJndiRootPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/NewJndiSubContextPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/NewPropertyPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/NewProviderPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/NotFoundPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderConnectAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderDataType.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderNode.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderProperties.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderProperty.java/1.1/Sat Apr 10 00:17:20 2004//
+/ProviderTestAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/RefreshAction.java/1.1/Sat Apr 10 00:17:20 2004//
+/TemplateCreator.java/1.1/Sat Apr 10 00:17:20 2004//
+/TimeOutPanel.form/1.1/Sat Apr 10 00:17:20 2004/-kb/
+/TimeOutPanel.java/1.1/Sat Apr 10 00:17:20 2004//
+/WaitNode.java/1.1/Sat Apr 10 00:17:20 2004//
+D/gui////
+D/resources////
+D/settings////
+D/templates////
+D/utils////

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+
+<Form version="1.0" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
+
+  <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout"/>
+  <SubComponents>
+    <Component class="javax.swing.JLabel" name="jLabel2">
+      <Properties>
+        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.ResourceBundleStringFormEditor">
+          <ResourceString bundle="org/netbeans/modules/javadoc/comments/Bundle.properties" key="CTL_StandardTagPanel.jLabel2.text"/>
+        </Property>
+        <Property name="horizontalAlignment" type="int" editor="org.openide.util.SwingEditors$HorizontalPropertyEditor" value="2"/>
+      </Properties>
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+          <GridBagConstraints anchor="17" fill="0" gridHeight="1" gridWidth="1" gridX="-1" gridY="-1" insetsBottom="2" insetsLeft="2" insetsRight="1" insetsTop="2" ipadX="0" ipadY="0" weightX="0.0" weightY="0.0"/>
+        </Constraint>
+      </Constraints>
+    </Component>
+    <Component class="javax.swing.JComboBox" name="nameComboBox">
+      <Properties>
+        <Property name="maximumRowCount" type="int" editor="sun.beans.editors.IntEditor" value="4"/>
+        <Property name="editable" type="boolean" editor="sun.beans.editors.BoolEditor" value="true"/>
+      </Properties>
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+          <GridBagConstraints anchor="17" fill="0" gridHeight="1" gridWidth="0" gridX="-1" gridY="-1" insetsBottom="2" insetsLeft="1" insetsRight="2" insetsTop="2" ipadX="0" ipadY="0" weightX="0.0" weightY="0.0"/>
+        </Constraint>
+      </Constraints>
+    </Component>
+    <Component class="javax.swing.JLabel" name="jLabel1">
+      <Properties>
+        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.ResourceBundleStringFormEditor">
+          <ResourceString bundle="org/netbeans/modules/javadoc/comments/Bundle.properties" key="CTL_StandardTagPanel.jLabel1.text"/>
+        </Property>
+        <Property name="horizontalAlignment" type="int" editor="org.openide.util.SwingEditors$HorizontalPropertyEditor" value="2"/>
+      </Properties>
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+          <GridBagConstraints anchor="18" fill="0" gridHeight="1" gridWidth="1" gridX="-1" gridY="-1" insetsBottom="2" insetsLeft="2" insetsRight="1" insetsTop="2" ipadX="0" ipadY="0" weightX="0.0" weightY="0.0"/>
+        </Constraint>
+      </Constraints>
+    </Component>
+    <Container class="javax.swing.JScrollPane" name="descriptionScrollPane">
+      <Constraints>
+        <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+          <GridBagConstraints anchor="10" fill="1" gridHeight="0" gridWidth="0" gridX="-1" gridY="-1" insetsBottom="2" insetsLeft="1" insetsRight="2" insetsTop="2" ipadX="0" ipadY="0" weightX="1.0" weightY="1.0"/>
+        </Constraint>
+      </Constraints>
+
+      <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+      <SubComponents>
+        <Component class="javax.swing.JEditorPane" name="descriptionTextArea">
+          <Properties>
+            <Property name="contentType" type="java.lang.String" editor="org.netbeans.beaninfo.editors.StringEditor" value="text/html"/>
+          </Properties>
+
+          <Events>
+            <EventHandler event="focusGained" handler="descriptionTextAreaFocusGained"/>
+            <EventHandler event="focusLost" handler="descriptionTextAreaFocusLost"/>
+          </Events>
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout$JScrollPaneConstraintsDescription"/>
+          </Constraints>
+        </Component>
+      </SubComponents>
+    </Container>
+  </SubComponents>
+</Form>

@@ -1,0 +1,10 @@
+[PropertyInfo]
+model,ButtonModel,false,false, , ,true,<default>
+parameter,String,false,false, , ,true,<default>
+text,String,false,false, , ,true,<default>
+defaultTrigger,boolean,false,false,defaultTrigger,default Trigger if parameter not present,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,9 @@
+V[1.1:org.acm.seguin.print.text]
+S[org.acm.seguin.print.text:PrintingThread,java.lang:Thread]{2:(702,155),(1413,400)}
+S[org.acm.seguin.print.text:TextPagePrinter,org.acm.seguin.print:PagePrinter]{2:(1249,146),(1731,167)}
+P[org.acm.seguin.print.text:LinePrinter]{20,20}
+P[org.acm.seguin.print.text:PrintingThread]{386,20}
+P[org.acm.seguin.print.text:LineSet]{722,20}
+P[org.acm.seguin.print.text:TextPagePrinter]{909,20}
+P[java.lang:Thread]{1413,20}
+P[org.acm.seguin.print:PagePrinter]{1731,20}

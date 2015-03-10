@@ -1,0 +1,124 @@
+<HTML>
+<BODY>
+Responsible for storing the software that performs the
+refactorings.  This package contains the base classes
+for the refactorings.  It also has a number of classes
+that are used by several types of refactorings.  This
+page briefly describes these types, then moves on to
+describe how to create a new refactoring.<P>
+
+<UL>
+<LI>  <B>Refactoring</B> is the base class for refactoring.
+<LI>  <B>TransformAST</B> is the base class for making a
+transformation on a syntax tree.
+<LI>  <B>ComplexTransform</B> combines a number of
+TransformASTs together to update a single file.
+<LI>  <B>RefactoringException</B> is thrown when the
+requested refactoring cannot be performed.
+<LI>  <B>AddImportTransform</B> is a TransformAST that
+adds an import statement to the file
+<LI>  <B>RemoveImportTransform</B> is a TransformAST that
+removes an import statement from a file
+</UL>
+
+<H2>How to create a new refactoring</H2>
+
+<P>This portion of the document describes how to create
+a new refactoring, or at least the methodology that was
+used to create the existing refactorings.</P>
+
+<P>The first step is to create a set of source files to test on.
+This file contains the "clean" version of the file before
+the refactoring was applied.  Then I hand edited the file
+so that it was the correct result.  Then applied the pretty
+printer to the edited file.  (If more than one file is updated
+by a refactoring, this process is repeated for each file.)</P>
+
+<P>The second step is to create a unit test.  To do this,
+I extended org.acm.seguin.junit.DirSourceTestCase.  This
+takes all the features of the TestCase from junit and adds
+in the specific directories.  Root is the working directory,
+clean contains the unmodified files, and check contains the
+correct files.  The unit test:</P>
+
+<OL>
+<LI> Copies the files from the
+clean directory to the working directory
+<LI> Applies the
+refactoring
+<LI> Compares the file in the working directory
+to the correct file
+<LI> Deletes the file in the working directory
+</OL>
+
+<P>To get the unit test to compile, I create a refactoring
+class.  I call the refactoring class XXXRefactoring, and
+it extends org.acm.seguin.refactor.Refactoring.  The refactoring
+goes into the appropriate package.  At the moment, the
+kinds of refactoring are:</P>
+
+<UL>
+<LI>  <B>org.acm.seguin.refactor.type</B> - renaming and moving classes, adding child
+or parent classes, removing classes
+<LI>  <B>org.acm.seguin.refactor.field</B> - renaming and moving fields
+<LI>  <B>org.acm.seguin.refactor.method</B> - renaming and moving methods
+</UL>
+
+<P>I quickly create the empty methods so that the refactoring
+is not abstract, and then everything should compile.  I compile,
+and run the unit tests to see that the junit test fails because
+the files do not match.  (Other types of failures are caused
+by the unit test being incorrect - so now that is debugged.)</P>
+
+<P>Next I create a number of TransformASTs that perform some
+unit transformation on the parse tree.  I've used these to
+add or remove a node in the parse tree or replace a name
+everywhere it occurs in the source tree.</P>
+
+<P>Sometimes a TransformAST hands it's work off to a
+Visitor object.  The org.acm.seguin.parser.ChildrenVisitor
+is a good one to choose as a base class for this visitor.
+It already provides the ability to traverse the entire tree.
+Then all I have to do is overload the specific visit
+methods for the nodes I'm concerned about.</P>
+
+<P>To learn more about what exactly the source tree looks like,
+look at the java1_1.jjt file that is included in the code.jar
+file.</P>
+
+<P>Now we have a bunch of TransformAST objects which
+might call visitors to do their work.  How do these
+get combined together to update a single file?
+I would then create a ComplexTransform
+and add to it each TransformAST object that is necessary to
+update that file.  Create an instance of the ComplexTransform
+with the getComplexTransform() method of the Refactoring
+object.  (This is done to support undoing the refactoring.)</P>
+
+<P>If the effect of a refactoring requires that
+perhaps a large number of files be modified, then I use
+a SummaryVisitor to traverse all the source files that
+are loaded into memory.  A good visitor to extend is
+the org.acm.seguin.summary.TraversalVisitor.  It
+traverses the summary file.</P>
+
+<P>To learn more about the Summary objects, look
+at the org.acm.seguin.summary package.  The Summary
+objects store the metadata for all the source
+files that are loaded.  One thing to note about
+the FileSummary objects is that if they have a
+file that is equal to null, then the FileSummary
+and associated types are from the JDK or a 3rd party
+library.  These types cannot be updated by the
+refactoring tool.</P>
+
+<P>By this point we have a Refactoring object.
+It applies a ComplexTransform to a single file
+or uses a TraversalVisitor to apply the ComplexTransform
+to a series of files.  The ComplexTransform applies
+a number of TransformAST objects to update a single
+parse tree.</P>
+
+<P>Once the unit test passes, you are done!</P>
+</BODY>
+</HTML>

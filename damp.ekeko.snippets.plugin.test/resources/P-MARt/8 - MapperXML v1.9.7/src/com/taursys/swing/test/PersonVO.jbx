@@ -1,0 +1,21 @@
+[PropertyInfo]
+address1,String,false,false, , ,true,<default>
+address2,String,false,false, , ,true,<default>
+birthdate,Date,false,false, , ,true,<default>
+city,String,false,false, , ,true,<default>
+country,String,false,false,country,country,true,<default>
+favoriteColorID,int,false,false, , ,true,<default>
+firstName,String,false,false, , ,true,<default>
+fullName,String,false,false, , ,true,<default>
+lastName,String,false,false, , ,true,<default>
+personID,int,false,false, , ,true,<default>
+postalCode,String,false,false, , ,true,<default>
+salary,BigDecimal,false,false, , ,true,<default>
+state,String,false,false, , ,true,<default>
+supervisorID,Integer,false,false, , ,true,<default>
+notes,String,false,false,notes,notes,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,10 @@
+[PropertyInfo]
+collectionValueHolder,com.taursys.model.CollectionValueHolder,false,false,collectionValueHolder,collectionValueHolder,true,<default>
+id,String,false,false,id,id,true,<default>
+node,org.w3c.dom.Node,false,false,node,node,true,<default>
+renderDispatcher,Dispatcher,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

@@ -1,0 +1,6 @@
+.\src\org\acm\seguin\print\text\LineSet.java
+.\src\org\acm\seguin\print\text\TextPagePrinter.java
+.\src\org\acm\seguin\print\text\NumberedLinePrinter.java
+.\src\org\acm\seguin\print\text\LinePrinter.java
+.\src\org\acm\seguin\print\text\PropertyLinePrinter.java
+.\src\org\acm\seguin\print\text\PrintingThread.java

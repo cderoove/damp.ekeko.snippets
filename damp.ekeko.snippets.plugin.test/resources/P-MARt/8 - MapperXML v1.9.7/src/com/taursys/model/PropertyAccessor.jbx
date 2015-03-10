@@ -1,0 +1,10 @@
+[PropertyInfo]
+javaDateType,int,false,false, , ,true,<default>
+propertyName,String,false,false, , ,true,<default>
+valueObjectClass,Class,false,false, , ,true,<default>
+primative,boolean,false,false,primative,primative,true,<default>
+[IconNames]
+
+
+
+

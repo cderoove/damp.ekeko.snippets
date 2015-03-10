@@ -1,0 +1,23 @@
+<!--
+    Typical usage:
+
+    <?xml version="1.0"?>
+
+    <!DOCTYPE control-panel SYSTEM "ControlPanel.dtd">
+
+    <control-panel>
+    ...
+    </control-panel>
+-->
+
+  <!ELEMENT control-panel (#PCDATA|class)*>
+  <!ATTLIST control-panel
+    version CDATA #IMPLIED
+  >
+
+  <!ELEMENT class EMPTY>
+  <!ATTLIST class
+    value CDATA #IMPLIED
+    name CDATA #IMPLIED
+  >
+
