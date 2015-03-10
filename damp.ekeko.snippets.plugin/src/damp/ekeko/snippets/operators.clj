@@ -739,41 +739,19 @@ damp.ekeko.snippets.operators
                                             (= node (snippet/snippet-node-parent|conceptually snippet resolvingnode))) 
                                         (add-directive-type|qname newsnippet resolvingnode qnamestring)
                                         newsnippet))))))))
-                                    
-                    
-                            
+              
 
-
-;todo: not so pretty, node to which
+;;mogelijke varianten
+;;1ste: overal type* ipv type inserten, vraag: object zou niet teruggeven mogen worden door type*?, nut? type->type* kan ook atomisch gebeuren
+;;2de: resolvingnodes hebben gemeenschappelijk supertype, vooral belangrijk als je er meteen een qname bijzet
 ;(defn
-;  generalize-types|qname  
-;  [snippetgroup snippet node] 
-;  (if-let [generalizedsnippetgroup (generalize-types snippetgroup snippet node)] ;returns nil if application wasn't possible
-;    (let [binding (snippet/snippet-node-resolvedbinding snippet node) ;proven non-nil by generalize-types
-;          itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
-;          qnamestring (.getFullyQualifiedName itype)
- ;         generalizedsnippet (snippetgroup/snippetgroup-snippet-for-node generalizedsnippetgroup node)]
- ;;     (snippetgroup/replace-snippet generalizedsnippetgroup 
- ;                                   generalizedsnippet
- ;                                   (add-directive-type|qname generalizedsnippet node qnamestring)))))
-
-  
-
-;todo:
-;generalize-commonsupertype (subtype toevoegen)
-
-;(defn 
-;  generalize-types|commonsupertype 
-;  [snippet node]
- ; "Generalizes all references in the snippet that refer to the same type as the given type reference."
- ;; (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
- ;   (when (astnode/binding-type? binding)
-
-  
-;resolve type van node, 
-;voor type en supertypes: snippet-children-resolvingto subtype (equality argument)
-;stop voor eerste supertype (!= Object) waarvoor je meer dan 1 ref terugvindt
-
+;  generalize-subtypes
+;  [snippetgroup snippet node]
+;  (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+;    (when (astnode/binding-type? binding)
+;     
+;     
+;      )))
 
 
 
