@@ -749,6 +749,70 @@ damp.ekeko.snippets.operators
 ;;2de: resolvingnodes hebben gemeenschappelijk supertype, vooral belangrijk als je er meteen een qname bijzet
 
 
+
+;;method declaration names en method invocation names resolven beiden naar IMethodBinding
+;;kunnen dus opnieuw alleen laagst liggende nodes beschouwen
+;;moet analoog aan generalize-references aangezien het om een dec en een inv gaat, 
+
+
+
+;;todo: variant generalize-constructorinvocations?
+;;superconstructorinvocations -> constructor? classinstancecreation -> constructor? 
+
+
+;lukt niet via namen: probleem is dat invokes en invokedby beiden op invs en decs werken ipv op namen
+;; tenzij ik dit aanpas, maar dan krijg ik een gelijkaardig probleem van duplicaten als bij de references en types
+;vraag is; heeft het zin om een ganse inv / dec te vervangen door een var
+;moeten uiteindelijk toch alleen naam abstraheren ... achteraf kan er over argumenten geabastraheerd worden
+;vanuit dat opzicht heeft generalize-* in het algemeen steeds betrekking tot namen, wat conceptueel mooier zit
+
+;todo: abstract because very similar to generalize-references
+;todo: use javaprojectmodel/invocation-targets rather than binding! (although this might not be possible without this model having being constructed)
+
+(defn
+  generalize-invocations
+  [snippetgroup snippet node]
+  (let [methoddecnodename 
+        (if 
+          (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
+          node
+          (.getName node))] ;to push replacement to lowest-level node (in line with other generalize-* operators)
+    (letfn [(addinvokes [template bindingtoresolveto invokedvar]
+              (let [resolvingnodes
+                    (snippet/snippet-children-resolvingto 
+                      template 
+                      (snippet/snippet-root template) 
+                      (fn [nodebinding]
+                        (.isEqualTo bindingtoresolveto nodebinding)))
+                    lowestlevelresolvingnodes
+                    (withoutimmediateparents template resolvingnodes)]
+                [;new template
+                 (reduce 
+                   (fn [snippetsofar resolvingnode]
+                     (if 
+                       (= methoddecnodename resolvingnode)
+                       (replace-by-variable snippetsofar resolvingnode invokedvar)
+                       (add-directive-invokes
+                         (replace-by-wildcard snippetsofar resolvingnode)
+                         resolvingnode invokedvar)))
+                   template
+                   lowestlevelresolvingnodes)
+                 ;number of references in template
+                 (count lowestlevelresolvingnodes)]))]
+      (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+        (when 
+          (astnode/binding-method? binding)
+          (let [referredvar
+                (util/gen-lvar "methoddec")
+                newtemplatesandcounts 
+                (map (fn [snippet] (addinvokes snippet binding referredvar))
+                     (snippetgroup/snippetgroup-snippetlist snippetgroup))
+                counts
+                (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
+            (when (> (apply + counts) 1) 
+              (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
+
+
 (defn
   extract-template
   "Extract the given node into a new template. Node itself is replaced by a variable that links old and new templates together."

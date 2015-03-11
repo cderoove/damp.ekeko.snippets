@@ -64,21 +64,39 @@
       )))
 
 
-
 (defn
   invokes
-  [?ast ?methoddeclaration]
+  [?ast ?methoddeclarationorname]
   (cl/all
     (el/v+ ?ast)
-    (aststructure/methodinvocation-methoddeclaration ?ast ?methoddeclaration)))
-
+    (cl/conda [(ast/ast :SimpleName ?ast)
+               (cl/fresh [?parentinvocation]
+                         (ast/ast-parent ?ast ?parentinvocation)
+                         (invokes ?parentinvocation ?methoddeclarationorname))] 
+              [(cl/conde [(ast/ast :MethodInvocation ?ast)]
+                         [(ast/ast :SuperMethodInvocation ?ast)])
+               (cl/fresh [?methoddeclaration]
+                         (aststructure/methodinvocation-methoddeclaration ?ast ?methoddeclaration)
+                         (cl/conde
+                           [(cl/== ?methoddeclaration ?methoddeclarationorname)]
+                           [(ast/has :name ?methoddeclaration ?methoddeclarationorname)]))])))
 
 (defn
   invokedby
-  [?ast ?invocation]
+  [?ast ?invocationorname]
   (cl/all
-    (el/v+ ?ast)
-    (aststructure/methodinvocation-methoddeclaration ?invocation ?ast)))
+    (el/v+ ?ast)	
+    (cl/conda [(ast/ast :SimpleName ?ast)
+               (cl/fresh [?parentdeclaration]
+                         (ast/ast-parent ?ast ?parentdeclaration)
+                         (invokedby ?parentdeclaration ?invocationorname))]
+              [(ast/ast :MethodDeclaration ?ast)
+               (cl/fresh [?invocation]
+                         (aststructure/methodinvocation-methoddeclaration ?invocation ?ast)
+                         (cl/conde
+                           [(cl/== ?invocation ?invocationorname)]
+                           [(ast/has :name ?invocation ?invocationorname)]))])))
+
 
 (defn
   overrides
