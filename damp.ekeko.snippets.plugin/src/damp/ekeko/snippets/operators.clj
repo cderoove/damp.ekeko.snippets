@@ -767,8 +767,6 @@ damp.ekeko.snippets.operators
 ;vanuit dat opzicht heeft generalize-* in het algemeen steeds betrekking tot namen, wat conceptueel mooier zit
 
 ;todo: abstract because very similar to generalize-references
-;todo: use javaprojectmodel/invocation-targets rather than binding! (although this might not be possible without this model having being constructed)
-
 (defn
   generalize-invocations
   [snippetgroup snippet node]
@@ -783,7 +781,9 @@ damp.ekeko.snippets.operators
                       template 
                       (snippet/snippet-root template) 
                       (fn [nodebinding]
-                        (.isEqualTo bindingtoresolveto nodebinding)))
+                        (or (.isEqualTo bindingtoresolveto nodebinding)
+                            (and (astnode/binding-method? nodebinding)
+                                 (.overrides nodebinding bindingtoresolveto)))))
                     lowestlevelresolvingnodes
                     (withoutimmediateparents template resolvingnodes)]
                 [;new template
