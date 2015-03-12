@@ -140,7 +140,7 @@
         src-path (str src-prefix system-name "/" full-system-name "/compressed")
         csv-path (str csv-prefix system-name "/provenance/" full-system-name "-mete-cmcd.csv" )
         [ast-nodes files] (clonecsv2ast csv-path src-path)]
-    (let [tmp (inspector-jay.core/inspect ast-nodes)
+    (let [;tmp (inspector-jay.core/inspect ast-nodes)
           cluster-no 3
           cluster (get ast-nodes (nth (keys ast-nodes) cluster-no))
           cluster-files (get files (nth (keys files) cluster-no))
