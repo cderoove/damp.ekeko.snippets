@@ -63,12 +63,14 @@ damp.ekeko.snippets.operatorsrep
     (some #{(astnode/ekeko-keyword-for-class-of value)} [:SimpleName :QualifiedName])))
 
 
+
 (defn 
   applicability|methoddeclaration
   [snippetgroup snippet value]
   (and
     (applicability|node snippetgroup snippet value)
-    (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of value))))
+    (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of value))
+    (not (.isConstructor value))))
 
 (defn
   applicability|methoddeclarationorname
@@ -80,39 +82,70 @@ damp.ekeko.snippets.operatorsrep
       (applicability|methoddeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
 
 
-;;todo like above .. but constructors should be separate (given that invokes only works on real invocations or their names)
 (defn 
   applicability|methodinvocation
   [snippetgroup snippet value]
-  (and (astnode/ast? value)
-       (or
-         (instance? MethodInvocation value)
-         (instance? SuperMethodInvocation value)
-         (instance? ClassInstanceCreation value)
-         (instance? ConstructorInvocation value)
-         (instance? SuperConstructorInvocation value))))
+  (and (applicability|node snippetgroup snippet value)
+       (some #{(astnode/ekeko-keyword-for-class-of value)}
+             [:MethodInvocation :SuperMethodInvocation])))
 
-  (defn
-    applicability|nonroot
-    [snippetgroup snippet value]
-    (not= (snippet/snippet-root snippet) value))
-
-  (defn 
-    applicability|node|nonroot
-    [snippetgroup snippet value]
-    (and 
-      (applicability|node snippetgroup snippet value)
-      (applicability|nonroot snippetgroup snippet value)))
-
-  (defn applicability|replace-parent
-    "The replace-parent operator can only be applied to Expression nodes, whose parent is an Expression as well."
-    [snippetgroup snippet value]
+(defn 
+  applicability|methodinvocationorname
+  [snippetgroup snippet value]
+  (or 
+    (applicability|methodinvocation snippetgroup snippet value)
     (and
-      (applicability|node snippetgroup snippet value)
-      (applicability|nonroot snippetgroup snippet value)
-      (astnode/expression? value)
-      (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
-      (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
+      (applicability|name snippetgroup snippet value)
+      (applicability|methodinvocation snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
+
+ 
+(defn
+  applicability|constructorinvocation 
+  [snippetgroup snippet value]
+  (and (applicability|node snippetgroup snippet value)
+       (some #{(astnode/ekeko-keyword-for-class-of value)}
+             [:ClassInstanceCreation :ConstructorInvocation :SuperConstructorInvocation])))
+
+(defn
+  applicability|constructor
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of value))
+    (.isConstructor value)))
+
+(defn 
+  applicability|constructororname
+  [snippetgroup snippet value]
+  (or 
+    (applicability|constructor snippetgroup snippet value)
+    (and
+      (applicability|name snippetgroup snippet value)
+      (applicability|constructor snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
+
+
+
+(defn
+  applicability|nonroot
+  [snippetgroup snippet value]
+  (not= (snippet/snippet-root snippet) value))
+
+(defn 
+  applicability|node|nonroot
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (applicability|nonroot snippetgroup snippet value)))
+
+(defn applicability|replace-parent
+  "The replace-parent operator can only be applied to Expression nodes, whose parent is an Expression as well."
+  [snippetgroup snippet value]
+  (and
+    (applicability|node snippetgroup snippet value)
+    (applicability|nonroot snippetgroup snippet value)
+    (astnode/expression? value)
+    (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
+    (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
 
   (defn 
     applicability|lst
@@ -624,7 +657,7 @@ damp.ekeko.snippets.operatorsrep
        :refinement
        "Add directive invokes."
        opscope-subject
-       applicability|methodinvocation
+       applicability|methodinvocationorname
        "Requires matches to invoke the binding for the meta-variable."
        [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
        false)
@@ -639,7 +672,29 @@ damp.ekeko.snippets.operatorsrep
        "Requires matches to be invoked by the binding for the meta-variable."
        [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
        false)
-   
+     
+     (Operator. 
+       "add-directive-constructs"
+       operators/add-directive-constructs
+       :refinement
+       "Add directive constructs."
+       opscope-subject
+       applicability|constructorinvocation ;note: no names exist here
+       "Requires matches to invoke the constructor bound to the meta-variable."
+       [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+       false)
+     
+     (Operator. 
+       "add-directive-constructedby"
+       operators/add-directive-constructedby
+       :refinement
+       "Add directive constructed-by."
+       opscope-subject
+       applicability|constructororname
+       "Requires matches to be constructors invoked by the meta-variable binding."
+       [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+       false)
+
      (Operator. 
        "add-directive-overrides"
        operators/add-directive-overrides
@@ -1166,7 +1221,19 @@ damp.ekeko.snippets.operatorsrep
        "Generalizes invocations to selected method declaration."
        []
        true)
-   
+
+
+     (Operator. 
+       "generalize-constructorinvocations"
+       operators/generalize-constructorinvocations
+       :generalization
+       "Generalize constructor invocations."
+       opscope-subject
+       applicability|constructororname
+       "Generalizes invocations of selected constructor declaration."
+       []
+       true)
+     
      ])
 
   (defn 

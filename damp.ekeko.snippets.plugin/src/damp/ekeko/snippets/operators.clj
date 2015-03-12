@@ -138,6 +138,20 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (add-unary-directive-opname-opvalue snippet node matching/directive-invokedby "Meta-variable" uservar))
 
+
+(defn 
+  add-directive-constructs
+  "Adds directive-constructs to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-constructs "Meta-variable" uservar))
+
+(defn 
+  add-directive-constructedby
+  "Adds directive-constructedby to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-constructedby "Meta-variable" uservar))
+
+
 (defn 
   add-directive-overrides
   "Adds directive-overrides to node."
@@ -774,7 +788,8 @@ damp.ekeko.snippets.operators
         (if 
           (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
           node
-          (.getName node))] ;to push replacement to lowest-level node (in line with other generalize-* operators)
+          (.getName node))]
+    ;to push replacement to lowest-level node (in line with other generalize-* operators)
     (letfn [(addinvokes [template bindingtoresolveto invokedvar]
               (let [resolvingnodes
                     (snippet/snippet-children-resolvingto 
@@ -807,10 +822,70 @@ damp.ekeko.snippets.operators
                 newtemplatesandcounts 
                 (map (fn [snippet] (addinvokes snippet binding referredvar))
                      (snippetgroup/snippetgroup-snippetlist snippetgroup))
+                foobar
+                (println newtemplatesandcounts)
                 counts
                 (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
+            (println newtemplatesandcounts)
             (when (> (apply + counts) 1) 
               (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
+
+
+
+(defn 
+  generalize-constructorinvocations
+  [snippetgroup snippet node]
+  (let [methoddecnodename 
+        (if 
+          (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
+          node
+          (.getName node))] ;to push replacement to lowest-level node (in line with other generalize-* operators)
+    (letfn [(addinvokes [template bindingtoresolveto invokedvar]
+              (let [resolvingnodes
+                    (snippet/snippet-children-resolvingto 
+                      template 
+                      (snippet/snippet-root template) 
+                      (fn [nodebinding]
+                        ;not necessary to check for overriding
+                        ;(or 
+                        ;   (and (astnode/binding-method? nodebinding)
+                        ;       (.overrides nodebinding bindingtoresolveto))))
+                        (.isEqualTo bindingtoresolveto nodebinding))
+                      (fn [snippet node]
+                        (snippet/snippet-node-resolvedbinding 
+                          snippet node 
+                          (fn [correspondingprojectnode] 
+                            (let [nodetype (astnode/ekeko-keyword-for-class-of correspondingprojectnode)]
+                              (when (some #{nodetype} [:ClassInstanceCreation :ConstructorInvocation :SuperConstructorInvocation])
+                                (.resolveConstructorBinding correspondingprojectnode)))))))
+                    lowestlevelresolvingnodes
+                    (withoutimmediateparents template resolvingnodes)]
+                [;new template
+                 (reduce 
+                   (fn [snippetsofar resolvingnode]
+                       (add-directive-constructs
+                         (replace-by-wildcard snippetsofar resolvingnode)
+                         resolvingnode invokedvar))
+                   (if
+                     (= template snippet)
+                     (replace-by-variable template node invokedvar)
+                     template)
+                   lowestlevelresolvingnodes)
+                 ;number of references in template
+                 (count lowestlevelresolvingnodes)]))]
+      (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
+        (when 
+          (astnode/binding-method? binding)
+          (let [referredvar
+                (util/gen-lvar "constructor")
+                newtemplatesandcounts 
+                (map (fn [snippet] (addinvokes snippet binding referredvar))
+                     (snippetgroup/snippetgroup-snippetlist snippetgroup))
+                counts
+                (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
+            (when (> (apply + counts) 0) ;there is no reference in the constructor itself, so 1 suffices already 
+              (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
+
 
 
 (defn

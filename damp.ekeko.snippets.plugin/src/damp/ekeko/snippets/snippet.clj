@@ -649,30 +649,38 @@ damp.ekeko.snippets.snippet
 (defn
   snippet-node-resolvedbinding
   "Resolves binding for given node using the snippet's project anchor."
-  [snippet node]  
-  (if-let [projectnode (snippet-corresponding-projectvalue-for-snippetvalue snippet node)]
-    (let [nodetype (astnode/ekeko-keyword-for-class-of projectnode)]
-      (when (some #{nodetype} astnode/ekeko-keywords-for-resolveable-ast-classes)
-        (.resolveBinding projectnode)))))
+  ([snippet node bindingproducingfn]
+    (if-let [projectnode (snippet-corresponding-projectvalue-for-snippetvalue snippet node)]
+      (bindingproducingfn projectnode)))
+  ([snippet node]  
+    (snippet-node-resolvedbinding 
+      snippet node
+      (fn [projectnode]
+        (let [nodetype (astnode/ekeko-keyword-for-class-of projectnode)]
+          (when (some #{nodetype} astnode/ekeko-keywords-for-resolveable-ast-classes)
+            (.resolveBinding projectnode)))))))
+
     
 (defn
   snippet-children-resolvingto
   "Recursive descent through a snippet that is anchored to a project,
    starting from root (inclusively), 
    in search for nodes that resolve to a binding for which the given predicate succeeds."
-  [snippet root bindingpredicate]
-  (let [children (atom '())] 
-    (walk-snippet-element 
-      snippet
-      root 
-      (fn [node] 
-        (if-let [nodebinding (snippet-node-resolvedbinding snippet node)]
-          (when (bindingpredicate nodebinding) 
-            (swap! children conj node))))
-      (fn [list])
-      (fn [prim])
-      (fn [null]))
-    @children))
+  ([snippet root bindingpredicate]
+    (snippet-children-resolvingto snippet root bindingpredicate snippet-node-resolvedbinding))
+  ([snippet root bindingpredicate snippetnodebindingfn]
+    (let [children (atom '())] 
+      (walk-snippet-element 
+        snippet
+        root 
+        (fn [node] 
+          (if-let [nodebinding (snippetnodebindingfn snippet node)]
+            (when (bindingpredicate nodebinding) 
+              (swap! children conj node))))
+        (fn [list])
+        (fn [prim])
+        (fn [null]))
+      @children)))
 
 
 

@@ -99,6 +99,32 @@
 
 
 (defn
+  constructs
+  [?ast ?constructordeclarationorname]
+  (cl/all
+    (el/v+ ?ast)
+    (cl/fresh [?constructordeclaration]
+              (aststructure/constructorinvocation-constructordeclaration ?ast ?constructordeclaration)
+              (cl/conde
+                [(cl/== ?constructordeclaration ?constructordeclarationorname)]
+                [(ast/has :name ?constructordeclaration ?constructordeclarationorname)]))))
+
+(defn
+  constructedby
+  [?ast ?invocation]
+  (cl/all
+    (el/v+ ?ast)
+    (cl/fresh [?constructordeclaration]
+              (cl/conda [(ast/ast :SimpleName ?ast)
+                         (cl/fresh [?parentdeclaration]
+                                   (ast/ast-parent ?ast ?parentdeclaration)
+                                   (constructedby ?parentdeclaration ?invocation))]
+                        [(ast/ast :MethodDeclaration ?ast)
+                         (aststructure/constructorinvocation-constructordeclaration ?invocation ?ast)]))))
+                                  
+          
+
+(defn
   overrides
   [?ast ?overridden]
   (cl/all

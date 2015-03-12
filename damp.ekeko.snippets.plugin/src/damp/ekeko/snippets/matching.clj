@@ -835,6 +835,25 @@ damp.ekeko.snippets.matching
           (symbol var-string)]
       `((runtime/invokes ~var-match ~var)))))
 
+(defn
+  constrain-constructs
+  [val uservar]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol uservar)]
+      `((runtime/constructs ~var-match ~var)))))
+
+(defn
+  constrain-constructedby
+  [val uservar]
+  (fn [template]
+    (let [var-match
+          (snippet/snippet-var-for-node template val)
+          var
+          (symbol uservar)]
+      `((runtime/constructedby ~var-match ~var)))))
 
 (defn
   constrain-invokes|sname
@@ -1194,6 +1213,14 @@ damp.ekeko.snippets.matching
     constrain-invokes
     "Match invokes a method, which is the binding for the meta-variable."))
 
+(def 
+  directive-constructs
+  (directives/make-directive
+    "constructs"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-constructs
+    "Match invokes a constructor, which is the binding for the meta-variable."))
+
 (def
   directive-invokes|sname
   (directives/make-directive
@@ -1209,6 +1236,14 @@ damp.ekeko.snippets.matching
     [(directives/make-directiveoperand "Meta-variable")]
     constrain-invokedby
     "Match is invoked by an invocation expression, bound to the meta-variable."))
+
+(def 
+  directive-constructedby
+  (directives/make-directive
+    "constructed-by"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-constructedby
+    "Match is a constructor invoked by an instance creation expression or super constructor invocation bound to the meta-variable."))
 
 (def 
   directive-overrides
@@ -1388,6 +1423,8 @@ damp.ekeko.snippets.matching
    directive-multiplicity
    directive-invokes
    directive-invokedby
+   directive-constructs
+   directive-constructedby
    directive-overrides
    directive-refersto
    directive-referredby
