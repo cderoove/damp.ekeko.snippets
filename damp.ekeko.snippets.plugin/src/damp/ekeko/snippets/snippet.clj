@@ -110,24 +110,38 @@ damp.ekeko.snippets.snippet
 
 (defn 
   snippet-nodes
-  "Returns all AST nodes of the given snippet."
+  "Returns all AST-originating values of the given snippet."
   [snippet]
   (keys (:ast2var snippet)))
 
-(defn 
+;(defn 
+;  snippet-list-containing
+;  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr."
+;  [snippet mbr]
+;  (let [ownerproperty (astnode/owner-property mbr)]
+;    (some (fn [value] 
+;            (when 
+ ;             (and 
+ ;;               (astnode/lstvalue? value)
+ ;               (= ownerproperty (astnode/owner-property value))
+ ;               (some #{mbr} (:value value)))
+ ;             value)) 
+ ;         (snippet-lists snippet))))
+  
+ 
+(defn
   snippet-list-containing
-  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr."
   [snippet mbr]
-  (let [ownerproperty (astnode/owner-property mbr)]
-    (some (fn [value] 
-            (when 
-              (and 
-                (astnode/lstvalue? value)
-                (= ownerproperty (astnode/owner-property value))
-                (some #{mbr} (:value value)))
-              value)) 
-          (snippet-nodes snippet))))
-    
+  (when (astnode/ast? mbr)
+    (if-let [parent (.getParent mbr)] 
+      (let [property (astnode/owner-property mbr)]
+        (when (astnode/property-descriptor-list? property)
+          (let [wrappedlst (astnode/node-poperty-value|reified parent property)]
+            (when
+              (contains? (:ast2var snippet) wrappedlst)
+              wrappedlst)))))))
+              
+ 
 (defn 
   snippet-node-with-value
   "Returns node (= wrapper of NodeList) which has :value = value.
@@ -141,7 +155,8 @@ damp.ekeko.snippets.snippet
   [snippet node]
   (let [owner (astnode/owner node)]
     ;finds value equal to, but not identitical to owner .. should not make a difference in practice (see note in make-value, and see jdt-node-as-snippet)
-    (some #{owner} (snippet-nodes snippet)))) 
+    ;(some #{owner} (snippet-nodes snippet)))) 
+    owner))
 
 (defn
   snippet-node-children
@@ -150,10 +165,11 @@ damp.ekeko.snippets.snippet
   ;;finds all values in snippet whose owner is equal to the given node.
   ;;note that using astnode/node-property-values would create new wrappersfor primitive values.
   ;;which the JFace treeviewer might not like
-  (filter
-    (fn [value] 
-      (= (astnode/owner value) node))
-    (snippet-nodes snippet)))
+  ;(filter
+  ;  (fn [value] 
+  ;    (= (astnode/owner value) node))
+  ;  (snippet-nodes snippet)))
+  (astnode/node-propertyvalues node))
 
 
 (defn 
@@ -245,7 +261,11 @@ damp.ekeko.snippets.snippet
   snippet-value 
   "Returns the value if there exists a match variable for it in the snippet, returns nil otherwise."
   [snippet val]
-  (some #{val} (snippet-nodes snippet)))
+  (when 
+    (contains? (:ast2var snippet) val)
+    val))
+  
+  ;(some #{val} (snippet-nodes snippet)))
   
 (defn
   snippet-value-list?
@@ -372,6 +392,8 @@ damp.ekeko.snippets.snippet
       (snippet-list-containing snippet c)
       (snippet-node-owner snippet c))))
 
+
+;TODO: speed up!  ;(snippet-node-children snippet node))
 (defn
   snippet-node-children|conceptually
   "Returns conceptual children of this snippet element 
@@ -381,7 +403,8 @@ damp.ekeko.snippets.snippet
     (fn [child]
       (=  node (snippet-node-parent|conceptually snippet child)))
     (snippet-nodes snippet)))
-
+ 
+  
   
 (defn 
   walk-snippet-element
