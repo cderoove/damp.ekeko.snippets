@@ -63,6 +63,14 @@ damp.ekeko.snippets.operatorsrep
     (some #{(astnode/ekeko-keyword-for-class-of value)} [:SimpleName :QualifiedName])))
 
 
+(defn
+  applicability|fieldaccess
+  "Value is a potential field acesss, not necessarily the case."
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (some #{(astnode/ekeko-keyword-for-class-of value)} 
+          [:FieldAccess :SuperFieldAccess :SimpleName :QualifiedName])))
 
 (defn 
   applicability|methoddeclaration

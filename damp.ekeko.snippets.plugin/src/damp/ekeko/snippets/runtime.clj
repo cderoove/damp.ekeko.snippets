@@ -30,7 +30,7 @@
   [?referring ?referred]
   (cl/all
     (el/v+ ?referring)
-    (cl/conde 
+    (cl/conda
       [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
       [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
       )))
