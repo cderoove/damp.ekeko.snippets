@@ -160,7 +160,7 @@
 (defn add-match [node-var]
   ; !!! Very subtle! node-var will not be projected to a node because it doesn't start with a ?
   ; ... The logic variable is what we want! It's trickier to map a node to a unique identifier..
-  (damp.ekeko.logic/perform (register-match (:oname node-var))))
+  (damp.ekeko.logic/perform (register-match node-var)))
 
 (defn new-match []
   (swap! matched-nodes (fn [x]
@@ -231,7 +231,8 @@
       (try
         (let [matches (templategroup-matches templategroup (:match-timeout config))
               fscore (fmeasure matches verifiedmatches)
-              partialscore (partial-matches templategroup partialmodel (:match-timeout config))
+              partialscore 0
+              ;partialscore (partial-matches templategroup partialmodel (:match-timeout config))
               weights (:fitness-weights config)
               ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
               ;            lengthscore (/ 1 (template-size templategroup))

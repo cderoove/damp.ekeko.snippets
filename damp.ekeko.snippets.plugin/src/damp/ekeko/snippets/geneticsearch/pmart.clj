@@ -32,6 +32,7 @@
              [search :as search]
              [individual :as individual]
              [fitness :as fitness]])
+  (:require [test.damp [ekeko :as test]])
   (:import [org.eclipse.core.resources ResourcesPlugin IWorkspace]
            [org.eclipse.jdt.core  IMember IJavaElement ITypeHierarchy JavaCore IType IJavaModel IJavaProject IPackageFragment ICompilationUnit]
            [org.eclipse.ui PlatformUI IWorkingSet IWorkingSetManager]
@@ -87,6 +88,8 @@
   (let [snippets (list (first (for [cls class-list]
                                 (try (-> (find-compilationunit project-name cls)
                                        damp.ekeko.jdt.astnode/jdt-parse-icu
+                                       .types
+                                       first ; Get the first type declaration in this ICU
                                        matching/snippet-from-node)
                                   (catch Exception e (println "!!! Could not parse " cls))))))]
     (snippetgroup/make-snippetgroup name snippets)))
@@ -103,17 +106,29 @@
                                               (first (role pattern-roles-map)))]
                              (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list)))
                          instances)
-        
         ]
     (println "Generated initial templates for" pattern-name "in projects" (str (interpose ", " project-names)))
-    (let [matches (apply concat 
-                         (for [templategroup templategroups]
-                           (fitness/templategroup-matches templategroup 60000)))]
-      (println "Generated initial population; commencing evolution..")
-      (search/evolve matches
-                     :max-generations 0
-                     :match-timeout 60000)
-      )))
+;    (let [matches (apply concat 
+;                         (for [templategroup templategroups]
+;                           (fitness/templategroup-matches templategroup 60000)))]
+;      (println "Generated initial population; commencing evolution..")
+;      (search/evolve matches
+;                     :max-generations 0
+;                     :match-timeout 60000)
+;      )
+     templategroups
+    ))
+
+(defn remove-javadoc [templategroup]
+  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
+        operator (first (filter 
+                         (fn [op] 
+                           (some #{(operatorsrep/operator-id op)} ["erase-comments"]))
+                         (operatorsrep/registered-operators)))
+        subject (snippet/snippet-root snippet)
+        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
+    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
+  
 
 (def projects 
     {:uml "1 - QuickUML 2001"
@@ -127,10 +142,43 @@
      :pmd "11 - PMD v1.8"})
 
 (comment
+  (test/against-projects-named
+    [(:lexi projects)]
+    false
+    (fn []
+;      (remove-javadoc (templategroup-from-classes "Test" (:lexi projects) ["com.jmonkey.office.lexi.support.ActionManager"]))
+      
+      
+      ))
+  
+  
   ; Try to infer an Observer template from a few instances
   (def pmart-xml (clojure.xml/parse (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/P-MARt/P-MARt.xml")))
-  (experiment-generalize-instances pmart-xml [(:uml projects) (:lexi projects)] "Observer")
+  (def results (experiment-generalize-instances pmart-xml [(:uml projects)] "Observer"))
+  (do (inspector-jay.core/inspect results) nil)
   
+  
+  
+  
+  
+  (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"]) 5000)
+  
+  (inspector-jay.core/inspect (damp.ekeko.jdt.astnode/jdt-parse-icu (find-compilationunit (projects :lexi) "com.jmonkey.office.lexi.support.ActionManager")))
+  
+  (inspector-jay.core/inspect
+    (remove-javadoc (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"])))
+  
+  (do 
+    (inspector-jay.core/inspect (remove-javadoc (first results)))
+    nil)
+  
+  (fitness/templategroup-matches (first results) 60000)
+  
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates (first results) 'damp.ekeko/ekeko true))
+  
+  (do (inspector-jay.core/inspect results) nil)
+  
+  (persistence/spit-snippetgroup "test.ekt" (first results))
   
   (inspector-jay.core/inspect (templategroup-from-classes "Design pattern" (:uml program-names) ["diagram.figures.FigureBorder"]))
   (inspector-jay.core/inspect (pattern-roles (first (:Builder (pattern-instances (program pmart "1 - QuickUML 2001"))))))

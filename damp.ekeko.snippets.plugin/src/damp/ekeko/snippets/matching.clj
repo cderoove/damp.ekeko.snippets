@@ -1798,7 +1798,7 @@ damp.ekeko.snippets.matching
     (snippet-node-conditions snippet ast-or-list identity))
   ([snippet ast-or-list bounddirectivesfilterf]
     (let [matchvar
-          (snippet/snippet-var-for-node snippet ast-or-list)
+          (str (snippet/snippet-var-for-node snippet ast-or-list))
           
           bounddirectives
           (filter bounddirectivesfilterf (snippet/snippet-bounddirectives-for-node snippet ast-or-list))
@@ -1822,7 +1822,8 @@ damp.ekeko.snippets.matching
               (directives/snippet-bounddirective-conditions snippet bounddirective))
             bounddirectives-constraining)]
       (concat conditions-grounding conditions-constraining 
-              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar)))
+;              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
+              )
 ;               `(damp.ekeko.snippets.matching/set-depth 
 ;                  ~(snippet/snippet-meta-for-node snippet ast-or-list :depth))
               

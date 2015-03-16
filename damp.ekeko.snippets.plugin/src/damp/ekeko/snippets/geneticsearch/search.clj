@@ -331,7 +331,8 @@
    @param conf             Configuration keyword arguments; see config-default for all default values"
   [verifiedmatches & {:as conf}]
   (let
-    [config (merge config-default conf)
+    [csv-name (str "fitness" (.getTime (new java.util.Date)) ".csv")
+     config (merge config-default conf)
      fitness ((:fitness-function config) verifiedmatches config)
      set-fit (fn [individual] (individual/compute-fitness individual fitness))
      sort-by-fitness (fn [population]
@@ -342,7 +343,8 @@
      initial-pop (sort-by-fitness (if (nil? (:initial-population config))
                                     (population-from-snippets (:positives verifiedmatches) (:population-size config))
                                     (:initial-population config))) 
-     tournament-size (:tournament-rounds config)] 
+     tournament-size (:tournament-rounds config)]
+    (util/append-csv csv-name ["Generation" "Fitness"])
     (loop
       [generation 0
        population initial-pop
@@ -367,6 +369,7 @@
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map individual/individual-fitness-components population))
         (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
+        (util/append-csv csv-name [generation best-fitness])
         
         (when (< generation (:max-generations config))
           (if
@@ -406,18 +409,18 @@
   (def matches (fitness/templategroup-matches templategroup 10000))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 25
-          :fitness-weights [18/20 2/20]
+          :max-generations 50
+          :fitness-weights [20/20 0/20]
           :match-timeout 2000
           :selection-weight 1/4
           :mutation-weight 3/4
-          :population-size 40
+          :population-size 10
           :tournament-rounds 2)
   
   (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-;  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
+  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
   (fitness/templategroup-matches templategroup 10000) 
   @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
   (count (snippetgroup/snippetgroup-nodes templategroup))

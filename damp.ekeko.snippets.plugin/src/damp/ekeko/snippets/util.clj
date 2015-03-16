@@ -118,6 +118,13 @@
       msg#)
     `~msg))
 
+(defn append-csv
+  "Appends a new row of values to a .csv file"
+  [file-name vals]
+  (spit file-name 
+        (str (apply str (interpose ";" vals)) "\n") 
+        :append true :create true))
+
 ; Source: http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
 (defmacro with-timeout
   "Execute the given body in a new future.
