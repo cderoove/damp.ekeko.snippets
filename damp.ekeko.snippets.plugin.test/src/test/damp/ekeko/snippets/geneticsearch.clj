@@ -24,7 +24,6 @@
   (:require [damp.ekeko 
              [logic :as el]
              [snippets :as snippets]])
-  (:require [clojure.xml :as xml])
   (:import [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]) 
   (:use clojure.test))
 
@@ -139,7 +138,4 @@
   (test/with-ekeko-disabled test-suite))
 
 (comment 
-  (run-tests)
-  
-  
-  (inspector-jay.core/inspect (clojure.xml/parse (new java.io.File "P-MARt.xml"))))
+  (run-tests))

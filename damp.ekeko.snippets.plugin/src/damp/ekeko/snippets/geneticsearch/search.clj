@@ -74,14 +74,14 @@
              "add-directive-overrides" ; OK
              "generalize-directive" ; OK
              "remove-directive" ; OK
-             "generalize-references" ; OK
-             "generalize-types" ; OK
-             "generalize-types|qname" ; OK
+;             "generalize-references" ; OK
+;             "generalize-types" ; OK
+;             "generalize-types|qname" ; OK
              "extract-template" ; OK (However, this should be a refactoring op.. I've had cases that no longer match..)
                                 ; e.g. :mutation-node #<TagElement * each instance has an ID to distinguish them.>
                                 ; I guess that's because a comment node in itself doesn't match?
-             "generalize-invocations" ; OK
-             "generalize-constructorinvocations"
+;             "generalize-invocations" ; OK
+;             "generalize-constructorinvocations" ; OK
              ]))
     (operatorsrep/registered-operators)))
 
