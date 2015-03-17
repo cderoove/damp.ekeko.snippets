@@ -381,7 +381,15 @@ damp.ekeko.snippets.operators
   "Removes node from snippet. "
   [snippet node]
   (let [newsnippet 
-        (atom snippet)] 
+        (atom snippet)
+        conceptualparent 
+        (snippet/snippet-node-parent|conceptually snippet node)
+        ] 
+    
+    (println "conceptual parent: " conceptualparent) 
+    
+    (assert (snippet/snippet-contains? snippet conceptualparent) "parent in snippet before delete")
+    
     (do 
       (snippet/walk-snippet-element ;dissoc children 
                                     snippet
@@ -389,6 +397,11 @@ damp.ekeko.snippets.operators
                                     (fn [val] 
                                       (swap! newsnippet matching/remove-value-from-snippet val)))
       (.delete node))   ;remove node
+    
+    (assert (snippet/snippet-contains? @newsnippet conceptualparent) "parent in snippet after delete")
+    
+    (println "PASSED IMPORTANT ASSERTS")
+
     @newsnippet))
 
 (defn

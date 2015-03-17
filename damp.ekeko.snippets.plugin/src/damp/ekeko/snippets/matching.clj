@@ -34,8 +34,7 @@ damp.ekeko.snippets.matching
 (defn
   nongrounding-value|null
   [?value]
-  (el/equals nil (astnode/value-unwrapped ?value)))
-
+  (el/succeeds (astnode/nilvalue? ?value)))
 
 (defn
   nongrounding-has
@@ -128,8 +127,8 @@ damp.ekeko.snippets.matching
               (snippet/snippet-bounddirectives-for-node snippet list-owner)
               list-match       
               (snippet/snippet-var-for-node snippet list-owner)
-              list-raw        
-              (:value list-owner)
+              list-raw  
+              (astnode/value-unwrapped list-owner)
               list-match-raw  
               (util/gen-readable-lvar-for-value ^List list-raw)
               index-match     
@@ -211,7 +210,7 @@ damp.ekeko.snippets.matching
           list-match
           (snippet/snippet-var-for-node template lst)
           list-match-raw
-          (util/gen-readable-lvar-for-value (:value list))]
+          (util/gen-readable-lvar-for-value (astnode/value-unwrapped list))]
       `((cl/fresh [~list-match-raw] 
                   (~value-raw ~list-match ~list-match-raw)
                   (el/contains ~list-match-raw ~match))))))
@@ -279,7 +278,7 @@ damp.ekeko.snippets.matching
         ;constrain lists
         (astnode/lstvalue? snippet-val)
         (let [lst 
-              (:value snippet-val)
+              (astnode/value-unwrapped snippet-val)
               snippet-list-size 
               (.size ^List lst)
               var-match-raw (util/gen-readable-lvar-for-value lst)]
@@ -287,7 +286,7 @@ damp.ekeko.snippets.matching
         ;constrain primitive values
         (astnode/primitivevalue? snippet-val)
         (let [exp 
-              (ast-primitive-as-expression (:value snippet-val))]
+              (ast-primitive-as-expression (astnode/value-unwrapped snippet-val))]
           `(;(ast/value|primitive ~var-match)
              (~value-raw ~var-match ~exp)))
         ;constrain null-values
@@ -598,7 +597,7 @@ damp.ekeko.snippets.matching
     (let [var-match
           (snippet/snippet-var-for-node template val)
           lst
-          (:value val)
+          (astnode/value-unwrapped val)
           template-list-size 
           (.size ^List lst)
           var-match-raw (util/gen-readable-lvar-for-value lst)]

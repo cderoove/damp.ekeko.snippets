@@ -71,7 +71,7 @@ damp.ekeko.snippets.gui
     (astnode/nilvalue? element)
     "null"
     (astnode/value? element)
-    (str (:value element))
+    (str (astnode/value-unwrapped element))
     :else 
     (str element)))
 

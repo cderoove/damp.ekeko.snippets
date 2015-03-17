@@ -95,6 +95,55 @@
 
 
   
+(comment
+
+  
+  ;;to be turned into unit test
+  
+  
+  
+  
+  
+  (defn verify-list-elements [snippet]
+    (let [vals (snippet/snippet-nodes snippet)
+          els (filter astnode/valuelistmember? vals)]
+      (doseq [el els]
+        (let [lst (snippet/snippet-list-containing snippet el)]
+          (when-not (= el (snippet/snippet-root snippet))
+            (assert lst (str "no lst found for: " el)))))))
+   
+  
+  (let [snippetgroup (snippetgroup-from-editor)
+        snippet (first (snippetgroup/snippetgroup-snippetlist snippetgroup))
+        method (first (filter (fn [val]
+                                (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of val)))
+                              (snippet/snippet-nodes snippet)))]
+    (verify-list-elements snippet)
+    (println "first check passed")
+    (let [newsnippet (damp.ekeko.snippets.operators/remove-node snippet method)]
+      (verify-list-elements newsnippet))
+    
+    )
+  
+  
+  
+  ;(doseq [[m] (damp.ekeko/ekeko [?m] (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m))]
+  ;  (let [t (matching/snippet-from-node m)
+  ;        vals (snippet/snippet-nodes t)
+  ;        els (filter astnode/valuelistmember? vals)]
+  ;    (doseq [el els]
+   ;     (let [lst (snippet/snippet-list-containing t el)]
+  ;        (assert lst)))))
+  
+  
+  
+
+)
+  
+  
+  
+  
+  
 
   (defn
     register-callbacks
