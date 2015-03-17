@@ -24,7 +24,6 @@
   (:require [damp.ekeko 
              [logic :as el]
              [snippets :as snippets]])
-  (:require [clojure.xml :as xml])
   (:import [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]) 
   (:use clojure.test))
 
@@ -105,19 +104,20 @@
 (deftest
   ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}
   singleton-experiment
+  ; Now mutating a singleton from one project into one from another project..
   (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt") 
         singleton2 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt")
         matches (concat 
                   (into [] (fitness/templategroup-matches singleton1 10000))
-                  (into [] (fitness/templategroup-matches singleton2 10000)))
+;                  (into [] (fitness/templategroup-matches singleton2 10000))
+                  )
         verifiedmatches (search/make-verified-matches matches [])]
     (println "Starting...")
     (search/evolve verifiedmatches
-                   :max-generations 5
-                   :initial-population (search/population-from-templates [singleton1 singleton2] 10)
-                   :fitness-weights [20/20 0/20]
-                   :match-timeout 10000)
-    ))
+                   :max-generations 50
+                   :initial-population (search/population-from-templates [singleton2] 10)
+                   :fitness-weights [18/20 2/20]
+                   :match-timeout 10000)))
 
 ;; Test suite
 ;; ----------
@@ -138,7 +138,4 @@
   (test/with-ekeko-disabled test-suite))
 
 (comment 
-  (run-tests)
-  
-  
-  (inspector-jay.core/inspect (clojure.xml/parse (new java.io.File "P-MARt.xml"))))
+  (run-tests))

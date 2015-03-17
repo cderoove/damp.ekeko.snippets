@@ -1821,7 +1821,7 @@ damp.ekeko.snippets.matching
               (directives/snippet-bounddirective-conditions snippet bounddirective))
             bounddirectives-constraining)]
       (concat conditions-grounding conditions-constraining 
-;              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
+              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
               )
 ;               `(damp.ekeko.snippets.matching/set-depth 
 ;                  ~(snippet/snippet-meta-for-node snippet ast-or-list :depth))
