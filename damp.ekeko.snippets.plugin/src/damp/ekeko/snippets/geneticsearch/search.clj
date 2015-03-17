@@ -68,6 +68,20 @@
              ;untested:
 ;             "replace-parent"
 ;             "erase-comments"
+
+             "add-directive-constructs" ; OK
+             "add-directive-constructedby" ; OK
+             "add-directive-overrides" ; OK
+             "generalize-directive" ; OK
+             "remove-directive" ; OK
+             "generalize-references" ; OK
+             "generalize-types" ; OK
+             "generalize-types|qname" ; OK
+             "extract-template" ; OK (However, this should be a refactoring op.. I've had cases that no longer match..)
+                                ; e.g. :mutation-node #<TagElement * each instance has an ID to distinguish them.>
+                                ; I guess that's because a comment node in itself doesn't match?
+             "generalize-invocations" ; OK
+             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -192,7 +206,8 @@
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [node] 
-                                    (and (operatorsrep/applicable? snippetgroup snippet node operator)
+                                    (and (try (operatorsrep/applicable? snippetgroup snippet node operator)
+                                           (catch Exception e false))
                                          ; Check that you haven't already applied this operation to this node..
                                          (not (boolean
                                                 (directives/bounddirective-for-directive
@@ -363,8 +378,11 @@
                              [ind (individual/compute-fitness individual fitness)]
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
-                             (if (pos? (first (individual/individual-fitness-components ind))) 
-                               ind))))]
+                             ind
+;                             (if (pos? (first (individual/individual-fitness-components ind))) 
+;                               ind)
+                             
+                             )))]
         (println "Generation:" generation)
         (println "Highest fitness:" best-fitness)
         (println "Fitnesses:" (map individual/individual-fitness-components population))
@@ -410,7 +428,7 @@
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
           :max-generations 50
-          :fitness-weights [20/20 0/20]
+          :fitness-weights [18/20 2/20]
           :match-timeout 2000
           :selection-weight 1/4
           :mutation-weight 3/4
@@ -431,6 +449,25 @@
   (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
   
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
-                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true)))
+                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
+  
+  (inspector-jay.core/inspect (mutate (individual/make-individual (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")) 
+                                          registered-operators|search))
+  
+  
+  ; Testing mutants..
+  (def mutant
+    (mutate 
+      (individual/make-individual (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_0.ekt")) 
+      (filter
+        (fn [op] (some #{(operatorsrep/operator-id op)} ["generalize-constructorinvocations"]))
+        (operatorsrep/registered-operators))))
+  (fitness/templategroup-matches (individual/individual-templategroup mutant) 10000)
+  (inspector-jay.core/inspect mutant)
+  (individual/individual-all-info mutant)
+  (persistence/snippetgroup-string (individual/individual-templategroup mutant))
+  
+  
+  )
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  

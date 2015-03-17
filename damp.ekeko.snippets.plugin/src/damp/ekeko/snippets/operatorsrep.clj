@@ -1439,7 +1439,9 @@ damp.ekeko.snippets.operatorsrep
       "add-directive-type|qname"
       (for [x (all-type-declarations)]
         (-> x .resolveBinding .getQualifiedName))
-      :else
+      "remove-directive"
+      (map damp.ekeko.snippets.directives/directive-name (matching/registered-directives))
+      ; default case
       []))
 
   (defmethod
