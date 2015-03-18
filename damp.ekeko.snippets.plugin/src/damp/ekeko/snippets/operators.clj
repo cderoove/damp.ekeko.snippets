@@ -1007,7 +1007,7 @@ damp.ekeko.snippets.operators
     @newsnippet)) 
 
 
-(def docclasskeywords [:BlockComment :Javadoc :LineComment])
+(def docclasskeywords [:BlockComment :Javadoc :LineComment :Comment])
 
 (defn
   ignore-comments

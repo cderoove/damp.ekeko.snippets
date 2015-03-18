@@ -271,16 +271,18 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node]
   (snippet/snippet-value-null? snippet node))
     
-  
 (defn
-  applicability|absentvalue-propertykeywords
-  [snippetgroup snippet node propertykeywords]
+  applicability|absentvalue-classkeywords
+  [snippetgroup snippet nullvalue classkeywords]
   (and 
-    (applicability|nullvalue snippetgroup snippet node)
-    (if-let [ownerproperty (astnode/owner-property node)]
-      (some #{(astnode/ekeko-keyword-for-property-descriptor ownerproperty)} 
-            propertykeywords))))
-
+    (applicability|nullvalue snippetgroup snippet nullvalue)
+    (let [ownerproperty 
+          (astnode/owner-property nullvalue)
+          valueclass
+          (astnode/property-descriptor-child-node-class ownerproperty)]
+      (some #{(astnode/ekeko-keyword-for-class valueclass)} classkeywords))))      
+      
+      
 (defn
   applicability|node-classkeywords
   [snippetgroup snippet node classkeywords]
@@ -293,11 +295,11 @@ damp.ekeko.snippets.operatorsrep
 (defn
   applicability|type
   [snippetgroup snippet node]
-  (or 
-    (applicability|node-classkeywords snippetgroup snippet node 
-      [:ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType])
-    (applicability|absentvalue-propertykeywords snippetgroup snippet node 
-                                                [:superclassType]))) ;often absent in typedeclaration
+  (let [typeclasskeywords 
+        [:ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type]]
+    (or 
+      (applicability|node-classkeywords snippetgroup snippet node typeclasskeywords)
+      (applicability|absentvalue-classkeywords snippetgroup snippet node  typeclasskeywords))))
   
 (defn
   applicability|typename
