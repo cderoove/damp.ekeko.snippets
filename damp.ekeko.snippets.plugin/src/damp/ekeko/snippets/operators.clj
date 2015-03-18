@@ -353,17 +353,23 @@ damp.ekeko.snippets.operators
   [snippet node]
   (let [bds
         (snippet/snippet-bounddirectives-for-node snippet node)
-        new-bds
+        has-explicit-directive
+        (some (fn [bd]
+                (let [bdname (directives/directive-name (directives/bounddirective-directive bd))]
+                  (or (= bdname "type") (= bdname "type|sname") (= bdname "type|qname"))))
+              bds)]
+    (if has-explicit-directive
+      (snippet/update-bounddirectives 
+        snippet node
         (for [bd bds]
           (let [bdname (directives/directive-name (directives/bounddirective-directive bd))
                 bdops (.getOperandBindings bd)] 
             (case bdname
-              "child" (directives/make-bounddirective matching/directive-child* bdops)
               "type" (directives/make-bounddirective matching/directive-subtype* bdops)
               "type|sname" (directives/make-bounddirective matching/directive-subtype*|sname bdops)
               "type|qname" (directives/make-bounddirective matching/directive-subtype*|qname bdops)
-              bd)))]
-    (snippet/update-bounddirectives snippet node new-bds)))
+              bd))))
+      (relax-scope-to-child* snippet node))))
 
 (defn
   remove-directive

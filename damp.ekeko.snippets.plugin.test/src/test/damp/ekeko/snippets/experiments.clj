@@ -13,11 +13,11 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [persistence :as persistence]
-             [transformation :as transformation]
-             ])
+             [transformation :as transformation]])
   (:require [damp.ekeko.snippets.geneticsearch
              [fitness :as fitness]
-             [search :as search]])
+             [search :as search]
+             [pmart :as pmart]])
   (:require [test.damp [ekeko :as test]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]
@@ -118,22 +118,43 @@
    :population-size 20
    :tournament-rounds 2})
 
-(defn run-experiment [projects config initial-population-ekt verifiedmatches-ekt ]
-  (test/against-projects-named 
-    [projects] false
-    (fn []
-      (let [initial-population (map snippetgroup-from-resource initial-population-ekt)
-            merged-cfg (merge experiment-config-default config)
-            merged-cfg2 (merge merged-cfg 
-                               {:initial-population 
-                                (search/population-from-templates
-                                              initial-population
-                                              (:population-size merged-cfg))})
-            verifiedmatches (search/make-verified-matches
-                              (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
-                                (map snippetgroup-from-resource verifiedmatches-ekt))
-                              [])]
-        (apply search/evolve verifiedmatches (flatten (vec merged-cfg2)))))))
+(defn run-experiment
+  ([projects config verifiedmatches-ekt]
+    ; In this case, the verified matches are also used as initial population..
+    (run-experiment projects config verifiedmatches-ekt verifiedmatches-ekt))
+  ([projects config initial-population-ekt verifiedmatches-ekt]
+    (test/against-projects-named 
+      projects false
+      (fn []
+        (let [initial-population (map snippetgroup-from-resource initial-population-ekt)
+              merged-cfg (merge experiment-config-default config)
+              merged-cfg2 (merge merged-cfg 
+                                 {:initial-population 
+                                  (search/population-from-templates
+                                    initial-population
+                                    (:population-size merged-cfg))})
+              verifiedmatches (search/make-verified-matches
+                                (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
+                                        (map snippetgroup-from-resource verifiedmatches-ekt))
+                                [])]
+          (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))
+    )  )
+
+(comment 
+  ; Singleton: From JHotDraw to DesignPatterns
+  (run-experiment
+   ["DesignPatterns"]
+   {}
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt"]
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
+  
+  ; Singleton: Generalize all instances into one template
+  (run-experiment
+   ["DesignPatterns" (pmart/projects :jhotdraw)]
+   {}
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt" 
+    "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
+  )
 
 (deftest
   ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}
