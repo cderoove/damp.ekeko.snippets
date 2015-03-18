@@ -614,7 +614,7 @@ damp.ekeko.snippets.matching
     (let [var-match (snippet/snippet-var-for-node template val)
           stmts-match (util/gen-lvar "stmts")]
       `((cl/conde
-          [(el/succeeds (nil? ~var-match))]
+          [(~value|null ~var-match)]
           [(cl/fresh [~stmts-match]
                      (~has :statements ~var-match ~stmts-match)
                      (damp.ekeko.snippets.runtime/list-size ~stmts-match 0))
