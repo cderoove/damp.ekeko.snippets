@@ -1108,10 +1108,21 @@ damp.ekeko.snippets.operatorsrep
      "erase-comments"
      operators/erase-comments
      :destructive
-     "Erase comments and JavaDoc."
+     "Erase comments."
      opscope-subject
      applicability|node
-     "Deletes all comments and JavaDoc within the node (and the node itself)."
+     "Deletes all comments within the node (and the node itself)."
+     []
+     false)
+   
+   (Operator. 
+     "ignore-comments"
+     operators/ignore-comments
+     :generalization
+     "Ignore comments."
+     opscope-subject
+     applicability|node
+     "Replaces all comments within the node (and the node itself) by a wildcard."
      []
      false)
      

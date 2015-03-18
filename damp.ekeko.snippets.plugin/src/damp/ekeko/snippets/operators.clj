@@ -1001,10 +1001,36 @@ damp.ekeko.snippets.operators
   (let [newsnippet (atom snippet)]
     (snippet/walk-snippet-element 
       snippet value
-      (fn [value] 
-        (when (instance? Comment value)
-          (swap! newsnippet remove-node value))))
+      (fn [val] 
+        (when (instance? Comment val)
+          (swap! newsnippet remove-node val))))
     @newsnippet)) 
+
+
+(def docclasskeywords [:BlockComment :Javadoc :LineComment])
+
+(defn
+  ignore-comments
+  "Replaces all JavaDoc and comments inside node by wildcard."
+  [snippet value]
+  (let [newsnippet (atom snippet)]
+    (snippet/walk-snippet-element 
+      snippet value
+      (fn [node]
+        (when (some #{(astnode/ekeko-keyword-for-class-of node)} docclasskeywords)
+          (swap! newsnippet replace-by-wildcard node)))
+      (fn [lst])
+      (fn [primitive])
+      (fn [nullvalue]
+        (let [ownerproperty 
+              (astnode/owner-property nullvalue)
+              valueclass
+              (astnode/property-descriptor-child-node-class ownerproperty)]
+          (when (some #{(astnode/ekeko-keyword-for-class valueclass)} docclasskeywords)
+             (println "swapping nil")
+            (swap! newsnippet replace-by-wildcard nullvalue)))))
+    @newsnippet))
+
 
 
 (defn
