@@ -375,7 +375,6 @@ damp.ekeko.snippets.operators
                 (snippet/snippet-bounddirectives-for-node snippet node))]
     (snippet/update-bounddirectives snippet node new-bds)))
 
-;todo: delete template elements other than nodes
 (defn
   remove-node
   "Removes node from snippet. "
@@ -384,24 +383,20 @@ damp.ekeko.snippets.operators
         (atom snippet)
         conceptualparent 
         (snippet/snippet-node-parent|conceptually snippet node)
-        ] 
-    
-    (println "conceptual parent: " conceptualparent) 
-    
-    (assert (snippet/snippet-contains? snippet conceptualparent) "parent in snippet before delete")
-    
+        ownerproperty 
+        (astnode/owner-property node)
+        ]     
     (do 
       (snippet/walk-snippet-element ;dissoc children 
                                     snippet
                                     node 
                                     (fn [val] 
                                       (swap! newsnippet matching/remove-value-from-snippet val)))
-      (.delete node))   ;remove node
-    
-    (assert (snippet/snippet-contains? @newsnippet conceptualparent) "parent in snippet after delete")
-    
-    (println "PASSED IMPORTANT ASSERTS")
-
+      (.delete node) ;remove node
+      (when (astnode/ast? conceptualparent) ;;will now have nil where node used to be
+        (let [newpropertyval (astnode/node-property-value|reified conceptualparent ownerproperty)]
+          (swap! newsnippet matching/add-value-to-snippet newpropertyval)))
+      )   
     @newsnippet))
 
 (defn
