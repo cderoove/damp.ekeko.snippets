@@ -47,10 +47,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static IFn FN_SNIPPET_ELEMENT_NODE;
 
 	public static IFn FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD;
-	
+
 	public static IFn FN_SNIPPET_VALUE_IDENTIFIER;
-	
-	
+
+
 
 
 
@@ -62,7 +62,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	protected LinkedList<StyleRange> styleRanges;
 	protected LinkedList<StyleRange> hyperlinks;
-	
+
 	protected Stack<StyleRange> currentHighlight;
 	@SuppressWarnings("rawtypes")
 	private Stack listWrapperForWhichToIgnoreListDecorations;
@@ -77,19 +77,21 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		currentHyperlink = new Stack();
 		this.templateGroup = group;
 	}
-	
+
 	public void setTemplateGroup(TemplateGroup group) {
 		this.templateGroup = group;
 	}
-	
+
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
-	
+
 	public Object getIdentifier(Object value) {
+		if(value == null)
+			return null;
 		return FN_SNIPPET_VALUE_IDENTIFIER.invoke(snippet, value);
 	}
-	
+
 	public void setSnippet(Object snippet) {
 		this.snippet = snippet;
 	}
@@ -105,7 +107,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public Object getUserVar(Object node) {
 		return FN_SNIPPET_USERVAR_FOR_NODE.invoke(snippet, node);
 	}
-	
+
 	public Object getUserExp(Object node) {
 		return FN_SNIPPET_EXP_FOR_NODE.invoke(snippet, node);
 	}
@@ -145,11 +147,11 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			return null;
 		return current.getSystemColor(id);
 	}
-	
+
 	public static StyleRange styleRangeForVariable(int start, int length) {
 		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_BLUE), null);
 	}
-	
+
 	public static StyleRange styleRangeForExp(int start, int length) {
 		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_DARK_CYAN), null);
 	}
@@ -164,7 +166,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static StyleRange styleRangeForDirectives(int start, int length) {
 		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_GRAY), null);
 	}
-	
+
 	public static StyleRange styleRangeForWildcard(int start, int length) {
 		return new StyleRange(start, length, colorOrNullOutsideOfDisplayThread(SWT.COLOR_DARK_GREEN), null);
 	}
@@ -175,7 +177,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		this.buffer.append(replacementVar);
 		styleRanges.add(styleRangeForVariable(start, getCurrentCharacterIndex() - start));	
 	}
-	
+
 	protected void printExpReplacement(Object replacementExp) {
 		int start = getCurrentCharacterIndex();
 		this.buffer.append(replacementExp);
@@ -196,29 +198,29 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 				if(listReplacementVar != null) {
 					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
 							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-						
+
 						if(isFirstElementOfList(node))
 							printVariableReplacement(listReplacementVar);
-						
-						
+
+
 						return false; //do not print node itself because list has been replaced
 					}
 				}
-				
-				
+
+
 
 				if(hasBeenReplacedByWildcard(nodeListWrapper)) {
 					if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
 							!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
 
 						if(isFirstElementOfList(node))
-								printWildcardReplacement();
-						
+							printWildcardReplacement();
+
 						return false;
 					}	
 				}
-				
-				
+
+
 			}
 		}
 		Object replacementVar = getUserVar(node);
@@ -226,18 +228,18 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			printVariableReplacement(replacementVar);
 			return false;//do not print node itself because node has been replace
 		} 
-		
+
 		Object replacementExp = getUserExp(node);
 		if (replacementExp != null) {
 			printExpReplacement(replacementExp);
 			return false;//do not print node itself because node has been replaced
 		} 
-		
+
 		if(hasBeenReplacedByWildcard(node)) {
 			printWildcardReplacement();
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -247,7 +249,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		this.buffer.append("...");
 		styleRanges.add(styleRangeForWildcard(start, getCurrentCharacterIndex() - start));	
 	}
-	
+
 	static boolean isElementOfList(ASTNode node) {
 		ASTNode parent = node.getParent();
 		if(parent == null)
@@ -289,21 +291,18 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			return;
 		if(isFirstElementOfList(node)) {
 			Object nodeListWrapper = FN_SNIPPET_LIST_CONTAINING.invoke(snippet, node); 
-			if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
-					!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
-				preVisitNodeListWrapper(nodeListWrapper);
+			if(nodeListWrapper != null) {
+				if(listWrapperForWhichToIgnoreListDecorations.isEmpty() ||
+						!nodeListWrapper.equals(listWrapperForWhichToIgnoreListDecorations.peek())) {
+					preVisitNodeListWrapper(nodeListWrapper);
+				}
 			}
 		}
 		printOpeningNode(node);
 		printOpeningHighlight(node);
-		
-		
-		
-		
-		
-		
-		
-		
+
+
+
 	}
 
 	public void postVisit(ASTNode node) {
@@ -350,14 +349,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("[");
 			styleRanges.add(styleRangeForMeta(start, 1));
 		}
-				
-		
-		
+
+
+
 		StyleRange styleRange = new StyleRange();
 		styleRange.start = getCurrentCharacterIndex();
 		styleRange.data = getIdentifier(node);
 		styleRange.underlineStyle = SWT.UNDERLINE_LINK;
-		
+
 		currentHyperlink.push(styleRange);
 	}
 
@@ -382,12 +381,12 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 			this.buffer.append("]");
 			styleRanges.add(styleRangeForMeta(start, 1));	
 		}
-		
+
 		StyleRange styleRange = (StyleRange) currentHyperlink.pop();
 		styleRange.length = getCurrentCharacterIndex() - styleRange.start;
 		hyperlinks.add(styleRange);
 	}
-	
+
 	public LinkedList<StyleRange> getHyperlinks() {
 		return hyperlinks;
 	}
@@ -440,7 +439,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 	public static Boolean isNullValueInTemplate(Object template, Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_ISNULL.invoke(template, element);
 	}
-	
+
 	public Boolean hasBeenReplacedByWildcard(Object element) {
 		return (Boolean) FN_SNIPPET_ELEMENT_REPLACEDBY_WILDCARD.invoke(snippet, element);
 	}
@@ -466,21 +465,21 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 		if(isListValueInTemplate(snippet, element)) {
 			printOpeningNode(element);
-			
+
 			Object listReplacementVar = getUserVar(element);
 			if(listReplacementVar != null) {
 				printVariableReplacement(listReplacementVar);
 				printClosingNode(element);
 				return getResult();
 			}
-			
+
 			if(hasBeenReplacedByWildcard(element)) {
 				printWildcardReplacement();
 				printClosingNode(element);
 				return getResult();
 			}
 
-			
+
 			listWrapperForWhichToIgnoreListDecorations.push(element);
 
 			@SuppressWarnings("rawtypes")
@@ -524,16 +523,21 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 		if(isNullValueInTemplate(snippet, element)) {
 			printOpeningNode(element);
+			
+			
 			Object nullReplacementVar = getUserVar(element);
 			if(nullReplacementVar != null) {
 				printVariableReplacement(nullReplacementVar);
+			} 
+			else if(hasBeenReplacedByWildcard(element)) {
+					printWildcardReplacement();
 			} else {
 				this.buffer.append("null");	
 			}
 			printClosingNode(element);	
 			return getResult();
 		} 
-		
+
 		if(element == null) {
 			this.buffer.append("null");	
 			return getResult();
@@ -543,17 +547,17 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	}
 
-	
+
 	public String prettyPrint() {
 		for(Object groupElement : templateGroup.getSnippets()) {
 			prettyPrintSnippet(groupElement);
-			
+
 			if(this.buffer.codePointBefore(getCurrentCharacterIndex()) != '\n')			
 				this.buffer.append("\n\n");
 		}
 		return getResult();
 	}
-	
+
 
 	public void prettyPrintArrow() {
 		int start = getCurrentCharacterIndex();
@@ -561,7 +565,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		styleRanges.add(styleRangeForMeta(start, getCurrentCharacterIndex() - start));	
 	}
 
-	
+
 	public String prettyPrintSnippet(Object snippet) {
 		setSnippet(snippet);
 		ASTNode root = TemplateGroup.getRootOfSnippet(snippet); 
@@ -571,8 +575,8 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		Collection conditions = templateGroup.getLogicConditions(snippet);
 		this.buffer.append('\n');
 		this.buffer.append(Joiner.on('\n').join(conditions));
-		*/
-		
+		 */
+
 		return getResult();
 	}
 

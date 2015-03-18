@@ -381,20 +381,28 @@ damp.ekeko.snippets.operators
                 (snippet/snippet-bounddirectives-for-node snippet node))]
     (snippet/update-bounddirectives snippet node new-bds)))
 
-;todo: delete template elements other than nodes
 (defn
   remove-node
   "Removes node from snippet. "
   [snippet node]
   (let [newsnippet 
-        (atom snippet)] 
+        (atom snippet)
+        conceptualparent 
+        (snippet/snippet-node-parent|conceptually snippet node)
+        ownerproperty 
+        (astnode/owner-property node)
+        ]     
     (do 
       (snippet/walk-snippet-element ;dissoc children 
                                     snippet
                                     node 
                                     (fn [val] 
                                       (swap! newsnippet matching/remove-value-from-snippet val)))
-      (.delete node))   ;remove node
+      (.delete node) ;remove node
+      (when (astnode/ast? conceptualparent) ;;will now have nil where node used to be
+        (let [newpropertyval (astnode/node-property-value|reified conceptualparent ownerproperty)]
+          (swap! newsnippet matching/add-value-to-snippet newpropertyval)))
+      )   
     @newsnippet))
 
 (defn
@@ -999,11 +1007,52 @@ damp.ekeko.snippets.operators
   (let [newsnippet (atom snippet)]
     (snippet/walk-snippet-element 
       snippet value
-      (fn [value] 
-        (when (instance? Comment value)
-          (swap! newsnippet remove-node value))))
+      (fn [val] 
+        (when (instance? Comment val)
+          (swap! newsnippet remove-node val))))
     @newsnippet)) 
 
+
+(def docclasskeywords [:BlockComment :Javadoc :LineComment :Comment])
+
+(defn
+  ignore-comments
+  "Replaces all JavaDoc and comments inside node by wildcard."
+  [snippet value]
+  (let [newsnippet (atom snippet)]
+    (snippet/walk-snippet-element 
+      snippet value
+      (fn [node]
+        (when (some #{(astnode/ekeko-keyword-for-class-of node)} docclasskeywords)
+          (swap! newsnippet replace-by-wildcard node)))
+      (fn [lst])
+      (fn [primitive])
+      (fn [nullvalue]
+        (let [ownerproperty 
+              (astnode/owner-property nullvalue)
+              valueclass
+              (astnode/property-descriptor-child-node-class ownerproperty)]
+          (when (some #{(astnode/ekeko-keyword-for-class valueclass)} docclasskeywords)
+             (println "swapping nil")
+            (swap! newsnippet replace-by-wildcard nullvalue)))))
+    @newsnippet))
+
+
+
+(defn
+  ignore-absentvalues
+  "Ignores all null-values inside of node by replacing them by a wildcard. 
+   Without, these values are also required to be absent in the match. "
+  [snippet value]
+  (let [newsnippet (atom snippet)]
+    (snippet/walk-snippet-element 
+      snippet value
+      (fn [node])
+      (fn [lst])
+      (fn [primitive])
+      (fn [nullvalue] 
+        (swap! newsnippet replace-by-wildcard nullvalue)))
+    @newsnippet)) 
 
 ;(defn
 ;  generalize-types

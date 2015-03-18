@@ -41,7 +41,7 @@ damp.ekeko.snippets.snippet
   (-uninitialized [_]
     (Snippet. 
       nil nil nil nil nil nil nil)))
-     
+
 
 (defn
   make-snippet
@@ -114,41 +114,33 @@ damp.ekeko.snippets.snippet
   [snippet]
   (keys (:ast2var snippet)))
 
-;(defn 
-;  snippet-list-containing
-;  "Returns value in snippet (= wrapper of NodeList) of which the NodeList contains member mbr."
-;  [snippet mbr]
-;  (let [ownerproperty (astnode/owner-property mbr)]
-;    (some (fn [value] 
-;            (when 
- ;             (and 
- ;;               (astnode/lstvalue? value)
- ;               (= ownerproperty (astnode/owner-property value))
- ;               (some #{mbr} (:value value)))
- ;             value)) 
- ;         (snippet-lists snippet))))
-  
- 
+(defn
+  snippet-contains?
+  [snippet value]
+  (let [result (contains? (:ast2var snippet) value)]
+    ;(assert result (str "Snippet does not contain value: " value))
+    result))
+
+(defn-
+  snippet-value 
+  "Returns the equivalent snippet value if there exists a match variable for it in the snippet, returns nil otherwise.
+   Stems from period in which reifying same object twice resulted in different values."
+  [snippet val]
+  ;(some #{val} (snippet-nodes snippet)))
+  (when 
+    (snippet-contains? snippet val)
+    val))
+
 (defn
   snippet-list-containing
   [snippet mbr]
   (when (astnode/ast? mbr)
-    (if-let [parent (.getParent mbr)] 
+    (if-let [owner (astnode/owner mbr)]
       (let [property (astnode/owner-property mbr)]
         (when (astnode/property-descriptor-list? property)
-          (let [wrappedlst (astnode/node-poperty-value|reified parent property)]
-            (when
-              (contains? (:ast2var snippet) wrappedlst)
-              wrappedlst)))))))
-              
+          (let [wrappedlst (astnode/node-property-value|reified owner property)]
+            (snippet-value snippet wrappedlst)))))))
  
-(defn 
-  snippet-node-with-value
-  "Returns node (= wrapper of NodeList) which has :value = value.
-  value at least should have one member."
-  [snippet value]
-  (snippet-list-containing snippet (first value)))
-
 (defn
   snippet-node-owner
   "Returns representation in snippet for owner of given node."
@@ -156,11 +148,13 @@ damp.ekeko.snippets.snippet
   (let [owner (astnode/owner node)]
     ;finds value equal to, but not identitical to owner .. should not make a difference in practice (see note in make-value, and see jdt-node-as-snippet)
     ;(some #{owner} (snippet-nodes snippet)))) 
-    owner))
+    (snippet-value snippet owner)))
 
 (defn
   snippet-node-children
-  "Returns representations in snippet for children of given node."
+  "Returns representations in snippet for children of given node. 
+   Corresponds to JDT children: other nodes, simple values, and lists.
+   Use snippet-node-children|conceptually for variant that also accepts lists, and returns their elements."
   [snippet node]
   ;;finds all values in snippet whose owner is equal to the given node.
   ;;note that using astnode/node-property-values would create new wrappersfor primitive values.
@@ -186,94 +180,18 @@ damp.ekeko.snippets.snippet
   "Returns the logic conditions defined by users of the given snippet."
   [snippet]
   (let [query (:userquery snippet)]
-        (if (nil? query)
-          '()
-          query)))
+    (if (nil? query)
+      '()
+      query)))
 
 
-
-;(defn
-;  snippet-corresponding-node
-;  "Returns the node corresponding to the given one in the snippet. 
-;   Correspondance is determined solely using the position and type of the node."
-;  [snippet node]
-; compare persistency identifiers
-;  )
-  
-;(defn 
-;  make-rewrite-for-snippet
-;  "Returns a new ASTRewrite for the root of the snippet."
-;  [snippet] 
-;  (ASTRewrite. (.getAST (snippet-root))))
-
-;(defn
-;  apply-rewrite-to-snippet
-;  "Applies the given ASTRewrite to a snippet."
-;  [rewrite snippet]
-;  (let [trackedPositions 
-;        (reduce 
-;          (fn [sofar value]
- ;           ;lukt alleen voor nodes
-            ;primitives en lijsten moeten opgezocht worden via hun relatieve id
-            ;vraag is of het niet simpeler is de ast destructief te updaten
-            
- ;           )
- ;         {}
- ;         (snippet-nodes snippet)
-                
-  
-  ;apply rewrite to root ast
-  ;create new snippet based on output
-  ;copy directives of each node
-  ;use tracked positions
-;  )
-
-;(defn 
-; snippet-document
-; "Returns the document of source code of the given snippet."
-; [snippet]
-; (:document snippet))
-
-  
-;(defn 
-;  snippet-node-for-track 
-;  "For the node track in document of the given snippet, returns the AST node."
-;  [snippet track]
-;  (get-in snippet [:track2ast track]))
-
-;(defn 
-;  snippet-track-for-node 
-;  "Returns node track in document of the given snippet for the given AST node."
-;  [snippet node]
-;  (get-in snippet [:ast2track node]))
-
-
-
-(defn
-  snippet-property-for-node
-  "Used together with track to identify node."
-  [snippet ast]
-  (if (or (instance? CompilationUnit ast) (= ast (:ast snippet)))
-    (util/class-simplename (class ast))
-    (astnode/property-descriptor-id (astnode/owner-property ast))))
-
-(defn
-  snippet-value 
-  "Returns the value if there exists a match variable for it in the snippet, returns nil otherwise."
-  [snippet val]
-  (when 
-    (contains? (:ast2var snippet) val)
-    val))
-  
-  ;(some #{val} (snippet-nodes snippet)))
-  
 (defn
   snippet-value-list?
   "Returns true for snippet values that are wrapped lists."
   [snippet val]
   (boolean 
-    (if-let [value (snippet-value snippet val)]
-      (astnode/lstvalue? value))))
+    ;(if-let [value (snippet-value snippet val)] ;;too expensive
+    (astnode/lstvalue? val))) 
 
 (defn
   snippet-value-list-unwrapped
@@ -282,7 +200,7 @@ damp.ekeko.snippets.snippet
   (when
     (snippet-value-list? snippet val)
     (astnode/value-unwrapped val)))
-  
+
 (defn
   snippet-value-primitive?
   "Returns true for snippet values that are wrapped primitives."
@@ -340,7 +258,7 @@ damp.ekeko.snippets.snippet
              [:ast2bounddirectives node]
              (fn [oldbounddirectives] 
                bounddirectives)))
-  
+
 (defn
   update-anchor 
   [snippet anchor]
@@ -393,19 +311,26 @@ damp.ekeko.snippets.snippet
       (snippet-node-owner snippet c))))
 
 
-;TODO: speed up!  ;(snippet-node-children snippet node))
 (defn
   snippet-node-children|conceptually
   "Returns conceptual children of this snippet element 
    (as they would be displayed in the tree viewer of the template editor)."
   [snippet node]
-  (filter 
-    (fn [child]
-      (=  node (snippet-node-parent|conceptually snippet child)))
-    (snippet-nodes snippet)))
- 
-  
-  
+  (cond 
+    (snippet-value-list? snippet node)
+    (snippet-value-list-unwrapped snippet node)
+    (snippet-value-node? snippet node)
+    (snippet-node-children snippet node)
+    :default
+    []))
+
+;  (filter 
+;    (fn [child]
+;      (=  node (snippet-node-parent|conceptually snippet child)))
+;    (snippet-nodes snippet)))
+
+
+
 (defn 
   walk-snippet-element
   "Performs a recursive descent through a particular snippet element.
@@ -573,41 +498,42 @@ damp.ekeko.snippets.snippet
   [snippet value]
   (let [owner (astnode/owner value) ;owner of list = node, owner of list element = node (never list)
         property (astnode/owner-property value)]
-  (cond 
-    ;root
-    (= value (snippet-root snippet))
-    (make-root-identifier)
-        
-    ;lists (keep before next clause, do not merge with before-last clause)
-    (astnode/lstvalue? value)
-    (astnode/make-property-value-identifier 
-      (snippet-value-identifier snippet owner)
-      property)
-    
-    ;list members
-    (astnode/property-descriptor-list? property)
-    (let [lst (snippet-list-containing snippet value)
-          lst-raw (astnode/value-unwrapped lst)]
-      (astnode/make-list-element-identifier 
-        (snippet-value-identifier 
-          snippet
-          lst)
-        (.indexOf ^List lst-raw value)))
-    
-    ;non-list members
-    (or 
-      (astnode/ast? value)
-      (astnode/nilvalue? value)
-      (astnode/primitivevalue? value))
-    
+    (cond 
+      ;root
+      (= value (snippet-root snippet))
+      (make-root-identifier)
+      
+      ;lists (keep before next clause, do not merge with before-last clause)
+      (astnode/lstvalue? value)
+      (astnode/make-property-value-identifier 
+        (snippet-value-identifier snippet owner)
+        property)
+      
+      ;list members
+      (astnode/property-descriptor-list? property)
+      (let [lst (snippet-list-containing snippet value)
+            lst-raw (astnode/value-unwrapped lst)]
+        (assert lst (str "Could not find list in snippet containing list member:" value))
+        (astnode/make-list-element-identifier 
+          (snippet-value-identifier 
+            snippet
+            lst)
+          (.indexOf ^List lst-raw value)))
+      
+      ;non-list members
+      (or 
+        (astnode/ast? value)
+        (astnode/nilvalue? value)
+        (astnode/primitivevalue? value))
+      
       
       
       (astnode/make-property-value-identifier
         (snippet-value-identifier snippet owner)
         property)
-    
-    :else
-    (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
+      
+      :else
+      (throw (Exception. (str "Unknown snippet value to create identifier for:" value))))))
 
 
 
@@ -621,7 +547,7 @@ damp.ekeko.snippets.snippet
           value)))
     (snippet-nodes snippet)))
 
- 
+
 (defn
   snippet-value-corresponding-to-identifier
   [snippet identifier]
@@ -647,14 +573,14 @@ damp.ekeko.snippets.snippet
     (let [ownerid (:ownerid id)
           property (:property id)
           owner (corresponding-projectvalue-for-snippetvalue ownerid snippetrootinproject)]
-        (astnode/node-poperty-value|reified owner property)))
+      (astnode/node-property-value|reified owner property)))
   RelativeListElementIdentifier
   (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
     (let [listid (:listid id)
           idx (:index id)
           lst (corresponding-projectvalue-for-snippetvalue listid snippetrootinproject)
           lst-raw (astnode/value-unwrapped lst)]
-        (.get ^List lst-raw idx))))
+      (.get ^List lst-raw idx))))
 
 
 (def
@@ -683,7 +609,7 @@ damp.ekeko.snippets.snippet
           (when (some #{nodetype} astnode/ekeko-keywords-for-resolveable-ast-classes)
             (.resolveBinding projectnode)))))))
 
-    
+
 (defn
   snippet-children-resolvingto
   "Recursive descent through a snippet that is anchored to a project,
@@ -707,12 +633,15 @@ damp.ekeko.snippets.snippet
 
 
 
+
+
+
 (defn
   register-callbacks
   []
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_ROOT) snippet-root)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_USERQUERY) snippet-userquery)
-
+  
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_LIST_CONTAINING) snippet-list-containing)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISLIST) snippet-value-list?)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_LIST) snippet-value-list-unwrapped)

@@ -30,7 +30,7 @@
   [?referring ?referred]
   (cl/all
     (el/v+ ?referring)
-    (cl/conda
+    (cl/conde
       [(aststructure/ast|fieldaccess-ast|referred ?referring ?referred)]
       [(aststructure/ast|localvariable-ast|referred ?referring ?referred)]
       )))
@@ -243,8 +243,8 @@
   ;on purpose not using value-raw because it will bind lstval when unbound, 
   ;while an unbound lstval indicates an error in the generated query
   (cl/fresh [?raw]
-         (el/equals ?raw (:value ?lstval))
-         (el/equals ?element (.get ?raw ?nth))))
+            (ast/value-raw ?lstval ?raw)
+            (el/equals ?element (.get ?raw ?nth))))
 
 
 (defn
@@ -253,8 +253,8 @@
   ;on purpose not using value-raw because it will bind lstval when unbound, 
   ;while an unbound lstval indicates an error in the generated query
   (cl/fresh [?raw]
-         (el/equals ?raw (:value ?lstval))
-         (el/equals ?size (.size ?raw))))
+            (ast/value-raw ?lstval ?raw)
+            (el/equals ?size (.size ?raw))))
 
 
 (defn
