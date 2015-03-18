@@ -1007,6 +1007,21 @@ damp.ekeko.snippets.operators
     @newsnippet)) 
 
 
+(defn
+  ignore-absentvalues
+  "Ignores all null-values inside of node by replacing them by a wildcard. 
+   Without, these values are also required to be absent in the match. "
+  [snippet value]
+  (let [newsnippet (atom snippet)]
+    (snippet/walk-snippet-element 
+      snippet value
+      (fn [node])
+      (fn [lst])
+      (fn [primitive])
+      (fn [nullvalue] 
+        (swap! newsnippet replace-by-wildcard nullvalue)))
+    @newsnippet)) 
+
 ;(defn
 ;  generalize-types
 ;  "Generalizes all references to the same type referred to by the argument."
