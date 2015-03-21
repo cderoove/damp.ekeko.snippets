@@ -45,8 +45,8 @@
   "Returns a list of logic conditions that will retrieve matches for the given snippet."
   ([snippet]
     (snippet-conditions snippet identity))
-  ([snippet-orig bounddirectivesfilterf]
-    (let [snippet (snippet/add-depth-info snippet-orig)
+  ([snippet bounddirectivesfilterf]
+    (let [;snippet (snippet/add-depth-info snippet-orig)
           ast (snippet/snippet-root snippet)
           query (atom '())]
       (snippet/walk-snippet-element

@@ -206,8 +206,9 @@
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [node] 
-                                    (and (try (operatorsrep/applicable? snippetgroup snippet node operator)
-                                           (catch Exception e false))
+                                    (and
+                                      (try (operatorsrep/applicable? snippetgroup snippet node operator)
+                                        (catch Exception e false))
                                          ; Check that you haven't already applied this operation to this node..
                                          (not (boolean
                                                 (directives/bounddirective-for-directive
@@ -346,7 +347,13 @@
    @param conf             Configuration keyword arguments; see config-default for all default values"
   [verifiedmatches & {:as conf}]
   (let
-    [csv-name (str "fitness" (.getTime (new java.util.Date)) ".csv")
+    [csv-name (str "fitness" (util/current-time) ".csv")
+     csv-columns ["Generation" "Total time" "Generation time"
+                  "Best fitness" "Worst fitness" "Average fitness"
+                  "Best fscore" "Worst fscore" "Average fscore"
+                  "Best partial" "Worst partial" "Average partial"]
+     start-time (. System (nanoTime))
+     
      config (merge config-default conf)
      fitness ((:fitness-function config) verifiedmatches config)
      set-fit (fn [individual] (individual/compute-fitness individual fitness))
@@ -359,19 +366,17 @@
                                     (population-from-snippets (:positives verifiedmatches) (:population-size config))
                                     (:initial-population config))) 
      tournament-size (:tournament-rounds config)]
-    (util/append-csv csv-name ["Generation" "Fitness"])
+    (util/append-csv csv-name csv-columns)
     (loop
       [generation 0
+       generation-start-time start-time
        population initial-pop
        history #{}]
       (let [new-history (atom history)
-            best (last population)
-            best-fitness (individual/individual-fitness best)
             history-hash (fn [individual] 
                            (hash (individual/individual-templategroup individual)))
             in-history (fn [individual]
                          (contains? @new-history (history-hash individual)))
-            
             preprocess (fn [individual]
                          (if (not (in-history individual))
                            (let
@@ -381,20 +386,33 @@
                              ind
 ;                             (if (pos? (first (individual/individual-fitness-components ind))) 
 ;                               ind)
-                             
-                             )))]
+                             )))
+            best-fitness (individual/individual-fitness (last population))]
         (println "Generation:" generation)
-        (println "Highest fitness:" best-fitness)
+        (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
-        (util/append-csv csv-name [generation best-fitness])
+        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
+                                   best-fitness ; Fitness 
+                                   (individual/individual-fitness (first population))
+                                   (util/average (map (fn [ind] (individual/individual-fitness ind)) population))
+                                   (first (individual/individual-fitness-components (last population))) ; F-score
+                                   (first (individual/individual-fitness-components (first population)))
+                                   (util/average (map (fn [ind] (first (individual/individual-fitness-components ind))) population))
+                                   (second (individual/individual-fitness-components (last population))) ; Partial score
+                                   (second (individual/individual-fitness-components (first population)))
+                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
         
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
-            (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup best)))
+            (do
+              (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+              (persistence/spit-snippetgroup (str "success" (util/current-time) ".ekt") templategroup))
+            
             (recur
               (inc generation)
+              (. System (nanoTime))
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
@@ -443,29 +461,8 @@
   @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
   (count (snippetgroup/snippetgroup-nodes templategroup))
   
-  (damp.ekeko.snippets.matching/reset-matched-nodes)
+  (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
   (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
-  @damp.ekeko.snippets.matching/matched-nodes
-  (count (snippetgroup/snippetgroup-nodes (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2)))))
-  
-  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates 
-                           (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 'damp.ekeko/ekeko true))
-  
-  (inspector-jay.core/inspect (mutate (individual/make-individual (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")) 
-                                          registered-operators|search))
-  
-  
-  ; Testing mutants..
-  (def mutant
-    (mutate 
-      (individual/make-individual (persistence/slurp-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_0.ekt")) 
-      (filter
-        (fn [op] (some #{(operatorsrep/operator-id op)} ["generalize-constructorinvocations"]))
-        (operatorsrep/registered-operators))))
-  (fitness/templategroup-matches (individual/individual-templategroup mutant) 10000)
-  (inspector-jay.core/inspect mutant)
-  (individual/individual-all-info mutant)
-  (persistence/snippetgroup-string (individual/individual-templategroup mutant))
   
   
   )

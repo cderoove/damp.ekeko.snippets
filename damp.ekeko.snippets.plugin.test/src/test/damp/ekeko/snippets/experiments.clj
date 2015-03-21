@@ -138,13 +138,13 @@
                                         (map snippetgroup-from-resource verifiedmatches-ekt))
                                 [])]
           (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))
-    )  )
+    ))
 
 (comment 
   ; Singleton: From JHotDraw to DesignPatterns
   (run-experiment
    ["DesignPatterns"]
-   {}
+   {:max-generations 0}
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt"]
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   

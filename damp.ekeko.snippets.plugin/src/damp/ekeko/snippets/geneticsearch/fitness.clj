@@ -185,30 +185,12 @@
 (defn create-partial-model
   "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
   [verifiedmatches]
+  (inspector-jay.core/inspect verifiedmatches)
   (let [partialmodel (new PartialJavaProjectModel)]
     (doseq [matchgroup (:positives verifiedmatches)]
       (doseq [match matchgroup]
-        (.addExistingAST partialmodel match))
-      
-;      (let [ast-group 
-;            (for [template (snippetgroup/snippetgroup-snippetlist matchgroup)]
-;              (snippet/snippet-root template))]
-;        (doseq [ast ast-group]
-;          (.addExistingAST partialmodel ast)))
-      )
+        (.addExistingAST partialmodel match)))
     partialmodel))
-
-;(def partial-matches-old
-;  (clojure.core/memoize
-;    (fn [templategroup partialmodel]
-;      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
-;
-;                ]
-;        (templategroup-matches templategroup 10000))
-;      (/ 
-;        (count @matching/matched-nodes)
-;        (count (snippetgroup/snippetgroup-nodes templategroup))))))
-
 
 (defn partial-matches
   [templategroup partialmodel timeout]
@@ -226,6 +208,7 @@
    ,where overall-fitness is a value between 0 (worst) and 1 (best)
    and fitness-components is a list of components that were used to compute the overall fitness"
   [verifiedmatches config]
+  (inspector-jay.core/inspect verifiedmatches)
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
       (try
@@ -243,14 +226,15 @@
              (* (nth weights 1) partialscore))
            [fscore partialscore]])
         (catch Exception e
-          (do
+          (let [id (.getTime (new java.util.Date))]
             (print "!--")
             (util/log "error"
-                      (str "!!!" e
+                      (str 
+                           "!!!" id "---" e
+                           (inspector-jay.core/inspect e)
+                           (persistence/spit-snippetgroup (str "error" (util/current-time) ".ekt") templategroup)
                            "\nTemplate\n"
                            (persistence/snippetgroup-string templategroup)
-                           "Last operation applied:" 
-;                           (:mutation-operator (meta templategroup))
                            "--------\n\n"))
             (throw e)
             0))))))

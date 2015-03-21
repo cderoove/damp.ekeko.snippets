@@ -419,17 +419,17 @@ damp.ekeko.snippets.snippet
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
-(defn add-depth-info 
-  "Walks over a snippet to add meta-info about the tree depth of each node
-   (available via (snippet-meta-for-node node :depth) )"
-  [snippet]
-  (let [newsnippet (atom snippet)]
-    (walk-snippet-element-track-depth
-      @newsnippet
-      (snippet-root snippet)
-      (fn [node depth]
-        (swap! newsnippet update-meta node :depth depth)))
-    @newsnippet))
+;(defn add-depth-info 
+;  "Walks over a snippet to add meta-info about the tree depth of each node
+;   (available via (snippet-meta-for-node node :depth) )"
+;  [snippet]
+;  (let [newsnippet (atom snippet)]
+;    (walk-snippet-element-track-depth
+;      @newsnippet
+;      (snippet-root snippet)
+;      (fn [node depth]
+;        (swap! newsnippet update-meta node :depth depth)))
+;    @newsnippet))
 
 (defn 
   walk-snippets-elements
