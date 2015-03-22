@@ -151,7 +151,7 @@
   (run-experiment
    ["DesignPatterns"]
    {:max-generations 10}
-   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt"]
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"]
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
   ; Singleton: Generalize all instances into one template
@@ -183,17 +183,17 @@
 ;; Test suite
 ;; ----------
 
-(deftest
-   test-suite
-   (let [testproject "TestCase-JDT-CompositeVisitor"
-         metamodel "TestCase-TypeParameters"
-         matchproject "TestCase-EkekoX-Matching"
-         designpatterns "DesignPatterns"
-         jhotdraw "JHotDraw51"]
-     (test/against-projects-named [jhotdraw designpatterns] false singleton-experiment)))
-
-(defn test-ns-hook []
-  (test/with-ekeko-disabled test-suite))
+;(deftest
+;   test-suite
+;   (let [testproject "TestCase-JDT-CompositeVisitor"
+;         metamodel "TestCase-TypeParameters"
+;         matchproject "TestCase-EkekoX-Matching"
+;         designpatterns "DesignPatterns"
+;         jhotdraw "JHotDraw51"]
+;     (test/against-projects-named [jhotdraw designpatterns] false singleton-experiment)))
+;
+;(defn test-ns-hook []
+;  (test/with-ekeko-disabled test-suite))
 
 (comment 
   (run-tests))
