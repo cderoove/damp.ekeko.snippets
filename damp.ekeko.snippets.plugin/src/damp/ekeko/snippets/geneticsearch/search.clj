@@ -15,7 +15,6 @@
             [damp.ekeko.jdt
              [astnode :as astnode]
              [rewrites :as rewrites]])
-  (:require [inspector-jay [core :as jay]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -347,7 +346,7 @@
    @param conf             Configuration keyword arguments; see config-default for all default values"
   [verifiedmatches & {:as conf}]
   (let
-    [csv-name (str "fitness" (util/current-time) ".csv")
+    [csv-name (str "results" (util/current-time) ".csv")
      csv-columns ["Generation" "Total time" "Generation time"
                   "Best fitness" "Worst fitness" "Average fitness"
                   "Best fscore" "Worst fscore" "Average fscore"
@@ -391,7 +390,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -408,7 +407,7 @@
             (> best-fitness (:fitness-threshold config))
             (do
               (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
-              (persistence/spit-snippetgroup (str "success" (util/current-time) ".ekt") templategroup))
+              (persistence/spit-snippetgroup (str "success" (util/current-time) ".ekt") (last population)))
             
             (recur
               (inc generation)

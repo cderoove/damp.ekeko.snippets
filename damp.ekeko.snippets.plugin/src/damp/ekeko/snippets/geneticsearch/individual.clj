@@ -31,8 +31,7 @@
          individual)
     
     (catch Exception e
-      (println "!!!")
-      ;(inspector-jay.core/inspect individual)
+      (println "@!")
       )
     ))
 

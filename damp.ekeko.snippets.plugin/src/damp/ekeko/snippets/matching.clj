@@ -210,7 +210,7 @@ damp.ekeko.snippets.matching
           list-match
           (snippet/snippet-var-for-node template lst)
           list-match-raw
-          (util/gen-readable-lvar-for-value (astnode/value-unwrapped list))]
+          (util/gen-readable-lvar-for-value (astnode/value-unwrapped lst))]
       `((cl/fresh [~list-match-raw] 
                   (~value-raw ~list-match ~list-match-raw)
                   (el/contains ~list-match-raw ~match))))))

@@ -185,7 +185,6 @@
 (defn create-partial-model
   "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
   [verifiedmatches]
-  (inspector-jay.core/inspect verifiedmatches)
   (let [partialmodel (new PartialJavaProjectModel)]
     (doseq [matchgroup (:positives verifiedmatches)]
       (doseq [match matchgroup]
@@ -208,7 +207,6 @@
    ,where overall-fitness is a value between 0 (worst) and 1 (best)
    and fitness-components is a list of components that were used to compute the overall fitness"
   [verifiedmatches config]
-  (inspector-jay.core/inspect verifiedmatches)
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
       (try
@@ -226,15 +224,15 @@
              (* (nth weights 1) partialscore))
            [fscore partialscore]])
         (catch Exception e
-          (let [id (.getTime (new java.util.Date))]
-            (print "!--")
+          (let [id (util/current-time)]
+            (print "!")
+            (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
             (util/log "error"
                       (str 
-                           "!!!" id "---" e
-                           (inspector-jay.core/inspect e)
-                           (persistence/spit-snippetgroup (str "error" (util/current-time) ".ekt") templategroup)
-                           "\nTemplate\n"
-                           (persistence/snippetgroup-string templategroup)
-                           "--------\n\n"))
-            (throw e)
+                        "!!!" id "---" e
+                        "\nTemplate\n"
+                        (persistence/snippetgroup-string templategroup)
+                        "\nStacktrace\n"
+                        (.toString (.printStackTrace e (new java.io.StringWriter)))
+                        "-----\n\n"))
             0))))))
