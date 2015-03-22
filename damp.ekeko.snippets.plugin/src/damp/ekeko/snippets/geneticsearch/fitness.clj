@@ -151,7 +151,9 @@
           (:done @matched-nodes))]
     (if (empty? partial-matches)
       0
-      (/ (apply max partial-matches) node-count))))
+      (do
+        (assert (>= node-count (apply max partial-matches)))
+        (/ (apply max partial-matches) node-count)))))
 
 (defn register-match [match]
   (swap! matched-nodes 
@@ -193,12 +195,12 @@
 
 (defn partial-matches
   [templategroup partialmodel timeout]
-  (reset-matched-nodes)
-;  (templategroup-matches templategroup timeout)
-  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
-    (templategroup-matches templategroup timeout))
-  (new-match)
-  (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))
+  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
+            matched-nodes (atom (MatchedNodes. #{} []))]
+    (do
+      (templategroup-matches templategroup timeout)
+      (new-match)
+      (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))))
 
 (defn
   make-fitness-function
@@ -224,7 +226,9 @@
              (* (nth weights 1) partialscore))
            [fscore partialscore]])
         (catch Exception e
-          (let [id (util/current-time)]
+          (let [id (util/current-time)
+                sw (new java.io.StringWriter)]
+            (.printStackTrace e sw)
             (print "!")
             (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
             (util/log "error"
@@ -233,6 +237,6 @@
                         "\nTemplate\n"
                         (persistence/snippetgroup-string templategroup)
                         "\nStacktrace\n"
-                        (.toString (.printStackTrace e (new java.io.StringWriter)))
+                        (.toString sw)
                         "-----\n\n"))
             0))))))
