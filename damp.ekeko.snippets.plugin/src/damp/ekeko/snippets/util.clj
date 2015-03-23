@@ -139,8 +139,17 @@
   []
   (.getTime (new java.util.Date)))
 
+(defn current-date
+  "Returns the current date as a String"
+  []
+  (.format (new java.text.SimpleDateFormat "dd-MM-yyyy--HH-mm-ss") (new java.util.Date)))
+
 (defn time-elapsed 
   "Returns the number of milliseconds that have passed since start-time.
    Note that start-time must be obtained via (.System (nanoTime))"
   [start-time]
   (/ (double (- (. System (nanoTime)) start-time)) 1000000.0))
+
+(defn make-dir 
+  [path]
+  (.mkdir (java.io.File. path)))

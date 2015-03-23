@@ -346,7 +346,8 @@
    @param conf             Configuration keyword arguments; see config-default for all default values"
   [verifiedmatches & {:as conf}]
   (let
-    [csv-name (str "results" (util/current-time) ".csv")
+    [output-dir (str "evolve-" (util/current-date))
+     csv-name (str output-dir "/results.csv")
      csv-columns ["Generation" "Total time" "Generation time"
                   "Best fitness" "Worst fitness" "Average fitness"
                   "Best fscore" "Worst fscore" "Average fscore"
@@ -365,7 +366,9 @@
                                     (population-from-snippets (:positives verifiedmatches) (:population-size config))
                                     (:initial-population config))) 
      tournament-size (:tournament-rounds config)]
+    (util/make-dir output-dir)
     (util/append-csv csv-name csv-columns)
+    
     (loop
       [generation 0
        generation-start-time start-time
@@ -401,14 +404,19 @@
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
-        
+        (util/make-dir (str output-dir "/" generation))
+        (doall (map-indexed
+                 (fn [idx individual]
+                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
+                                                  (individual/individual-templategroup individual))) 
+                 population))
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
             (do
               (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
-              (persistence/spit-snippetgroup (str "success" (util/current-time) ".ekt") (last population)))
-            
+              (persistence/spit-snippetgroup (str output-dir "/success.ekt") 
+                                             (individual/individual-templategroup (last population))))
             (recur
               (inc generation)
               (. System (nanoTime))
@@ -444,13 +452,13 @@
   (def matches (fitness/templategroup-matches templategroup 10000))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 50
+          :max-generations 5
           :fitness-weights [18/20 2/20]
-          :match-timeout 2000
+          :match-timeout 8000
           :selection-weight 1/4
           :mutation-weight 3/4
           :population-size 10
-          :tournament-rounds 2)
+          :tournament-rounds 7)
   
   (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
   (def templategroup

@@ -151,9 +151,10 @@
           (:done @matched-nodes))]
     (if (empty? partial-matches)
       0
-      (do
-        (assert (>= node-count (apply max partial-matches)))
-        (/ (apply max partial-matches) node-count)))))
+      (let [score (/ (apply max partial-matches) node-count)]
+        (if (> score 1)
+          (println "!@!%" @matched-nodes)
+          score)))))
 
 (defn register-match [match]
   (swap! matched-nodes 
@@ -227,7 +228,8 @@
            [fscore partialscore]])
         (catch Exception e
           (let [id (util/current-time)
-                sw (new java.io.StringWriter)]
+                sw (new java.io.StringWriter)
+                e (new Exception)]
             (.printStackTrace e sw)
             (print "!")
             (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
