@@ -44,6 +44,7 @@ public class TemplateEditorActionBarContributor extends EditorActionBarContribut
 		matchTemplateAction.setToolTipText("Match template");
 		actions.add(matchTemplateAction);
 
+		/*
 		inspectQueryAction = new Action("Inspect corresponding query") {
 			public void run() {
 				if(activeTemplateEditor != null)
@@ -53,6 +54,7 @@ public class TemplateEditorActionBarContributor extends EditorActionBarContribut
 		inspectQueryAction.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_TEMPLATE_INSPECT));
 		inspectQueryAction.setToolTipText("Inspect corresponding query");
 		actions.add(inspectQueryAction);
+		*/
 
 	}
 

@@ -28,16 +28,20 @@
   (:import [ec.util MersenneTwister]
            [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
 
+(declare new-match)
+
 (defn templategroup-matches
   "Given a templategroup, look for all of its matches in the code
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
   [templategroup timeout]
   (into #{}
         (util/with-timeout timeout 
-          (eval (querying/snippetgroup-query|usingpredicates 
-                  templategroup 'damp.ekeko/ekeko 
-                  [`(damp.ekeko.logic/succeeds (do (new-match) true))]
-                  '() true)))))
+          (querying/query-by-snippetgroup
+                  templategroup 
+                  'damp.ekeko/ekeko 
+                  `((damp.ekeko.logic/perform (new-match)))
+                  '() 
+                  true))))
 
 (defn 
   truep

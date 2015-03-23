@@ -89,7 +89,6 @@ damp.ekeko.snippets.snippet
   [snippet snippet-var]
   (get-in snippet [:var2ast snippet-var]))
 
-
 (defn
   snippet-bounddirectives-for-node
   "For the given AST node of the given snippet, returns the seq of bound directives used to generate conditions to find a match for the node."
@@ -120,6 +119,7 @@ damp.ekeko.snippets.snippet
   (let [result (contains? (:ast2var snippet) value)]
     ;(assert result (str "Snippet does not contain value: " value))
     result))
+
 
 (defn-
   snippet-value 

@@ -35,8 +35,11 @@ public class TemplateGroup {
 	public static IFn FN_QUERY_BY_SNIPPETGROUP;
 	public static IFn FN_QUERY_BY_SNIPPETGROUP_NOGUI;
 
+	/*
 	public static IFn FN_SNIPPETGROUP_QUERY;
 	public static IFn FN_SNIPPET_QUERY;
+	
+	*/
 	
 	public static IFn FN_APPLY_TO_SNIPPETGROUP;
 	
@@ -164,6 +167,7 @@ public class TemplateGroup {
 		cljGroup = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(cljGroup, snippet);
 	}
 
+	/*
 	public String getQuery(Object node) {
 		Object snippet = getSnippet(node);
 		Object query = "";
@@ -173,6 +177,7 @@ public class TemplateGroup {
 			query = FN_SNIPPET_QUERY.invoke(snippet, Symbol.intern("damp.ekeko/ekeko*"));
 		return query.toString().replace(") ", ") \n").replace("] ", "] \n");
 	}
+	*/
 	
 	public void runQuery(final Object node) {
 		Job job = new Job("Matching template") {

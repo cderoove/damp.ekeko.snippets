@@ -29,121 +29,79 @@
   (:require [damp.ekeko])
   (:require [damp.ekeko.logic :as el]))    
 
+
+
+
 (defn
   query-by-snippet*
   "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
   [snippet]
-  (let [q (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko*)]
-    ;(clojure.pprint/pprint q)
-    (eval q)))
-
+  (querying/query-by-snippet snippet 'damp.ekeko/ekeko*))
 
 (defn
   query-by-snippet
   "Queries the Ekeko projects for matches for the given snippet."
   [snippet]
-  (let [q (querying/snippet-query|usingpredicate snippet 'damp.ekeko/ekeko)]
-    ;(clojure.pprint/pprint q)
-    (eval q)))
+  (querying/query-by-snippet snippet 'damp.ekeko/ekeko))
 
+   
 (defn
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (let [q (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko* false)]
-    ;(clojure.pprint/pprint q)
-    (eval q)))
-   
-    
+  (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko*))
+
+
 (defn
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippetgroup."
   [snippetgroup]
-  (eval (querying/snippetgroup-query|usingpredicates snippetgroup 'damp.ekeko/ekeko false)))
+  (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko))
 
 
-  (defn
-    query-by-snippetgroup|java
-    [snippetgroup]
-    (let [solutions (query-by-snippetgroup snippetgroup)]
-      ;(java.util.ArrayList. solutions)
-      (into #{} solutions)))
+(defn
+  query-by-snippetgroup|java
+  [snippetgroup]
+  (let [solutions (query-by-snippetgroup snippetgroup)]
+    ;(java.util.ArrayList. solutions)
+    (into #{} solutions)))
 
-  (defn
-    transform-by-snippetgroups
-    "Performs the program transformation defined by the lhs and rhs snippetgroups." 
-    [snippetgroup|lhs snippetgroup|rhs]
-  (do 
-      (eval (querying/transformation-query|usingpredicates snippetgroup|lhs snippetgroup|rhs))
-      (rewrites/apply-and-reset-rewrites)))
-
-  (defn
-    snippetgroup-from-editor
-    "Returns the snippetgroup in the currently active editor."
-    []
-    (damp.ekeko.gui/eclipse-uithread-return 
-      (fn []
-        (let [editor (damp.ekeko.gui/workbench-editor)]
-          (when (instance? damp.ekeko.snippets.gui.TemplateEditor editor)
-            (.getGroup (.getGroup editor)))))))
-
-  (defn
-    snippetgroup-from-file
-    "Returns the snippetgroup persisted in the given file."
-    [file]
-    (damp.ekeko.snippets.persistence/slurp-snippetgroup file))
+(defn
+  transform-by-snippetgroups
+  "Performs the program transformation defined by the lhs and rhs snippetgroups." 
+  [snippetgroup|lhs snippetgroup|rhs]
+  (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
+        defines (:preddefs qinfo)
+        lhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|lhs))
+        rhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|rhs))
+        rhsconditions (querying/snippetgroup-conditions|rewrite snippetgroup|rhs lhsuservars)
+        query (querying/snippetgroupqueryinfo-query qinfo 'damp.ekeko/ekeko rhsconditions rhsuservars false)] ;should these be hidden?
+     (querying/pprint-sexps (conj defines query))
+    (doseq [define defines]
+      (eval define))
+    (eval query)
+    (rewrites/apply-and-reset-rewrites)))
 
 
-  
-(comment
+(defn
+  snippetgroup-from-editor
+  "Returns the snippetgroup in the currently active editor."
+  []
+  (damp.ekeko.gui/eclipse-uithread-return 
+    (fn []
+      (let [editor (damp.ekeko.gui/workbench-editor)]
+        (when (instance? damp.ekeko.snippets.gui.TemplateEditor editor)
+          (.getGroup (.getGroup editor)))))))
 
-  
-  ;;to be turned into unit test
-  
-  
-  
-  
-  
-  (defn verify-list-elements [snippet]
-    (let [vals (snippet/snippet-nodes snippet)
-          els (filter astnode/valuelistmember? vals)]
-      (doseq [el els]
-        (let [lst (snippet/snippet-list-containing snippet el)]
-          (when-not (= el (snippet/snippet-root snippet))
-            (assert lst (str "no lst found for: " el)))))))
-   
-  
-  (let [snippetgroup (snippetgroup-from-editor)
-        snippet (first (snippetgroup/snippetgroup-snippetlist snippetgroup))
-        method (first (filter (fn [val]
-                                (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of val)))
-                              (snippet/snippet-nodes snippet)))]
-    (verify-list-elements snippet)
-    (println "first check passed")
-    (let [newsnippet (damp.ekeko.snippets.operators/remove-node snippet method)]
-      (verify-list-elements newsnippet))
-    
-    )
-  
-  
-  
-  ;(doseq [[m] (damp.ekeko/ekeko [?m] (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m))]
-  ;  (let [t (matching/snippet-from-node m)
-  ;        vals (snippet/snippet-nodes t)
-  ;        els (filter astnode/valuelistmember? vals)]
-  ;    (doseq [el els]
-   ;     (let [lst (snippet/snippet-list-containing t el)]
-  ;        (assert lst)))))
-  
-  
-  
+(defn
+  snippetgroup-from-file
+  "Returns the snippetgroup persisted in the given file."
+  [file]
+  (damp.ekeko.snippets.persistence/slurp-snippetgroup file))
 
-)
-  
-  
-  
-  
-  
+
+
+
 
   (defn
     register-callbacks

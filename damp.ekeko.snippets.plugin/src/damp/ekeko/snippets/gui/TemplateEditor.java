@@ -416,6 +416,7 @@ public class TemplateEditor extends EditorPart {
 		becomeDirty();
 	}
 
+	/*
 	public void viewQuery() {
 		String query = templateGroup.getQuery(templateGroupViewer.getSelectedSnippet());
 		QueryInspectorDialog dlg = new QueryInspectorDialog(Display.getCurrent().getActiveShell(),
@@ -425,6 +426,7 @@ public class TemplateEditor extends EditorPart {
 		if (dlg.open() == Window.OK) 
 			runQuery();
 	}
+	 */
 
 	public void runQuery() {
 		templateGroup.runQuery(templateGroupViewer.getSelectedSnippet());

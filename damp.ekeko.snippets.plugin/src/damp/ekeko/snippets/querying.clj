@@ -25,164 +25,132 @@
 ;; Converting a snippet to a query
 ;; -------------------------------
 
-
+                 
 (defn
-  snippet-value-conditions-already-generated?
-  "Regexp matching of list elements will already have generated conditions for all their offspring
-   (inside the corresponding qwal query)."
-  [snippet value]
-  (or
-    (matching/snippet-value-regexp-offspring? snippet value)
-    (matching/snippet-value-setmatch-offspring? snippet value)
-    (matching/snippet-value-orimplicit-offspring? snippet value)
-    (matching/snippet-value-orsimple-offspring? snippet value)
-    ))
-
-
-
-(defn
-  snippet-conditions
-  "Returns a list of logic conditions that will retrieve matches for the given snippet."
+  snippet-conditions 
   ([snippet]
     (snippet-conditions snippet identity))
-  ([snippet-orig bounddirectivesfilterf]
-    (let [snippet (snippet/add-depth-info snippet-orig)
-          ast (snippet/snippet-root snippet)
-          query (atom '())]
-      (snippet/walk-snippet-element
-        snippet
-        ast
-        (fn [val]
-          (when-not 
-            (snippet-value-conditions-already-generated? snippet val)
-            (swap! query concat (matching/snippet-node-conditions snippet val bounddirectivesfilterf)))))
-      @query)))
-
-(declare snippet-uservars)
-(declare snippetgroup-uservars)
-
-(defn-
-  snippet-query-with-conditions
-  [snippet ekekolaunchersymbol conditions userconditions]
-  (let [root-var (snippet/snippet-var-for-root snippet)
-        uservars-exact (snippet-uservars snippet)
-        vars (disj (into #{} (snippet/snippet-vars snippet)) root-var)]
-    (if 
-      (not-empty vars) 
-      `(~ekekolaunchersymbol 
-         [~root-var ~@uservars-exact]
-         (cl/fresh [~@vars]
-                   ~@conditions
-                   ~@userconditions))
-      `(~ekekolaunchersymbol 
-         [~root-var ~@uservars-exact]
-         ~@conditions
-         ~@userconditions))))
-
+  ([snippet bounddirectivesfilterf]
+    (snippet-conditions snippet bounddirectivesfilterf (constantly '())))
+  ([snippet bounddirectivesfilterf extraconditionsafter]
+    (matching/snippet-node-conditions snippet 
+                                      (snippet/snippet-root snippet)
+                                      :bdfilter 
+                                      bounddirectivesfilterf
+                                      :extraconditionsafter
+                                      extraconditionsafter
+                                      )))
 (defn
-  snippet-query
-  "Returns an Ekeko query that that will retrieve matches for the given snippet."
-  [snippet ekekolaunchersymbol]
-  (snippet-query-with-conditions 
-    snippet ekekolaunchersymbol 
-    (snippet-conditions snippet) 
-    (snippet/snippet-userquery snippet)))
+  snippet-uservars
+  [snippet]
+  (sort (into #{} 
+              (matching/snippet-vars-among-directivebindings snippet))))
+  
+(defn
+  snippetgroup-uservars
+  [snippetgroup]
+  (sort (into #{}
+              (mapcat
+                snippet-uservars
+                (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
 
 
 (defn
-  snippet-predicates
-  "Returns a logic goal retrieving matches for the given snippet."
-  ([snippet]
-    (let [root-var
-          (snippet/snippet-var-for-root snippet)
-          fname
-          (symbol (str "match" root-var)) ;has to be same for call and definition
-          uservars-exact
-          (snippet-uservars snippet)
-          vars
-          (disj (into #{} (snippet/snippet-vars snippet)) root-var)
-          conditions
-          (snippet-conditions snippet) 
-          userconditions
-          (snippet/snippet-userquery snippet)]
-      (snippet-predicates snippet fname root-var uservars-exact vars conditions userconditions)))
-  ([snippet fname matchvar uservars vars conditions userconditions]
-    (let [allvars 
-          (conj (concat uservars vars) matchvar)
-          bodies
-          (partition-all 50 conditions) ;;CUTOFF suffices to avoid "Method too Large" raised by Clojure compiler, but introduces overhead
-          maxprednumber
-          (count bodies)
-          defines
-          (map-indexed 
-            (fn [idx body]  
-              (let [predname (symbol (str fname "_" idx))
-                    nextpredname (symbol (str fname "_" (inc idx)))]
-                (if 
-                  (< idx (dec maxprednumber))
-                  `(defn
-                     ~predname 
-                     [varvector#]
-                     (cl/fresh [~@allvars]
-                               (cl/== varvector# [~@allvars])
-                               ~@body
-                               (~nextpredname varvector#)))
-                  `(defn
-                     ~predname 
-                     [varvector#]
-                     (cl/fresh [~@allvars]
-                               (cl/== varvector# [~@allvars])
-                               ~@body)))))
-            bodies)
-          revdefines
-          (reverse defines)
-          predname 
-          (symbol (str fname "_" 0))
-          define
-          `(defn
-             ~fname 
-             [~matchvar ~@uservars]
-             (cl/fresh [varvector# ~@vars]
-                       (cl/== varvector# [~@allvars])
-                       (~predname varvector#)
-                       ~@userconditions))]
-      `(~@revdefines ~define))))
-
-(defn
-  snippet-predicatecall 
-  ([snippet fname matchvar uservars]
-    `(~fname ~matchvar ~@uservars))
-  ([snippet]
-    (let [root-var
-          (snippet/snippet-var-for-root snippet)
-          fname
-          (symbol (str "match" root-var)) ;has to be same for call and definition
-          uservars-exact
-          (snippet-uservars snippet)]
-      (snippet-predicatecall snippet fname root-var uservars-exact))))
-
-
-(defn
-  snippet-query|usingpredicate
-  [snippet ekekolaunchersymbol]
-  (let [root-var
-        (snippet/snippet-var-for-root snippet)
-        uservars-exact
+  snippet-queryinfo
+  [snippet]
+  (let [potentialbodies
+        (partition-by 
+          (fn [condition] (= (first condition) `cl/fresh))
+          (snippet-conditions snippet))
+        bodies
+        (rest potentialbodies)
+        standaloneconditions
+        (first potentialbodies)
+        uservars
         (snippet-uservars snippet)
-        defines
-        (snippet-predicates snippet)]
-    `(do 
-       ~@defines
-       (~ekekolaunchersymbol 
-         [~root-var ~@uservars-exact]
-         ~(snippet-predicatecall snippet)))))
+        publicvars
+        (conj 
+          uservars
+          (snippet/snippet-var-for-root snippet))
+        conditionsvars
+        (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet))
+        predvars
+        (concat
+          publicvars
+          conditionsvars)]
+    (let [prednames
+          (map (fn [bodyconditions]
+                 (gensym "match"))
+               bodies)
+          preddefinitions 
+          (map (fn [predname bodyconditions]
+                 `(defn
+                    ~predname 
+                    [varvector#]
+                    (cl/fresh [~@predvars]
+                              (cl/== varvector# [~@predvars])
+                              ~@bodyconditions)))
+               prednames
+               bodies)]
+      {:conditions 
+       standaloneconditions
+       :conditionsvars 
+       conditionsvars
+       :prednames
+       prednames
+       :preddefs
+       preddefinitions
+       :publicvars
+       publicvars
+       :predvars
+       predvars
+       })))
+
+(defn
+  snippetqueryinfo-query
+  [snippetinfo ekekolaunchersymbol]
+  (let [{conditions :conditions
+         conditionsvars :conditionsvars
+         publicvars :publicvars
+         predvars :predvars
+         prednames :prednames} snippetinfo]
+    (let [varvector
+          (gensym "varvector")
+          predcalls 
+          (map (fn [predname]
+                 `(~predname ~varvector))
+               prednames)]
+      `(~ekekolaunchersymbol 
+         [~@publicvars]
+         (cl/fresh [~varvector ~@conditionsvars]
+                   ~@conditions
+                   (cl/== ~varvector [~@predvars])
+                   ~@predcalls
+                   )))))  
 
 
+(defn
+  pprint-sexps
+  [sexps]
+  (binding [clojure.pprint/*print-right-margin* 200]
+    (doseq [sexp sexps]
+      (clojure.pprint/pprint sexp))))
+            
+
+(defn
+  query-by-snippet
+  [snippet launchersymbol]
+  (let [qinfo (snippet-queryinfo snippet)
+        defines (:preddefs qinfo)
+        query (snippetqueryinfo-query qinfo launchersymbol)]
+    (pprint-sexps (conj defines query))
+    (doseq [define defines]
+      (eval define))
+    (eval query)))
 
 
 ; Converting snippet group to query
 ;------------------------------------
-
 
 (defn-
    snippetgroup-conditions
@@ -190,91 +158,137 @@
    [snippetgroup]
    (mapcat snippet-conditions (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
-(defn-
-  snippetgroup-query-with-conditions
-  ([snippetgroup ekekolaunchersymbol conditions userconditions]
-    (snippetgroup-query-with-conditions snippetgroup ekekolaunchersymbol conditions userconditions '()))
-  ([snippetgroup ekekolaunchersymbol conditions userconditions additionalrootvars]
-    (let [root-vars 
-          (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
-                  additionalrootvars)
-         uservars-exact
-         (snippetgroup-uservars snippetgroup)
-          vars (into #{} (remove (set root-vars) (snippetgroup/snippetgroup-vars snippetgroup)))]
+
+(defn
+  snippetgroup-snippetgroupqueryinfo
+  [snippetgroup]
+  (letfn [(snippetingroup-queryinfo ;similar to snippet-queryinfo, except that snippets in same group need to share user variables
+            [publicvars snippet]
+            (let [potentialbodies
+                  (partition-by 
+                    (fn [condition] (= (first condition) `cl/fresh))
+                    (snippet-conditions snippet))
+                  bodies
+                  (rest potentialbodies)
+                  standaloneconditions
+                  (first potentialbodies)
+                  conditionsvars
+                  (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet))
+                  predvars
+                  (concat
+                    publicvars
+                    conditionsvars)]
+              (let [prednames
+                    (map (fn [bodyconditions]
+                           (gensym "match"))
+                         bodies)
+                    preddefinitions 
+                    (map (fn [predname bodyconditions]
+                           `(defn
+                              ~predname 
+                              [varvector#]
+                              (cl/fresh [~@predvars]
+                                        (cl/== varvector# [~@predvars]) ;differs per predicate!
+                                        ~@bodyconditions)))
+                         prednames
+                         bodies)]
+                {:predvars predvars
+                 :prednames  prednames
+                 :conditions standaloneconditions
+                 :conditionsvars conditionsvars
+                 :preddefs preddefinitions
+                })))]
+    (let [uservars
+          (mapcat snippet-uservars (snippetgroup/snippetgroup-snippetlist snippetgroup))
+          matchvars
+          (snippetgroup/snippetgroup-rootvars snippetgroup)
+          publicvars
+          (concat 
+            matchvars
+            uservars)
+          queryinfos 
+          (map (partial snippetingroup-queryinfo publicvars) (snippetgroup/snippetgroup-snippetlist snippetgroup))
+          ]
+  (reduce
+    (fn [groupqueryinfosofar queryinfo]
+      (let [varvector
+            (gensym "varvector")
+            predcalls 
+            (map (fn [predname]
+                   `(~predname ~varvector))
+                 (:prednames queryinfo))
+            conditionsvars 
+            (:conditionsvars queryinfo)
+            conditions
+            (:conditions queryinfo)
+            predvars
+            (:predvars queryinfo)
+            ]
+        (->
+          groupqueryinfosofar
+          (update-in 
+            [:conditions]
+            conj
+            `(cl/fresh [~varvector ~@conditionsvars]
+                       ~@conditions
+                       (cl/== ~varvector [~@predvars]) ;;differ per predicate!
+                       ~@predcalls))
+          (update-in 
+            [:preddefs]
+            concat
+            (:preddefs queryinfo)))))
+    {:conditions '()
+     :preddefs '()
+     :publicvars publicvars
+     :matchvars matchvars
+     :uservars uservars
+     }
+    queryinfos))))
+
+      
+(defn
+  snippetgroupqueryinfo-query
+  ([groupqueryinfo ekekolaunchersymbol]
+    (snippetgroupqueryinfo-query groupqueryinfo ekekolaunchersymbol '() '() false))
+  ([groupqueryinfo ekekolaunchersymbol additionalconditions additionalrootvars hideuservars]
+    (let [{conditions :conditions
+           matchvars :matchvars
+           uservars :uservars
+           } groupqueryinfo
+          ]
       (if 
-        (not-empty vars) 
+        hideuservars
         `(~ekekolaunchersymbol 
-           [~@root-vars ~@uservars-exact]
-           (cl/fresh [~@vars]
-                     ~@conditions
-                     ~@userconditions))
-        `(~ekekolaunchersymbol 
-           [~@root-vars ~@uservars-exact]
-           ~@conditions
-           ~@userconditions)))))
-        
-
-(defn
-  snippetgroup-query
-  "Returns an Ekeko query that that will retrieve matches for the given snippet group."
-  ([snippetgroup ekekolaunchersymbol]
-    (snippetgroup-query snippetgroup ekekolaunchersymbol '() '()))
-  ([snippetgroup ekekolaunchersymbol additionalconditions additionalrootvars]
-    (snippetgroup-query-with-conditions 
-      snippetgroup ekekolaunchersymbol 
-      (snippetgroup-conditions snippetgroup) 
-      (concat 
-        (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-        additionalconditions)
-      additionalrootvars)))
-
-
-(defn-
-  snippetgroup-query-with-conditions|usingpredicates
-  [snippetgroup ekekolaunchersymbol conditions userconditions additionalrootvars hideuservars]
-  (let [snippets
-        (snippetgroup/snippetgroup-snippetlist snippetgroup)
-        predicates
-        (concat (mapcat snippet-predicates snippets))
-        calls
-        (map snippet-predicatecall snippets)
-        root-vars 
-        (concat (snippetgroup/snippetgroup-rootvars snippetgroup)
-                additionalrootvars)
-        uservars
-        (snippetgroup-uservars snippetgroup)]
-    (if
-      hideuservars
-      `(do
-         ~@predicates
-         (~ekekolaunchersymbol 
-           [~@root-vars]
+           [~@matchvars ~@additionalrootvars]
            (cl/fresh [~@uservars]
-                     ~@calls
-                     ~@userconditions)))
-      `(do
-         ~@predicates
-         (~ekekolaunchersymbol 
-           [~@root-vars ~@uservars]
-           ~@calls
-           ~@userconditions)))))
-         
-              
-(defn
-  snippetgroup-query|usingpredicates
-  "Returns an Ekeko query that that will retrieve matches for the given snippet group."
-  ([snippetgroup ekekolaunchersymbol hideuservars]
-    (snippetgroup-query|usingpredicates snippetgroup ekekolaunchersymbol '() '() hideuservars))
-  ([snippetgroup ekekolaunchersymbol additionalconditions additionalrootvars hideuservars]
-    (snippetgroup-query-with-conditions|usingpredicates 
-      snippetgroup ekekolaunchersymbol 
-      (snippetgroup-conditions snippetgroup) 
-      (concat 
-        (snippetgroup/snippetgroup-snippets-userqueries snippetgroup)
-        additionalconditions)
-      additionalrootvars
-      hideuservars)))
+                     ~@conditions
+                     ~@additionalconditions))
+        `(~ekekolaunchersymbol 
+           [~@matchvars ~@additionalrootvars ~@uservars]
+           ~@conditions
+           ~@additionalconditions)))))
 
+
+
+
+(defn
+  query-by-snippetgroup
+  ([snippetgroup launchersymbol]
+    (query-by-snippetgroup snippetgroup launchersymbol '() '() false))
+  ([snippetgroup launchersymbol additionalconditions additionalrootvars hideuservars]
+    (let [qinfo (snippetgroup-snippetgroupqueryinfo snippetgroup)
+          defines (:preddefs qinfo)
+          query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
+      (pprint-sexps (conj defines query))
+      (doseq [define defines]
+        (eval define))
+      (eval query))))
+
+
+
+
+
+  
 
 ; Converting snippet group to rewrite query
 ;------------------------------------------
@@ -338,31 +352,10 @@
             matching/directive-replacedbyexp
             (let [sexpoperand (read-string (nth opbindingvals 1))]
               `((el/perform (damp.ekeko.snippets.operators/snippet-jdtvalue-replace ~snippetruntimevar ~varsubject ~sexpoperand))))
-            
-            
             )))
-      replacedby-bounddirectives
-      )))
-
+      replacedby-bounddirectives)))
 
  
-(defn 
-  snippet-node-conditions+|rewritingandreplacedby
-  [snippet node snippetruntimevar]
-  (let [snippetchanges (atom '())
-        programchanges (atom '())]
-    (snippet/walk-snippet-element
-      snippet
-      node
-      (fn [val]
-        (swap! snippetchanges 
-               concat
-               (snippet-node-conditions|replacedby snippet val snippetruntimevar))
-        (swap! programchanges
-               concat
-               (snippet-node-conditions|rewriting snippet val snippetruntimevar))
-               ))
-    (concat @snippetchanges @programchanges)))
 
 
 ;new strategy:
@@ -372,21 +365,6 @@
 
 
 (defn
-  snippet-uservars
-  [snippet]
-  (sort (into #{} 
-              (matching/snippet-vars-among-directivebindings snippet))))
-  
-(defn
-  snippetgroup-uservars
-  [snippetgroup]
-  (sort (into #{}
-              (mapcat
-                snippet-uservars
-                (snippetgroup/snippetgroup-snippetlist snippetgroup)))))
-
-
-(defn-
   snippetgroup-conditions|rewrite
   [snippetgrouprhs lhsuservars]
   (let [snippets
@@ -396,25 +374,38 @@
         (map (fn [snippet]
                (util/gen-lvar 'runtimesnippet))
              snippets)
+        
+             
         ;create run-time instance of snippet and an ast for its root
         instantiations
         (mapcat (fn [snippet runtimevar] 
                   (newnode-from-template snippet runtimevar))
                 snippets
                 snippetsruntimevars) 
+        
+        
         ;bind match-vars of run-time snippet to ast components, such that they can be rewritten later on
         ;ignoring replacedbysexp and replacedbyvar
-        
         conditions-on-instantiations
-        (mapcat (fn [snippet] 
-                  (snippet-conditions 
-                    snippet
-                    (fn [bounddirective]
-                      (let [directive (directives/bounddirective-directive bounddirective)]
-                        (not (or (matching/registered-replacedby-directive? directive)
-                                 (rewriting/registered-rewriting-directive? directive)))
-                        ))))
-                  snippets)
+        (apply concat
+               (map 
+                 (fn [snippet snippetruntimevar] 
+                   (let [root (snippet/snippet-root snippet)]
+                     (snippet-conditions 
+                       snippet
+                       (fn [bounddirective]
+                         (let [directive (directives/bounddirective-directive bounddirective)]
+                           (not (or (matching/registered-replacedby-directive? directive)
+                                    (rewriting/registered-rewriting-directive? directive)))))
+                       (fn [val]
+                         (concat 
+                           (snippet-node-conditions|replacedby snippet val snippetruntimevar) ;node replaced by var in template being instantiated
+                           (when
+                             (= val root)
+                             (snippet-node-conditions|rewriting snippet val snippetruntimevar)))) ;program change
+                              )))
+                 snippets
+                 snippetsruntimevars))
         ;todo: fix this hack .. 
         ;none of these conditions should ground against the base program
         ;they are walking a newly generated piece of code
@@ -423,39 +414,31 @@
         conditions-on-instantiations-without-grounding-of-root-node
         (rest conditions-on-instantiations)
         
-        changes
-        (mapcat (fn [snippet snippetruntimevar] 
-                  (snippet-node-conditions+|rewritingandreplacedby snippet (snippet/snippet-root snippet) snippetruntimevar)) 
-                snippets snippetsruntimevars)
+        
+        instantiationconditionsvars
+        (mapcat 
+          (fn [snippet]
+            (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet)))
+          snippets)
+            
+        
+        
+        
         
         rootvars
         (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) 
         uservars 
         (snippetgroup-uservars snippetgrouprhs) ;uservars should be added to the ekeko [..] instead of here 
-        vars
-        (into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
-        allvarsexceptrootsandlhsandusers
-        (clojure.set/difference vars lhsuservars)]
-    `((cl/fresh [~@snippetsruntimevars ~@rootvars  ~@allvarsexceptrootsandlhsandusers] 
+        ;vars
+        ;(into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
+        ;allvarsexceptrootsandlhsandusers
+        ;(clojure.set/difference vars lhsuservars)
+        ]
+    `((cl/fresh [~@snippetsruntimevars ~@rootvars]; ~@allvarsexceptrootsandlhsandusers] TOFIX: add match vars for replacedby(var/exp) nodes here, are to be changed
            ~@instantiations
-           ~@conditions-on-instantiations-without-grounding-of-root-node
-           ~@changes))))
-
-
-(defn
-  transformation-query|usingpredicates
-  [snippetgroup|lhs snippetgroup|rhs]
-  (let [lhsuservars
-        (snippetgroup-uservars snippetgroup|lhs)
-        q 
-        (snippetgroup-query|usingpredicates
-          snippetgroup|lhs 
-          'damp.ekeko/ekeko ;TODO: serious bug in GUI, getting indexoutofbounds exception when using ekeko*  
-          (snippetgroup-conditions|rewrite snippetgroup|rhs (into #{} lhsuservars))
-          (snippetgroup-uservars snippetgroup|rhs)
-          false)]
-   ; (clojure.pprint/pprint q)
-    q))
+           (cl/fresh [~@instantiationconditionsvars]
+                     ~@conditions-on-instantiations-without-grounding-of-root-node
+                     )))))
 
 
 
@@ -474,8 +457,8 @@
 (defn
   register-callbacks 
   []
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_QUERY) snippetgroup-query|usingpredicates)
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_QUERY) snippet-query|usingpredicate)
+  ; (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_QUERY) snippetgroup-query|usingpredicates)
+  ; (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPET_QUERY) snippet-query|usingpredicate)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_SNIPPETGROUP_NORMALIZED_MATCH_VARS) snippetgroup-matchvariables|normalized))
 
   

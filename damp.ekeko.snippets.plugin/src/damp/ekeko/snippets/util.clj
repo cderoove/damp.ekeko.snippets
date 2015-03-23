@@ -13,12 +13,12 @@
 (defn 
   gen-lvar
   "Generates a unique symbol starting with ?v
-   (i.e., a symbol to be used as the name for a logic variable)."
+   (i.e., a string to be used as the name for a logic variable)."
   ([] (gen-lvar "?v"))
   ([prefix] (gensym (str "?" prefix))))
 
 (defn
-  gen-readable-lvar-for-value
+  gen-readable-lvar-for-value|classbased
   "Generates a unique logic variable, of which the name 
    gives a hint about the class of the given JDT property value."
   [value]
@@ -34,6 +34,13 @@
       "NilVal"
       (astnode/ast? value)
       (class-simplename (class value)))))
+
+(defn 
+  gen-readable-lvar-for-value
+  [value]
+  (if-let [ownerprop (astnode/owner-property value)]
+    (gen-lvar (astnode/property-descriptor-id ownerprop))
+    (gen-readable-lvar-for-value|classbased value)))
 
 
 (defn 
