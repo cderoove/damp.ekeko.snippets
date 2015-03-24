@@ -49,7 +49,8 @@
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko*))
+  (binding [querying/*print-queries-to-console* true]
+    (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko*)))
 
 
 (defn
