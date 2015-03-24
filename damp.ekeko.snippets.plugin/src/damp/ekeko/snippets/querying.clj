@@ -128,13 +128,16 @@
                    ~@predcalls
                    )))))  
 
+(def ^:dynamic *print-queries-to-console* false) 
 
 (defn
   pprint-sexps
   [sexps]
-  (binding [clojure.pprint/*print-right-margin* 200]
-    (doseq [sexp sexps]
-      (clojure.pprint/pprint sexp))))
+  (when 
+    *print-queries-to-console* 
+    (binding [clojure.pprint/*print-right-margin* 200]
+      (doseq [sexp sexps]
+        (clojure.pprint/pprint sexp)))))
             
 
 (defn
