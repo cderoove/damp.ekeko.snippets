@@ -96,6 +96,11 @@
            result 
            (recur)))))))
 
+(defn average
+  "Calculate the average in a collection of numbers"
+  [coll]
+  (/ (reduce + coll) (count coll)))
+
 (defmacro dbg
   "Identity function, that prints x as a side-effect"
   [x] 
@@ -132,4 +137,26 @@
          (do
            (println "Timed out!!")
            (future-cancel future#)
-           nil)))))
+           nil))
+       (catch Exception x#
+         (throw x#)))))
+
+(defn current-time 
+  "Returns the current time (as a Unix timestamp)"
+  []
+  (.getTime (new java.util.Date)))
+
+(defn current-date
+  "Returns the current date as a String"
+  []
+  (.format (new java.text.SimpleDateFormat "dd-MM-yyyy--HH-mm-ss") (new java.util.Date)))
+
+(defn time-elapsed 
+  "Returns the number of milliseconds that have passed since start-time.
+   Note that start-time must be obtained via (.System (nanoTime))"
+  [start-time]
+  (/ (double (- (. System (nanoTime)) start-time)) 1000000.0))
+
+(defn make-dir 
+  [path]
+  (.mkdir (java.io.File. path)))

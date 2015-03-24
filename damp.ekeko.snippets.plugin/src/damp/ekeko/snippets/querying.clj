@@ -384,6 +384,7 @@
                 snippetsruntimevars) 
         
         
+        
         ;bind match-vars of run-time snippet to ast components, such that they can be rewritten later on
         ;ignoring replacedbysexp and replacedbyvar
         conditions-on-instantiations
@@ -434,7 +435,7 @@
         ;allvarsexceptrootsandlhsandusers
         ;(clojure.set/difference vars lhsuservars)
         ]
-    `((cl/fresh [~@snippetsruntimevars ~@rootvars]; ~@allvarsexceptrootsandlhsandusers] TOFIX: add match vars for replacedby(var/exp) nodes here, are to be changed
+    `((cl/fresh [~@snippetsruntimevars ~@rootvars]; ~@allvarsexceptrootsandlhsandusers] 
            ~@instantiations
            (cl/fresh [~@instantiationconditionsvars]
                      ~@conditions-on-instantiations-without-grounding-of-root-node

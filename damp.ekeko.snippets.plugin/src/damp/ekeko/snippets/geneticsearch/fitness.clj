@@ -155,7 +155,10 @@
           (:done @matched-nodes))]
     (if (empty? partial-matches)
       0
-      (/ (apply max partial-matches) node-count))))
+      (let [score (/ (apply max partial-matches) node-count)]
+        (if (> score 1)
+          (println "!@!%" @matched-nodes)
+          score)))))
 
 (defn register-match [match]
   (swap! matched-nodes 
@@ -192,36 +195,17 @@
   (let [partialmodel (new PartialJavaProjectModel)]
     (doseq [matchgroup (:positives verifiedmatches)]
       (doseq [match matchgroup]
-        (.addExistingAST partialmodel match))
-      
-;      (let [ast-group 
-;            (for [template (snippetgroup/snippetgroup-snippetlist matchgroup)]
-;              (snippet/snippet-root template))]
-;        (doseq [ast ast-group]
-;          (.addExistingAST partialmodel ast)))
-      )
+        (.addExistingAST partialmodel match)))
     partialmodel))
-
-;(def partial-matches-old
-;  (clojure.core/memoize
-;    (fn [templategroup partialmodel]
-;      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
-;
-;                ]
-;        (templategroup-matches templategroup 10000))
-;      (/ 
-;        (count @matching/matched-nodes)
-;        (count (snippetgroup/snippetgroup-nodes templategroup))))))
-
 
 (defn partial-matches
   [templategroup partialmodel timeout]
-  (reset-matched-nodes)
-;  (templategroup-matches templategroup timeout)
-  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
-    (templategroup-matches templategroup timeout))
-  (new-match)
-  (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))
+  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
+            matched-nodes (atom (MatchedNodes. #{} []))]
+    (do
+      (templategroup-matches templategroup timeout)
+      (new-match)
+      (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))))
 
 (defn
   make-fitness-function
@@ -247,14 +231,18 @@
              (* (nth weights 1) partialscore))
            [fscore partialscore]])
         (catch Exception e
-          (do
-            (print "!--")
+          (let [id (util/current-time)
+                sw (new java.io.StringWriter)
+                e (new Exception)]
+            (.printStackTrace e sw)
+            (print "!")
+            (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
             (util/log "error"
-                      (str "!!!" e
-                           "\nTemplate\n"
-                           (persistence/snippetgroup-string templategroup)
-                           "Last operation applied:" 
-;                           (:mutation-operator (meta templategroup))
-                           "--------\n\n"))
-            (throw e)
+                      (str 
+                        "!!!" id "---" e
+                        "\nTemplate\n"
+                        (persistence/snippetgroup-string templategroup)
+                        "\nStacktrace\n"
+                        (.toString sw)
+                        "-----\n\n"))
             0))))))

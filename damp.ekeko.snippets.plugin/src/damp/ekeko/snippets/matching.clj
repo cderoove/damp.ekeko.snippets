@@ -128,7 +128,7 @@ damp.ekeko.snippets.matching
               list-match       
               (snippet/snippet-var-for-node snippet list-owner)
               list-raw  
-              (astnode/value-unwrapped list-owner)
+              (astnode/value-unwrapped list-owner) 
               index-match     
               (.indexOf ^List list-raw snippet-val)]
           ;could check for parent list directives that might already have ground the element
@@ -1831,19 +1831,9 @@ damp.ekeko.snippets.matching
               (directives/snippet-bounddirective-conditions snippet bounddirective))
             bounddirectives-constraining)
           ]
-      (concat conditions-grounding conditions-constraining)))) 
-;              `(
-;                 (damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar)
- ;                
- ;;                )
- ;             )
-;;               `(damp.ekeko.snippets.matching/set-depth 
-; ;;                 ~(snippet/snippet-meta-for-node snippet ast-or-list :depth))
-  ;            
-  ;            )))
-;
-
-
+      (concat conditions-grounding
+              conditions-constraining 
+              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))))))
 
 
 
