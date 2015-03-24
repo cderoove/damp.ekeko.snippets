@@ -41,8 +41,8 @@ damp.ekeko.snippets.matching
   [?keyw ?owner ?value]
   (cl/conda 
     [(el/v- ?owner)
-     (el/perform (throw (Exception. (str "Generated query should have already ground the owner of the property."
-                                         ?keyw
+     (el/perform (throw (Exception. (str "Generated query should have already ground the owner of the property. "
+                                         ?keyw 
                                          ?owner
                                          ?value))))]
     [(el/v+ ?owner)
@@ -53,7 +53,9 @@ damp.ekeko.snippets.matching
   [?keyw ?node]
   (cl/conda 
     [(el/v- ?node)
-     (el/perform (throw (Exception. "Generated query should have already this node.")))]
+     (el/perform (throw (Exception. (str "Generated query should have already this node."
+                                         ?keyw
+                                         ?node))))]
     [(el/v+ ?node)
      (ast/ast ?keyw ?node)]))
 
@@ -567,22 +569,20 @@ damp.ekeko.snippets.matching
           (astnode/value-unwrapped val)
           listrawvar
           (util/gen-lvar "lstraw")]
-      (defn
-        generate
-        [lstvar elements]
-        (if 
-          (empty? elements)
-          `()
-          (let [element 
-                (first elements)
-                ;these conditions no longer need to be included in the query 
-                ;querying/snippet-conditions takes care of this
-                ;using snippet-value-conditions-already-generated? predicate
-                elmatch                    
-                (snippet/snippet-var-for-node template element)
-                remaininglstvar (gensym "remaining")
-                elconditions 
-                (snippet-node-conditions template element 
+      (letfn [(generate [lstvar elements]
+	        (if 
+	          (empty? elements)
+           `()
+           (let [element 
+                 (first elements)
+                 ;these conditions no longer need to be included in the query 
+                 ;querying/snippet-conditions takes care of this
+                 ;using snippet-value-conditions-already-generated? predicate
+                 elmatch                    
+                 (snippet/snippet-var-for-node template element)
+                 remaininglstvar (gensym "remaining")
+                 elconditions 
+                 (snippet-node-conditions template element 
                                           :extraconditions
                                           (fn [elorchild]
                                             (if 
@@ -591,12 +591,12 @@ damp.ekeko.snippets.matching
                                               `()))
                                           :generatep
                                           (constantly true))]
-            `((cl/fresh [~remaininglstvar]
-                        ~@elconditions
-                        ~@(generate remaininglstvar (rest elements)))))))
-      `((cl/fresh [~listrawvar]
-                  (~value-raw ~lstvar ~listrawvar)
-                  ~@(generate listrawvar elements))))))
+             `((cl/fresh [~remaininglstvar]
+                         ~@elconditions
+                         ~@(generate remaininglstvar (rest elements)))))))]
+        `((cl/fresh [~listrawvar]
+                    (~value-raw ~lstvar ~listrawvar)
+                    ~@(generate listrawvar elements)))))))
 
 
 (defn
