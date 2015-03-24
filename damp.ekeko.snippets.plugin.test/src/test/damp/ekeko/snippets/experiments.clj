@@ -70,7 +70,7 @@
              "add-directive-constructs"
              "add-directive-constructedby"
              "add-directive-overrides"
-;             "generalize-directive"
+             "generalize-directive"
              "remove-directive"
 ;             "generalize-references"
 ;             "generalize-types"
@@ -157,7 +157,8 @@
   ; Singleton: From DesignPatterns to JHotDraw
   (run-experiment-from-files
    [(:jhotdraw pmart/projects)]
-   {:max-generations 10}
+   {:max-generations 10
+    :mutation-operators search/registered-operators|search}
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"]
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"])
   

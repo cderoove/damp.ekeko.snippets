@@ -48,37 +48,37 @@
     (fn [op] 
       (some #{(operatorsrep/operator-id op)} 
             [
-;             "replace-by-variable"
-;             "replace-by-wildcard"
-;             "remove-node"
-;             "add-directive-equals"
-;             "add-directive-invokes"
-;             "add-directive-invokedby"
-;             "restrict-scope-to-child"
-;             "relax-scope-to-child+"
-;             "relax-scope-to-child*"
-;             "relax-size-to-atleast"
-;             "relax-scope-to-member"
-;             "consider-set|lst"
-;             "add-directive-type"
-;             "add-directive-type|qname"
-;             "add-directive-type|sname"
-;             "add-directive-refersto"
+             "replace-by-variable"
+             "replace-by-wildcard"
+             "remove-node"
+             "add-directive-equals"
+             "add-directive-invokes"
+             "add-directive-invokedby"
+             "restrict-scope-to-child"
+             "relax-scope-to-child+"
+             "relax-scope-to-child*"
+             "relax-size-to-atleast"
+             "relax-scope-to-member"
+             "consider-set|lst"
+             "add-directive-type"
+             "add-directive-type|qname"
+             "add-directive-type|sname"
+             "add-directive-refersto"
              ;untested:
 ;             "replace-parent"
 ;             "erase-comments"
 
-;             "add-directive-constructs"
-;             "add-directive-constructedby"
-;             "add-directive-overrides"
-;             "generalize-directive"
+             "add-directive-constructs"
+             "add-directive-constructedby"
+             "add-directive-overrides"
+             "generalize-directive"
              "remove-directive"
-             "extract-template"
-;             "generalize-references"
+;             "extract-template"
+             "generalize-references"
              "generalize-types"
-;             "generalize-types|qname"
-;             "generalize-invocations"
-;             "generalize-constructorinvocations"
+             "generalize-types|qname"
+             "generalize-invocations"
+             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -218,7 +218,7 @@
         
         [operator value] (pick-operator)
         
-;        tmp (println (operatorsrep/operator-id operator))
+        tmp (println (operatorsrep/operator-id operator))
         operands (operatorsrep/operator-operands operator)
         
         operandvalues

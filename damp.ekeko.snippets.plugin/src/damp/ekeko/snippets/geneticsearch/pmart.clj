@@ -192,7 +192,7 @@
   (persistence/spit-snippetgroup "test.ekt" (first results))
   
   (inspector-jay.core/inspect (templategroup-from-classes "Design pattern" (:uml program-names) ["diagram.figures.FigureBorder"]))
-  (inspector-jay.core/inspect (pattern-roles (first (:Builder (pattern-instances (program pmart "1 - QuickUML 2001"))))))
+  (inspector-jay.core/inspect (pattern-roles (first (:Builder (pattern-instances (program (parse-pmart-xml) "1 - QuickUML 2001"))))))
   (inspector-jay.core/inspect 
     (.getCompilationUnits (first 
                             (.getChildren (first (.getPackageFragmentRoots (first (.getJavaProjects (JavaCore/create (.getRoot  (damp.ekeko.workspace.workspace/eclipse-workspace))))))))))))
