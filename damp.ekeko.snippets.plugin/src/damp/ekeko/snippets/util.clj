@@ -38,9 +38,9 @@
 (defn 
   gen-readable-lvar-for-value
   [value]
-  (if-let [ownerprop (astnode/owner-property value)]
-    (gen-lvar (astnode/property-descriptor-id ownerprop))
-    (gen-readable-lvar-for-value|classbased value)))
+  ;(if-let [ownerprop (astnode/owner-property value)]
+  ;  (gen-lvar (astnode/property-descriptor-id ownerprop))
+  (gen-readable-lvar-for-value|classbased value))
 
 
 (defn 

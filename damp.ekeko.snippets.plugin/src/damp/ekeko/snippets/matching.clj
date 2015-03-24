@@ -53,7 +53,7 @@ damp.ekeko.snippets.matching
   [?keyw ?node]
   (cl/conda 
     [(el/v- ?node)
-     (el/perform (throw (Exception. (str "Generated query should have already this node."
+     (el/perform (throw (Exception. (str "Generated query should have already ground this node."
                                          ?keyw
                                          ?node))))]
     [(el/v+ ?node)
@@ -99,6 +99,18 @@ damp.ekeko.snippets.matching
   represents-variable?
   [string]
   (@#'el/ekeko-lvar-sym? string))
+
+
+(defn 
+  freshornot
+  [vars conditions]
+  (if 
+    (seq conditions)
+    (if 
+      (seq vars)
+      `((cl/fresh [~@vars] ~@conditions))
+      conditions)
+    '()))
 
 
 ;; Grounding Functions
@@ -555,6 +567,10 @@ damp.ekeko.snippets.matching
 ;todo: allow additional operand that determines where the list comes from
 ;e.g. super declarations
 
+
+;(declare snippet-value-conditions-already-generated)
+
+
 (defn
   constrain-lst|set
   "Considers candidate matches as a set in which elements are matched.
@@ -568,32 +584,26 @@ damp.ekeko.snippets.matching
           elements 
           (astnode/value-unwrapped val)
           listrawvar
-          (util/gen-lvar "lstraw")]
+          (util/gen-lvar "lstraw")
+          ;elementsvars
+          ;(map (partial snippet/snippet-var-for-node template) elements)
+          ]
       (letfn [(generate [lstvar elements]
-	        (if 
-	          (empty? elements)
-           `()
-           (let [element 
-                 (first elements)
-                 ;these conditions no longer need to be included in the query 
-                 ;querying/snippet-conditions takes care of this
-                 ;using snippet-value-conditions-already-generated? predicate
-                 elmatch                    
-                 (snippet/snippet-var-for-node template element)
-                 remaininglstvar (gensym "remaining")
-                 elconditions 
-                 (snippet-node-conditions template element 
-                                          :extraconditions
-                                          (fn [elorchild]
-                                            (if 
-                                              (= elorchild element)
-                                              `((runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar))
-                                              `()))
-                                          :generatep
-                                          (constantly true))]
-             `((cl/fresh [~remaininglstvar]
-                         ~@elconditions
-                         ~@(generate remaininglstvar (rest elements)))))))]
+                (if 
+                  (empty? elements)
+                  '()
+                  (let [element 
+                        (first elements)
+                        elmatch                    
+                        (snippet/snippet-var-for-node template element)
+                        remaininglstvar (gensym "remaining")
+                        elconditions ;snippet-node-conditions does not recurse into elements of lists with set matching
+                        (snippet-node-conditions template element)]
+                    (freshornot [remaininglstvar]
+                                (concat 
+                                  `((runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar))
+                                  elconditions
+                                  (generate remaininglstvar (rest elements)))))))]
         `((cl/fresh [~listrawvar]
                     (~value-raw ~lstvar ~listrawvar)
                     ~@(generate listrawvar elements)))))))
@@ -1538,47 +1548,48 @@ damp.ekeko.snippets.matching
     
 
 (defn
-  snippet-value-element-of-list-satisfying?
+  snippet-value-element-of-list-satisfying 
   [snippet value satisfyingf]
-  (and
-    (astnode/valuelistmember? value)
-    (let [owninglst (snippet/snippet-list-containing snippet value)]
-      (satisfyingf snippet owninglst))))
-
+  (and (snippet/snippet-value-node? snippet value)
+       (if-let [owninglst (snippet/snippet-list-containing snippet value)]
+         (when 
+           (satisfyingf snippet owninglst)
+           owninglst))))
 
 (defn
-  snippet-value-regexp-element?
+  snippet-value-regexp-element
   [snippet value]
-  (snippet-value-element-of-list-satisfying? snippet value snippet-list-regexp?))
+  (snippet-value-element-of-list-satisfying snippet value snippet-list-regexp?))
 
 
 
 (defn
-  snippet-value-regexp-offspring-of-list-satisfying?
+  snippet-value-regexp-offspring-of-list-satisfying
   [snippet value satisfyingf]
   (loop [val value]
-    (cond
+    (if
       (= val (snippet/snippet-root snippet))
-      false
-      (snippet-value-element-of-list-satisfying? snippet val satisfyingf)
-      true
-      ;owner will skip list in which elements reside, which is why the above is to be checked first
-      :default
-      (let [owner (astnode/owner val)]
-        (recur owner)))))
+      nil
+      (if-let
+        [lst (snippet-value-element-of-list-satisfying snippet val satisfyingf)]
+        lst
+        (if-let [owner (snippet/snippet-node-owner snippet val)]
+          (recur owner))))))
 
 
 
 (defn
-  snippet-value-regexp-offspring?
+  snippet-value-regexp-offspring
   [snippet value]
-  (snippet-value-regexp-offspring-of-list-satisfying? snippet value snippet-list-regexp?))
+  (snippet-value-regexp-offspring-of-list-satisfying snippet value snippet-list-regexp?))
 
 
 (defn
-  snippet-value-setmatch-offspring?
+  snippet-value-setmatch-offspring
   [snippet value]
-  (snippet-value-regexp-offspring-of-list-satisfying? snippet value snippet-list-setmatch?))
+  (let [result (snippet-value-regexp-offspring-of-list-satisfying snippet value snippet-list-setmatch?)]
+    result
+    ))
 
 
 
@@ -1660,7 +1671,7 @@ damp.ekeko.snippets.matching
   [directive]
   (some #{directive} default-directives))
 
-(declare snippet-value-regexp-element?)
+(declare snippet-value-regexp-element)
 
 (defn
   default-bounddirectives
@@ -1668,7 +1679,7 @@ damp.ekeko.snippets.matching
    These are directive-exact and directive-child, or directive-exact when the value resides within a regular expression."
   [snippet value]
   (if
-    (snippet-value-regexp-element? snippet value)
+    (snippet-value-regexp-element snippet value)
     (list 
       (directives/bind-directive-with-defaults directive-exact snippet value))
     (list 
@@ -1833,60 +1844,69 @@ damp.ekeko.snippets.matching
           ]
       (concat conditions-grounding
               conditions-constraining 
-              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))))))
+              ;`((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
+              
+              ))))
 
 
+
+;;TODO: only need to go up one level
 
 (defn
-  snippet-value-conditions-already-generated?
+  snippet-value-conditions-already-generated
   "Regexp matching of list elements will already have generated conditions for all their offspring
    (inside the corresponding qwal query)."
   [snippet value]
-  (or
-    (snippet-value-regexp-offspring? snippet value)
-    (snippet-value-setmatch-offspring? snippet value)
-    (snippet-value-orimplicit-offspring? snippet value)
-    (snippet-value-orsimple-offspring? snippet value)))
-
+  (snippet-value-element-of-list-satisfying snippet value 
+                                            (fn [s l]
+                                              (snippet-list-setmatch? s l))))
+ ; (or
+ ;   (snippet-value-regexp-offspring snippet value)
+ ;   (snippet-value-setmatch-offspring snippet value)
+ ;   ;TODO: ensure these return the actual list
+ ;   (snippet-value-orimplicit-offspring? snippet value)
+ ;   (snippet-value-orsimple-offspring? snippet value)))
 
 (defn
-  snippet-node-matchvarsforprimitiveproperties
+  snippet-node-matchvarsforproperties
   [snippet val]
-  (map
-    (partial snippet/snippet-var-for-node snippet)
-    (filter (fn [child] (snippet/snippet-value-primitive? snippet child))
-            (snippet/snippet-node-children|conceptually snippet val))))
-  
+  (map (partial snippet/snippet-var-for-node snippet)
+       (snippet/snippet-node-children|conceptually snippet val)))
+
+(defn
+  snippet-node-matchvars
+  [snippet node]
+;  (conj
+   (snippet-node-matchvarsforproperties snippet node))
+;    (snippet/snippet-var-for-node snippet node)))
 
 (defn
   snippet-value-freshvars 
   [snippet value]
-    (cond 
-      (snippet/snippet-value-primitive? snippet value)
-      '() ;already generated by owning node
-      (snippet/snippet-value-node? snippet value)
-      (if 
-        (= (snippet/snippet-root snippet) value) 
-        '() ;to be generated by query producer 
-        (cons
-          (snippet/snippet-var-for-node snippet value)
-          (snippet-node-matchvarsforprimitiveproperties snippet value)
-          ))
-         :default
-      (list  (snippet/snippet-var-for-node snippet value)))) ;null values, list values
-      
-     
-(defn 
-  freshornot
-  [vars conditions]
-  (if 
-    (seq conditions)
+  (let [root (snippet/snippet-root snippet)]
     (if 
-      (seq vars)
-      `((cl/fresh [~@vars] ~@conditions))
-      conditions)
-    '()))
-
+      (= root value)
+      ;    (= root (snippet/snippet-node-parent|conceptually snippet value)))
+      '() ;to be generated by query producer 
+      (snippet-node-matchvars snippet value))))   
+  
+;  (cond 
+;    (= (snippet/snippet-root snippet) value) 
+;    '() ;to be generated by query producer 
+;    (snippet/snippet-value-primitive? snippet value)
+;    '() ;already generated by owning node
+;    (astnode/listvalue? snippet value)
+;    (mapcat
+;      (partial snippet-node-matchvars snippet)
+;      (snippet/snippet-value-list-unwrapped snippet value))
+;    (snippet/snippet-list-containing snippet value)
+;    '() ;list elements already generated above
+;    (snippet/snippet-value-node? snippet value)
+;    (snippet-node-matchvars snippet value)
+;    :default
+;    (list (snippet/snippet-var-for-node snippet value)))) ;null values
+      
+    
 (defn
   snippet-node-conditions
   "Returns a list of logic conditions that will retrieve matches for the node and its children."
@@ -1894,7 +1914,7 @@ damp.ekeko.snippets.matching
    & {:keys
       [extraconditions bdfilter generatep extraconditionsafter] 
       :or 
-      {generatep (complement snippet-value-conditions-already-generated?)
+      {generatep (fn [val] (not (snippet-list-setmatch? snippet val)))
        extraconditions (constantly '())
        extraconditionsafter  (constantly '())
        bdfilter identity}}]
@@ -1902,16 +1922,16 @@ damp.ekeko.snippets.matching
         ;snippet snippet-orig 
         snippet snippet]
     (letfn [(conditions [val]
-              (if 
-                (generatep snippet val)
-                (freshornot  (snippet-value-freshvars snippet val) 
-                             (concat 
-                               (extraconditions val)
-                               (snippet-node-conditions|withoutfresh snippet val bdfilter) 
+              (freshornot  (snippet-value-freshvars snippet val) 
+                           (concat 
+                             (extraconditions val)
+                             (snippet-node-conditions|withoutfresh snippet val bdfilter) 
+                             (if 
+                               (generatep val)
                                (mapcat conditions (snippet/snippet-node-children|conceptually snippet val))
-                               (extraconditionsafter val)
-                               ))
-                '()))]
+                               '())
+                             (extraconditionsafter val)
+                             )))]
       (conditions node))))
 
 

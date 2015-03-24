@@ -73,7 +73,7 @@
           uservars
           (snippet/snippet-var-for-root snippet))
         conditionsvars
-        (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet))
+        (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet))
         predvars
         (concat
           publicvars
@@ -176,7 +176,9 @@
                   standaloneconditions
                   (first potentialbodies)
                   conditionsvars
-                  (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet))
+                  (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet))
+                  
+                  
                   predvars
                   (concat
                     publicvars
@@ -258,16 +260,19 @@
            matchvars :matchvars
            uservars :uservars
            } groupqueryinfo
-          ]
+          launchervars
+          (into #{} 
+                (concat matchvars additionalrootvars 
+                        (if hideuservars '() uservars)))]
       (if 
         hideuservars
         `(~ekekolaunchersymbol 
-           [~@matchvars ~@additionalrootvars]
+           [~@launchervars]
            (cl/fresh [~@uservars]
                      ~@conditions
                      ~@additionalconditions))
         `(~ekekolaunchersymbol 
-           [~@matchvars ~@additionalrootvars ~@uservars]
+           [~@launchervars]
            ~@conditions
            ~@additionalconditions)))))
 
@@ -422,7 +427,7 @@
         instantiationconditionsvars
         (mapcat 
           (fn [snippet]
-            (matching/snippet-node-matchvarsforprimitiveproperties snippet (snippet/snippet-root snippet)))
+            (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet)))
           snippets)
             
         

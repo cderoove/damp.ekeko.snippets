@@ -210,7 +210,7 @@ damp.ekeko.snippets.operatorsrep
 (defn
   applicability|multiplicity
   [snippetgroup snippet value]
-  (matching/snippet-value-regexp-element? snippet value))
+  (matching/snippet-value-regexp-element snippet value))
 
 
 (defn
