@@ -158,3 +158,39 @@
 (defn make-dir 
   [path]
   (.mkdir (java.io.File. path)))
+
+(defn trace-element-to-string
+  [e]
+  (let [class (.getClassName e)
+        method (.getMethodName e)] 
+    (let [match (re-matches #"^([A-Za-z0-9_.-]+)\$(\w+)__\d+$" (str class))
+          chunk (if (and match (= "invoke" method))
+                  (apply format "%s/%s" (rest match))
+                  (format "%s.%s" class method))]
+      (str
+        chunk
+        (format " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e))))))
+
+(defn stacktrace-to-string [tr]
+  (let [st (.getStackTrace tr)
+        prefix (str (.getName (class tr)) (.getMessage tr) " at \n")]
+    (str prefix 
+         (apply str 
+                (for [e st]
+                  (str "    " (trace-element-to-string e) "\n"))))))
+
+
+(defn combinations [coll]
+  "Takes a map, where each value is a list of elements.
+   Returns all possible combinations, such that each combination contains one element from each list.
+
+   For example {:a [1 2 3] :b [5 6]}
+   Returns [[1 5] [1 6] [2 5] [2 6] [3 5] [3 6]]"
+  (if (= 1 (count (keys coll)))
+    (for [val ((first (keys coll)) coll)]
+      [val])
+    
+    (let [rest-combinations (combinations (dissoc coll (first (keys coll))))]
+      (for [val ((first (keys coll)) coll)
+            combo rest-combinations]
+        (cons val combo)))))
