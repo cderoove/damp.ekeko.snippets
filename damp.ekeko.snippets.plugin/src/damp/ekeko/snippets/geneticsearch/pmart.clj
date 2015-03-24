@@ -50,6 +50,16 @@
 ;        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
 ;    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
 
+(defn apply-operator-to-root
+  [templategroup snippet operator-id]
+  (let [operator (first (filter 
+                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
+                          (operatorsrep/registered-operators)))
+        subject (snippet/snippet-root snippet)
+        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
+    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
+
+
 (defn apply-operator-to-all-roots
   [templategroup operator-id]
   (loop [tg templategroup
@@ -60,15 +70,6 @@
         (recur 
           (apply-operator-to-root tg snippet operator-id)
           (rest snippets))))))
-
-(defn apply-operator-to-root
-  [templategroup snippet operator-id]
-  (let [operator (first (filter 
-                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
-                          (operatorsrep/registered-operators)))
-        subject (snippet/snippet-root snippet)
-        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
-    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
 
 (defn preprocess-templategroup
   [templategroup]

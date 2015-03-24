@@ -137,9 +137,7 @@
          (do
            (println "Timed out!!")
            (future-cancel future#)
-           nil))
-       (catch Exception x#
-         (throw x#)))))
+           nil)))))
 
 (defn current-time 
   "Returns the current time (as a Unix timestamp)"

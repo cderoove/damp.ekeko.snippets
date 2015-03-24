@@ -234,7 +234,7 @@
           (let [id (util/current-time)
                 sw (new java.io.StringWriter)
                 e (new Exception)]
-            (.printStackTrace e sw)
+;            (.printStackTrace e (new java.io.PrintWriter sw))
             (print "!")
             (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
             (util/log "error"
@@ -242,7 +242,7 @@
                         "!!!" id "---" e
                         "\nTemplate\n"
                         (persistence/snippetgroup-string templategroup)
-                        "\nStacktrace\n"
-                        (.toString sw)
+;                        "\nStacktrace\n"
+;                        (.toString sw)
                         "-----\n\n"))
-            0))))))
+            [0 [0 0]]))))))

@@ -23,17 +23,12 @@
   "Compute the fitness of an individual (if this hasn't been done before)
    and return the individual with its fitness values filled in."
   [individual fitness-func]
-  (try  (if (nil? (:fitness-overall individual))
-         (let [[overall components] (fitness-func (:templategroup individual))]
-           (-> individual
-             (assoc :fitness-overall overall)
-             (assoc :fitness-components components)))
-         individual)
-    
-    (catch Exception e
-      (println "@!")
-      )
-    ))
+  (if (nil? (:fitness-overall individual))
+    (let [[overall components] (fitness-func (:templategroup individual))]
+      (-> individual
+        (assoc :fitness-overall overall)
+        (assoc :fitness-components components)))
+    individual))
 
 (defn individual-templategroup 
   [individual]

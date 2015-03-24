@@ -33,6 +33,16 @@
   [pathrelativetobundle]
   (persistence/slurp-snippet (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
 
+(def experiment-config-default
+  {:max-generations 50
+   :fitness-weights [19/20 1/20]
+   :match-timeout 30000
+   :selection-weight 1/4
+   :mutation-weight 3/4
+   :population-size 20
+   :tournament-rounds 7})
+
+
 (def
   atomic-operators
   (filter 
@@ -109,15 +119,6 @@
              ]))
     (operatorsrep/registered-operators)))
 
-(def experiment-config-default
-  {:max-generations 50
-   :fitness-weights [18/20 2/20]
-   :match-timeout 30000
-   :selection-weight 1/4
-   :mutation-weight 3/4
-   :population-size 20
-   :tournament-rounds 2})
-
 (defn run-experiment
   ([projects config verified]
     ; In this case, the verified matches are also used as initial population..
@@ -153,12 +154,12 @@
    {:max-generations 50}
    ["/resources/EkekoX-Specifications/invokedby.ekt"])
   
-  ; Singleton: From JHotDraw to DesignPatterns
+  ; Singleton: From DesignPatterns to JHotDraw
   (run-experiment-from-files
-   ["DesignPatterns"]
+   [(:jhotdraw pmart/projects)]
    {:max-generations 10}
-   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"]
-   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"]
+   ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"])
   
   ; Singleton: Generalize all instances into one template
   (run-experiment-from-files
@@ -170,22 +171,11 @@
   (run-experiment
     [(pmart/projects :uml)]
     {:max-generations 0
-     :population-size 20}
+     :population-size 5}
     (pmart/pattern-instances-as-templategroups 
       (pmart/parse-pmart-xml)
       [(pmart/projects :uml)]
       "Observer"))
-  
-  
-;  (fitness/templategroup-matches (first (pmart/pattern-instances-as-templategroups 
-;                                         (pmart/parse-pmart-xml)
-;                                         [(pmart/projects :uml)]
-;                                         "Observer")) 6000)
-;  (do (inspector-jay.core/inspect 
-;        (pmart/pattern-instances-as-templategroups 
-;                                          (pmart/parse-pmart-xml)
-;                                          [(pmart/projects :uml)]
-;                                          "Observer")) nil)
   )
 
 ;(deftest
