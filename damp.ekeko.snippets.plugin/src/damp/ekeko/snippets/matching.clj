@@ -321,9 +321,6 @@ damp.ekeko.snippets.matching
 
 (declare  snippet-node-conditions)
 
-;;remove:
-(declare snippet-node-conditions*)
-
 (declare snippet-node-conditions+)
 
 (defn 
@@ -358,10 +355,9 @@ damp.ekeko.snippets.matching
           val-string
           (.toString snippet-val)
           var-match-type
-          (util/gen-lvar 'type)
+          (util/gen-lvar "type")
           ]
       `((cl/conde [~@normalconditions]
-                  
                   [(cl/fresh [~var-match-type]
                              (aststructure/ast|type-type ~var-match ~var-match-type)
                              (structure/type-name|qualified|string ~var-match-type ~val-string))])))))
@@ -419,7 +415,7 @@ damp.ekeko.snippets.matching
                            ;querying/snippet-conditions takes care of this
                            ;using snippet-value-conditions-already-generated? predicate
                            elconditions 
-                           (snippet-node-conditions* template element)
+                           (snippet-node-conditions template element)
                            
                            elconditionsvars
                            (conj (conditions-variables elconditions)
@@ -512,7 +508,7 @@ damp.ekeko.snippets.matching
                            
                     ;these conditions no longer need to be included in the query 
                     elconditions 
-                    (snippet-node-conditions* template element)
+                    (snippet-node-conditions template element)
                            
                     elconditionsvars
                     (conj (conditions-variables elconditions)
@@ -1584,14 +1580,6 @@ damp.ekeko.snippets.matching
   (snippet-value-regexp-offspring-of-list-satisfying snippet value snippet-list-regexp?))
 
 
-(defn
-  snippet-value-setmatch-offspring
-  [snippet value]
-  (let [result (snippet-value-regexp-offspring-of-list-satisfying snippet value snippet-list-setmatch?)]
-    result
-    ))
-
-
 
 (defn
   snippet-value-multiplicity
@@ -1604,56 +1592,16 @@ damp.ekeko.snippets.matching
         (nth (directives/bounddirective-operandbindings mbd) 1))
       "1")))
 
-
-
 (defn
-  snippet-value-offspring-of-value-satisfying?
-  [snippet value satisfyingf]  
-  (loop [val value]
-    (cond
-      (= val (snippet/snippet-root snippet))
-      (and 
-        (not= val value)
-        (satisfyingf val))
-      (astnode/valuelistmember? val)
-      (let [owninglst (snippet/snippet-list-containing snippet val)]
-        (or (satisfyingf owninglst)
-            (recur (snippet/snippet-node-owner snippet val))))
-      :default
-      (or (satisfyingf val)
-          (recur (snippet/snippet-node-owner snippet val))))))
+  snippet-value-directive?
+  "Returns bounddirective for given value corresponding to given directive, if present."
+  [snippet val directive]
+  (if-let [bds (snippet/snippet-bounddirectives-for-node snippet val)]
+    (directives/bounddirective-for-directive 
+      bds
+      directive)))
 
 
-(defn
-  snippet-value-offspring-of-directive
-  [snippet value directive]
-  (snippet-value-offspring-of-value-satisfying?
-    snippet
-    value
-    (fn [val] 
-      (let [bds (snippet/snippet-bounddirectives-for-node snippet val)]
-        (directives/bounddirective-for-directive 
-          bds
-          directive)))))
-
-
-
-(defn
-  snippet-value-orimplicit-offspring?
-  [snippet value]
-  (snippet-value-offspring-of-directive
-    snippet
-    value
-    directive-orimplicit))
-
-
-(defn
-  snippet-value-orsimple-offspring?
-  [snippet value]
-  (snippet-value-offspring-of-directive
-    snippet
-    value
-    directive-orsimple))
 
 ;; Constructing Snippet instances with default matching directives
 ;; ---------------------------------------------------------------
@@ -1844,28 +1792,8 @@ damp.ekeko.snippets.matching
           ]
       (concat conditions-grounding
               conditions-constraining 
-              ;`((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
-              
+              `((damp.ekeko.snippets.geneticsearch.fitness/add-match ~matchvar))
               ))))
-
-
-
-;;TODO: only need to go up one level
-
-(defn
-  snippet-value-conditions-already-generated
-  "Regexp matching of list elements will already have generated conditions for all their offspring
-   (inside the corresponding qwal query)."
-  [snippet value]
-  (snippet-value-element-of-list-satisfying snippet value 
-                                            (fn [s l]
-                                              (snippet-list-setmatch? s l))))
- ; (or
- ;   (snippet-value-regexp-offspring snippet value)
- ;   (snippet-value-setmatch-offspring snippet value)
- ;   ;TODO: ensure these return the actual list
- ;   (snippet-value-orimplicit-offspring? snippet value)
- ;   (snippet-value-orsimple-offspring? snippet value)))
 
 (defn
   snippet-node-matchvarsforproperties
@@ -1873,12 +1801,9 @@ damp.ekeko.snippets.matching
   (map (partial snippet/snippet-var-for-node snippet)
        (snippet/snippet-node-children|conceptually snippet val)))
 
-(defn
+(def
   snippet-node-matchvars
-  [snippet node]
-;  (conj
-   (snippet-node-matchvarsforproperties snippet node))
-;    (snippet/snippet-var-for-node snippet node)))
+  snippet-node-matchvarsforproperties)
 
 (defn
   snippet-value-freshvars 
@@ -1886,26 +1811,9 @@ damp.ekeko.snippets.matching
   (let [root (snippet/snippet-root snippet)]
     (if 
       (= root value)
-      ;    (= root (snippet/snippet-node-parent|conceptually snippet value)))
       '() ;to be generated by query producer 
       (snippet-node-matchvars snippet value))))   
   
-;  (cond 
-;    (= (snippet/snippet-root snippet) value) 
-;    '() ;to be generated by query producer 
-;    (snippet/snippet-value-primitive? snippet value)
-;    '() ;already generated by owning node
-;    (astnode/listvalue? snippet value)
-;    (mapcat
-;      (partial snippet-node-matchvars snippet)
-;      (snippet/snippet-value-list-unwrapped snippet value))
-;    (snippet/snippet-list-containing snippet value)
-;    '() ;list elements already generated above
-;    (snippet/snippet-value-node? snippet value)
-;    (snippet-node-matchvars snippet value)
-;    :default
-;    (list (snippet/snippet-var-for-node snippet value)))) ;null values
-      
     
 (defn
   snippet-node-conditions
@@ -1914,13 +1822,16 @@ damp.ekeko.snippets.matching
    & {:keys
       [extraconditions bdfilter generatep extraconditionsafter] 
       :or 
-      {generatep (fn [val] (not (snippet-list-setmatch? snippet val)))
+      {generatep (fn [val] (not 
+                             (or 
+                               (snippet-list-setmatch? snippet val)
+                               (snippet-value-directive? snippet val directive-orimplicit)
+                               (snippet-value-directive? snippet val directive-orsimple)
+                               (snippet-list-regexp? snippet val))))
        extraconditions (constantly '())
        extraconditionsafter  (constantly '())
        bdfilter identity}}]
-  (let [;snippet (snippet/add-depth-info snippet-orig)
-        ;snippet snippet-orig 
-        snippet snippet]
+  (let [snippet snippet]
     (letfn [(conditions [val]
               (freshornot  (snippet-value-freshvars snippet val) 
                            (concat 
@@ -1938,10 +1849,13 @@ damp.ekeko.snippets.matching
 
 (defn 
   snippet-node-conditions+
-  "Generates default conditions for offspring of node."
+  "Generates default conditions for offspring of node.
+   Assumes fresh variables already exist for immediate children."
   [snippet node]
-  (throw (Exception. "Re-implement caller.")))
-
+  (mapcat
+    (partial snippet-node-conditions snippet)
+    (snippet/snippet-node-children|conceptually snippet node)))
+    
     
    
 
