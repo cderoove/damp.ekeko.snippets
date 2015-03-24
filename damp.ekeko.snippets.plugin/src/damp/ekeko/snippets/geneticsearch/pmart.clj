@@ -40,6 +40,22 @@
            [org.eclipse.core.runtime Status Path]
            [damp.ekeko EkekoModel JavaProjectModel ProjectModel]))
 
+(defn apply-operator-to-root 
+  [templategroup operator-id]
+  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
+        operator (first (filter 
+                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
+                          (operatorsrep/registered-operators)))
+        subject (snippet/snippet-root snippet)
+        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
+    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
+
+(defn preprocess-templategroup
+  [templategroup]
+  (-> templategroup
+    (apply-operator-to-root "erase-comments")
+    (apply-operator-to-root "ignore-comments")))
+
 (defn program [pmart-xml name]
   (let [all-programs (get-in pmart-xml [:content])
         find-program (fn [[head & tail]]
@@ -85,16 +101,16 @@
     (.getCompilationUnit (.findType project cls-name))))
 
 (defn templategroup-from-classes [name project-name class-list]
-  (let [snippets (list (first (for [cls class-list]
-                                (try (-> (find-compilationunit project-name cls)
-                                       damp.ekeko.jdt.astnode/jdt-parse-icu
-                                       .types
-                                       first ; Get the first type declaration in this ICU
-                                       matching/snippet-from-node)
-                                  (catch Exception e (println "!!! Could not parse " cls))))))]
+  (let [snippets (for [cls class-list]
+                   (try (-> (find-compilationunit project-name cls)
+                          damp.ekeko.jdt.astnode/jdt-parse-icu
+                          .types
+                          first ; Get the first type declaration in this ICU
+                          matching/snippet-from-node)
+                     (catch Exception e (println "!!! Could not parse " cls))))]
     (snippetgroup/make-snippetgroup name snippets)))
 
-(defn experiment-generalize-instances [pmart-xml project-names pattern-name]
+(defn pattern-instances-as-templategroups [pmart-xml project-names pattern-name]
   (let [instances (apply concat
                          (for [name project-names]
                            (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
@@ -105,30 +121,15 @@
                                  class-list (for [role (keys pattern-roles-map)]
                                               (first (role pattern-roles-map)))]
                              (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list)))
-                         instances)
-        ]
-    (println "Generated initial templates for" pattern-name "in projects" (str (interpose ", " project-names)))
-;    (let [matches (apply concat 
-;                         (for [templategroup templategroups]
-;                           (fitness/templategroup-matches templategroup 60000)))]
-;      (println "Generated initial population; commencing evolution..")
-;      (search/evolve matches
-;                     :max-generations 0
-;                     :match-timeout 60000)
-;      )
-     templategroups
-    ))
+                         instances)]
+    templategroups
+;     (map
+;       (fn [templategroup] (preprocess-templategroup templategroup))
+;       templategroups)
+     ))
 
-(defn remove-javadoc [templategroup]
-  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
-        operator (first (filter 
-                         (fn [op] 
-                           (some #{(operatorsrep/operator-id op)} ["erase-comments"]))
-                         (operatorsrep/registered-operators)))
-        subject (snippet/snippet-root snippet)
-        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
-    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
-  
+(defn parse-pmart-xml []
+  (clojure.xml/parse (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/P-MARt/P-MARt.xml")))
 
 (def projects 
     {:uml "1 - QuickUML 2001"
@@ -142,23 +143,13 @@
      :pmd "11 - PMD v1.8"})
 
 (comment
-  (test/against-projects-named
-    [(:lexi projects)]
-    false
-    (fn []
-;      (remove-javadoc (templategroup-from-classes "Test" (:lexi projects) ["com.jmonkey.office.lexi.support.ActionManager"]))
-      
-      
-      ))
-  
   
   ; Try to infer an Observer template from a few instances
-  (def pmart-xml (clojure.xml/parse (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/P-MARt/P-MARt.xml")))
-  (def results (experiment-generalize-instances pmart-xml [(:uml projects)] "Observer"))
+  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:uml projects) (:jhotdraw projects)] "Observer"))
   (do (inspector-jay.core/inspect results) nil)
   
-  
-  
+  ; Inspect which patterns are in a project..
+  (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:uml projects)))) nil)
   
   
   (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"]) 5000)
@@ -167,10 +158,6 @@
   
   (inspector-jay.core/inspect
     (remove-javadoc (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"])))
-  
-  (do 
-    (inspector-jay.core/inspect (remove-javadoc (first results)))
-    nil)
   
   (fitness/templategroup-matches (first results) 60000)
   
