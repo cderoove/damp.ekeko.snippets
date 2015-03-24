@@ -306,9 +306,10 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node]
   (and 
     (applicability|name snippetgroup snippet node)
-    (when-let [namebinding (snippet/snippet-node-resolvedbinding snippet node)]
-      (astnode/binding-type? namebinding))))
-
+    ;(if-let [namebinding (snippet/snippet-node-resolvedbinding snippet node)]
+    ;  (astnode/binding-type? namebinding))))
+    (applicability|type snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet node))))
+ 
 (defn
   applicability|typeortypename
   [snippetgroup snippet node]
@@ -316,7 +317,6 @@ damp.ekeko.snippets.operatorsrep
     (applicability|type snippetgroup snippet node)
     (applicability|typename snippetgroup snippet node)))
     
-
 (defn
   applicability|qualifiedtypeorname
   [snippetgroup snippet value]

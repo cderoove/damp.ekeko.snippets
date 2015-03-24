@@ -557,7 +557,7 @@ damp.ekeko.snippets.snippet
       (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
       found))) 
 
-
+;TODO: consider more approximatie implementation, resilient to e.g., indices no longer being correct after deleting element from template list
 (defprotocol 
   IIdentifiesProjectValueForSnippetValue
   (corresponding-projectvalue-for-snippetvalue [identifier snippetrootinproject]
@@ -571,16 +571,17 @@ damp.ekeko.snippets.snippet
   RelativePropertyValueIdentifier
   (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
     (let [ownerid (:ownerid id)
-          property (:property id)
-          owner (corresponding-projectvalue-for-snippetvalue ownerid snippetrootinproject)]
-      (astnode/node-property-value|reified owner property)))
+          property (:property id)]
+      (if-let [owner (corresponding-projectvalue-for-snippetvalue ownerid snippetrootinproject)]
+        (when property
+          (astnode/node-property-value|reified owner property)))))
   RelativeListElementIdentifier
-  (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject]
+  (corresponding-projectvalue-for-snippetvalue [id snippetrootinproject] 
     (let [listid (:listid id)
-          idx (:index id)
-          lst (corresponding-projectvalue-for-snippetvalue listid snippetrootinproject)
-          lst-raw (astnode/value-unwrapped lst)]
-      (.get ^List lst-raw idx))))
+          idx (:index id)]
+      (if-let [lst (corresponding-projectvalue-for-snippetvalue listid snippetrootinproject)]
+        (let [lst-raw (astnode/value-unwrapped lst)]
+          (.get ^List lst-raw idx))))))
 
 
 (def
@@ -590,8 +591,8 @@ damp.ekeko.snippets.snippet
     (fn [snippet value]
       (if-let [rootinproject 
                (snippet-anchor|resolved snippet)]
-        (let [valueid 
-              (snippet-value-identifier snippet value)]
+        (if-let [valueid 
+                 (snippet-value-identifier snippet value)]
           (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))))
 
 
@@ -603,7 +604,8 @@ damp.ekeko.snippets.snippet
       (bindingproducingfn projectnode)))
   ([snippet node]  
     (snippet-node-resolvedbinding 
-      snippet node
+      snippet 
+      node
       (fn [projectnode]
         (let [nodetype (astnode/ekeko-keyword-for-class-of projectnode)]
           (when (some #{nodetype} astnode/ekeko-keywords-for-resolveable-ast-classes)
