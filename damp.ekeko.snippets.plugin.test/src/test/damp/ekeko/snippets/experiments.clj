@@ -118,16 +118,23 @@
    :population-size 20
    :tournament-rounds 2})
 
-(defn run-experiment
+(defn run-experiment-from-files
   ([projects config verifiedmatches-ekt]
-    ; In this case, the verified matches are also used as initial population..
-    (run-experiment projects config verifiedmatches-ekt verifiedmatches-ekt))
+    (run-experiment-from-files projects config verifiedmatches-ekt verifiedmatches-ekt))
   ([projects config initial-population-ekt verifiedmatches-ekt]
+    (run-experiment-from-files projects config
+                               (map snippetgroup-from-resource initial-population-ekt)
+                               (map snippetgroup-from-resource verifiedmatches-ekt))))
+
+(defn run-experiment
+  ([projects config verified]
+    ; In this case, the verified matches are also used as initial population..
+    (run-experiment projects config verified verified))
+  ([projects config initial-population verified]
     (test/against-projects-named 
       projects false
       (fn []
-        (let [initial-population (map snippetgroup-from-resource initial-population-ekt)
-              merged-cfg (merge experiment-config-default config)
+        (let [merged-cfg (merge experiment-config-default config)
               merged-cfg2 (merge merged-cfg 
                                  {:initial-population 
                                   (search/population-from-templates
@@ -135,31 +142,41 @@
                                     (:population-size merged-cfg))})
               verifiedmatches (search/make-verified-matches
                                 (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
-                                        (map snippetgroup-from-resource verifiedmatches-ekt))
+                                        verified)
                                 [])]
           (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))
     ))
 
 (comment
   ; Sanity check
-  (run-experiment
+  (run-experiment-from-files
    ["TestCase-JDT-CompositeVisitor"]
    {:max-generations 50}
    ["/resources/EkekoX-Specifications/invokedby.ekt"])
   
   ; Singleton: From JHotDraw to DesignPatterns
-  (run-experiment
+  (run-experiment-from-files
    ["DesignPatterns"]
    {:max-generations 10}
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"]
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
   ; Singleton: Generalize all instances into one template
-  (run-experiment
+  (run-experiment-from-files
    ["DesignPatterns" (pmart/projects :jhotdraw)]
    {}
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt" 
     "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
+  
+  (run-experiment
+    [(pmart/projects :jhotdraw)]
+    {:max-generations 10}
+    (pmart/pattern-instances-as-templategroups 
+      (pmart/parse-pmart-xml)
+      [(pmart/projects :jhotdraw)]
+      "Observer"))
+  
+  
   )
 
 ;(deftest
