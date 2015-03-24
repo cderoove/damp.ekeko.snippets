@@ -118,14 +118,6 @@
    :population-size 20
    :tournament-rounds 2})
 
-(defn run-experiment-from-files
-  ([projects config verifiedmatches-ekt]
-    (run-experiment-from-files projects config verifiedmatches-ekt verifiedmatches-ekt))
-  ([projects config initial-population-ekt verifiedmatches-ekt]
-    (run-experiment-from-files projects config
-                               (map snippetgroup-from-resource initial-population-ekt)
-                               (map snippetgroup-from-resource verifiedmatches-ekt))))
-
 (defn run-experiment
   ([projects config verified]
     ; In this case, the verified matches are also used as initial population..
@@ -144,8 +136,15 @@
                                 (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
                                         verified)
                                 [])]
-          (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))
-    ))
+          (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))))
+
+(defn run-experiment-from-files
+  ([projects config verifiedmatches-ekt]
+    (run-experiment-from-files projects config verifiedmatches-ekt verifiedmatches-ekt))
+  ([projects config initial-population-ekt verifiedmatches-ekt]
+    (run-experiment projects config
+                    (map snippetgroup-from-resource initial-population-ekt)
+                    (map snippetgroup-from-resource verifiedmatches-ekt))))
 
 (comment
   ; Sanity check
@@ -169,14 +168,24 @@
     "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
   (run-experiment
-    [(pmart/projects :jhotdraw)]
-    {:max-generations 10}
+    [(pmart/projects :uml)]
+    {:max-generations 0
+     :population-size 20}
     (pmart/pattern-instances-as-templategroups 
       (pmart/parse-pmart-xml)
-      [(pmart/projects :jhotdraw)]
+      [(pmart/projects :uml)]
       "Observer"))
   
   
+;  (fitness/templategroup-matches (first (pmart/pattern-instances-as-templategroups 
+;                                         (pmart/parse-pmart-xml)
+;                                         [(pmart/projects :uml)]
+;                                         "Observer")) 6000)
+;  (do (inspector-jay.core/inspect 
+;        (pmart/pattern-instances-as-templategroups 
+;                                          (pmart/parse-pmart-xml)
+;                                          [(pmart/projects :uml)]
+;                                          "Observer")) nil)
   )
 
 ;(deftest
