@@ -40,21 +40,43 @@
            [org.eclipse.core.runtime Status Path]
            [damp.ekeko EkekoModel JavaProjectModel ProjectModel]))
 
-(defn apply-operator-to-root 
-  [templategroup operator-id]
-  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
-        operator (first (filter 
+;(defn apply-operator-to-roots
+;  [templategroup operator-id]
+;  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
+;        operator (first (filter 
+;                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
+;                          (operatorsrep/registered-operators)))
+;        subject (snippet/snippet-root snippet)
+;        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
+;    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
+
+(defn apply-operator-to-root
+  [templategroup snippet operator-id]
+  (let [operator (first (filter 
                           (fn [op] (= (operatorsrep/operator-id op) operator-id))
                           (operatorsrep/registered-operators)))
         subject (snippet/snippet-root snippet)
         bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
     (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
 
+
+(defn apply-operator-to-all-roots
+  [templategroup operator-id]
+  (loop [tg templategroup
+         snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
+    (if (empty? snippets)
+      tg
+      (let [snippet (first snippets)]
+        (recur 
+          (apply-operator-to-root tg snippet operator-id)
+          (rest snippets))))))
+
 (defn preprocess-templategroup
   [templategroup]
   (-> templategroup
-    (apply-operator-to-root "erase-comments")
-    (apply-operator-to-root "ignore-comments")))
+    (apply-operator-to-all-roots "erase-comments")
+    (apply-operator-to-all-roots "ignore-comments")
+    (apply-operator-to-all-roots "ignore-absentvalues")))
 
 (defn program [pmart-xml name]
   (let [all-programs (get-in pmart-xml [:content])
@@ -94,10 +116,7 @@
         project (first (filter 
                         (fn [project]
                           (= project-name (.getElementName project)))
-                        all-projects))
-;        src-roots (first (.getPackageFragmentRoots project))
-;        all-packages (.getChildren src-roots) 
-        ]
+                        all-projects))]
     (.getCompilationUnit (.findType project cls-name))))
 
 (defn templategroup-from-classes [name project-name class-list]
@@ -122,11 +141,8 @@
                                               (first (role pattern-roles-map)))]
                              (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list)))
                          instances)]
-    templategroups
-;     (map
-;       (fn [templategroup] (preprocess-templategroup templategroup))
-;       templategroups)
-     ))
+    (for [x templategroups]
+      (preprocess-templategroup x))))
 
 (defn parse-pmart-xml []
   (clojure.xml/parse (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/P-MARt/P-MARt.xml")))
@@ -145,14 +161,22 @@
 (comment
   
   ; Try to infer an Observer template from a few instances
-  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:uml projects) (:jhotdraw projects)] "Observer"))
+  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:uml projects)] "Observer"))
   (do (inspector-jay.core/inspect results) nil)
+  (fitness/templategroup-matches (first results) 6000)
   
   ; Inspect which patterns are in a project..
   (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:uml projects)))) nil)
   
   
-  (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"]) 5000)
+  (do (inspector-jay.core/inspect (preprocess-templategroup 
+                                   (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"]))) nil)
+  
+  (fitness/templategroup-matches (preprocess-templategroup 
+                                   (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"])) 5000)
+  
+  
+  (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionToolBar"]) 5000)
   
   (inspector-jay.core/inspect (damp.ekeko.jdt.astnode/jdt-parse-icu (find-compilationunit (projects :lexi) "com.jmonkey.office.lexi.support.ActionManager")))
   
