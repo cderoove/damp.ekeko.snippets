@@ -202,10 +202,13 @@
   [templategroup partialmodel timeout]
   (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
             matched-nodes (atom (MatchedNodes. #{} []))]
-    (do
+    (try
       (templategroup-matches templategroup timeout)
       (new-match)
-      (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup))))))
+      (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup)))
+      (catch Exception e
+        (println "Partial match failed!")
+        0))))
 
 (defn
   make-fitness-function
@@ -216,32 +219,15 @@
   [verifiedmatches config]
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
-      (try
-        (let [matches (templategroup-matches templategroup (:match-timeout config))
-              fscore (fmeasure matches verifiedmatches)
-              ;partialscore 0
-              partialscore (partial-matches templategroup partialmodel (:match-timeout config))
-              weights (:fitness-weights config)
-              ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
-              ;            lengthscore (/ 1 (template-size templategroup))
-              ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
-              ]
-          [(+
-             (* (nth weights 0) fscore)
-             (* (nth weights 1) partialscore))
-           [fscore partialscore]])
-        (catch Exception e
-          (let [id (util/current-time)
-                sw (new java.io.StringWriter)
-                e (new Exception)]
-            (print "!")
-            (persistence/spit-snippetgroup (str "error" id ".ekt") templategroup)
-            (util/log "error"
-                      (str 
-                        "!!!" id "---"  (.getName (class e)) (.getMessage e)
-                        "\nTemplate\n"
-                        (persistence/snippetgroup-string templategroup)
-                        "\nStacktrace\n"
-                        (util/stacktrace-to-string e)
-                        "-----\n\n"))
-            [0 [0 0]]))))))
+      (let [matches (templategroup-matches templategroup (:match-timeout config))
+            fscore (fmeasure matches verifiedmatches)
+            partialscore (partial-matches templategroup partialmodel (:match-timeout config))
+            weights (:fitness-weights config)
+            ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
+            ;            lengthscore (/ 1 (template-size templategroup))
+            ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
+            ]
+        [(+
+           (* (nth weights 0) fscore)
+           (* (nth weights 1) partialscore))
+         [fscore partialscore]]))))

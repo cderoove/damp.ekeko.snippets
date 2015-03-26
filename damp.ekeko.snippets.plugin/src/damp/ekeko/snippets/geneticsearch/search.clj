@@ -218,7 +218,7 @@
         
         [operator value] (pick-operator)
         
-        tmp (println (operatorsrep/operator-id operator))
+;        tmp (println (operatorsrep/operator-id operator))
         operands (operatorsrep/operator-operands operator)
         
         operandvalues
@@ -354,7 +354,6 @@
      
      config (merge config-default conf)
      fitness ((:fitness-function config) verifiedmatches config)
-     set-fit (fn [individual] (individual/compute-fitness individual fitness))
      sort-by-fitness (fn [population]
                        (sort-by
                          (fn [x] (individual/individual-fitness x))
@@ -383,7 +382,8 @@
                              [ind (individual/compute-fitness individual fitness)]
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
-                             ind
+                             (if (pos? (individual/individual-fitness ind))
+                               ind)
 ;                             (if (pos? (first (individual/individual-fitness-components ind))) 
 ;                               ind)
                              )))
@@ -391,7 +391,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))

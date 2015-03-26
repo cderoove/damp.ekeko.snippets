@@ -174,8 +174,7 @@
   
   (fitness/templategroup-matches (preprocess-templategroup 
                                    (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"])) 5000)
-  
-  
+    
   (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionToolBar"]) 5000)
   
   (inspector-jay.core/inspect (damp.ekeko.jdt.astnode/jdt-parse-icu (find-compilationunit (projects :lexi) "com.jmonkey.office.lexi.support.ActionManager")))
