@@ -176,7 +176,7 @@ damp.ekeko.snippets.matching
     (if 
       (root-of-snippet? val snippet)
       ;ignore for root, as these are ground independent of a context
-      `(())
+      `()
       (let [var-match (snippet/snippet-var-for-node snippet val)
             conditions-regular ((ground-relativetoparent val) snippet)
             var-match-regular (util/gen-lvar "nonTranMatch")]
@@ -196,7 +196,7 @@ damp.ekeko.snippets.matching
     (if 
       (root-of-snippet? val snippet)
       ;ignore for root, as these are ground independent of a context
-      `(())
+      `()
       (let [var-match (snippet/snippet-var-for-node snippet val)
             conditions-regular ((ground-relativetoparent val) snippet)
             var-match-regular (util/gen-lvar "nonTranMatch")]
@@ -1041,7 +1041,7 @@ damp.ekeko.snippets.matching
     ;   `((cl/fresh [~var-replacementvalue]
      ;              ;to project vars in replacementexp
      ;             (el/equals ~var-replacementvalue ~replacement-exp))))))
-     `(()))) 
+     `())) 
 
 
 (defn
