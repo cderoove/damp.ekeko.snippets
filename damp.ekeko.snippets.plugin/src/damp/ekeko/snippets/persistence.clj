@@ -85,14 +85,18 @@
 
 
 (defn
-  snippet-persistable-directives
+  snippet-persistable-associativeinfo
   [snippet]
   (reduce 
-    (fn [sofar value] 
+    (fn [{bdmap :bdmap 
+          pidmap :pidmap
+          :as sofar} value] 
       (let [bounddirectives
             (snippet/snippet-bounddirectives-for-node snippet value)            
             identifier
-            (snippet/snippet-value-identifier snippet value)]
+            (snippet/snippet-value-identifier snippet value)
+            correspondingprojectvalueidentifier
+            (snippet/snippet-value-projectanchoridentifier snippet value)]
         (when (contains? sofar identifier)
           (throw (Exception. (str "While serializing snippet, encountered duplicate identifier among snippet values:" value identifier))))
         (when 
@@ -101,38 +105,65 @@
         (when 
           (nil? identifier)
           (throw (Exception. (str "While serializing snippet, encountered invalid identifier for snippet value:" value))))
-        (assoc sofar identifier bounddirectives)))
-    {}
+        (-> 
+          sofar
+          (assoc-in [:bdmap identifier] bounddirectives)
+          (assoc-in [:pidmap identifier] correspondingprojectvalueidentifier))))
+    {;bounddirectives
+     :bdmap {} 
+     ;projectidentifiers
+     :pidmap {} 
+     }
     (snippet/snippet-nodes snippet)))
  
+
+
+
+   
+;called from old persisted snippets, for which only the map of bounddirectives was persisted
 (defn
   snippet-from-node-and-persisted-directives
-  ([node data anchor] ;current persistence
-                      (if-let [snippet (snippet-from-node-and-persisted-directives node data)]
-                        (snippet/update-anchor snippet anchor)))
-  ([node data] ;pre-anchor persistence
-               (let [result 
-                     (reduce
-                       (fn [sofar [identifier bounddirectives]]
-                         (let [value 
-                               (snippet/snippet-value-corresponding-to-identifier sofar identifier)
+  ([node data anchor] 
+    (if-let [snippet (snippet-from-node-and-persisted-directives node data)]
+      (snippet/update-anchor snippet anchor)))
+  ([node data] 
+    (let [result 
+          (reduce
+            (fn [sofar [identifier bounddirectives]]
+              (let [value 
+                    (snippet/snippet-value-corresponding-to-identifier sofar identifier)
                                
-                               bounddirectives-with-implicit-operand
-                               (map
-                                 (fn [bounddirective]
-                                   (directives/make-bounddirective
-                                     (directives/bounddirective-directive bounddirective)
-                                     (cons 
-                                       (directives/make-implicit-operand value)
-                                       (directives/bounddirective-operandbindings bounddirective))))
-                                 bounddirectives)
-                               ]
-                           (snippet/update-bounddirectives sofar value bounddirectives-with-implicit-operand)))
-                       (matching/jdt-node-as-snippet node)
-                       (seq data))]
-                 result)))
+                    bounddirectives-with-implicit-operand
+                    (map
+                      (fn [bounddirective]
+                        (directives/make-bounddirective
+                          (directives/bounddirective-directive bounddirective)
+                          (cons 
+                            (directives/make-implicit-operand value)
+                            (directives/bounddirective-operandbindings bounddirective))))
+                      bounddirectives)
+                    ]
+                (snippet/update-bounddirectives sofar value bounddirectives-with-implicit-operand)))
+            (matching/jdt-node-as-snippet node)
+            (seq data))]
+      result)))
 
-    
+
+;new persistence in which a map of associativeinfo is persisted
+(defn
+  snippet-from-node-and-persisted-associativeinfo
+  [node 
+   { bdmap :bdmap ;astid->bounddirectives
+    pidmap :pidmap ;astid->correspondingprojectvalueidentifiers
+   } 
+   anchor]
+  (reduce
+    (fn [sofar [snippetvalueidentifier projectvalueidentifier]]
+      (let [snippetvalue (snippet/snippet-value-corresponding-to-identifier sofar snippetvalueidentifier)]
+        (snippet/update-projectanchoridentifier sofar snippetvalue projectvalueidentifier)))
+    (snippet-from-node-and-persisted-directives node bdmap anchor)
+    (seq pidmap)))
+        
 
 
 (defmethod 
@@ -141,16 +172,16 @@
   [snippet w]
   (let [root 
         (snippet/snippet-root snippet)
-        directives
-        (snippet-persistable-directives snippet)
+        info
+        (snippet-persistable-associativeinfo snippet)
         anchor
         (snippet/snippet-anchor snippet)
         ]
-  (.write ^Writer w (str  "#=" `(snippet-from-node-and-persisted-directives 
-                           ~root
-                           ~directives
-                           ~anchor
-                           )))))
+    (.write ^Writer w (str  "#=" `(snippet-from-node-and-persisted-associativeinfo 
+                                    ~root
+                                    ~info
+                                    ~anchor
+                                    )))))
 
 (defmethod 
   clojure.core/print-dup 

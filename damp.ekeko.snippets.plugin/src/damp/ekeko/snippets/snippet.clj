@@ -36,11 +36,11 @@ damp.ekeko.snippets.snippet
 
 (defrecord 
   Snippet
-  [ast ast2var ast2bounddirectives var2ast ast2meta userquery anchor]
+  [ast ast2var ast2bounddirectives var2ast ast2meta userquery anchor ast2anchoridentifier]
   clojure.core.logic.protocols/IUninitialized ;otherwise cannot be bound to logic var
   (-uninitialized [_]
     (Snippet. 
-      nil nil nil nil nil nil nil)))
+      nil nil nil nil nil nil nil nil)))
 
 
 (defn
@@ -48,7 +48,7 @@ damp.ekeko.snippets.snippet
   "For internal use only. 
    Consider matching/snippet-from-string or matching/snippet-from-node instead."
   [node]
-  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} {} '() nil))
+  (damp.ekeko.snippets.snippet.Snippet. node {} {} {} {} '() nil {}))
 
 (defn 
   snippet-root 
@@ -265,6 +265,12 @@ damp.ekeko.snippets.snippet
   (assoc snippet :anchor anchor))
 
 (defn
+  update-projectanchoridentifier
+  [snippet value projectidentifier]
+  (assoc-in snippet [:ast2anchoridentifier value] projectidentifier))
+                         
+
+(defn
   add-bounddirective
   [snippet node bounddirective]
   (update-in snippet
@@ -324,13 +330,6 @@ damp.ekeko.snippets.snippet
     :default
     []))
 
-;  (filter 
-;    (fn [child]
-;      (=  node (snippet-node-parent|conceptually snippet child)))
-;    (snippet-nodes snippet)))
-
-
-
 (defn 
   walk-snippet-element
   "Performs a recursive descent through a particular snippet element.
@@ -370,66 +369,6 @@ damp.ekeko.snippets.snippet
             :default
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
-
-(defn 
-  walk-snippet-element-track-depth
-  "@see walk-snippet-element
-   Also passes the depth of each node on the function that is called on all nodes in the snippet.
-   That is, f takes two arguments: the node itself and its depth in the tree. (where level 0 is the snippet root)"
-  ([snippet element f]
-    (walk-snippet-element-track-depth snippet element f f f f))
-  ([snippet element node-f list-f primitive-f null-f]
-    (loop
-      [nodes (list element) ; worklist
-       depths (list 0)]
-      (when-not (empty? nodes)
-        (let [val (first nodes)
-              others (rest nodes)
-              cur-depth (first depths)
-              other-depths (rest depths)]
-          (cond 
-            (astnode/ast? val)
-            (do
-              (node-f val cur-depth)
-              (let [children (snippet-node-children|conceptually snippet val)
-                    child-depths (for [x children] (inc cur-depth))]
-                (recur 
-                  (concat children others)
-                  (concat child-depths other-depths))))
-            
-            (astnode/lstvalue? val)
-            (do 
-              (list-f val cur-depth)
-              (let [children (snippet-node-children|conceptually snippet val)
-                    child-depths (for [x children] (inc cur-depth))]
-                (recur 
-                  (concat children others)
-                  (concat child-depths other-depths))))
-            
-            (astnode/primitivevalue? val)
-            (do
-              (primitive-f val cur-depth)
-              (recur others other-depths))
-            
-            (astnode/nilvalue? val)
-            (do
-              (null-f val cur-depth)
-              (recur others other-depths))
-            :default
-            (throw (Exception. (str "Don't know how to walk this value:" val)))
-            ))))))
-
-;(defn add-depth-info 
-;  "Walks over a snippet to add meta-info about the tree depth of each node
-;   (available via (snippet-meta-for-node node :depth) )"
-;  [snippet]
-;  (let [newsnippet (atom snippet)]
-;    (walk-snippet-element-track-depth
-;      @newsnippet
-;      (snippet-root snippet)
-;      (fn [node depth]
-;        (swap! newsnippet update-meta node :depth depth)))
-;    @newsnippet))
 
 (defn 
   walk-snippets-elements
@@ -557,7 +496,14 @@ damp.ekeko.snippets.snippet
       (throw (Exception. (str "While deserializing snippet, could not locate node for identifier in snippet:" identifier snippet)))
       found))) 
 
-;TODO: consider more approximatie implementation, resilient to e.g., indices no longer being correct after deleting element from template list
+
+
+(defn
+  snippet-value-projectanchoridentifier
+  [snippet value]
+  (get-in snippet [:ast2anchoridentifier value]))
+
+
 (defprotocol 
   IIdentifiesProjectValueForSnippetValue
   (corresponding-projectvalue-for-snippetvalue [identifier snippetrootinproject]
@@ -584,16 +530,15 @@ damp.ekeko.snippets.snippet
           (.get ^List lst-raw idx))))))
 
 
-(def
+(defn
   snippet-corresponding-projectvalue-for-snippetvalue
   "Returns the JDT value from the snippet's project anchor that corresponds to the given snippet value, if it still exists."
-  (memoize 
-    (fn [snippet value]
-      (if-let [rootinproject 
-               (snippet-anchor|resolved snippet)]
-        (if-let [valueid 
-                 (snippet-value-identifier snippet value)]
-          (corresponding-projectvalue-for-snippetvalue valueid rootinproject))))))
+  [snippet value]
+  (when-let [id (snippet-value-projectanchoridentifier snippet value)]
+    (println id)
+    (astnode/corresponding-project-value id)))
+
+;(corresponding-projectvalue-for-snippetvalue valueid rootinproject))))))
 
 
 (defn

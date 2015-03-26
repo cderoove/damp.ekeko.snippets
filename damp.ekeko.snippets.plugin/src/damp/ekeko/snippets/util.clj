@@ -78,6 +78,53 @@
             :default
             (throw (Exception. "Don't know how to walk this value."))))))))
 
+
+(defn 
+  walk-jdt-nodes
+  "See walk-jdt-node, but walks two corresponding elements from different nodes simultaneously.
+   Function arguments therefore take pairs of elements, rather than a single element."
+  ([e1 e2 f]
+    (walk-jdt-nodes e1 e2 f f f f))
+  ([e1 e2 node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list [e1 e2])]
+      (when-not (empty? nodes)
+        (let [[v1 v2 :as v] (first nodes)
+              others (rest nodes)]
+          (cond 
+            (astnode/ast? v1)
+            ;;;todo: check v2 is an astnode as well, otherwise throw friendly exception
+            (do
+              (node-f v)
+              (recur 
+                (concat 
+                  (map vector 
+                       (astnode/node-propertyvalues v1)
+                       (astnode/node-propertyvalues v2))
+                  others)))
+            (astnode/lstvalue? v1)
+            (do 
+              (list-f v)
+              (recur (concat
+                       (map vector 
+                            (astnode/value-unwrapped v1)
+                            (astnode/value-unwrapped v2))
+                       others)))
+            (astnode/primitivevalue? v1)
+            (do
+              (primitive-f v)
+              (recur others))
+            (astnode/nilvalue? v1)
+            (do
+              (null-f v)
+              (recur others))
+            :default
+            (throw (Exception. (str "Don't know how to walk this value:" val)))
+            ))))))
+
+
+
+
 ; TODO: Maybe throw an exception after we retried X times? To avoid infinite recursions..
 (defn viable-repeat 
   "Keep on applying func until we get cnt results for which test-func is true

@@ -1706,7 +1706,21 @@ damp.ekeko.snippets.matching
   (->
     (update-in s [:var2ast] dissoc (get-in s [:ast2var value])) 
     (update-in [:ast2var] dissoc value)
-    (update-in [:ast2bounddirectives] dissoc value)))
+    (update-in [:ast2bounddirectives] dissoc value)
+    (update-in [:ast2meta] dissoc value)
+    (update-in [:ast2anchoridentifier] dissoc value)))
+
+
+(defn-
+  jdt-node-anchor
+  [n]
+  (try 
+    (astnode/project-value-identifier n)
+    (catch Exception e 
+      (do 
+        (.printStackTrace e)
+        nil))))
+
 
 (defn 
   add-value-to-snippet
@@ -1718,17 +1732,9 @@ damp.ekeko.snippets.matching
       (assoc-in [:ast2var value] lvar)
       (assoc-in [:ast2bounddirectives value] 
                 (default-bounddirectives snippet value))
-      (assoc-in [:var2ast lvar] value))))
+      (assoc-in [:var2ast lvar] value)
+      )))
 
-(defn-
-  jdt-node-anchor
-  [n]
-  (try 
-    (astnode/project-value-identifier n)
-    (catch Exception e 
-      (do 
-        (.printStackTrace e)
-        nil))))
   
 (defn 
   jdt-node-as-snippet
@@ -1738,11 +1744,14 @@ damp.ekeko.snippets.matching
   [n]
   (let [copy (org.eclipse.jdt.core.dom.ASTNode/copySubtree (.getAST ^ASTNode n) n)
         snippet (atom (snippet/make-snippet copy))]
-    (do 
-      (util/walk-jdt-node 
-        copy
-        (fn [val] (swap! snippet add-value-to-snippet val)))
-      (swap! snippet snippet/update-anchor (jdt-node-anchor n)))
+    (util/walk-jdt-nodes 
+      copy ;copy in snippet 
+      n ;original node in project
+      (fn [[val projectval]] 
+        (let [projectanchor (jdt-node-anchor projectval)]
+          (swap! snippet add-value-to-snippet val)
+          (swap! snippet assoc-in [:ast2anchoridentifier val] projectanchor))))
+    (swap! snippet snippet/update-anchor (jdt-node-anchor n))
     @snippet))
 
 (defn
