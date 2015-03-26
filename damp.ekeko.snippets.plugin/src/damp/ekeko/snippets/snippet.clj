@@ -270,7 +270,6 @@ damp.ekeko.snippets.snippet
   [snippet value projectidentifier]
   (assoc-in snippet [:ast2anchoridentifier value] projectidentifier))
                          
-
 (defn
   add-bounddirective
   [snippet node bounddirective]

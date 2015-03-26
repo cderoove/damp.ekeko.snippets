@@ -244,6 +244,7 @@
   ;while an unbound lstval indicates an error in the generated query
   (cl/fresh [?raw]
             (ast/value-raw ?lstval ?raw)
+            (el/succeeds (> (.size ?raw) ?nth)) 
             (el/equals ?element (.get ?raw ?nth))))
 
 
