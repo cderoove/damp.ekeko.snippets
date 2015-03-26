@@ -173,42 +173,34 @@ damp.ekeko.snippets.matching
   ;arity 0: reside within arbitraty depth for their normal ground-relativetoparent match
   [val]
   (fn [snippet]
-    (if 
-      (root-of-snippet? val snippet)
-      ;ignore for root, as these are ground independent of a context
-      `()
-      (let [var-match (snippet/snippet-var-for-node snippet val)
-            conditions-regular ((ground-relativetoparent val) snippet)
-            var-match-regular (util/gen-lvar "nonTranMatch")]
-        ;these conditions will refer to var-match, therefore shadow var-match
-        ;such that is is completely fresh
-        `((cl/fresh [~var-match-regular]
-                   (cl/fresh [~var-match] 
+    (let [var-match (snippet/snippet-var-for-node snippet val)
+          conditions-regular ((ground-relativetoparent val) snippet)
+          var-match-regular (util/gen-lvar "nonTranMatch")]
+      ;these conditions will refer to var-match, therefore shadow var-match
+      ;such that is is completely fresh
+      `((cl/fresh [~var-match-regular]
+                  (cl/fresh [~var-match] 
                             ~@conditions-regular
                             (cl/== ~var-match ~var-match-regular))
-                   (ast/astorvalue-offspring+ ~var-match-regular ~var-match)))))))
+                  (ast/astorvalue-offspring+ ~var-match-regular ~var-match))))))
 
 ;child* 
 (defn
   ground-relativetoparent*
   [val]
   (fn [snippet]
-    (if 
-      (root-of-snippet? val snippet)
-      ;ignore for root, as these are ground independent of a context
-      `()
-      (let [var-match (snippet/snippet-var-for-node snippet val)
-            conditions-regular ((ground-relativetoparent val) snippet)
-            var-match-regular (util/gen-lvar "nonTranMatch")]
-        ;these conditions will refer to var-match, therefore shadow var-match
-        ;such that is is completely fresh
-        `((cl/fresh [~var-match-regular]
-                   (cl/fresh [~var-match] 
-                            ~@conditions-regular
-                            (cl/== ~var-match ~var-match-regular))
-                   (cl/conde 
-                     [(cl/== ~var-match-regular ~var-match)]
-                     [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)])))))))
+    (let [var-match (snippet/snippet-var-for-node snippet val)
+          conditions-regular ((ground-relativetoparent val) snippet)
+          var-match-regular (util/gen-lvar "nonTranMatch")]
+      ;these conditions will refer to var-match, therefore shadow var-match
+      ;such that is is completely fresh
+      `((cl/fresh [~var-match-regular]
+                  (cl/fresh [~var-match] 
+                           ~@conditions-regular
+                           (cl/== ~var-match ~var-match-regular))
+                  (cl/conde 
+                    [(cl/== ~var-match-regular ~var-match)]
+                    [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)]))))))
 
 
 (defn
