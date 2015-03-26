@@ -30,38 +30,6 @@
   ([template info-map]
     (Individual. template nil nil info-map)))
 
-(defn compute-fitness
-  "Compute the fitness of an individual (if this hasn't been done before)
-   and return the individual with its fitness values filled in."
-  [individual fitness-func]
-  (if (nil? (:fitness-overall individual))
-    (let [[overall components] 
-          (try
-            (fitness-func (:templategroup individual))
-            
-            (catch Exception e
-              (let [id (util/current-time)
-                    tg (individual-templategroup individual)]
-                (print "!")
-                (print (individual-info individual :mutation-operator))
-;                (inspector-jay.core/inspect e)
-                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
-                (util/log "error"
-                          (str 
-                            "!!!" id "---"  (.getName (class e)) (.getMessage e)
-                            "\nMutation operator\n"
-                            (individual-info individual :mutation-operator)
-                            "\nTemplate\n"
-                            (persistence/snippetgroup-string tg)
-                            "\nStacktrace\n"
-                            (util/stacktrace-to-string e)
-                            "-----\n\n"))
-                [0 [0 0]])))]
-      (-> individual
-        (assoc :fitness-overall overall)
-        (assoc :fitness-components components)))
-    individual))
-
 (defn individual-templategroup 
   [individual]
   (:templategroup individual))
@@ -87,3 +55,35 @@
   (let [old-info (:info individual)
         new-info (merge old-info info-map)]
     (assoc individual :info new-info)))
+
+(defn compute-fitness
+  "Compute the fitness of an individual (if this hasn't been done before)
+   and return the individual with its fitness values filled in."
+  [individual fitness-func]
+  (if (nil? (:fitness-overall individual))
+    (let [[overall components] 
+          (try
+            (fitness-func (:templategroup individual))
+            
+            (catch Exception e
+              (let [id (util/current-time)
+                    tg (individual-templategroup individual)]
+                (print "!")
+                (print (individual-info individual :mutation-operator))
+;                (inspector-jay.core/inspect e)
+                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
+                (util/log "error"
+                          (str 
+                            "!!!" id "---"  (.getName (class e)) (.getMessage e)
+                            "\nMutation operator\n"
+                            (individual-info individual :mutation-operator)
+                            "\nTemplate\n"
+                            (persistence/snippetgroup-string tg)
+                            "\nStacktrace\n"
+                            (util/stacktrace-to-string (.getCause e)) ; Because the future in util/with-timeout will wrap the exception..
+                            "-----\n\n"))
+                [0 [0 0]])))]
+      (-> individual
+        (assoc :fitness-overall overall)
+        (assoc :fitness-components components)))
+    individual))

@@ -37,11 +37,11 @@
   (into #{}
         (util/with-timeout timeout 
           (querying/query-by-snippetgroup
-                  templategroup 
-                  'damp.ekeko/ekeko 
-                  `((damp.ekeko.logic/perform (new-match)))
-                  '() 
-                  true))))
+            templategroup 
+            'damp.ekeko/ekeko 
+            `((damp.ekeko.logic/perform (new-match)))
+            '() 
+            true))))
 
 (defn 
   truep
