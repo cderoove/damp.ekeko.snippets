@@ -130,9 +130,7 @@
         (let [merged-cfg (merge experiment-config-default config)
               merged-cfg2 (merge merged-cfg 
                                  {:initial-population 
-                                  (search/population-from-templates
-                                    initial-population
-                                    (:population-size merged-cfg))})
+                                  (search/population-from-templates initial-population (:population-size merged-cfg))})
               verifiedmatches (search/make-verified-matches
                                 (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
                                         verified)
@@ -157,7 +155,7 @@
   ; Singleton: From DesignPatterns to JHotDraw
   (run-experiment-from-files
    [(:jhotdraw pmart/projects)]
-   {:max-generations 10
+   {:max-generations 50
     :mutation-operators search/registered-operators|search}
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"]
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1_alt.ekt"])
@@ -176,8 +174,7 @@
     (pmart/pattern-instances-as-templategroups 
       (pmart/parse-pmart-xml)
       [(pmart/projects :uml)]
-      "Observer"))
-  )
+      "Observer")))
 
 ;(deftest
 ;  ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}

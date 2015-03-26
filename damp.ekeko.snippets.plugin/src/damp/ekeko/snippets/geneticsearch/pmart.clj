@@ -40,16 +40,6 @@
            [org.eclipse.core.runtime Status Path]
            [damp.ekeko EkekoModel JavaProjectModel ProjectModel]))
 
-;(defn apply-operator-to-roots
-;  [templategroup operator-id]
-;  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
-;        operator (first (filter 
-;                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
-;                          (operatorsrep/registered-operators)))
-;        subject (snippet/snippet-root snippet)
-;        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
-;    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
-
 (defn apply-operator-to-root
   [templategroup snippet operator-id]
   (let [operator (first (filter 
@@ -174,8 +164,7 @@
   
   (fitness/templategroup-matches (preprocess-templategroup 
                                    (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"])) 5000)
-  
-  
+    
   (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionToolBar"]) 5000)
   
   (inspector-jay.core/inspect (damp.ekeko.jdt.astnode/jdt-parse-icu (find-compilationunit (projects :lexi) "com.jmonkey.office.lexi.support.ActionManager")))

@@ -50,7 +50,7 @@
             [
              "replace-by-variable"
              "replace-by-wildcard"
-             "remove-node"
+;             "remove-node"
              "add-directive-equals"
              "add-directive-invokes"
              "add-directive-invokedby"
@@ -65,7 +65,7 @@
              "add-directive-type|sname"
              "add-directive-refersto"
              ;untested:
-;             "replace-parent"
+             "replace-parent"
 ;             "erase-comments"
 
              "add-directive-constructs"
@@ -168,24 +168,15 @@
     snippetgroup/snippetgroup-snippetlist
     rand-nth))
 
-(def operator-directive
+(defn operator-directive
   "Retrieve the directive that will be created by an operator
-   !! For now, this relies on the naming convention that the operator's id starts with 'add-'
+   This relies on the naming convention that the operator's id starts with 'add-'
    , followed by the directive's name.."
-  (clojure.core.memoize/memo
-    (fn [operator-id] 
-      (try
-        (let [directive-func-name (subs operator-id 4)]
-         (eval (read-string (str "matching/" directive-func-name))))
-        (catch Exception e nil))))
-  ;  (cond
-  ;    "replace-by-variable" matching/directive-replacedbyvariable
-  ;    "replace-by-exp" matching/directive-replacedbyexp
-  ;    "add-directive-equals" matching/directive-equals
-  ;    "add-directive-invokes" matching/directive-invokes
-  ;    
-  ;    :rest nil)
-  )
+  [operator-id]
+  (try
+    (let [directive-func-name (subs operator-id 4)]
+      (eval (read-string (str "matching/" directive-func-name))))
+    (catch Exception e nil)))
 
 (defn
   mutate
@@ -204,9 +195,8 @@
                 all-valid-nodes (filter
                                   (fn [node] 
                                     (and
-                                      (try (operatorsrep/applicable? snippetgroup snippet node operator)
-                                        (catch Exception e false))
-                                         ; Check that you haven't already applied this operation to this node..
+                                      (operatorsrep/applicable? snippetgroup snippet node operator)
+                                         ; In case of an operator that adds a directive, check that the directive isn't already there..
                                          (not (boolean
                                                 (directives/bounddirective-for-directive
                                                   (snippet/snippet-bounddirectives-for-node snippet node)
@@ -217,8 +207,6 @@
               [operator (rand-nth all-valid-nodes)])))
         
         [operator value] (pick-operator)
-        
-        tmp (println (operatorsrep/operator-id operator))
         operands (operatorsrep/operator-operands operator)
         
         operandvalues
@@ -354,7 +342,6 @@
      
      config (merge config-default conf)
      fitness ((:fitness-function config) verifiedmatches config)
-     set-fit (fn [individual] (individual/compute-fitness individual fitness))
      sort-by-fitness (fn [population]
                        (sort-by
                          (fn [x] (individual/individual-fitness x))
@@ -383,7 +370,8 @@
                              [ind (individual/compute-fitness individual fitness)]
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
-                             ind
+                             (if (pos? (individual/individual-fitness ind))
+                               ind)
 ;                             (if (pos? (first (individual/individual-fitness-components ind))) 
 ;                               ind)
                              )))
@@ -391,7 +379,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -469,7 +457,17 @@
   (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
   (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
   
+  ; Test a particular mutation operator (on a random subject)
+  (do
+    (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (def mutant
+      (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
+              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-directive")) (operatorsrep/registered-operators))))
+    (fitness/templategroup-matches (individual/individual-templategroup mutant) 1000)
+    nil)
   
+  (persistence/spit-snippetgroup "error3.ekt" mutant)
   )
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  
