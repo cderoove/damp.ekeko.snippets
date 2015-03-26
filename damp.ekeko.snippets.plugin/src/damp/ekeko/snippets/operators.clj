@@ -921,7 +921,9 @@ damp.ekeko.snippets.operators
       node
       (fn [[destval srcval]] 
         (let [srcbds
-              (snippet/snippet-bounddirectives-for-node snippet srcval) 
+              (snippet/snippet-bounddirectives-for-node snippet srcval)
+              srcpid
+              (snippet/snippet-value-projectanchoridentifier snippet srcval)
               destbds
               (map
                 (fn [bounddirective]
@@ -931,7 +933,11 @@ damp.ekeko.snippets.operators
                       (directives/make-implicit-operand destval)
                       (rest (directives/bounddirective-operandbindings bounddirective)))))
                    srcbds)]
-          (swap! destination snippet/update-bounddirectives  destval destbds))))
+          (swap! destination snippet/update-bounddirectives destval destbds)
+          (swap! destination snippet/update-projectanchoridentifier destval srcpid)
+          )))
+    (swap! destination snippet/update-anchor 
+           (snippet/snippet-value-projectanchoridentifier snippet (snippet/snippet-root snippet))) 
     (snippetgroup/snippetgroup-update-snippetlist
       snippetgroup
       (conj 
