@@ -369,7 +369,9 @@ damp.ekeko.snippets.operators
               "type|sname" (directives/make-bounddirective matching/directive-subtype*|sname bdops)
               "type|qname" (directives/make-bounddirective matching/directive-subtype*|qname bdops)
               bd))))
-      (relax-scope-to-child* snippet node))))
+      (if (astnode/lstvalue? node) ; Because child* can't be applied to list nodes!
+        snippet
+        (relax-scope-to-child* snippet node)))))
 
 (defn
   remove-directive

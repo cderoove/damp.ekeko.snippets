@@ -2,7 +2,9 @@
   ^{:doc "Auxiliary functions for snippet-driven querying."
     :author "Coen De Roover, Siltvani, Tim Molderez."}
   damp.ekeko.snippets.util
-  (:require [damp.ekeko.jdt [astnode :as astnode]]))
+  (:require [damp.ekeko.jdt [astnode :as astnode]])
+  (:import (java.util.concurrent TimeoutException TimeUnit FutureTask)
+           (clojure.lang LispReader$ReaderException)))
 
 (defn
   class-simplename
@@ -125,19 +127,35 @@
         (str (apply str (interpose ";" vals)) "\n") 
         :append true :create true))
 
-; Source: http://stackoverflow.com/questions/6694530/executing-a-function-with-a-timeout/6697469#6697469
-(defmacro with-timeout
-  "Execute the given body in a new future.
-   A TimeoutException is thrown if the execution takes longer than a certain amount of milliseconds."
-  [millis & body]
-  `(let [future# (future ~@body)]
-     (try
-       (.get future# ~millis java.util.concurrent.TimeUnit/MILLISECONDS)
-       (catch java.util.concurrent.TimeoutException x# 
-         (do
-           (println "Timed out!!")
-           (future-cancel future#)
-           nil)))))
+; Source: https://github.com/flatland/clojail/blob/master/src/clojail/core.clj#L40
+(defn thunk-timeout
+  "Takes a function and an amount of time to wait for thse function to finish
+   executing. The sandbox can do this for you. unit is any of :ns, :us, :ms,
+   or :s which correspond to TimeUnit/NANOSECONDS, MICROSECONDS, MILLISECONDS,
+   and SECONDS respectively."
+  ([thunk ms]
+     (thunk-timeout thunk ms :ms nil)) ; Default to milliseconds, because that's pretty common.
+  ([thunk time unit]
+     (thunk-timeout thunk time unit nil))
+  ([thunk time unit tg]
+     (let [task (FutureTask. thunk)
+           thr (if tg (Thread. tg task) (Thread. task))]
+       (try
+         (.start thr)
+         (.get task time TimeUnit/MILLISECONDS)
+         (catch TimeoutException e
+           (.cancel task true)
+           (.stop thr) 
+           (throw (TimeoutException. "Execution timed out.")))
+         (catch Exception e
+           (.cancel task true)
+           (.stop thr) 
+           (throw e))
+         (finally (when tg (.stop tg)))))))
+
+(defmacro with-timeout [time & body]
+  "Apply this macro to an expression and an exception is thrown if it takes longer than a given time to evaluate the expression" 
+  `(thunk-timeout (fn [] ~@body) ~time))
 
 (defn current-time 
   "Returns the current time (as a Unix timestamp)"
@@ -173,7 +191,7 @@
 
 (defn stacktrace-to-string [tr]
   (let [st (.getStackTrace tr)
-        prefix (str (.getName (class tr)) (.getMessage tr) " at \n")]
+        prefix (str (.getName (class tr)) " " (.getMessage tr) " at \n")]
     (str prefix 
          (apply str 
                 (for [e st]

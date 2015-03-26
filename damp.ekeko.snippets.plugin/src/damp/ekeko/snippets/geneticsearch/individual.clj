@@ -74,14 +74,16 @@
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 
-                            "!!!" id "---"  (.getName (class e)) (.getMessage e)
-                            "\nMutation operator\n"
+                            "!!! " id " --- " (.getMessage e)
+                            "\n--- Mutation operator\n"
                             (individual-info individual :mutation-operator)
-                            "\nTemplate\n"
+                            "\n--- Mutation subject\n"
+                            (individual-info individual :mutation-node)
+                            "\n--- Template\n"
                             (persistence/snippetgroup-string tg)
-                            "\nStacktrace\n"
+                            "\n--- Stacktrace\n"
                             (util/stacktrace-to-string (.getCause e)) ; Because the future in util/with-timeout will wrap the exception..
-                            "-----\n\n"))
+                            "################\n\n"))
                 [0 [0 0]])))]
       (-> individual
         (assoc :fitness-overall overall)

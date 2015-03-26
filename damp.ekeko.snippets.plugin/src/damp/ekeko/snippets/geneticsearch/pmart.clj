@@ -40,16 +40,6 @@
            [org.eclipse.core.runtime Status Path]
            [damp.ekeko EkekoModel JavaProjectModel ProjectModel]))
 
-;(defn apply-operator-to-roots
-;  [templategroup operator-id]
-;  (let [snippet (first (snippetgroup/snippetgroup-snippetlist templategroup))
-;        operator (first (filter 
-;                          (fn [op] (= (operatorsrep/operator-id op) operator-id))
-;                          (operatorsrep/registered-operators)))
-;        subject (snippet/snippet-root snippet)
-;        bindings (operatorsrep/make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
-;    (operatorsrep/apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
-
 (defn apply-operator-to-root
   [templategroup snippet operator-id]
   (let [operator (first (filter 
