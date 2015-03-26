@@ -259,6 +259,7 @@ damp.ekeko.snippets.snippet
              (fn [oldbounddirectives] 
                bounddirectives)))
 
+;todo: deprecate, projectanchoridentifier for root node already recorded
 (defn
   update-anchor 
   [snippet anchor]
