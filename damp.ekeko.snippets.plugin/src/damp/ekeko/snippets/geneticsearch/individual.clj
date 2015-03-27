@@ -70,7 +70,7 @@
                     tg (individual-templategroup individual)]
                 (print "!")
                 (print (individual-info individual :mutation-operator))
-;                (inspector-jay.core/inspect e)
+                (inspector-jay.core/inspect e)
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 
@@ -82,7 +82,9 @@
                             "\n--- Template\n"
                             (persistence/snippetgroup-string tg)
                             "\n--- Stacktrace\n"
-                            (util/stacktrace-to-string (.getCause e)) ; Because the future in util/with-timeout will wrap the exception..
+                            (if (nil? (.getCause e))
+                              "No cause available.."
+                              (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
                             "################\n\n"))
                 [0 [0 0]])))]
       (-> individual

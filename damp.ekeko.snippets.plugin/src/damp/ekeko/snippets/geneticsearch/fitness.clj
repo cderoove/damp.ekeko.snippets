@@ -30,18 +30,25 @@
 
 (declare new-match)
 
+
+(defrecord MatchedNodes
+  [in-progress ; Set of nodes that have matched in the current attempt to match with a snippet
+   done        ; List of how many nodes matched in the previous attempts
+   ])
+
+(def ^:dynamic matched-nodes (atom (MatchedNodes. #{} [])))
+
 (defn templategroup-matches
   "Given a templategroup, look for all of its matches in the code
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
-  [templategroup timeout]
+  [templategroup]
   (into #{}
-        (util/with-timeout timeout 
-          (querying/query-by-snippetgroup
-            templategroup 
-            'damp.ekeko/ekeko 
-            `((damp.ekeko.logic/perform (new-match)))
-            '() 
-            true))))
+        (querying/query-by-snippetgroup
+          templategroup 
+          'damp.ekeko/ekeko 
+          `((damp.ekeko.logic/perform (new-match)))
+          '() 
+          true)))
 
 (defn 
   truep
@@ -138,12 +145,6 @@
 
 
 
-(defrecord MatchedNodes
-  [in-progress ; Set of nodes that have matched in the current attempt to match with a snippet
-   done        ; List of how many nodes matched in the previous attempts
-   ])
-
-(def ^:dynamic matched-nodes (atom (MatchedNodes. #{} [])))
 
 (defn partialmatch-score
   "Compute the partial matching score of the last templategroup that we tried to match
@@ -157,7 +158,7 @@
       0
       (let [score (/ (apply max partial-matches) node-count)]
         (if (> score 1)
-          (println "!@!%" @matched-nodes)
+          (println "!Partial matching score cannot > 1" @matched-nodes)
           score)))))
 
 (defn register-match [match]
@@ -199,11 +200,11 @@
     partialmodel))
 
 (defn partial-matches
-  [templategroup partialmodel timeout]
+  [templategroup partialmodel]
   (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
             matched-nodes (atom (MatchedNodes. #{} []))]
     (try
-      (templategroup-matches templategroup timeout)
+      (templategroup-matches templategroup)
       (new-match)
       (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup)))
       (catch Exception e
@@ -219,9 +220,9 @@
   [verifiedmatches config]
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
-      (let [matches (templategroup-matches templategroup (:match-timeout config))
+      (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup)) 
             fscore (fmeasure matches verifiedmatches)
-            partialscore (partial-matches templategroup partialmodel (:match-timeout config))
+            partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel))
             weights (:fitness-weights config)
             ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ;            lengthscore (/ 1 (template-size templategroup))

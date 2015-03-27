@@ -379,7 +379,7 @@
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
-;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -435,27 +435,24 @@
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (def matches (fitness/templategroup-matches templategroup 10000))
+  (def matches (fitness/templategroup-matches templategroup))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 5
+          :max-generations 30
           :fitness-weights [18/20 2/20]
           :match-timeout 8000
           :selection-weight 1/4
           :mutation-weight 3/4
-          :population-size 10
+          :population-size 20
           :tournament-rounds 7)
-  
-  (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates templategroup 'damp.ekeko/ekeko true))
-  (fitness/templategroup-matches templategroup 10000) 
+    
+  (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
+  (fitness/templategroup-matches templategroup) 
   @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
   (count (snippetgroup/snippetgroup-nodes templategroup))
   
   (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
-  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))) 10000)
+  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))))
   
   ; Test a particular mutation operator (on a random subject)
   (do
@@ -464,10 +461,10 @@
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
               (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-directive")) (operatorsrep/registered-operators))))
-    (fitness/templategroup-matches (individual/individual-templategroup mutant) 1000)
+    (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   
-  (persistence/spit-snippetgroup "error3.ekt" mutant)
+  (persistence/spit-snippetgroup "error3.ekt" (individual/individual-templategroup mutant))
   )
 ;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
 ;; todo: gewone a* search  

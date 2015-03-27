@@ -132,7 +132,7 @@
                                  {:initial-population 
                                   (search/population-from-templates initial-population (:population-size merged-cfg))})
               verifiedmatches (search/make-verified-matches
-                                (mapcat (fn [x] (into [] (fitness/templategroup-matches x (:match-timeout merged-cfg))))
+                                (mapcat (fn [x] (into [] (fitness/templategroup-matches x)))
                                         verified)
                                 [])]
           (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))))
@@ -183,8 +183,8 @@
 ;  (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt") 
 ;        singleton2 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt")
 ;        matches (concat 
-;                  (into [] (fitness/templategroup-matches singleton1 10000))
-;                  (into [] (fitness/templategroup-matches singleton2 10000))
+;                  (into [] (fitness/templategroup-matches singleton1))
+;                  (into [] (fitness/templategroup-matches singleton2))
 ;                  )
 ;        verifiedmatches (search/make-verified-matches matches [])]
 ;    (println "Starting...")

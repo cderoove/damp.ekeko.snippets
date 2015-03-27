@@ -261,9 +261,9 @@
            uservars :uservars
            } groupqueryinfo
           launchervars
-          (into #{} 
-                (concat matchvars additionalrootvars 
-                        (if hideuservars '() uservars)))]
+          (distinct 
+            (concat matchvars additionalrootvars 
+                    (if hideuservars '() uservars)))]
       (if 
         hideuservars
         `(~ekekolaunchersymbol 

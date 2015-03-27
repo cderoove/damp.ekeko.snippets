@@ -153,7 +153,7 @@
   ; Try to infer an Observer template from a few instances
   (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:uml projects)] "Observer"))
   (do (inspector-jay.core/inspect results) nil)
-  (fitness/templategroup-matches (first results) 6000)
+  (fitness/templategroup-matches (first results))
   
   ; Inspect which patterns are in a project..
   (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:uml projects)))) nil)
@@ -163,16 +163,16 @@
                                    (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"]))) nil)
   
   (fitness/templategroup-matches (preprocess-templategroup 
-                                   (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"])) 5000)
+                                   (templategroup-from-classes "Test" (:uml projects) ["diagram.tool.ToolListener"])))
     
-  (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionToolBar"]) 5000)
+  (fitness/templategroup-matches (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionToolBar"]))
   
   (inspector-jay.core/inspect (damp.ekeko.jdt.astnode/jdt-parse-icu (find-compilationunit (projects :lexi) "com.jmonkey.office.lexi.support.ActionManager")))
   
   (inspector-jay.core/inspect
     (remove-javadoc (templategroup-from-classes "Test" (projects :lexi) ["com.jmonkey.office.lexi.support.ActionManager"])))
   
-  (fitness/templategroup-matches (first results) 60000)
+  (fitness/templategroup-matches (first results))
   
   (clojure.pprint/pprint (querying/snippetgroup-query|usingpredicates (first results) 'damp.ekeko/ekeko true))
   
