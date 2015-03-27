@@ -50,7 +50,7 @@
             [
              "replace-by-variable"
              "replace-by-wildcard"
-;             "remove-node"
+             "remove-node"
              "add-directive-equals"
              "add-directive-invokes"
              "add-directive-invokedby"
@@ -65,20 +65,20 @@
              "add-directive-type|sname"
              "add-directive-refersto"
              ;untested:
-             "replace-parent"
+;             "replace-parent"
 ;             "erase-comments"
 
-             "add-directive-constructs"
-             "add-directive-constructedby"
+;             "add-directive-constructs"
+;             "add-directive-constructedby"
              "add-directive-overrides"
              "generalize-directive"
              "remove-directive"
-;             "extract-template"
-             "generalize-references"
-             "generalize-types"
-             "generalize-types|qname"
-             "generalize-invocations"
-             "generalize-constructorinvocations"
+             "extract-template"
+;             "generalize-references"
+;             "generalize-types"
+;             "generalize-types|qname"
+;             "generalize-invocations"
+;             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 

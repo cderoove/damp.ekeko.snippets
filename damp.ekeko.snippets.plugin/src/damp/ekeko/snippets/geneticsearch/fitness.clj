@@ -202,7 +202,8 @@
 (defn partial-matches
   [templategroup partialmodel]
   (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
-            matched-nodes (atom (MatchedNodes. #{} []))]
+            matched-nodes (atom (MatchedNodes. #{} []))
+            matching/*partial-matching* true]
     (try
       (templategroup-matches templategroup)
       (new-match)

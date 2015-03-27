@@ -109,6 +109,8 @@
                         all-projects))]
     (.getCompilationUnit (.findType project cls-name))))
 
+
+
 (defn templategroup-from-classes [name project-name class-list]
   (let [snippets (for [cls class-list]
                    (try (-> (find-compilationunit project-name cls)
@@ -127,11 +129,14 @@
         templategroups (map-indexed
                          (fn [idx [project-name instance]]
                            (let [pattern-roles-map (pattern-roles instance)
-                                 class-list (for [role (keys pattern-roles-map)]
-                                              (first (role pattern-roles-map)))]
-                             (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list)))
+                                 class-lists (inspector-jay.core/inspect (util/combinations pattern-roles-map))
+;                                 (for [role (keys pattern-roles-map)]
+;                                   (first (role pattern-roles-map)))
+                                 ]
+                             (for [class-list class-lists]
+                               (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list))))
                          instances)]
-    (for [x templategroups]
+    (for [x (mapcat identity templategroups)]
       (preprocess-templategroup x))))
 
 (defn parse-pmart-xml []
@@ -151,12 +156,16 @@
 (comment
   
   ; Try to infer an Observer template from a few instances
-  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:uml projects)] "Observer"))
+  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:jhotdraw projects)] "Strategy"))
   (do (inspector-jay.core/inspect results) nil)
   (fitness/templategroup-matches (first results))
   
+  (doseq [x results]
+    (println (count (snippetgroup/snippetgroup-nodes x))))
+  
   ; Inspect which patterns are in a project..
-  (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:uml projects)))) nil)
+  (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:jhotdraw projects)))) nil)
+  
   
   
   (do (inspector-jay.core/inspect (preprocess-templategroup 

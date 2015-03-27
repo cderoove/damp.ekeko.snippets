@@ -1045,11 +1045,8 @@ damp.ekeko.snippets.operators
               valueclass
               (astnode/property-descriptor-child-node-class ownerproperty)]
           (when (some #{(astnode/ekeko-keyword-for-class valueclass)} docclasskeywords)
-             (println "swapping nil")
             (swap! newsnippet replace-by-wildcard nullvalue)))))
     @newsnippet))
-
-
 
 (defn
   ignore-absentvalues
