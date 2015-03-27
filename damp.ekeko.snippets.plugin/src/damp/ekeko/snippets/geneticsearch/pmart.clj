@@ -98,7 +98,7 @@
         values (for [role roles]
                  (for [cls (:content role)]
                    (first (:content (first (:content cls))))))]
-    (zipmap keys values)))
+    (dissoc (zipmap keys values) nil)))
 
 (defn find-compilationunit [^String project-name ^String cls-name]
   "Find a compilation unit, given an Eclipse project name and an absolute class name"
@@ -118,8 +118,10 @@
                           .types
                           first ; Get the first type declaration in this ICU
                           matching/snippet-from-node)
-                     (catch Exception e (println "!!! Could not parse " cls))))]
-    (snippetgroup/make-snippetgroup name snippets)))
+                     (catch Exception e
+                       (println "!!! Could not parse " cls)
+                       nil)))]
+    (snippetgroup/make-snippetgroup name (remove (fn [x] (nil? x)) snippets))))
 
 (defn pattern-instances-as-templategroups [pmart-xml project-names pattern-name]
   (let [instances (apply concat
@@ -129,7 +131,7 @@
         templategroups (map-indexed
                          (fn [idx [project-name instance]]
                            (let [pattern-roles-map (pattern-roles instance)
-                                 class-lists (inspector-jay.core/inspect (util/combinations pattern-roles-map))
+                                 class-lists (util/combinations pattern-roles-map)
 ;                                 (for [role (keys pattern-roles-map)]
 ;                                   (first (role pattern-roles-map)))
                                  ]
@@ -145,8 +147,8 @@
 (def projects 
     {:uml "1 - QuickUML 2001"
      :lexi "2 - Lexi v0.1.1 alpha"
-     :refactoring "3 - JRefactory v2.6.24"
-     :netbeans "4 - Netbeans v1.0.x"
+;     :refactoring "3 - JRefactory v2.6.24"
+;     :netbeans "4 - Netbeans v1.0.x"
      :junit "5 - JUnit v3.7"
      :jhotdraw "6 - JHotDraw v5.1"
      :mapperxml "8 - MapperXML v1.9.7"
@@ -156,12 +158,21 @@
 (comment
   
   ; Try to infer an Observer template from a few instances
-  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:jhotdraw projects)] "Strategy"))
+  (def results (pattern-instances-as-templategroups (parse-pmart-xml) [(:pmd projects)] "Observer"))
   (do (inspector-jay.core/inspect results) nil)
   (fitness/templategroup-matches (first results))
   
   (doseq [x results]
     (println (count (snippetgroup/snippetgroup-nodes x))))
+  
+  ; Print number of nodes for all design pattern instances in all projects..
+  (doseq [project-key (keys projects)]
+    (let [patterns (pattern-instances (program (parse-pmart-xml) (project-key projects)))]
+      (doseq [pattern-key (keys patterns)]
+        (util/log "pmart" (str (project-key projects) "---" (name pattern-key)))
+        (doseq [tg (pattern-instances-as-templategroups (parse-pmart-xml) [(project-key projects)] (name pattern-key))]
+          (util/log "pmart" (count (snippetgroup/snippetgroup-nodes tg)))
+          (print ".")))))
   
   ; Inspect which patterns are in a project..
   (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:jhotdraw projects)))) nil)

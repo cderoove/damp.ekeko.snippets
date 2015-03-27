@@ -253,8 +253,7 @@
    Returns [[1 5] [1 6] [2 5] [2 6] [3 5] [3 6]]"
   (if (= 1 (count (keys coll)))
     (for [val ((first (keys coll)) coll)]
-      [val])
-    
+      [val])  
     (let [rest-combinations (combinations (dissoc coll (first (keys coll))))]
       (for [val ((first (keys coll)) coll)
             combo rest-combinations]

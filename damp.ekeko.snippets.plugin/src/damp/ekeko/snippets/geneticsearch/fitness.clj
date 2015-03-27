@@ -56,7 +56,7 @@
   [matches verifiedmatches]
   (clojure.set/intersection matches (:positives verifiedmatches)))
 
-(defn 
+(defn
   falsep
   "False positives; how many results were incorrectly considered relevant"
   [matches verifiedmatches]
