@@ -26,10 +26,9 @@
              [astnode :as astnode]
              [rewrites :as rewrites]
              ])
-  (:require [damp.ekeko])
-  (:require [damp.ekeko.logic :as el]))    
-
-
+  (:require [damp.ekeko
+             [gui]
+             [logic :as el]]))
 
 
 (defn
@@ -93,6 +92,25 @@
       (let [editor (damp.ekeko.gui/workbench-editor)]
         (when (instance? damp.ekeko.snippets.gui.TemplateEditor editor)
           (.getGroup (.getGroup editor)))))))
+
+(defn-
+  editor-on-snippetgroup
+  [snippetgroup]
+  (let [page (damp.ekeko.gui/workbench-activepage)
+        activeeditor (.getActiveEditor page)
+        editorid (damp.ekeko.snippets.gui.TemplateEditor/ID)
+        openededitor (.openEditor page (damp.ekeko.snippets.gui.TemplateEditorInput.) editorid)]
+    (doto
+      openededitor
+      (.setPreviouslyActiveEditor activeeditor)
+      (.setGroup (damp.ekeko.snippets.data.TemplateGroup/newFromClojureGroup snippetgroup)))))
+
+(defn
+  open-editor-on-snippetgroup
+  "Opens an editor on the given snippetgroup."
+  [snippetgroup]
+  (damp.ekeko.gui/eclipse-uithread-return (fn [] (editor-on-snippetgroup snippetgroup))))
+
 
 (defn
   snippetgroup-from-file
