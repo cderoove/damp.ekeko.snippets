@@ -1009,7 +1009,8 @@ damp.ekeko.snippets.operators
     (fn [newsnippet child]
       (remove-node newsnippet child))
     snippet
-    (snippet/snippet-node-children|conceptually snippet value)))
+    ;copy into seq to avoid NoSuchElementException
+    (into [] (snippet/snippet-node-children|conceptually snippet value))))
 
 
 (defn
