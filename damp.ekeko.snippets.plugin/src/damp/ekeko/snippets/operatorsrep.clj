@@ -225,6 +225,14 @@ damp.ekeko.snippets.operatorsrep
        (matching/snippet-list-regexp? snippet value)))))
 
 (defn
+  applicability|child+*
+  [snippetgroup snippet value]
+  (and
+    (applicability|nonroot snippetgroup snippet value)
+    (complement applicability|lst)))
+
+
+(defn
   applicability|regexplst
   "Verifies that value is a list, but has not been replaced by a wildcard."
   [snippetgroup snippet value]
@@ -879,7 +887,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Use child+ as matching scope."
      opscope-subject
-     (complement applicability|lst)
+     applicability|child+*
      "Match is nested within the corresponding child of the parent match."
      []
      false)
@@ -890,7 +898,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Use child* as matching scope (child or child+)."
      opscope-subject
-     (complement applicability|lst)
+     applicability|child+*
      "Matches are the corresponding child of the parent match, or nested within it."
      []
      false)
