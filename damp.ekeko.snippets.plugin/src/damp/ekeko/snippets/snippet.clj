@@ -192,8 +192,8 @@ damp.ekeko.snippets.snippet
   "Returns true for snippet values that are wrapped lists."
   [snippet val]
   (boolean 
-    ;(if-let [value (snippet-value snippet val)] ;;too expensive
-    (astnode/lstvalue? val))) 
+    (if-let [value (snippet-value snippet val)] ;;too expensive
+      (astnode/lstvalue? value)))) 
 
 (defn
   snippet-value-list-unwrapped
