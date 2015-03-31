@@ -2,6 +2,9 @@
   ^{:doc "Representation of an individual within a population, to be used in genetic search algorithms."
      :author "Tim Molderez"}
   damp.ekeko.snippets.geneticsearch.individual
+  (:require [damp.ekeko]
+            [damp.ekeko.jdt
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -12,7 +15,9 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]
-             [transformation :as transformation]]))
+             [transformation :as transformation]])
+  (:import [damp.ekeko JavaProjectModel]
+           [org.eclipse.jdt.core.dom AST]))
 
 (defrecord 
   ^{:doc "An individual in a population"}
@@ -68,25 +73,42 @@
             (catch Exception e
               (let [id (util/current-time)
                     tg (individual-templategroup individual)]
-                (print "!")
-                (print (individual-info individual :mutation-operator))
-                (inspector-jay.core/inspect e)
-                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
+                (println "!")
+;                (println "-" (individual-info individual :mutation-node))
+                
+                (inspector-jay.core/inspect [id individual e])
+                
+;                (throw e)
+                
+;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
+                
+                
+                
+                
+;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
+
+;                (binding [astnode/*ast-for-newlycreatednodes* (AST/newAST JavaProjectModel/JLS)] 
+;                              (persistence/spit-snippetgroup (str "error" id ".ekt") tg))
                 (util/log "error"
                           (str 
                             "!!! " id " --- " (.getMessage e)
+                            (snippetgroup/snippetgroup-name tg) 
                             "\n--- Mutation operator\n"
                             (individual-info individual :mutation-operator)
                             "\n--- Mutation subject\n"
                             (individual-info individual :mutation-node)
+                            "\n--- Mutation operand values\n"
+                            (individual-info individual :mutation-opvals)
                             "\n--- Template\n"
                             (persistence/snippetgroup-string tg)
                             "\n--- Stacktrace\n"
                             (if (nil? (.getCause e))
                               "No cause available.."
                               (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
-                            "################\n\n"))
-                [0 [0 0]])))]
+                            "\n################\n\n"))
+                (throw e)
+                ;[0 [0 0]]
+                )))]
       (-> individual
         (assoc :fitness-overall overall)
         (assoc :fitness-components components)))

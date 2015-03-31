@@ -64,15 +64,16 @@
              "add-directive-type|qname"
              "add-directive-type|sname"
              "add-directive-refersto"
+             "erase-list"
              ;untested:
 ;             "replace-parent"
 ;             "erase-comments"
 
-;             "add-directive-constructs"
-;             "add-directive-constructedby"
+             "add-directive-constructs"
+             "add-directive-constructedby"
              "add-directive-overrides"
              "generalize-directive"
-             "remove-directive"
+;             "remove-directive"
              "extract-template"
 ;             "generalize-references"
 ;             "generalize-types"
@@ -113,23 +114,6 @@
   (VerifiedMatches. (into #{} positives)
                     (into #{} negatives)))
 
-;(defn
-;  make-verified-matches
-;  "Create a record of verified matches, consisting of a number of positive and negative matches.
-;   The positive ones are those that the resulting template must match;
-;   the negative one are those it may not match."
-;  [positives negatives]
-;  (let [to-templates 
-;        (fn [matches]
-;          (map-indexed
-;            (fn [idx snippet]
-;              (snippetgroup/make-snippetgroup 
-;                (str "Offspring of snippet " idx) (map matching/snippet-from-node snippet)))
-;            matches))]
-;    (make-verified-templates (to-templates positives) (to-templates negatives))))
-
-
-
 (defn
   individual-from-snippet
   ([snippet]
@@ -145,6 +129,7 @@
    (In case population-size is larger than the number of matches,
     we cycle through the matches again until the population is filled..)"
   [matches population-size]
+  (assert (not (empty? matches)) "Empty initial population! Is Ekeko enabled on the right project?")
   (let [id-templates 
         (map-indexed
           (fn [idx snippet] 
@@ -185,7 +170,7 @@
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
-        ;group-copy snippetgroup ; I think we still need to make a copy to be safe.. Otherwise we can get stuck mutating a template over and over and it always has fitness 0..
+;        group-copy snippetgroup ; I think we still need to make a copy to be safe.. Otherwise we can get stuck mutating a template over and over and it always has fitness 0..
         snippet (rand-snippet group-copy)
         
         pick-operator
@@ -226,9 +211,9 @@
                operandvalues))]
     (individual/make-individual
       (operatorsrep/apply-operator-to-snippetgroup group-copy snippet value operator bindings)
-      {:mutation-operator (operatorsrep/operator-id operator)
-       :mutation-node value
-       :mutation-opvals operandvalues}
+      {:mutation-operator (conj (individual/individual-info individual :mutation-operator) (operatorsrep/operator-id operator))
+       :mutation-node (conj (individual/individual-info individual :mutation-node) value)
+       :mutation-opvals (conj (individual/individual-info individual :mutation-opvals) operandvalues)}
       )))
 
 (defn- node-expected-class
@@ -312,18 +297,6 @@
   (let [size (count population)]
     (nth population
          (apply max (repeatedly tournament-size #(rand-int size))))))
-
-;(defn- correct-implicit-operands?
-;  [snippetgroup]
-;  (reduce (fn [sofar node]
-;            (and 
-;              sofar
-;              (every? (fn [bd]
-;                        (let [implOp (first (.getOperandBindings bd))]
-;                          (= (.getValue implOp) node)))
-;                      (snippet/snippet-bounddirectives-for-node node))))
-;          true
-;          (mapcat snippet/snippet-nodes snippetgroup)))
 
 (defn
   evolve
@@ -417,7 +390,7 @@
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (util/viable-repeat 
+                         (util/parallel-viable-repeat 
                            (* (/ (:crossover-weight config) 2) (count population))
                            #(map preprocess
                                  (crossover
@@ -426,25 +399,48 @@
                            (fn [x] (not (some? nil? x)))))
                   
                   ; Selection
-                  (util/viable-repeat 
+                  (util/parallel-viable-repeat 
                     (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
-                    (fn [x] true))))
+                    (fn [ind] (pos? (individual/individual-fitness ind))))))
               @new-history)))))))
 
 (comment
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (def matches (fitness/templategroup-matches templategroup))
+  (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
           :max-generations 30
           :fitness-weights [18/20 2/20]
-          :match-timeout 8000
+          :match-timeout 12000
           :selection-weight 1/4
           :mutation-weight 3/4
-          :population-size 20
+          :population-size 5
           :tournament-rounds 7)
+  
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (def matches (into [] (fitness/templategroup-matches templategroup)))
+  (nth (population-from-snippets matches 5) 4)
+  
+  
+  (inspector-jay.core/inspect (nth (population-from-snippets matches 4 )))
+  (inspector-jay.core/inspect (nth matches 4))
+  
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/vardecl2.ekt"))
+  
+  
+  
+  (util/parallel-viable-repeat
+    20
+    (fn [] (persistence/copy-snippetgroup templategroup))
+    (fn [x] true))
+  
+  (pmap 
+    (fn [x]  (persistence/copy-snippetgroup templategroup))
+    (range 0 20))
     
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
   (fitness/templategroup-matches templategroup) 
@@ -460,7 +456,9 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-directive")) (operatorsrep/registered-operators))))
+              registered
+;              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-directive")) (operatorsrep/registered-operators))
+              ))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   

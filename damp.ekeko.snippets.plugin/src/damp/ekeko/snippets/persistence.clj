@@ -24,7 +24,8 @@
  ;        make-list-element-identifier
  ;        ]]) ;for future reference: also supports :rename
   (:import 
-    [java.io Writer] 
+    [java.io Writer]
+    [org.eclipse.jdt.core.dom BodyDeclaration Expression Statement ASTNode ASTParser AST CompilationUnit]
     [java.util List]
     [damp.ekeko.snippets
      BoundDirective
@@ -271,7 +272,16 @@
   [snippet]
   (let [s (snippet-as-persistent-string snippet)
         copy (snippet-from-persistent-string s)]
-    copy))
+    copy)
+  
+;  (binding
+;    [astnode/*ast-for-newlycreatednodes* (AST/newAST JavaProjectModel/JLS)]
+;    )
+  
+  
+  
+ 
+  )
   
 
 (def

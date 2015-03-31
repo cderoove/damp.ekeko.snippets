@@ -145,6 +145,24 @@
            result 
            (recur)))))))
 
+(defn parallel-viable-repeat
+  "Keep on applying func until we get cnt results for which test-func is true
+   (This variation of viable-repeat produces all results concurrently.)
+   @param cnt  We want this many viable results
+   @param func  The function to apply repeatedly (has no args)
+   @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
+   @return a list of cnt viable results"
+  [cnt func test-func]
+  (pmap
+    (fn [idx]
+      (loop []
+       (let [result (func)]
+         (print ".")
+         (if (test-func result)
+           result 
+           (recur)))))
+    (range 0 cnt)))
+
 (defn average
   "Calculate the average in a collection of numbers"
   [coll]
@@ -152,7 +170,7 @@
 
 (defmacro dbg
   "Identity function, that prints x as a side-effect"
-  [x] 
+  [x]
   `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
 (def log-enabled true)
@@ -177,13 +195,9 @@
 ; Source: https://github.com/flatland/clojail/blob/master/src/clojail/core.clj#L40
 (defn thunk-timeout
   "Takes a function and an amount of time to wait for thse function to finish
-   executing. The sandbox can do this for you. unit is any of :ns, :us, :ms,
-   or :s which correspond to TimeUnit/NANOSECONDS, MICROSECONDS, MILLISECONDS,
-   and SECONDS respectively."
+   executing."
   ([thunk ms]
      (thunk-timeout thunk ms :ms nil)) ; Default to milliseconds, because that's pretty common.
-  ([thunk time unit]
-     (thunk-timeout thunk time unit nil))
   ([thunk time unit tg]
      (let [task (FutureTask. thunk)
            thr (if tg (Thread. tg task) (Thread. task))]

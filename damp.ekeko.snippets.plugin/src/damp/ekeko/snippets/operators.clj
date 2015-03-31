@@ -375,13 +375,13 @@ damp.ekeko.snippets.operators
 
 (defn
   remove-directive
-  "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"
   [snippet node directive-name]
   (let [new-bds
         (remove (fn [bd] (= directive-name 
                             (directives/directive-name (directives/bounddirective-directive bd))))
                 (snippet/snippet-bounddirectives-for-node snippet node))]
     (snippet/update-bounddirectives snippet node new-bds)))
+; TODO Careful when using in gensearch; might remove implicit directives!
 
 (defn
   remove-node
