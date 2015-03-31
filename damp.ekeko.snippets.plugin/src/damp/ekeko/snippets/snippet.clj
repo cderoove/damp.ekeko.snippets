@@ -73,7 +73,9 @@ damp.ekeko.snippets.snippet
   "For the given AST node of the given snippet, returns the name of the logic
    variable that will be bound to a matching AST node from the Java project."
   [snippet snippet-node]
-  (get-in snippet [:ast2var snippet-node]))
+  (if-let [result (get-in snippet [:ast2var snippet-node])]
+    result
+    (throw (Exception. (str "No match variable for snippet value: " snippet-node)))))
 
 (defn
   snippet-var-for-root
