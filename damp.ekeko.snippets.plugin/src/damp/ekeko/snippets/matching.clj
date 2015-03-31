@@ -37,6 +37,11 @@ damp.ekeko.snippets.matching
   (el/succeeds (astnode/nilvalue? ?value)))
 
 (defn
+  nongrounding-value|list
+  [?value]
+  (el/succeeds (astnode/lstvalue? ?value)))
+
+(defn
   nongrounding-has
   [?keyw ?owner ?value]
   (cl/conda 
@@ -74,6 +79,9 @@ damp.ekeko.snippets.matching
 
 ;(def value|null `ast/value|null)
 (def value|null `nongrounding-value|null)
+
+(def value|list `nongrounding-value|list)
+
 
 
 (def to-modifier-keyword `runtime/to-modifier-keyword)
@@ -285,7 +293,8 @@ damp.ekeko.snippets.matching
               (astnode/value-unwrapped snippet-val)
               snippet-list-size 
               (.size ^List lst)]
-          `((runtime/list-size ~var-match ~snippet-list-size)))
+          `((~nongrounding-value|list ~var-match)
+             (runtime/list-size ~var-match ~snippet-list-size)))
         ;constrain primitive values
         (astnode/primitivevalue? snippet-val)
         (let [exp 
@@ -592,9 +601,10 @@ damp.ekeko.snippets.matching
                                   `((runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar))
                                   elconditions
                                   (generate remaininglstvar (rest elements)))))))]
-        `((cl/fresh [~listrawvar]
-                    (~value-raw ~lstvar ~listrawvar)
-                    ~@(generate listrawvar elements)))))))
+        `((~nongrounding-value|list ~lstvar)
+           (cl/fresh [~listrawvar]
+                     (~value-raw ~lstvar ~listrawvar)
+                     ~@(generate listrawvar elements)))))))
 
 
 (defn
@@ -609,7 +619,7 @@ damp.ekeko.snippets.matching
           template-list-size 
           (.size ^List lst)
           var-match-raw (util/gen-lvar "lstraw")]
-      `(;(ast/value|list ~var-match)
+      `((~nongrounding-value|list ~var-match)
          (cl/fresh [~var-match-raw] 
                    (~value-raw ~var-match ~var-match-raw)
                    (el/succeeds (>= (.size ~var-match-raw) ~template-list-size)))))))
@@ -625,6 +635,7 @@ damp.ekeko.snippets.matching
           [(~value|null ~var-match)]
           [(cl/fresh [~stmts-match]
                      (~has :statements ~var-match ~stmts-match)
+                     (~nongrounding-value|list ~stmts-match)
                      (damp.ekeko.snippets.runtime/list-size ~stmts-match 0))
            ]
           )))))
