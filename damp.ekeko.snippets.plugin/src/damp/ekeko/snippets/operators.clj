@@ -350,28 +350,27 @@ damp.ekeko.snippets.operators
 (defn
   generalize-directive
   "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"
-  [snippet node]
+  [snippet node directive-name]
   (let [bds
         (snippet/snippet-bounddirectives-for-node snippet node)
-        has-explicit-directive
-        (some (fn [bd]
-                (let [bdname (directives/directive-name (directives/bounddirective-directive bd))]
-                  (or (= bdname "type") (= bdname "type|sname") (= bdname "type|qname"))))
-              bds)]
-    (if has-explicit-directive
+        
+        process-directive
+        (fn [cur-directive-name bd new-bd]
+          (let [bdops (.getOperandBindings bd)]
+            (if (= cur-directive-name directive-name)
+             (directives/make-bounddirective new-bd bdops)
+             bd)))]
+    (if (and (= directive-name "child") (not (astnode/lstvalue? node)))
+      (relax-scope-to-child* snippet node)
       (snippet/update-bounddirectives 
         snippet node
         (for [bd bds]
-          (let [bdname (directives/directive-name (directives/bounddirective-directive bd))
-                bdops (.getOperandBindings bd)] 
+          (let [bdname (directives/directive-name (directives/bounddirective-directive bd))] 
             (case bdname
-              "type" (directives/make-bounddirective matching/directive-subtype* bdops)
-              "type|sname" (directives/make-bounddirective matching/directive-subtype*|sname bdops)
-              "type|qname" (directives/make-bounddirective matching/directive-subtype*|qname bdops)
-              bd))))
-      (if (astnode/lstvalue? node) ; Because child* can't be applied to list nodes!
-        snippet
-        (relax-scope-to-child* snippet node)))))
+              "type" (process-directive bdname bd matching/directive-subtype*)
+              "type|sname" (process-directive bdname bd matching/directive-subtype*|sname)
+              "type|qname" (process-directive bdname bd matching/directive-subtype*|qname)
+              bd)))))))
 
 (defn
   remove-directive

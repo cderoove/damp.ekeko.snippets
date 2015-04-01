@@ -15,8 +15,7 @@ damp.ekeko.snippets.operatorsrep
              [parsing :as parsing]
              [matching :as matching]
              [snippetgroup :as snippetgroup]
-             [util :as util]
-             ])
+             [util :as util]])
   (:import 
     [java.util Map]
     [damp.ekeko JavaProjectModel]
@@ -39,6 +38,7 @@ damp.ekeko.snippets.operatorsrep
 
 (def opscope-nodeclasskeyw :nodeclasskeyw) ;operand scope for ekeko keyword for node class 
 
+(def opscope-directive :directive) ; operand scope denoting the id of a directive
 (def opscope-string :string)
 (def opscope-subjectlistidx :subjectlistidx) ;0 till size exclusive
 (def opscope-incsubjectlistidx :incsubjectlistidx);0 till size inclusive
@@ -911,7 +911,7 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      (complement applicability|lst)
      "Changes an existing directive into its more general variant. (e.g. type becomes type*)"
-     []
+     [(make-operand "Directive name" opscope-directive validity|directivename)]
      false)
    
    (Operator. 
@@ -922,7 +922,7 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|always
      "Removes a directive, given its name."
-     [(make-operand "Directive name" opscope-string validity|directivename)]
+     [(make-operand "Directive name" opscope-directive validity|directivename)]
      false)
    
    (Operator. 
@@ -1498,6 +1498,24 @@ damp.ekeko.snippets.operatorsrep
     (map damp.ekeko.snippets.directives/directive-name (matching/registered-directives))
     ; default case
     []))
+
+(defmethod
+  possible-operand-values
+  opscope-directive
+  [snippetgroup snippet node operator operand]
+  (let [node-directives
+        (distinct (for [bd (snippet/snippet-bounddirectives-for-node snippet node)]
+                    (damp.ekeko.snippets.directives/directive-name 
+                      (damp.ekeko.snippets.directives/bounddirective-directive bd))))]
+    
+    (case (operator-id operator)
+     "remove-directive"
+     (remove (fn [x] (or (= x "child") (= x "match"))) 
+             node-directives)
+     "generalize-directive"
+     (clojure.set/intersection #{"child" "type" "type|sname" "type|qname"} (into #{} node-directives))
+    ; default case
+    [])))
 
 (defmethod
   possible-operand-values

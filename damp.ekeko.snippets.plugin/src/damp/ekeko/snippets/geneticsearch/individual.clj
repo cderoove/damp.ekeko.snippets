@@ -78,11 +78,7 @@
                 
                 (inspector-jay.core/inspect [id individual e])
                 
-;                (throw e)
-                
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
-                
-                
                 
                 
 ;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
