@@ -45,6 +45,13 @@ damp.ekeko.snippets.operatorsrep
 (def opscope-multiplicity :multiplicity) ;match multiplicity (int, *, +)
 
 
+(defn-
+  ekekokeyword-owningproperty?
+  [value keyword]
+  (when-let [ownerprop (astnode/owner-property value)]
+   (and (= keyword (astnode/ekeko-keyword-for-property-descriptor ownerprop)))))
+
+
 (defn
   applicability|always
   [snippetgroup snippet value] 
@@ -87,7 +94,8 @@ damp.ekeko.snippets.operatorsrep
     (applicability|methoddeclaration snippetgroup snippet value)
     (and
       (applicability|name snippetgroup snippet value)
-      (applicability|methoddeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
+      (applicability|methoddeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
+      (ekekokeyword-owningproperty? value :name))))
 
 
 (defn 
@@ -97,6 +105,7 @@ damp.ekeko.snippets.operatorsrep
        (some #{(astnode/ekeko-keyword-for-class-of value)}
              [:MethodInvocation :SuperMethodInvocation])))
 
+
 (defn 
   applicability|methodinvocationorname
   [snippetgroup snippet value]
@@ -104,9 +113,10 @@ damp.ekeko.snippets.operatorsrep
     (applicability|methodinvocation snippetgroup snippet value)
     (and
       (applicability|name snippetgroup snippet value)
-      (applicability|methodinvocation snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
+      (applicability|methodinvocation snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
+      (ekekokeyword-owningproperty? value :name))))
 
- 
+
 (defn
   applicability|constructorinvocation 
   [snippetgroup snippet value]
@@ -129,7 +139,8 @@ damp.ekeko.snippets.operatorsrep
     (applicability|constructor snippetgroup snippet value)
     (and
       (applicability|name snippetgroup snippet value)
-      (applicability|constructor snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value)))))
+      (applicability|constructor snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
+      (ekekokeyword-owningproperty? value :name))))
 
 
 (defn
@@ -246,20 +257,15 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value]
   (and 
     (applicability|regexplst snippetgroup snippet value)
-    (when-let [ownerprop (astnode/owner-property value)]
-      (= "statements" (astnode/property-descriptor-id ownerprop)))))
-
+    (ekekokeyword-owningproperty? value :statements)))
+    
 (defn
   applicability|receiver
   [snippetgroup snippet value]
   (and
     (applicability|node snippetgroup snippet value)
-    (when-let [owner (astnode/owner value)]
-      (and (= :MethodInvocation (astnode/ekeko-keyword-for-class-of owner))
-           (when-let [ownerprop (astnode/owner-property value)]
-             (and (= :expression (astnode/ekeko-keyword-for-property-descriptor ownerprop))))))))
-          
-
+    (applicability|methodinvocation snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
+    (ekekokeyword-owningproperty? value :expression)))      
          
 (defn
   applicability|vardeclaration
@@ -271,7 +277,9 @@ damp.ekeko.snippets.operatorsrep
             [:VariableDeclarationFragment :SingleVariableDeclaration])
       (and
         (applicability|name snippetgroup snippet value)
-        (applicability|vardeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))))
+        (applicability|vardeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
+        (ekekokeyword-owningproperty? value :name)
+        ))))
 
   
 (defn
@@ -316,7 +324,8 @@ damp.ekeko.snippets.operatorsrep
     (applicability|name snippetgroup snippet node)
     ;(if-let [namebinding (snippet/snippet-node-resolvedbinding snippet node)]
     ;  (astnode/binding-type? namebinding))))
-    (applicability|type snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet node))))
+    (applicability|type snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet node))
+    (ekekokeyword-owningproperty? node :name)))
  
 (defn
   applicability|typeortypename
