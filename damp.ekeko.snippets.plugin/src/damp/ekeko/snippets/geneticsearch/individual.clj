@@ -17,7 +17,12 @@
              [directives :as directives]
              [transformation :as transformation]])
   (:import [damp.ekeko JavaProjectModel]
+           [java.util.concurrent TimeoutException]
            [org.eclipse.jdt.core.dom AST]))
+
+(def errors (new java.util.Vector))
+(defn clear-errors [] 
+  (-> errors .clear))
 
 (defrecord 
   ^{:doc "An individual in a population"}
@@ -70,6 +75,9 @@
           (try
             (fitness-func (:templategroup individual))
             
+            (catch TimeoutException e
+              (println "!(timeout)")
+              [0 [0 0]])
             (catch Exception e
               (let [id (util/current-time)
                     tg (individual-templategroup individual)]
@@ -77,12 +85,10 @@
 ;                (println "-" (individual-info individual :mutation-node))
                 
                 (inspector-jay.core/inspect [id individual e])
+                (-> errors (.add [id individual e]))
                 
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
-                
-                
 ;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
-
 ;                (binding [astnode/*ast-for-newlycreatednodes* (AST/newAST JavaProjectModel/JLS)] 
 ;                              (persistence/spit-snippetgroup (str "error" id ".ekt") tg))
                 (util/log "error"

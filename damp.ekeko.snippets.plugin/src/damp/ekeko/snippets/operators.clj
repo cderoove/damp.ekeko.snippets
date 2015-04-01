@@ -761,6 +761,7 @@ damp.ekeko.snippets.operators
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
       (let [itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
+            tmp (assert (not (nil? itype)))
             qnamestring (.getFullyQualifiedName itype)
             typevar (util/gen-lvar "type")]
         (generic-generalize-types snippetgroup snippet node
@@ -841,11 +842,11 @@ damp.ekeko.snippets.operators
                 newtemplatesandcounts 
                 (map (fn [snippet] (addinvokes snippet binding referredvar))
                      (snippetgroup/snippetgroup-snippetlist snippetgroup))
-                foobar
-                (println newtemplatesandcounts)
+;                foobar
+;                (println newtemplatesandcounts)
                 counts
                 (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
-            (println newtemplatesandcounts)
+;            (println newtemplatesandcounts)
             (when (> (apply + counts) 1) 
               (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts)))))))))
 

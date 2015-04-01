@@ -66,20 +66,20 @@
              "add-directive-refersto"
              "erase-list"
              ;untested:
-;             "replace-parent"
+             "replace-parent"
 ;             "erase-comments"
 
              "add-directive-constructs"
              "add-directive-constructedby"
              "add-directive-overrides"
              "generalize-directive"
-;             "remove-directive"
+             "remove-directive"
              "extract-template"
 ;             "generalize-references"
-;             "generalize-types"
-;             "generalize-types|qname"
+             "generalize-types"
+             "generalize-types|qname"
 ;             "generalize-invocations"
-;             "generalize-constructorinvocations"
+             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -188,19 +188,17 @@
                                                   (operator-directive (operatorsrep/operator-id operator)))))))
                                   (snippet/snippet-nodes snippet))]
             (if (empty? all-valid-nodes)
-              (recur)
-              [operator (rand-nth all-valid-nodes)])))
+              (recur) ; Try again if there are no valid subjects..
+              (let [subject (rand-nth all-valid-nodes)
+                    operands (operatorsrep/operator-operands operator)
+                    possiblevalues (for [operand operands]
+                                     (operatorsrep/possible-operand-values|valid snippetgroup snippet subject operator operand))]
+                (if (every? (fn [x] (not (empty? x))) possiblevalues)
+                [operator subject operands (for [vals possiblevalues] (rand-nth vals))]
+                (recur)))))) ; Try again if there are operands with no possible values..
         
-        [operator value] (pick-operator)
-        operands (operatorsrep/operator-operands operator)
-        
-        operandvalues
-        (map
-          (fn [operand]
-            (rand-nth
-              (operatorsrep/possible-operand-values|valid
-                    group-copy snippet value operator operand)))
-          operands)
+        [operator value operands operandvalues] 
+        (pick-operator)
         
         bindings
         (cons
@@ -363,12 +361,12 @@
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
-        (util/make-dir (str output-dir "/" generation))
-        (doall (map-indexed
-                 (fn [idx individual]
-                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
-                                                  (individual/individual-templategroup individual))) 
-                 population))
+;        (util/make-dir (str output-dir "/" generation))
+;        (doall (map-indexed
+;                 (fn [idx individual]
+;                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
+;                                                  (individual/individual-templategroup individual))) 
+;                 population))
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
@@ -390,7 +388,7 @@
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (util/parallel-viable-repeat 
+                         (util/viable-repeat 
                            (* (/ (:crossover-weight config) 2) (count population))
                            #(map preprocess
                                  (crossover
@@ -399,7 +397,7 @@
                            (fn [x] (not (some? nil? x)))))
                   
                   ; Selection
-                  (util/parallel-viable-repeat 
+                  (util/viable-repeat 
                     (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
                     (fn [ind] (pos? (individual/individual-fitness ind))))))
@@ -407,7 +405,7 @@
 
 (comment
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
@@ -416,7 +414,7 @@
           :match-timeout 12000
           :selection-weight 1/4
           :mutation-weight 3/4
-          :population-size 5
+          :population-size 10
           :tournament-rounds 7)
   
   (def templategroup

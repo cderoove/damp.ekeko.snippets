@@ -458,7 +458,7 @@ damp.ekeko.snippets.operatorsrep
            (<= operandvalue (.size lst-raw))))))
 
 (defn validity|directivename
-  [snippetgroup snippet value operandvalue]
+  [snippetgroup snippet value operandvalue]  
   (some (fn [dir]
           (= operandvalue (damp.ekeko.snippets.directives/directive-name dir)))
         (matching/registered-directives)))
