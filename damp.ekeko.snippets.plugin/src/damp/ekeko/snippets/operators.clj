@@ -760,23 +760,23 @@ damp.ekeko.snippets.operators
   "Generalizes all references in the snippetgroup that refer to the same type as the given type reference."
   (if-let [binding (snippet/snippet-node-resolvedbinding snippet node)]
     (when (astnode/binding-type? binding)
-      (let [itype (.getJavaElement binding) ;getting name through IType rather than IBinding to mimick matching process
-            tmp (assert (not (nil? itype)))
-            qnamestring (.getFullyQualifiedName itype)
-            typevar (util/gen-lvar "type")]
-        (generic-generalize-types snippetgroup snippet node
-                                  (fn [snippetsofar resolvingnode] ;only lowest-level resolving nodes
-                                    (let [newsnippet
-                                          (add-directive-type
-                                            (replace-by-wildcard snippetsofar resolvingnode)  
-                                            resolvingnode 
-                                            typevar)]
-                                      (if 
-                                        (or (= node resolvingnode)
-                                            ;otherwise directive-type|qname can be added to parent of the one to which type was added before 
-                                            (= node (snippet/snippet-node-parent|conceptually snippet resolvingnode))) 
-                                        (add-directive-type|qname newsnippet resolvingnode qnamestring)
-                                        newsnippet))))))))
+      ;getting name through IType rather than IBinding to mimick matching process
+      (if-let [itype (.getJavaElement binding)] 
+        (let[qnamestring (.getFullyQualifiedName itype)
+             typevar (util/gen-lvar "type")]
+          (generic-generalize-types snippetgroup snippet node
+                                    (fn [snippetsofar resolvingnode] ;only lowest-level resolving nodes
+                                      (let [newsnippet
+                                            (add-directive-type
+                                              (replace-by-wildcard snippetsofar resolvingnode)  
+                                              resolvingnode 
+                                              typevar)]
+                                        (if 
+                                          (or (= node resolvingnode)
+                                              ;otherwise directive-type|qname can be added to parent of the one to which type was added before 
+                                              (= node (snippet/snippet-node-parent|conceptually snippet resolvingnode))) 
+                                          (add-directive-type|qname newsnippet resolvingnode qnamestring)
+                                          newsnippet)))))))))
 
 ;;mogelijke varianten voor in de toekomst
 ;;1ste: overal type* ipv type inserten, vraag: object zou niet teruggeven mogen worden door type*?, nut? type->type* kan ook atomisch gebeuren
