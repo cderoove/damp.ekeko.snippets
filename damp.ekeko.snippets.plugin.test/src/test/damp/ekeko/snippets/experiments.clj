@@ -145,6 +145,14 @@
                     (map snippetgroup-from-resource initial-population-ekt)
                     (map snippetgroup-from-resource verifiedmatches-ekt))))
 
+(defn run-pmart-experiment
+  [projects pattern]
+  (run-experiment
+    projects
+    {:max-generations 10
+     :population-size 5}
+    (pmart/pattern-instances-as-templategroups (pmart/parse-pmart-xml) projects pattern)))
+
 (comment
   ; Sanity check
   (run-experiment-from-files
@@ -167,14 +175,9 @@
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt" 
     "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
-  (run-experiment
-    [(pmart/projects :uml)]
-    {:max-generations 0
-     :population-size 5}
-    (pmart/pattern-instances-as-templategroups 
-      (pmart/parse-pmart-xml)
-      [(pmart/projects :uml)]
-      "Observer")))
+  (run-pmart-experiment [(pmart/projects :mapperxml)] "Singleton")
+  
+  )
 
 ;(deftest
 ;  ^{:doc "Try to infer the general template of the TemplateGroup pattern scam_demo1.ekx's left-hand-side template"}

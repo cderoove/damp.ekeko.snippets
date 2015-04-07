@@ -74,12 +74,12 @@
              "add-directive-overrides"
              "generalize-directive"
              "remove-directive"
-             "extract-template"
+;             "extract-template"
 ;             "generalize-references"
-             "generalize-types"
-             "generalize-types|qname"
+;             "generalize-types"
+;             "generalize-types|qname"
 ;             "generalize-invocations"
-             "generalize-constructorinvocations"
+;             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -170,7 +170,7 @@
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
-;        group-copy snippetgroup ; I think we still need to make a copy to be safe.. Otherwise we can get stuck mutating a template over and over and it always has fitness 0..
+       
         snippet (rand-snippet group-copy)
         
         pick-operator
@@ -293,7 +293,7 @@
    @param tournament-size  The number of random entries to pick"
   [population tournament-size]
   (let [size (count population)]
-    (nth population
+    (nth population 
          (apply max (repeatedly tournament-size #(rand-int size))))))
 
 (defn
@@ -381,14 +381,14 @@
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
                   ; Mutation
-                  (util/viable-repeat
+                  (util/parallel-viable-repeat
                     (* (:mutation-weight config) (count population))
                     #(preprocess (mutate (select population tournament-size) (:mutation-operators config)))
                     (fn [x] (not (nil? x))))
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (util/viable-repeat 
+                         (util/parallel-viable-repeat 
                            (* (/ (:crossover-weight config) 2) (count population))
                            #(map preprocess
                                  (crossover
@@ -397,7 +397,7 @@
                            (fn [x] (not (some? nil? x)))))
                   
                   ; Selection
-                  (util/viable-repeat 
+                  (util/parallel-viable-repeat 
                     (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
                     (fn [ind] (pos? (individual/individual-fitness ind))))))
@@ -405,32 +405,32 @@
 
 (comment
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 30
+          :max-generations 20
           :fitness-weights [18/20 2/20]
           :match-timeout 12000
           :selection-weight 1/4
           :mutation-weight 3/4
-          :population-size 10
+          :population-size 40
           :tournament-rounds 7)
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
-  (nth (population-from-snippets matches 5) 4)
+  (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
-  
-  (inspector-jay.core/inspect (nth (population-from-snippets matches 4 )))
-  (inspector-jay.core/inspect (nth matches 4))
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/error1428404128734.ekt"))
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/vardecl2.ekt"))
   
   
-  
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (util/parallel-viable-repeat
     20
     (fn [] (persistence/copy-snippetgroup templategroup))

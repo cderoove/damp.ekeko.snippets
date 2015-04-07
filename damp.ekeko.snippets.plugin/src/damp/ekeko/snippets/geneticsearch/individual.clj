@@ -84,13 +84,12 @@
                 (println "!")
 ;                (println "-" (individual-info individual :mutation-node))
                 
-                (inspector-jay.core/inspect [id individual e])
+;                (inspector-jay.core/inspect [id individual e])
                 (-> errors (.add [id individual e]))
                 
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
 ;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
-;                (binding [astnode/*ast-for-newlycreatednodes* (AST/newAST JavaProjectModel/JLS)] 
-;                              (persistence/spit-snippetgroup (str "error" id ".ekt") tg))
+                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 
                             "!!! " id " --- " (.getMessage e)
@@ -108,8 +107,8 @@
                               "No cause available.."
                               (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
                             "\n################\n\n"))
-                (throw e)
-                ;[0 [0 0]]
+;                (throw e)
+                [0 [0 0]]
                 )))]
       (-> individual
         (assoc :fitness-overall overall)

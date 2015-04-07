@@ -537,7 +537,6 @@ damp.ekeko.snippets.snippet
   "Returns the JDT value from the snippet's project anchor that corresponds to the given snippet value, if it still exists."
   [snippet value]
   (when-let [id (snippet-value-projectanchoridentifier snippet value)]
-    (println id)
     (astnode/corresponding-project-value id)))
 
 ;(corresponding-projectvalue-for-snippetvalue valueid rootinproject))))))
