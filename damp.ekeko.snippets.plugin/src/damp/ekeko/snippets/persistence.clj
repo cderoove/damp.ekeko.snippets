@@ -83,40 +83,44 @@
         (directives/directiveoperandbinding-value bd)]
     (.write ^Writer w (str  "#=" `(directives/make-directiveoperand-binding ~directiveoperand ~value)))))
 
-
+(defn
+  snippet-associativeinfo
+  ([snippet]
+    (reduce 
+      (fn [{bdmap :bdmap 
+            pidmap :pidmap
+            :as sofar} value] 
+        (let [bounddirectives
+              (snippet/snippet-bounddirectives-for-node snippet value)            
+              identifier
+              (snippet/snippet-value-identifier snippet value)
+              correspondingprojectvalueidentifier
+              (snippet/snippet-value-projectanchoridentifier snippet value)]
+          (when (contains? sofar identifier)
+            (throw (Exception. (str "While serializing snippet, encountered duplicate identifier among snippet values:" value identifier))))
+          (when 
+            (nil? bounddirectives)
+            (throw (Exception. (str "While serializing snippet, encountered invalid bound directives for snippet value:"  bounddirectives value snippet))))
+          (when 
+            (nil? identifier)
+            (throw (Exception. (str "While serializing snippet, encountered invalid identifier for snippet value:" value))))
+          (-> 
+            sofar
+            (assoc-in [:bdmap identifier]  bounddirectives)
+            (assoc-in [:pidmap identifier] correspondingprojectvalueidentifier))))
+      {;bounddirectives
+       :bdmap {} 
+       ;projectidentifiers
+       :pidmap {} 
+       }
+      (snippet/snippet-nodes snippet))))
+ 
 
 (defn
-  snippet-persistable-associativeinfo
+  snippet-persistable-associativeinfo	
   [snippet]
-  (reduce 
-    (fn [{bdmap :bdmap 
-          pidmap :pidmap
-          :as sofar} value] 
-      (let [bounddirectives
-            (snippet/snippet-bounddirectives-for-node snippet value)            
-            identifier
-            (snippet/snippet-value-identifier snippet value)
-            correspondingprojectvalueidentifier
-            (snippet/snippet-value-projectanchoridentifier snippet value)]
-        (when (contains? sofar identifier)
-          (throw (Exception. (str "While serializing snippet, encountered duplicate identifier among snippet values:" value identifier))))
-        (when 
-          (nil? bounddirectives)
-          (throw (Exception. (str "While serializing snippet, encountered invalid bound directives for snippet value:"  bounddirectives value snippet))))
-        (when 
-          (nil? identifier)
-          (throw (Exception. (str "While serializing snippet, encountered invalid identifier for snippet value:" value))))
-        (-> 
-          sofar
-          (assoc-in [:bdmap identifier] bounddirectives)
-          (assoc-in [:pidmap identifier] correspondingprojectvalueidentifier))))
-    {;bounddirectives
-     :bdmap {} 
-     ;projectidentifiers
-     :pidmap {} 
-     }
-    (snippet/snippet-nodes snippet)))
- 
+  (snippet-associativeinfo snippet)) ;;print-dup of BoundDirective removes the implicit operand
+
 
 
 
@@ -265,30 +269,63 @@
             snippetgroup))]
     (.prettyPrint pp)))
 
+
+(defn-
+  remove-implicit-opbindings
+  "Removes every implicit operand binding from a snippet-associativeinfo.
+   Called when copying a snippet from this info, 
+   as slurping a snippet assumes that print-dup on BoundDirective has not spat this implicit operand."
+  [{ 
+    bdmap :bdmap ;astid->bounddirectives
+    pidmap :pidmap ;astid->correspondingprojectvalueidentifiers
+    }]
+  {
+   :pidmap pidmap
+   :bdmap 
+   (reduce 
+     (fn [sofar [astid bounddirectives]]
+       (assoc-in 
+         sofar 
+         [astid]
+         (map 
+           (fn [bounddirective]
+             (directives/make-bounddirective
+               (directives/bounddirective-directive bounddirective)
+               (rest (directives/bounddirective-operandbindings bounddirective))))
+           bounddirectives)))
+     bdmap
+     (seq bdmap))
+   })
+
 (defn 
   copy-snippet
   "Duplicates the given snippet. 
-   No data is shared between the original and the copy."
+   No mutable data is shared between the original and the copy."
   [snippet]
-  (let [s (snippet-as-persistent-string snippet)
-        copy (snippet-from-persistent-string s)]
-    copy)
+  ;(let [s (snippet-as-persistent-string snippet)
+  ;     copy (snippet-from-persistent-string s)]
+  ;copy)
+  (let [;bypassing astnode/*ast-for-newlycreatednodes* for performance reasons
+       associnfo (remove-implicit-opbindings (snippet-associativeinfo snippet)) ;do not want implicit subject operand of directive bindings
+       root (snippet/snippet-root snippet)
+       newast (AST/newAST damp.ekeko.JavaProjectModel/JLS) 
+       newroot (ASTNode/copySubtree ^AST newast root)
+       anchor (snippet/snippet-anchor snippet)]
+    (snippet-from-node-and-persisted-associativeinfo newroot associnfo anchor))) 
   
-;  (binding
-;    [astnode/*ast-for-newlycreatednodes* (AST/newAST JavaProjectModel/JLS)]
-;    )
-  
-  
-  
- 
-  )
-  
+           
+   
+   
+   
 
-(def
+(defn
   copy-snippetgroup
   "Duplicates the given snippet group. 
    No data is shared between the original and the copy."
-  copy-snippet)
+  ;copy-snippet)
+  [snippetgroup]
+  (snippetgroup/make-snippetgroup (snippetgroup/snippetgroup-name snippetgroup)
+                                  (map copy-snippet (snippetgroup/snippetgroup-snippetlist snippetgroup))))
   
 
 (defn
