@@ -65,7 +65,7 @@
              "add-directive-type|sname"
              "add-directive-refersto"
              "erase-list"
-             ;untested:
+
              "replace-parent"
 ;             "erase-comments"
 
@@ -74,12 +74,12 @@
              "add-directive-overrides"
              "generalize-directive"
              "remove-directive"
-;             "extract-template"
-;             "generalize-references"
-;             "generalize-types"
-;             "generalize-types|qname"
-;             "generalize-invocations"
-;             "generalize-constructorinvocations"
+             "extract-template"
+             "generalize-references"
+             "generalize-types"
+             "generalize-types|qname"
+             "generalize-invocations"
+             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -91,8 +91,8 @@
    :initial-population nil ; If nil, the initial population is generated from the verified matches
    
    :selection-weight 1/4
-   :mutation-weight 3/4
-   :crossover-weight 0/4
+   :mutation-weight 2/4
+   :crossover-weight 1/4
    
    :fitness-function fitness/make-fitness-function
    :fitness-weights [19/20 1/20]
@@ -342,10 +342,7 @@
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
                              (if (pos? (individual/individual-fitness ind))
-                               ind)
-;                             (if (pos? (first (individual/individual-fitness-components ind))) 
-;                               ind)
-                             )))
+                               ind))))
             best-fitness (individual/individual-fitness (last population))]
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
@@ -361,12 +358,12 @@
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
-;        (util/make-dir (str output-dir "/" generation))
-;        (doall (map-indexed
-;                 (fn [idx individual]
-;                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
-;                                                  (individual/individual-templategroup individual))) 
-;                 population))
+        (util/make-dir (str output-dir "/" generation))
+        (doall (map-indexed
+                 (fn [idx individual]
+                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
+                                                  (individual/individual-templategroup individual))) 
+                 population))
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
@@ -394,7 +391,8 @@
                                  (crossover
                                    (select population tournament-size)
                                    (select population tournament-size)))
-                           (fn [x] (not (some? nil? x)))))
+                           (fn [x]
+                             (not-any? nil? x))))
                   
                   ; Selection
                   (util/parallel-viable-repeat 
@@ -409,11 +407,8 @@
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 20
-          :fitness-weights [18/20 2/20]
+          :max-generations 5
           :match-timeout 12000
-          :selection-weight 1/4
-          :mutation-weight 3/4
           :population-size 40
           :tournament-rounds 7)
   

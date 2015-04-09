@@ -176,7 +176,6 @@
     "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
   (run-pmart-experiment [(pmart/projects :mapperxml)] "Singleton")
-  
   )
 
 ;(deftest

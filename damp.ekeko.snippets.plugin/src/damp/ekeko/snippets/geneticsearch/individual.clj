@@ -107,7 +107,8 @@
                               "No cause available.."
                               (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
                             "\n################\n\n"))
-;                (throw e)
+                (if (instance? java.lang.UnsupportedOperationException (.getCause e))
+                  (throw e))
                 [0 [0 0]]
                 )))]
       (-> individual
