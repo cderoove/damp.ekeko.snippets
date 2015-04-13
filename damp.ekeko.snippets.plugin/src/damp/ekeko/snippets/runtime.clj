@@ -81,6 +81,7 @@
                            [(cl/== ?methoddeclaration ?methoddeclarationorname)]
                            [(ast/has :name ?methoddeclaration ?methoddeclarationorname)]))])))
 
+; TODO Double-check whether there are any performance issues/memory leaks with invokedby
 (defn
   invokedby
   [?ast ?invocationorname]

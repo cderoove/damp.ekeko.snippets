@@ -123,7 +123,46 @@
                        nil)))]
     (snippetgroup/make-snippetgroup name (remove (fn [x] (nil? x)) snippets))))
 
-(defn pattern-instances-as-templategroups [pmart-xml project-names pattern-name]
+(defn spit-pattern-instances [folder-name pmart-xml project-names pattern-name]
+  (util/make-dir folder-name)
+  (let [instances (apply concat
+                         (for [name project-names]
+                           (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
+                             [name instance])))]
+    (doseq [[project-name instance] instances]
+      (let [pattern-roles-map (pattern-roles instance)
+                                 class-lists
+                                 (doseq [role (keys pattern-roles-map)]
+                                   (doseq [cls (role pattern-roles-map)]
+                                     (persistence/spit-snippet 
+                                       (str folder-name "/" (hash cls) ".ekt") 
+                                       (preprocess-templategroup
+                                         (templategroup-from-classes cls project-name [cls])))))]))))
+
+(defn slurp-pattern-instances-as-templategroups
+  [folder-name pmart-xml project-names pattern-name]
+  (let [instances (apply concat
+                         (for [name project-names]
+                           (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
+                             [name instance])))
+        templategroups (map-indexed
+                         (fn [idx [project-name instance]]
+                           (let [pattern-roles-map (pattern-roles instance)
+                                 class-lists (util/combinations pattern-roles-map)]
+                             (for [class-list class-lists]
+                               (snippetgroup/make-snippetgroup 
+                                 (str pattern-name "-" idx " --- " project-name)
+                                 (for [cls class-list]
+                                   (first 
+                                     (snippetgroup/snippetgroup-snippetlist 
+                                       (persistence/slurp-snippet (str folder-name "/" (hash cls) ".ekt")))))))))
+                         instances)]
+    (mapcat identity templategroups)))
+
+(defn pattern-instances-as-templategroups
+  "Given the parsed P-MARt XML, a list of projects and a design pattern name,
+   produce a list of templategroups of all instances of that pattern in the given projects."
+  [pmart-xml project-names pattern-name]
   (let [instances (apply concat
                          (for [name project-names]
                            (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
@@ -174,8 +213,20 @@
           (util/log "pmart" (count (snippetgroup/snippetgroup-nodes tg)))
           (print ".")))))
   
+  ; Spit all classes involved in the Singleton pattern to .ekt snippets
+  (spit-pattern-instances "test" (parse-pmart-xml) [(projects :mapperxml)] "Singleton")
+  
+  (inspector-jay.core/inspect
+    (slurp-pattern-instances-as-templategroups 
+     "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/singleton-mapperxml" 
+     (parse-pmart-xml) [(projects :mapperxml)] "Singleton"))
+  
   ; Inspect which patterns are in a project..
   (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:jhotdraw projects)))) nil)
+  
+  
+  
+  
   
   
   

@@ -20,9 +20,9 @@
            [java.util.concurrent TimeoutException]
            [org.eclipse.jdt.core.dom AST]))
 
-(def errors (new java.util.Vector))
-(defn clear-errors [] 
-  (-> errors .clear))
+;(def errors (new java.util.Vector))
+;(defn clear-errors [] 
+;  (-> errors .clear))
 
 (defrecord 
   ^{:doc "An individual in a population"}
@@ -77,16 +77,19 @@
             
             (catch TimeoutException e
               (println "!(timeout)")
+              (persistence/spit-snippetgroup 
+                (str "timeout" (util/current-time) ".ekt")
+                (individual-templategroup individual))
               [0 [0 0]])
             (catch Exception e
               (let [id (util/current-time)
                     tg (individual-templategroup individual)]
                 (println "!")
 ;                (println "-" (individual-info individual :mutation-node))
-                
+
 ;                (inspector-jay.core/inspect [id individual e])
-                (-> errors (.add [id individual e]))
-                
+;                (-> errors (.add [id individual e]))
+
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
 ;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)

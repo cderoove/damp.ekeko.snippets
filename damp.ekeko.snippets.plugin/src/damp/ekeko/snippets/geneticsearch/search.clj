@@ -49,11 +49,11 @@
       (some #{(operatorsrep/operator-id op)} 
             [
              "replace-by-variable"
-             "replace-by-wildcard"
+;             "replace-by-wildcard"
              "remove-node"
              "add-directive-equals"
              "add-directive-invokes"
-             "add-directive-invokedby"
+;             "add-directive-invokedby"
              "restrict-scope-to-child"
              "relax-scope-to-child+"
              "relax-scope-to-child*"
@@ -70,16 +70,16 @@
 ;             "erase-comments"
 
              "add-directive-constructs"
-             "add-directive-constructedby"
+;             "add-directive-constructedby"
              "add-directive-overrides"
              "generalize-directive"
              "remove-directive"
              "extract-template"
-             "generalize-references"
-             "generalize-types"
-             "generalize-types|qname"
-             "generalize-invocations"
-             "generalize-constructorinvocations"
+;             "generalize-references"
+;             "generalize-types"
+;             "generalize-types|qname"
+;             "generalize-invocations"
+;             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -178,7 +178,7 @@
           (let [operator (rand-nth operators)
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
-                                  (fn [node] 
+                                  (fn [node]
                                     (and
                                       (operatorsrep/applicable? snippetgroup snippet node operator)
                                          ; In case of an operator that adds a directive, check that the directive isn't already there..
@@ -403,26 +403,37 @@
 
 (comment
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
+      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
-          :max-generations 5
+          :max-generations 100
           :match-timeout 12000
-          :population-size 40
-          :tournament-rounds 7)
+          :population-size 10
+          :tournament-rounds 5)
+  
+  (clojure.pprint/pprint (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo templategroup) 'damp.ekeko/ekeko ))
+  
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (inspector-jay.core/inspect templategroup)
+  
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/error1428404128734.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/error1428668287954.ekt"))
+  (inspector-jay.core/inspect templategroup)
+  (util/with-timeout 5000 (fitness/templategroup-matches templategroup))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/vardecl2.ekt"))
+    (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
+      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/timeout-bad.ekt")))
+  (time (util/with-timeout 20000 (fitness/templategroup-matches templategroup)))
   
+  (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))

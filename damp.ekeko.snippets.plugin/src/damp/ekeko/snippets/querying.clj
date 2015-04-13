@@ -256,10 +256,13 @@
   ([groupqueryinfo ekekolaunchersymbol]
     (snippetgroupqueryinfo-query groupqueryinfo ekekolaunchersymbol '() '() false))
   ([groupqueryinfo ekekolaunchersymbol additionalconditions additionalrootvars hideuservars]
-    (let [{conditions :conditions
+    (let [{conditions_ :conditions
            matchvars :matchvars
            uservars :uservars
            } groupqueryinfo
+          
+          conditions (take-last (- (count conditions_) 0) conditions_)
+          
           launchervars
           (distinct 
             (concat matchvars additionalrootvars 
@@ -292,11 +295,17 @@
         (eval define))
       (eval query))))
 
-
-
-
-
-  
+(defn
+  print-snippetgroup
+  ([snippetgroup launchersymbol]
+    (print-snippetgroup snippetgroup launchersymbol '() '() false))
+  ([snippetgroup launchersymbol additionalconditions additionalrootvars hideuservars]
+    (let [qinfo (snippetgroup-snippetgroupqueryinfo snippetgroup)
+          defines (:preddefs qinfo)
+          query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
+      (doseq [define defines]
+        (clojure.pprint/pprint define))
+      (clojure.pprint/pprint query))))
 
 ; Converting snippet group to rewrite query
 ;------------------------------------------
