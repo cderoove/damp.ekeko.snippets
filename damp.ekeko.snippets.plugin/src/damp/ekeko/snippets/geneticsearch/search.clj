@@ -97,6 +97,7 @@
    :fitness-function fitness/make-fitness-function
    :fitness-weights [19/20 1/20]
    :fitness-threshold 0.95
+   :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
    :match-timeout 10000
    :tournament-rounds 7
@@ -345,11 +346,13 @@
             preprocess (fn [individual]
                          (if (not (in-history individual))
                            (let
-                             [ind (individual/compute-fitness individual fitness)]
+                             [ind (individual/compute-fitness individual fitness)
+                              filter-score (if ( = -1 (:fitness-filter-comp config))
+                                             (individual/individual-fitness ind)
+                                             (nth (individual/individual-fitness-components ind) (:fitness-filter-comp config)))]
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
-                             (if (pos? (individual/individual-fitness ind))
-                               ind))))
+                             (if (pos? filter-score) ind))))
             best-fitness (individual/individual-fitness (last population))]
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))

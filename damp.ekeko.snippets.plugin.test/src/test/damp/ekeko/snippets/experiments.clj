@@ -38,7 +38,8 @@
    :fitness-weights [19/20 1/20]
    :match-timeout 30000
    :selection-weight 1/4
-   :mutation-weight 3/4
+   :mutation-weight 2/4
+   :crossover-weight 1/4
    :population-size 20
    :tournament-rounds 7})
 
@@ -160,7 +161,7 @@
      :population-size 20})
   
   (run-pmart-experiment
-    "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/singleton-mapperxml"
+    (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/singleton-mapperxml")
     [(pmart/projects :mapperxml)] "Singleton"
     {:max-generations 800
      :population-size 5})
