@@ -1,3 +1,4 @@
 *.class
 damp.ekeko.snippets.plugin.test/resources/Ekeko-JDT/.project
 bin/
+damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/dbg/

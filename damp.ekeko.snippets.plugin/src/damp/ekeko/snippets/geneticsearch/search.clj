@@ -54,15 +54,15 @@
              "add-directive-equals"
              "add-directive-invokes"
 ;             "add-directive-invokedby"
-             "restrict-scope-to-child"
-             "relax-scope-to-child+"
-             "relax-scope-to-child*"
+;             "restrict-scope-to-child"
+;             "relax-scope-to-child+"
+;             "relax-scope-to-child*"
              "relax-size-to-atleast"
              "relax-scope-to-member"
              "consider-set|lst"
              "add-directive-type"
-             "add-directive-type|qname"
-             "add-directive-type|sname"
+;             "add-directive-type|qname"
+;             "add-directive-type|sname"
              "add-directive-refersto"
              "erase-list"
 
@@ -154,14 +154,21 @@
     rand-nth))
 
 (defn operator-directive
-  "Retrieve the directive that will be created by an operator
-   This relies on the naming convention that the operator's id starts with 'add-'
-   , followed by the directive's name.."
+  "Retrieve the directive that will be created by an operator"
   [operator-id]
-  (try
-    (let [directive-func-name (subs operator-id 4)]
-      (eval (read-string (str "matching/" directive-func-name))))
-    (catch Exception e nil)))
+  (case operator-id
+    ; these exceptions don't follow the "add-directive-" naming convention
+    "relax-scope-to-child+" matching/directive-child+
+    "relax-scope-to-child*" matching/directive-child*
+    "restrict-scope-to-child" matching/directive-child
+    "relax-size-to-atleast" matching/directive-size|atleast
+    "empty-body" matching/directive-emptybody
+    "relax-scope-to-member" matching/directive-member
+    ; default case; we rely on the naming convention that operator id starts with "add-directive-"
+    (try
+      (let [directive-func-name (subs operator-id 4)]
+        (eval (read-string (str "matching/" directive-func-name))))
+      (catch Exception e nil))))
 
 (defn
   mutate
@@ -413,8 +420,6 @@
           :population-size 10
           :tournament-rounds 5)
   
-  (clojure.pprint/pprint (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo templategroup) 'damp.ekeko/ekeko ))
-  
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
@@ -424,15 +429,8 @@
   (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/error1428668287954.ekt"))
-  (inspector-jay.core/inspect templategroup)
-  (util/with-timeout 5000 (fitness/templategroup-matches templategroup))
-  
-  (def templategroup
-    (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
-      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/timeout-bad.ekt")))
-  (time (util/with-timeout 20000 (fitness/templategroup-matches templategroup)))
-  
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/good-Debug.ekt"))
+  (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   
   (def templategroup

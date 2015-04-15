@@ -261,7 +261,7 @@
            uservars :uservars
            } groupqueryinfo
           
-          conditions (take-last (- (count conditions_) 0) conditions_)
+          conditions (take (- (count conditions_) 0) conditions_)
           
           launchervars
           (distinct 

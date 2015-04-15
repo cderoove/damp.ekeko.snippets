@@ -1467,8 +1467,13 @@ damp.ekeko.snippets.matching
   [directive-child
    directive-child+
    directive-child*
-   directive-member
-   ])
+   directive-member])
+
+(def
+  directives-list-nongrounding
+  [directive-consider-as-set|lst
+   directive-consider-as-regexp|lst
+   directive-consider-as-regexp|cfglst])
 
 (defn 
   registered-constraining-directives
@@ -1481,6 +1486,12 @@ damp.ekeko.snippets.matching
   "Returns collection of registered grounding directives."
   []
   directives-grounding)
+
+(defn 
+  registered-nongrounding-list-directives
+  "Returns collection of directives on list nodes, which remove grounding directives from its elements."
+  []
+  directives-list-nongrounding)
 
 (defn
   registered-grounding-directive?

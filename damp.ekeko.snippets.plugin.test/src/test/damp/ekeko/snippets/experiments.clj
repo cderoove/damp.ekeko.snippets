@@ -86,37 +86,12 @@
   (filter 
     (fn [op] 
       (some #{(operatorsrep/operator-id op)} 
-            [
-;             "replace-by-variable"
-;             "replace-by-wildcard"
-;             "remove-node"
-;             "add-directive-equals"
-;             "add-directive-invokes"
-;             "add-directive-invokedby"
-;             "restrict-scope-to-child"
-            ; "relax-scope-to-child+"
-            ; "relax-scope-to-child*"
-;             "relax-size-to-atleast"
-;             "relax-scope-to-member"
-;             "consider-set|lst"
-;             "add-directive-type"
-;             "add-directive-type|qname"
-;             "add-directive-type|sname"
-;             "add-directive-refersto"
-;             "replace-parent"
-;             "erase-comments"
-;             "add-directive-constructs"
-;             "add-directive-constructedby"
-;             "add-directive-overrides"
-             "generalize-directive"
-;             "remove-directive"
-             "generalize-references"
+            ["generalize-references"
              "generalize-types"
              "generalize-types|qname"
              "extract-template"
              "generalize-invocations"
-             "generalize-constructorinvocations"
-             ]))
+             "generalize-constructorinvocations"]))
     (operatorsrep/registered-operators)))
 
 (defn run-experiment
@@ -146,17 +121,12 @@
                     (map snippetgroup-from-resource verifiedmatches-ekt))))
 
 (defn run-pmart-experiment
-  ([projects pattern]
+  ([projects pattern config]
+    (run-experiment projects config (pmart/pattern-instances-as-templategroups (pmart/parse-pmart-xml) projects pattern)))
+  ([folder-name projects pattern config]
     (run-experiment
       projects
-      {:max-generations 800
-       :population-size 20}
-      (pmart/pattern-instances-as-templategroups (pmart/parse-pmart-xml) projects pattern)))
-  ([folder-name projects pattern]
-    (run-experiment
-      projects
-      {:max-generations 800
-       :population-size 20}
+      config
       (pmart/slurp-pattern-instances-as-templategroups 
         folder-name
         (pmart/parse-pmart-xml)
@@ -184,11 +154,16 @@
    ["/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt" 
     "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt"])
   
-  (run-pmart-experiment [(pmart/projects :mapperxml)] "Singleton")
+  (run-pmart-experiment 
+    [(pmart/projects :mapperxml)] "Singleton"
+    {:max-generations 800
+     :population-size 20})
   
   (run-pmart-experiment
     "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/singleton-mapperxml"
-    [(pmart/projects :mapperxml)] "Singleton")
+    [(pmart/projects :mapperxml)] "Singleton"
+    {:max-generations 800
+     :population-size 5})
   )
 
 ;(deftest

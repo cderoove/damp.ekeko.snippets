@@ -151,7 +151,6 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (add-unary-directive-opname-opvalue snippet node matching/directive-constructedby "Meta-variable" uservar))
 
-
 (defn 
   add-directive-overrides
   "Adds directive-overrides to node."
@@ -378,9 +377,26 @@ damp.ekeko.snippets.operators
   (let [new-bds
         (remove (fn [bd] (= directive-name 
                             (directives/directive-name (directives/bounddirective-directive bd))))
-                (snippet/snippet-bounddirectives-for-node snippet node))]
-    (snippet/update-bounddirectives snippet node new-bds)))
-; TODO Careful when using in gensearch; might remove implicit directives!
+                (snippet/snippet-bounddirectives-for-node snippet node))
+        new-snippet (snippet/update-bounddirectives snippet node new-bds)]
+    ; If we're removing a grounding directive, be sure to add a child directive back to ensure we have a valid snippet
+    (cond
+      ; If we're removing a grounding directive, we should put back a child directive
+      (some #(= directive-name %) (map directives/directive-name (matching/registered-grounding-directives)))
+      (restrict-scope-to-child new-snippet node)
+      
+      ; If we're removing a directive which had previously removed grounding directives from its list elements,
+      ; then we should add a child directive to each element
+      (some #(= directive-name %) (map directives/directive-name (matching/registered-nongrounding-list-directives)))
+      (reduce
+        (fn [cur-snippet lstel] (restrict-scope-to-child cur-snippet lstel))
+        (snippet/add-bounddirective 
+          new-snippet node
+          (directives/make-bounddirective matching/directive-exact [(make-directiveoperandbinding-for-match node)]))
+        (astnode/value-unwrapped node))
+      
+      :else 
+      new-snippet)))
 
 (defn
   remove-node
