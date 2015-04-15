@@ -54,10 +54,10 @@
              "add-directive-equals"
              "add-directive-invokes"
 ;             "add-directive-invokedby"
-;             "restrict-scope-to-child"
+             "restrict-scope-to-child"
 ;             "relax-scope-to-child+"
-;             "relax-scope-to-child*"
-             "relax-size-to-atleast"
+             "relax-scope-to-child*"
+;             "relax-size-to-atleast"
              "relax-scope-to-member"
              "consider-set|lst"
              "add-directive-type"
@@ -74,12 +74,12 @@
              "add-directive-overrides"
              "generalize-directive"
              "remove-directive"
-             "extract-template"
-;             "generalize-references"
-;             "generalize-types"
+;             "extract-template"
+             "generalize-references"
+             "generalize-types"
 ;             "generalize-types|qname"
-;             "generalize-invocations"
-;             "generalize-constructorinvocations"
+             "generalize-invocations"
+             "generalize-constructorinvocations"
              ]))
     (operatorsrep/registered-operators)))
 
@@ -415,6 +415,9 @@
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (evolve verifiedmatches
+          :selection-weight 1/4
+          :mutation-weight 3/4
+          :crossover-weight 0/4
           :max-generations 100
           :match-timeout 12000
           :population-size 10

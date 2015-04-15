@@ -379,7 +379,6 @@ damp.ekeko.snippets.operators
                             (directives/directive-name (directives/bounddirective-directive bd))))
                 (snippet/snippet-bounddirectives-for-node snippet node))
         new-snippet (snippet/update-bounddirectives snippet node new-bds)]
-    ; If we're removing a grounding directive, be sure to add a child directive back to ensure we have a valid snippet
     (cond
       ; If we're removing a grounding directive, we should put back a child directive
       (some #(= directive-name %) (map directives/directive-name (matching/registered-grounding-directives)))
