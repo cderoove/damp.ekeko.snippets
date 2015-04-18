@@ -197,8 +197,8 @@
   "Takes a function and an amount of time to wait for thse function to finish
    executing."
   ([thunk ms]
-     (thunk-timeout thunk ms :ms nil)) ; Default to milliseconds, because that's pretty common.
-  ([thunk time unit tg]
+     (thunk-timeout thunk ms nil))
+  ([thunk time tg]
      (let [task (FutureTask. thunk)
            thr (if tg (Thread. tg task) (Thread. task))]
        (try
@@ -212,11 +212,26 @@
            (.cancel task true)
            (.stop thr) 
            (throw e))
-         (finally (when tg (.stop tg)))))))
+;         (finally (when tg (.stop tg)))
+         ))))
 
-(defmacro with-timeout [time & body]
-  "Apply this macro to an expression and an exception is thrown if it takes longer than a given time to evaluate the expression" 
-  `(thunk-timeout (fn [] ~@body) ~time))
+(defmacro with-timeout
+  "Apply this macro to an expression and an exception is thrown if it takes longer than a given time to evaluate the expression"
+  ([time body]
+  `(thunk-timeout (fn [] ~body) ~time))
+  ([time body tg]
+  `(thunk-timeout (fn [] ~body) ~time ~tg)))
+
+(defmacro future-group [thread-group body]
+  `(let [task# (FutureTask. (fn [] ~body))
+         thr# (Thread. ~thread-group task#)]
+     (try
+       (.start thr#)
+       task#
+       (catch Exception e#
+         (.cancel task# true)
+         (.stop thr#) 
+         (throw e#)))))
 
 (defn current-time 
   "Returns the current time (as a Unix timestamp)"

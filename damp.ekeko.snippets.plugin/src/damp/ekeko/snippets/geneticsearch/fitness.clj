@@ -221,9 +221,9 @@
   [verifiedmatches config]
   (let [partialmodel (create-partial-model verifiedmatches)]
     (fn [templategroup]
-      (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup)) 
+      (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup) (:thread-group config)) 
             fscore (fmeasure matches verifiedmatches)
-            partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel))
+            partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel) (:thread-group config))
             weights (:fitness-weights config)
             ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ;            lengthscore (/ 1 (template-size templategroup))

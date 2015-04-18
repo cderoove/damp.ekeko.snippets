@@ -100,6 +100,7 @@
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
    :match-timeout 10000
+   :thread-group (new ThreadGroup "Evolve")
    :tournament-rounds 7
    :mutation-operators registered-operators|search})
 
@@ -165,6 +166,7 @@
     "relax-size-to-atleast" matching/directive-size|atleast
     "empty-body" matching/directive-emptybody
     "relax-scope-to-member" matching/directive-member
+    "consider-set|lst" matching/directive-consider-as-set|lst
     ; default case; we rely on the naming convention that operator id starts with "add-directive-"
     (try
       (let [directive-func-name (subs operator-id 4)]
@@ -189,11 +191,11 @@
                                   (fn [node]
                                     (and
                                       (operatorsrep/applicable? snippetgroup snippet node operator)
-                                         ; In case of an operator that adds a directive, check that the directive isn't already there..
-                                         (not (boolean
-                                                (directives/bounddirective-for-directive
-                                                  (snippet/snippet-bounddirectives-for-node snippet node)
-                                                  (operator-directive (operatorsrep/operator-id operator)))))))
+                                      ; In case of an operator that adds a directive, check that the directive isn't already there..
+                                      (not (boolean
+                                             (directives/bounddirective-for-directive
+                                               (snippet/snippet-bounddirectives-for-node snippet node)
+                                               (operator-directive (operatorsrep/operator-id operator)))))))
                                   (snippet/snippet-nodes snippet))]
             (if (empty? all-valid-nodes)
               (recur) ; Try again if there are no valid subjects..
@@ -412,19 +414,21 @@
               @new-history)))))))
 
 (comment
+  (def tg (new ThreadGroup "invokedby"))
   (def templategroup
     (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
       (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
-  (evolve verifiedmatches
-          :selection-weight 1/4
-          :mutation-weight 3/4
-          :crossover-weight 0/4
-          :max-generations 100
-          :match-timeout 12000
-          :population-size 10
-          :tournament-rounds 5)
+  (util/future-group tg (evolve verifiedmatches
+                               :selection-weight 1/4
+                               :mutation-weight 3/4
+                               :crossover-weight 0/4
+                               :max-generations 5
+                               :match-timeout 12000
+                               :thread-group tg
+                               :population-size 10
+                               :tournament-rounds 5))
   
   
   (def templategroup
