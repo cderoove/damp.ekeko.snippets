@@ -196,7 +196,8 @@
                                              (directives/bounddirective-for-directive
                                                (snippet/snippet-bounddirectives-for-node snippet node)
                                                (operator-directive (operatorsrep/operator-id operator)))))))
-                                  (snippet/snippet-nodes snippet))]
+                                  (matching/reachable-nodes snippet (snippet/snippet-root snippet))
+                                  )]
             (if (empty? all-valid-nodes)
               (recur) ; Try again if there are no valid subjects..
               (let [subject (rand-nth all-valid-nodes)
@@ -207,7 +208,7 @@
                 [operator subject operands (for [vals possiblevalues] (rand-nth vals))]
                 (recur)))))) ; Try again if there are operands with no possible values..
         
-        [operator value operands operandvalues] 
+        [operator value operands operandvalues]
         (pick-operator)
         
         bindings
@@ -413,7 +414,7 @@
                     (fn [ind] (pos? (individual/individual-fitness ind))))))
               @new-history)))))))
 
-(comment
+(defn run-example []
   (def tg (new ThreadGroup "invokedby"))
   (def templategroup
     (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
@@ -421,15 +422,29 @@
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (util/future-group tg (evolve verifiedmatches
-                               :selection-weight 1/4
-                               :mutation-weight 3/4
-                               :crossover-weight 0/4
-                               :max-generations 5
-                               :match-timeout 12000
-                               :thread-group tg
-                               :population-size 10
-                               :tournament-rounds 5))
-  
+                                :selection-weight 1/4
+                                :mutation-weight 3/4
+                                :crossover-weight 0/4
+                                :max-generations 30
+                                :match-timeout 12000
+                                :thread-group tg
+                                :population-size 10
+                                :tournament-rounds 5
+                                :mutation-operators 
+                                (filter 
+                                  (fn [op] 
+                                    (some #{(operatorsrep/operator-id op)} 
+                                          ["replace-by-variable"
+                                           "replace-by-wildcard"
+                                           "add-directive-equals"
+                                           "add-directive-invokes"
+                                           "relax-scope-to-child*"
+                                           ]))
+                                  (operatorsrep/registered-operators)))))
+
+(comment
+  (run-example) ; To start
+  (.interrupt tg) ; To stop
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))

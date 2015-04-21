@@ -372,7 +372,7 @@ damp.ekeko.snippets.snippet
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
-(defn 
+(defn
   walk-snippets-elements
   "See walk-snippet-element, but walks two corresponding elements from different snippets simultaneously.
    Function arguments therefore take pairs of elements, rather than a single element."

@@ -1083,6 +1083,31 @@ damp.ekeko.snippets.matching
         bds
         directive-replacedbywildcard))))
 
+(defn snippet-node-replaced?
+  [snippet node]
+  (or
+    (snippet-node-replaced-by-var? snippet node)
+    (snippet-node-replaced-by-wilcard? snippet node)
+    (snippet-node-replaced-by-exp? snippet node)))
+
+(defn
+  reachable-nodes
+  [snippet node]
+  (let [walk
+        (fn walk [val]
+          (cond 
+            (or (astnode/ast? val) (astnode/lstvalue? val))
+            (if (snippet-node-replaced? snippet val)
+              [val]
+              (cons val (mapcat walk (snippet/snippet-node-children|conceptually snippet val))))
+            
+            (or (astnode/primitivevalue? val) (astnode/nilvalue? val))
+            [val]
+            
+            :default
+            (throw (Exception. (str "Don't know how to walk this value:" val)))))]
+    (walk node)))
+
 (defn
   to-literal-string
   [value]
