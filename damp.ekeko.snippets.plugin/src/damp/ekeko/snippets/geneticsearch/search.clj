@@ -416,9 +416,7 @@
 
 (defn run-example []
   (def tg (new ThreadGroup "invokedby"))
-  (def templategroup
-    (damp.ekeko.snippets.geneticsearch.pmart/preprocess-templategroup
-      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")))
+  (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (util/future-group tg (evolve verifiedmatches
@@ -430,17 +428,18 @@
                                 :thread-group tg
                                 :population-size 10
                                 :tournament-rounds 5
-                                :mutation-operators 
-                                (filter 
-                                  (fn [op] 
-                                    (some #{(operatorsrep/operator-id op)} 
-                                          ["replace-by-variable"
-                                           "replace-by-wildcard"
-                                           "add-directive-equals"
-                                           "add-directive-invokes"
-                                           "relax-scope-to-child*"
-                                           ]))
-                                  (operatorsrep/registered-operators)))))
+;                                :mutation-operators 
+;                                (filter 
+;                                  (fn [op] 
+;                                    (some #{(operatorsrep/operator-id op)} 
+;                                          ["replace-by-variable"
+;                                           "replace-by-wildcard"
+;                                           "add-directive-equals"
+;                                           "add-directive-invokes"
+;                                           "relax-scope-to-child*"
+;                                           ]))
+;                                  (operatorsrep/registered-operators))
+                                )))
 
 (comment
   (run-example) ; To start
