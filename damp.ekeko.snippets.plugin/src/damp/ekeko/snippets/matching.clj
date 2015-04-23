@@ -641,6 +641,33 @@ damp.ekeko.snippets.matching
           )))))
 
 (defn
+  ground-orblock 
+  [val]
+  (fn [snippet]
+    (let [var-match (snippet/snippet-var-for-node snippet val)
+          conditions-regular ((ground-relativetoparent val) snippet)
+          var-match-regular (util/gen-lvar "nonTranMatch")
+          var-stmts (util/gen-lvar "stmts")
+          var-slist (util/gen-lvar "slist")
+          ]
+      `((cl/fresh [~var-match-regular]
+                  (cl/fresh [~var-match] 
+                           ~@conditions-regular
+                           (cl/== ~var-match ~var-match-regular))
+                  (cl/conde 
+                    [(cl/== ~var-match-regular ~var-match)]
+                    
+                    [(cl/fresh [~var-slist ~var-stmts]
+                               (ast/ast :Block ~var-match-regular)
+                               (ast/has :statements ~var-match-regular ~var-slist)
+                               (ast/value-raw ~var-slist ~var-stmts)
+                               (el/contains ~var-stmts ~var-match)
+                               )]
+                    
+;                    [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)]
+                    ))))))
+
+(defn
   constrain-refersto
   "Requires candidate matches to refer to the given variable."
   [val var-string]
@@ -1203,6 +1230,14 @@ damp.ekeko.snippets.matching
     "Requires candidate matches to be an empty block (or nil)."))
 
 (def 
+  directive-orblock
+  (directives/make-directive
+    "or-block"
+    []
+    ground-orblock 
+    "Matches with a statement itself, or the statement wrapped in a block."))
+
+(def 
   directive-replacedbyvariable
   (directives/make-directive
     "replaced-by-variable"
@@ -1492,7 +1527,9 @@ damp.ekeko.snippets.matching
   [directive-child
    directive-child+
    directive-child*
-   directive-member])
+   directive-member
+   directive-orblock
+   ])
 
 (def
   directives-list-nongrounding

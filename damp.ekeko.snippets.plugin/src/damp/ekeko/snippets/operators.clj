@@ -21,7 +21,6 @@ damp.ekeko.snippets.operators
     [org.eclipse.jdt.core.dom ASTNode Comment]
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
-
 ;; Operators for Snippet
 ;; ---------------------
 
@@ -270,6 +269,16 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match lst)])))
 
 (defn
+  or-block
+  [template value]
+  (snippet/add-bounddirective 
+    (matching/remove-directives 
+      template value (matching/registered-grounding-directives))
+    value
+    (directives/make-bounddirective matching/directive-orblock
+                                    [(make-directiveoperandbinding-for-match value)])))
+
+(defn
   relax-scope-to-member
   "Uses member/0 for grounding of list members."
   [template value]
@@ -304,7 +313,6 @@ damp.ekeko.snippets.operators
     value
     (directives/make-bounddirective matching/directive-child*
                                     [(make-directiveoperandbinding-for-match value)])))
-
 
 (defn
   restrict-scope-to-child

@@ -30,7 +30,6 @@
 
 (declare new-match)
 
-
 (defrecord MatchedNodes
   [in-progress ; Set of nodes that have matched in the current attempt to match with a snippet
    done        ; List of how many nodes matched in the previous attempts
@@ -144,23 +143,6 @@
 ;               (count (snippet/snippet-nodes x))))))
 
 
-
-
-(defn partialmatch-score
-  "Compute the partial matching score of the last templategroup that we tried to match
-   @param node-count number of nodes in that last templategroup"
-  [node-count]
-  (let [partial-matches
-        (remove 
-          (fn [x] (= x node-count))
-          (:done @matched-nodes))]
-    (if (empty? partial-matches)
-      0
-      (let [score (/ (apply max partial-matches) node-count)]
-        (if (> score 1)
-          (println "!Partial matching score cannot > 1" @matched-nodes)
-          score)))))
-
 (defn register-match [match]
   (swap! matched-nodes 
          (fn [x]
@@ -179,16 +161,22 @@
 (defn reset-matched-nodes []
   (reset! matched-nodes (MatchedNodes. #{} [])))
 
-;(def max-depth (atom 0))
-;(defn set-depth [depth]
-;  (el/succeeds (do
-;                 (if (> depth @max-depth)
-;                   (swap! max-depth (fn [x] depth))) 
-;                 true)))
-;(defn reset-max-depth []
-;  (reset! max-depth 0))
 
-
+(defn partialmatch-score
+  "Compute the partial matching score of the last templategroup that we tried to match
+   @param node-count number of nodes in that last templategroup"
+  [node-count]
+  (let [partial-matches
+        (remove 
+          (fn [x] (= x node-count))
+          (:done @matched-nodes))]
+    (reset-matched-nodes)
+    (if (empty? partial-matches)
+      0
+      (let [score (/ (apply max partial-matches) node-count)]
+        (if (> score 1)
+          (println "!Partial matching score cannot > 1" @matched-nodes)
+          score)))))
 
 (defn create-partial-model
   "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
@@ -208,9 +196,15 @@
       (templategroup-matches templategroup)
       (new-match)
       (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup)))
+;      (.clean partialmodel) ; Don't need this anymore..
+      ; Hmm, seems that we're going over *all* nodes when generating queries? So partialscore goes up for children of e.g. a wildcard..
+;      (partialmatch-score (reduce + (map 
+;                                      (fn [snippet] (count (matching/reachable-nodes snippet (snippet/snippet-root snippet))))
+;                                      (snippetgroup/snippetgroup-snippetlist templategroup))))
       (catch Exception e
         (println "Partial match failed!")
-        0))))
+        0)
+      )))
 
 (defn
   make-fitness-function

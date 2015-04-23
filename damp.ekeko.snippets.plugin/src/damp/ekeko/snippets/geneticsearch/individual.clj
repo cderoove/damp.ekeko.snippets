@@ -81,6 +81,10 @@
                 (str "timeout" (util/current-time) ".ekt")
                 (individual-templategroup individual))
               [0 [0 0]])
+            (catch java.lang.OutOfMemoryError e
+              (throw e))
+            (catch clojure.lang.Compiler$CompilerException e ; This may be a wrapper to an OutOfMemoryError!
+              (throw e))
             (catch Exception e
               (let [id (util/current-time)
                     tg (individual-templategroup individual)]
@@ -91,7 +95,6 @@
 ;                (-> errors (.add [id individual e]))
 
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
-;                (print (querying/snippetgroupqueryinfo-query (querying/snippetgroup-snippetgroupqueryinfo tg) 'damp.ekeko/ekeko ))
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 

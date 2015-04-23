@@ -956,6 +956,17 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator. 
+     "or-block"
+     operators/or-block
+     :generalization
+     "Add directive or-block."
+     opscope-subject
+     applicability|child+*
+     "Matches with a statement itself, or the statement wrapped in a block."
+     []
+     false)
+   
    ;prefer set matching on owner of list element
    (Operator. 
      "relax-scope-to-member"
