@@ -1883,19 +1883,24 @@ damp.ekeko.snippets.matching
        extraconditions (constantly '())
        extraconditionsafter  (constantly '())
        bdfilter identity}}]
-  (let [snippet snippet]
-    (letfn [(conditions [val]
-              (freshornot  (snippet-value-freshvars snippet val) 
-                           (concat 
-                             (extraconditions val)
-                             (snippet-node-conditions|withoutfresh snippet val bdfilter) 
-                             (if 
-                               (generatep val)
-                               (mapcat conditions (snippet/snippet-node-children|conceptually snippet val))
-                               '())
-                             (extraconditionsafter val)
-                             )))]
-      (conditions node))))
+  (letfn [(conditions [val]
+            (let [bds (snippet/snippet-bounddirectives-for-node snippet val)]
+              (if 
+                ;assumption: no need to generate fresh vars for something that won't generate conditions,
+                ;_and_ neither for its children
+                (seq bds) 
+                (freshornot  (snippet-value-freshvars snippet val) 
+                             (concat 
+                               (extraconditions val)
+                               (snippet-node-conditions|withoutfresh snippet val bdfilter) 
+                               (if 
+                                 (generatep val)
+                                 (mapcat conditions (snippet/snippet-node-children|conceptually snippet val))
+                                 '())
+                               (extraconditionsafter val)
+                               ))
+                '())))]
+            (conditions node)))
 
 
 
