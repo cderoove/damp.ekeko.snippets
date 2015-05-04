@@ -313,14 +313,17 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet node]
   (let [typeclasskeywords 
         [:ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type]]
-    (or 
-      (applicability|node-classkeywords snippetgroup snippet node typeclasskeywords)
-      (applicability|absentvalue-classkeywords snippetgroup snippet node  typeclasskeywords))))
+    (and
+      (applicability|node snippetgroup snippet node)
+      (or 
+       (applicability|node-classkeywords snippetgroup snippet node typeclasskeywords)
+       (applicability|absentvalue-classkeywords snippetgroup snippet node  typeclasskeywords)))))
   
 (defn
   applicability|typename
   [snippetgroup snippet node]
-  (and 
+  (and
+    (applicability|node snippetgroup snippet node)
     (applicability|name snippetgroup snippet node)
     ;(if-let [namebinding (snippet/snippet-node-resolvedbinding snippet node)]
     ;  (astnode/binding-type? namebinding))))

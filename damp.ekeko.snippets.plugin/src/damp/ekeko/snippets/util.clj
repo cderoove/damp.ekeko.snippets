@@ -145,6 +145,32 @@
            result 
            (recur)))))))
 
+(defn pmap-group
+  "Variant of pmap, where each future created is associated with the given thread group."
+  [f coll tg]
+  (let [n (+ 2 (.. Runtime getRuntime availableProcessors))
+        rets (map 
+               #(let [task (FutureTask. (fn [] (f %)))
+                      thr (Thread. tg task)]
+                  (.start thr)
+                  [task thr])
+               coll)
+        
+        run (fn [[task thr]]
+              (try
+                (.get task)
+                (catch Exception e
+                  (.cancel task true)
+                  (.stop thr) 
+                  (throw e))))
+        
+        step (fn step [[x & xs :as vs] fs]
+               (lazy-seq
+                 (if-let [s (seq fs)]
+                   (cons (run x) (step xs (rest s)))
+                   (map run vs))))]
+    (step rets (drop n rets))))
+
 (defn parallel-viable-repeat
   "Keep on applying func until we get cnt results for which test-func is true
    (This variation of viable-repeat produces all results concurrently.)

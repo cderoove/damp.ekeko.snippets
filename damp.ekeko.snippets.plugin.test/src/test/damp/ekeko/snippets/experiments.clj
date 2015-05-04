@@ -160,11 +160,21 @@
     {:max-generations 800
      :population-size 20})
   
-  (run-pmart-experiment
-    (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/singleton-mapperxml")
-    [(pmart/projects :mapperxml)] "Singleton"
-    {:max-generations 800
-     :population-size 5})
+  (def tg (new ThreadGroup "experiment"))
+  (util/future-group 
+    tg
+    (run-pmart-experiment
+      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/singleton-mapperxml")
+      [(pmart/projects :mapperxml)] "Singleton"
+      {:max-generations 50
+       :match-timeout 120000
+       :fitness-weights [19/20 1/20]
+       :population-size 5
+       :selection-weight 0/4
+   :mutation-weight 4/4
+   :crossover-weight 0/4
+       :thread-group tg}))
+  (.interrupt tg)
   )
 
 ;(deftest

@@ -271,13 +271,47 @@ damp.ekeko.snippets.snippet
   update-projectanchoridentifier
   [snippet value projectidentifier]
   (assoc-in snippet [:ast2anchoridentifier value] projectidentifier))
-                         
+             
+
+; Copy pasted from directives; FIXME!
+(defn
+  bounddirective-directive
+  [bounddirective]
+  (.directive bounddirective))
+(defn
+  directive-name
+  [directive]
+  (:name directive))
+(defn
+  bounddirective-for-directive
+  [bounddirectives directive]
+  (let [name (directive-name directive)]
+    (some (fn [bounddirective]
+          (when
+            (= name 
+               (directive-name (bounddirective-directive bounddirective)))
+            bounddirective))
+        bounddirectives)))
+
 (defn
   add-bounddirective
   [snippet node bounddirective]
-  (update-in snippet
-             [:ast2bounddirectives node]
-             (fn [oldbounddirectives] (conj oldbounddirectives bounddirective))))
+  (let 
+    [already-added
+     (bounddirective-for-directive
+              (snippet-bounddirectives-for-node snippet node)
+              (bounddirective-directive bounddirective))]
+    
+    (if already-added 
+      (do
+        (println "Can't add same directive twice!")
+        snippet)
+      (update-in snippet
+                 [:ast2bounddirectives node]
+                 (fn [oldbounddirectives] (conj oldbounddirectives bounddirective)))
+      ))
+  
+  )
 
 (defn
   remove-bounddirective
