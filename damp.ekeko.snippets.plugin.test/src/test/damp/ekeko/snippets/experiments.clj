@@ -164,16 +164,18 @@
   (util/future-group 
     tg
     (run-pmart-experiment
-      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/singleton-mapperxml")
+      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications-DesignPatterns/singleton-mapperxml")
       [(pmart/projects :mapperxml)] "Singleton"
-      {:max-generations 50
+      {:max-generations 200
        :match-timeout 120000
-       :fitness-weights [19/20 1/20]
-       :population-size 5
-       :selection-weight 0/4
-   :mutation-weight 4/4
-   :crossover-weight 0/4
+       :fitness-weights [17/20 2/20 1/20]
+       :population-size 10
+       :selection-weight 1/8
+       :mutation-weight 7/8
+       :crossover-weight 0/8
+       :tournament-rounds 2
        :thread-group tg}))
+  
   (.interrupt tg)
   )
 

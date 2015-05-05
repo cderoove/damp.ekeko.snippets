@@ -135,7 +135,10 @@
                                  (doseq [role (keys pattern-roles-map)]
                                    (doseq [cls (role pattern-roles-map)]
                                      (persistence/spit-snippet 
-                                       (str folder-name "/" (hash cls) ".ekt") 
+                                       (str folder-name 
+                                            "/" (hash cls) 
+                                            "-" (last (clojure.string/split cls #"\."))
+                                            ".ekt") 
                                        (preprocess-templategroup
                                          (templategroup-from-classes cls project-name [cls])))))]))))
 
@@ -155,7 +158,11 @@
                                  (for [cls class-list]
                                    (first 
                                      (snippetgroup/snippetgroup-snippetlist 
-                                       (persistence/slurp-snippet (str folder-name "/" (hash cls) ".ekt")))))))))
+                                       (persistence/slurp-snippet 
+                                         (str folder-name 
+                                              "/" (hash cls) 
+                                              "-" (last (clojure.string/split cls #"\."))
+                                              ".ekt")))))))))
                          instances)]
     (mapcat identity templategroups)))
 
@@ -215,6 +222,8 @@
   
   ; Spit all classes involved in the Singleton pattern to .ekt snippets
   (spit-pattern-instances "test" (parse-pmart-xml) [(projects :mapperxml)] "Singleton")
+  
+  (spit-pattern-instances "test" (parse-pmart-xml) [(projects :mapperxml)] "Template Method")
   
   (inspector-jay.core/inspect
     (slurp-pattern-instances-as-templategroups 

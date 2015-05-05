@@ -30,7 +30,8 @@
              [individual :as individual]
              [fitness :as fitness]])
   (:import [ec.util MersenneTwister]
-           [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]))
+           [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]
+           [damp.ekeko.jdt.astnode EkekoAbsentValueWrapper]))
 
 ; Replace Java's pseudo-random number generator for MersenneTwister
 (def ^:dynamic *twister* (MersenneTwister.)) ;TODO: use binding to rebind per-thread in different places of the search algo
@@ -41,6 +42,7 @@
 (defn rand-nth [coll]
   (nth coll (rand-int (count coll))))
 
+
 (def
   ^{:doc "List of all possible mutation operators"}
   registered-operators|search
@@ -49,32 +51,32 @@
       (some #{(operatorsrep/operator-id op)} 
             [
              "replace-by-variable"
-;             "replace-by-wildcard"
-             "remove-node"
+             "replace-by-wildcard"
+;             "remove-node"
              "add-directive-equals"
              "add-directive-invokes"
 ;             "add-directive-invokedby"
-             "restrict-scope-to-child"
+;             "restrict-scope-to-child"
 ;             "relax-scope-to-child+"
-             "relax-scope-to-child*"
+;             "relax-scope-to-child*"
 ;             "relax-size-to-atleast"
-             "relax-scope-to-member"
+;             "relax-scope-to-member"
              "consider-set|lst"
              "add-directive-type"
 ;             "add-directive-type|qname"
 ;             "add-directive-type|sname"
              "add-directive-refersto"
-             "erase-list"
+;             "erase-list"
 
-             "replace-parent"
+;             "replace-parent"
 ;             "erase-comments"
 
              "add-directive-constructs"
 ;             "add-directive-constructedby"
-             "add-directive-overrides"
-             "generalize-directive"
+;             "add-directive-overrides"
+;             "generalize-directive"
              "remove-directive"
-;             "extract-template"
+;             "extract-template" ; ! Don't use this for genetic search, as it expects a certain number of templates in a templategroup/individual
              "generalize-references"
              "generalize-types"
 ;             "generalize-types|qname"
@@ -167,6 +169,11 @@
     "empty-body" matching/directive-emptybody
     "relax-scope-to-member" matching/directive-member
     "consider-set|lst" matching/directive-consider-as-set|lst
+    
+    ; Gross hack; FIXME later!!
+    "generalize-types" matching/directive-type
+    "generalize-references" matching/directive-replacedbyvariable
+    "generalize-constructorinvocations" matching/directive-constructs
     ; default case; we rely on the naming convention that operator id starts with "add-directive-"
     (try
       (let [directive-func-name (subs operator-id 4)]
@@ -196,8 +203,26 @@
                                              (directives/bounddirective-for-directive
                                                (snippet/snippet-bounddirectives-for-node snippet node)
                                                (operator-directive (operatorsrep/operator-id operator)))))))
-                                  (matching/reachable-nodes snippet (snippet/snippet-root snippet))
-                                  )]
+                                  (matching/reachable-nodes snippet (snippet/snippet-root snippet)))
+;                all-valid-nodes (case (operatorsrep/operator-id operator)
+;                                  "generalize-types" (filter (fn [x] (or 
+;                                                                       (= "Debug" (.toString x))
+;                                                                       (= "CodeGenerator" (.toString x))
+;                                                                       (= "HTMLComponentFactory" (.toString x))
+;                                                                       )) all-valid-nodes1)
+;                                  "generalize-references" (filter (fn [x] (or 
+;                                                                            (= "factory" (.toString x))
+;                                                                            (= "singleton" (.toString x))
+;                                                                            (= "singleton=null" (.toString x)))) all-valid-nodes1)
+;                                  "replace-by-wildcard" (filter (fn [x]
+;                                                                  (and
+;                                                                    (or
+;                                                                      true
+;                                                                      (= "private" (.toString x)))
+;                                                                    (not= EkekoAbsentValueWrapper (class x)))) all-valid-nodes1)
+;                                  all-valid-nodes1 
+;                                  )
+                ]
             (if (empty? all-valid-nodes)
               (recur) ; Try again if there are no valid subjects..
               (let [subject (rand-nth all-valid-nodes)
@@ -377,6 +402,8 @@
                    (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
                                                   (individual/individual-templategroup individual))) 
                  population))
+        (doseq [x population]
+          (println "OP:" (individual/individual-info x :mutation-operator)))
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
@@ -417,6 +444,10 @@
 (defn run-example []
   (def tg (new ThreadGroup "invokedby"))
   (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  
+  (def templategroup
+      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/solution.ekt"))
+  
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (util/future-group tg (evolve verifiedmatches
@@ -459,15 +490,8 @@
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (util/parallel-viable-repeat
-    20
-    (fn [] (persistence/copy-snippetgroup templategroup))
-    (fn [x] true))
   
-  (pmap 
-    (fn [x]  (persistence/copy-snippetgroup templategroup))
-    (range 0 20))
-    
+  
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
   (fitness/templategroup-matches templategroup) 
   @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
@@ -479,16 +503,25 @@
   ; Test a particular mutation operator (on a random subject)
   (do
     (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-              registered
-;              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-directive")) (operatorsrep/registered-operators))
+              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-constructorinvocations")) (operatorsrep/registered-operators))
               ))
+    
+    
+    (persistence/snippetgroup-string (individual/individual-templategroup mutant))
+    (individual/compute-fitness (individual/make-individual templategroup) (fitness/make-fitness-function
+                                                                             (make-verified-matches 
+                                                                               (map
+                                                                                 (fn [x] (first (fitness/templategroup-matches x)))
+                                                                                 [(persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt")
+                                                                                 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-907843851.ekt")
+                                                                                 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/29895102.ekt")])
+                                                                               [])
+                                                                             config-default))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   
   (persistence/spit-snippetgroup "error3.ekt" (individual/individual-templategroup mutant))
   )
-;; todo: applicable for equals: bestaande vars (of slechts 1 nieuwe)
-;; todo: gewone a* search  

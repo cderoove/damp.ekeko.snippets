@@ -97,19 +97,48 @@
     (if (= (+ p r) 0)
       0
       (* 2 (/ (* p r) (+ p r))))))
+  
+(defn snippetgroup-nodes
+  [snippetgroup]
+  (mapcat snippet/snippet-nodes (snippetgroup/snippetgroup-snippetlist snippetgroup) ))
 
-;(defn count-directives
-;  "Count the number of directives used in a snippet group (excluding default directives)"
-;  [snippetgroup]
-;  (reduce + 
-;          (for [snippet (snippetgroup/snippetgroup-snippetlist snippetgroup)]
-;            (count (mapcat (fn [node] (matching/nondefault-bounddirectives snippet node)) (snippet/snippet-nodes snippet) )))))
-;
 ;(defn directive-count-measure
 ;  "Produce a score in [0,1] to reflect how complex a template looks,
 ;   which is based on how many directives are used in the template"
 ;  [templategroup]
 ;  (/ 1 (inc (* 1/2 (count-directives templategroup)))))
+
+
+
+(defn count-directives
+  "Count the number of directives used in a snippet group (excluding default directives)"
+  [snippetgroup]
+  ;  (count (snippet/snippet-bounddirectives snippet node))
+  
+  (reduce 
+    (fn [countsofar bdlist]
+      (+ countsofar (count bdlist)))
+    0
+    (mapcat snippet/snippet-bounddirectives (snippetgroup/snippetgroup-snippetlist snippetgroup))))
+    
+(defn directive-count-measure
+  "Produce a score in [0,1] to reflect how complex a template looks,
+   which is based on how many directives are used in the template"
+  [templategroup]
+  (- 1 (/ (count-directives templategroup)   
+          (* (count (matching/registered-directives)) (count (snippetgroup-nodes templategroup)))))
+  
+;  (/ 1 (inc (* 1/2 (count-directives templategroup))))
+  )
+
+  (def templategroup1
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  
+  (def templategroup2
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
+
+  (double (directive-count-measure templategroup1))
+
 ;
 ;(defn simple-measure
 ;  "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
@@ -166,14 +195,20 @@
   "Compute the partial matching score of the last templategroup that we tried to match
    @param node-count number of nodes in that last templategroup"
   [node-count]
-  (let [partial-matches
-        (remove 
-          (fn [x] (= x node-count))
-          (:done @matched-nodes))]
+  (let [partial-matches (:done @matched-nodes)
+        
+;        (remove 
+;          (fn [x] (= x node-count))
+;          (:done @matched-nodes))
+        ]
     (reset-matched-nodes)
     (if (empty? partial-matches)
       0
-      (let [score (/ (apply max partial-matches) node-count)]
+      (let [score (/ 
+                    (reduce + (map (fn [x] (/ x node-count)) partial-matches))
+                    (count partial-matches))
+;            (/ (apply max partial-matches) node-count)
+            ]
         (if (> score 1)
           (println "!Partial matching score cannot > 1" @matched-nodes)
           score)))))
@@ -218,6 +253,9 @@
       (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup) (:thread-group config)) 
             fscore (fmeasure matches verifiedmatches)
             partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel) (:thread-group config))
+            
+            directive-count-score (directive-count-measure templategroup)
+            
             weights (:fitness-weights config)
             ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
             ;            lengthscore (/ 1 (template-size templategroup))
@@ -225,5 +263,7 @@
             ]
         [(+
            (* (nth weights 0) fscore)
-           (* (nth weights 1) partialscore))
-         [fscore partialscore]]))))
+           (* (nth weights 1) partialscore)
+           (* (nth weights 2) directive-count-score)
+           )
+         [fscore partialscore directive-count-score]]))))
