@@ -42,7 +42,6 @@
 (defn rand-nth [coll]
   (nth coll (rand-int (count coll))))
 
-
 (def
   ^{:doc "List of all possible mutation operators"}
   registered-operators|search
@@ -187,12 +186,31 @@
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
-       
+        operator-bias (nth (individual/individual-fitness-components) 3)
         snippet (rand-snippet group-copy)
         
         pick-operator
         (fn []
-          (let [operator (rand-nth operators)
+          (let [
+                refining-ops (filter (fn [x] (= :refinement (operatorsrep/operator-category x)) ) operators)
+                generalizing-ops (filter (fn [x] (= :generalization (operatorsrep/operator-category x)) ) operators)
+                other-ops (filter (fn [x] (and (not= :refinement (operatorsrep/operator-category x))
+                                               (not= :generalization (operatorsrep/operator-category x))) ) operators)
+                
+                operator (let [rand-num (rand 100)]
+                           (if (pos? operator-bias)
+                             (cond
+                               (<= rand-num 40) (rand-nth generalizing-ops)
+                               (>= rand-num 80) (rand-nth refining-ops)
+                               :else (rand-nth other-ops))
+                             (cond
+                               (<= rand-num 20) (rand-nth generalizing-ops)
+                               (>= rand-num 60) (rand-nth refining-ops)
+                               :else (rand-nth other-ops))
+                             )
+                           )
+                
+;                operator (rand-nth operators)
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [node]
@@ -478,7 +496,6 @@
   
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (inspector-jay.core/inspect templategroup)
   
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
@@ -488,8 +505,6 @@
   (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   
   
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
@@ -523,5 +538,6 @@
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   
-  (persistence/spit-snippetgroup "error3.ekt" (individual/individual-templategroup mutant))
+  ; Selection 
+  (inspector-jay.core/inspect (select (population-from-snippets matches 10) 2))
   )

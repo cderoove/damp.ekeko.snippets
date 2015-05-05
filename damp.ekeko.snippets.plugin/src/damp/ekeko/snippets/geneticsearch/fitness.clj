@@ -57,13 +57,13 @@
 
 (defn
   falsep
-  "False positives; how many results were incorrectly considered relevant"
+  "False positives; how many results were incorrectly considered relevant; i.e. these results shouldn't be there"
   [matches verifiedmatches]
   (clojure.set/difference matches (:positives verifiedmatches)))
 
 (defn
   falsen
-  "False negatives; how many results were incorrectly considered irrelevant"
+  "False negatives; how many results were incorrectly considered irrelevant; i.e. these results were missed"
   [matches verifiedmatches]
   (clojure.set/difference (:positives verifiedmatches) matches))
   
@@ -253,8 +253,10 @@
       (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup) (:thread-group config)) 
             fscore (fmeasure matches verifiedmatches)
             partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel) (:thread-group config))
-            
             directive-count-score (directive-count-measure templategroup)
+            
+            ; If > 0, we have more false positives ; if < 0, we have more false negatives
+            false-bias (- (falsep matches verifiedmatches) (falsen matches verifiedmatches))
             
             weights (:fitness-weights config)
             ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
@@ -266,4 +268,4 @@
            (* (nth weights 1) partialscore)
            (* (nth weights 2) directive-count-score)
            )
-         [fscore partialscore directive-count-score]]))))
+         [fscore partialscore directive-count-score  ]]))))
