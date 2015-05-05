@@ -1,9 +1,12 @@
 package damp.ekeko.snippets.gui;
 
+import java.io.File;
 import java.net.URI;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -31,6 +34,7 @@ import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.dialogs.SaveAsDialog;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
@@ -51,7 +55,7 @@ public class TemplateEditor extends EditorPart {
 	private TemplateGroupViewer templateGroupViewer;
 	private TemplateTreeContentProvider contentProvider;
 	//private OperatorOperandsViewer operatorOperandsViewer;
-	
+
 	//private BoundDirectivesViewer boundDirectivesViewer;
 	//private String lastSelectedWorkspaceTextString;
 	private ASTNode lastSelectedWorkspaceASTNode;
@@ -59,7 +63,7 @@ public class TemplateEditor extends EditorPart {
 	private boolean isDirty = false;
 
 	protected ToolBar toolBar;
-	
+
 	public static IFn FN_SNIPPET_ANCHOR;
 	public static IFn FN_SNIPPET_VALUE_ANCHOR_RESOLVED;
 
@@ -71,7 +75,7 @@ public class TemplateEditor extends EditorPart {
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
 	}
-	
+
 	public void setGroup(TemplateGroup group) {
 		templateGroup = group;
 		refreshWidgets();
@@ -80,22 +84,22 @@ public class TemplateEditor extends EditorPart {
 	public TemplateGroup getGroup() {
 		return templateGroup;
 	}
-	
-	
-	
-	
+
+
+
+
 	/**
 	 * Create contents of the view part.
 	 * @param parent
 	 */
 	@Override
 	public void createPartControl(Composite parent) {
-				
+
 		parent.setLayout(new GridLayout(1, false));
-		
+
 		toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
-		
+
 		ToolItem tltmAdd = new ToolItem(toolBar, SWT.NONE);
 		tltmAdd.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -103,11 +107,11 @@ public class TemplateEditor extends EditorPart {
 				addSnippet();
 			}
 		});
-		
+
 		tltmAdd.setImage(EkekoSnippetsPlugin.IMG_ADD);
 		tltmAdd.setToolTipText("Add template");
-				
-		
+
+
 		tltmRemove = new ToolItem(toolBar, SWT.NONE);
 		tltmRemove.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -131,9 +135,9 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_EDIT);
 		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
 		tltmEditBoundDirectives.setEnabled(false);
-		
-		
-		
+
+
+
 		tltmRevealAnchor = new ToolItem(toolBar, SWT.NONE);
 		tltmRevealAnchor.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -145,8 +149,8 @@ public class TemplateEditor extends EditorPart {
 		tltmRevealAnchor.setToolTipText("Reveal project anchor");
 		tltmRevealAnchor.setEnabled(false);
 
-		
-	
+
+
 		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);
 		templateGroupViewer.setParentTemplateEditor(this);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);
 		templateGroupViewer.setInput(templateGroup, null, null);
@@ -157,13 +161,13 @@ public class TemplateEditor extends EditorPart {
 				onNodeSelected(event);
 			}
 		});
-					
-		
+
+
 		/*
 
 		Group snippetOperatorGroup = new Group(container, SWT.NONE);
 		snippetOperatorGroup.setLayout(new GridLayout(1, false));
-		
+
 		ToolBar snippetOperatorGroupToolbar = new ToolBar(snippetOperatorGroup, SWT.FLAT | SWT.RIGHT);
 		snippetOperatorGroupToolbar.setOrientation(SWT.RIGHT_TO_LEFT);
 		snippetOperatorGroupToolbar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
@@ -173,9 +177,9 @@ public class TemplateEditor extends EditorPart {
 		gd_lblOperator.heightHint = 22;
 		lblOperator.setLayoutData(gd_lblOperator);
 		lblOperator.setText("");
-		
-		*/
-		
+
+		 */
+
 		/*
 		ToolItem tltmApplyOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		tltmApplyOperator.addSelectionListener(new SelectionAdapter() {
@@ -186,11 +190,11 @@ public class TemplateEditor extends EditorPart {
 		});
 		tltmApplyOperator.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/etool16/validate.gif"));
 		tltmApplyOperator.setToolTipText("Apply Operator");
-		*/
-		
-		
-		
-		
+		 */
+
+
+
+
 		/*
 		ToolItem undoOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		undoOperator.addSelectionListener(new SelectionAdapter() {
@@ -201,8 +205,8 @@ public class TemplateEditor extends EditorPart {
 		});
 		undoOperator.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/undo_edit.gif"));
 		undoOperator.setToolTipText("Undo operator application");
-		
-		
+
+
 		ToolItem redoOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		redoOperator.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -212,20 +216,20 @@ public class TemplateEditor extends EditorPart {
 		});
 		redoOperator.setImage(ResourceManager.getPluginImage("org.eclipse.ui", "/icons/full/etool16/redo_edit.gif"));
 		redoOperator.setToolTipText("Redo operator application");
-		*/
+		 */
 
-		
+
 		/*
 		operatorOperandsViewer = new OperatorOperandsViewer(snippetOperatorGroup, SWT.NONE);				GridData gd_operatorOperandsViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_operatorOperandsViewer.heightHint = 297;		operatorOperandsViewer.setLayoutData(gd_operatorOperandsViewer);
-		*/
-		
+		 */
+
 		/*
 		boundDirectivesViewer = new BoundDirectivesViewer(snippetOperatorGroup, SWT.NONE);
 		GridData gd_boundDirectivesViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		gd_boundDirectivesViewer.heightHint = 297;
 		boundDirectivesViewer.setLayoutData(gd_boundDirectivesViewer);
-		
-		
+
+
 		templateGroupViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
 			@Override
 			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
@@ -238,7 +242,7 @@ public class TemplateEditor extends EditorPart {
 		});
 		 */
 
-		
+
 		templateGroupViewer.addNodeDoubleClickListener(new TemplateGroupViewerNodeDoubleClickListener() {
 			@Override
 			public void nodeDoubleClicked(TemplateGroupViewerNodeSelectionEvent event) {
@@ -247,10 +251,10 @@ public class TemplateEditor extends EditorPart {
 		});
 
 
-		
-		
-		
-		
+
+
+
+
 		ISelectionListener sl = new ISelectionListener() {
 			@Override
 			public void selectionChanged(IWorkbenchPart part, ISelection sel) {
@@ -260,10 +264,10 @@ public class TemplateEditor extends EditorPart {
 					if(!lastSelectedText.isEmpty())
 						lastSelectedWorkspaceTextString = lastSelectedText.getText();
 				}
-				*/
-				
-				
-				
+				 */
+
+
+
 				refreshWorkspaceSelection(part, sel);
 			}
 
@@ -273,10 +277,10 @@ public class TemplateEditor extends EditorPart {
 		//but people might be using different editors (e.g., WindowBuilder)
 		getSite().getPage().addSelectionListener(sl);
 
-			
+
 		//does not work reliably, so reverting
 		//getSite().setSelectionProvider(templateGroupViewer);
-		
+
 		try {
 			IViewPart view = getSite().getPage().showView(OperatorOperandsView.ID);
 			OperatorOperandsView operatorOperandsView = (OperatorOperandsView) view;
@@ -294,7 +298,7 @@ public class TemplateEditor extends EditorPart {
 			return null;
 		return (ASTNode) anchor;
 	}	
-	
+
 	public static Object projectAnchorOfTemplate(Object template) {
 		if(template == null)
 			return null;
@@ -310,7 +314,7 @@ public class TemplateEditor extends EditorPart {
 		} else {
 			tltmRevealAnchor.setEnabled(false);
 		}
-		
+
 		if(event.getSelectedTemplateNode() == null) {
 			tltmRemove.setEnabled(false);
 			tltmEditBoundDirectives.setEnabled(false);
@@ -352,7 +356,7 @@ public class TemplateEditor extends EditorPart {
 			lastSelectedWorkspaceASTNode = finder.getCoveringNode();
 		}
 	}
-	
+
 	//manually called when view is opened for the first time
 	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
 		if(activeEditor instanceof ITextEditor) {
@@ -364,7 +368,7 @@ public class TemplateEditor extends EditorPart {
 	}
 
 	protected void onEditBoundDirectives(TemplateGroup oldTemplateGroup, Object selectedTemplate, Object selectedNode) {
-		
+
 		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), oldTemplateGroup.getGroup(), selectedTemplate, selectedNode);
 		int open = dialog.open();
 		if(open == BoundDirectivesEditorDialog.CANCEL)
@@ -379,7 +383,7 @@ public class TemplateEditor extends EditorPart {
 	public void setFocus() {
 		templateGroupViewer.setFocus();
 	}
-			
+
 	public TemplateTreeContentProvider getContentProvider() {
 		return contentProvider;
 	}
@@ -388,8 +392,8 @@ public class TemplateEditor extends EditorPart {
 	public void setViewID(String secondaryId) {
 		this.viewID = secondaryId;
 	}
-	*/
-				
+	 */
+
 	public void addSnippet() {
 		if (lastSelectedWorkspaceASTNode != null) {
 			templateGroup.addSnippetCode(lastSelectedWorkspaceASTNode);
@@ -398,7 +402,7 @@ public class TemplateEditor extends EditorPart {
 		}
 		becomeDirty();
 	}
-	
+
 	public void viewSnippet() {
 		//removed plain snippet viewer
 		//snippetGroup.viewSnippet(getSelectedSnippet());
@@ -422,7 +426,7 @@ public class TemplateEditor extends EditorPart {
 		QueryInspectorDialog dlg = new QueryInspectorDialog(Display.getCurrent().getActiveShell(),
 				"Query", query, "\nExecute the Query?", null, null);
 		dlg.create();
-		
+
 		if (dlg.open() == Window.OK) 
 			runQuery();
 	}
@@ -431,18 +435,18 @@ public class TemplateEditor extends EditorPart {
 	public void runQuery() {
 		templateGroup.runQuery(templateGroupViewer.getSelectedSnippet());
 	}
-	
+
 	private void updateTemplate() {
 		templateGroupViewer.setInput(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
-		
+
 	}
-	
-	
+
+
 	protected void refreshWidgets() {
 		updateTemplate();
 	}
 
-	
+
 	@Override
 	public void doSave(IProgressMonitor monitor) {
 		IEditorInput input = getEditorInput();
@@ -452,41 +456,52 @@ public class TemplateEditor extends EditorPart {
 		ClojureFileEditorInput teinput = (ClojureFileEditorInput) input;
 		if(!teinput.isAssociatedWithPersistentFile()) {
 			FileDialog fileDialog = new FileDialog(getSite().getShell(), SWT.SAVE);
-		    fileDialog.setFilterExtensions(new String[] { "*.ekt" });
-		    fileDialog.setFilterNames(new String[] { "Ekeko/X template file (*.ekt)" });
-		    absoluteFilePathString = fileDialog.open();
-		    if(absoluteFilePathString == null)
-		    	return;   
-		    teinput.setPathToPersistentFile(absoluteFilePathString);
+			fileDialog.setFilterExtensions(new String[] { "*.ekt" });
+			fileDialog.setFilterNames(new String[] { "Ekeko/X template file (*.ekt)" });
+			absoluteFilePathString = fileDialog.open();
+			if(absoluteFilePathString == null)
+				return;   
+			teinput.setPathToPersistentFile(absoluteFilePathString);
 		} else {
 			absoluteFilePathString = teinput.getPathToPersistentFile();
 		}
-		TemplateEditorInput.serializeClojureTemplateGroup(templateGroup.getGroup(), absoluteFilePathString);
-		isDirty = false;
-		firePropertyChange(IEditorPart.PROP_DIRTY); 
+		try {
+			TemplateEditorInput.serializeClojureTemplateGroup(templateGroup.getGroup(), absoluteFilePathString);
+			isDirty = false;
+			firePropertyChange(IEditorPart.PROP_DIRTY); 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void doSaveAs() {
-		// TODO Auto-generated method stub
-		//SaveAsDialog dialog = new SaveAsDialog(getShell());
+		IEditorInput input = getEditorInput();
+		if(!(input instanceof TemplateEditorInput))
+			return;
+		TemplateEditorInput newInput = new TemplateEditorInput();
+		setInput(newInput); //fires no prop change, only sets field
+		try {
+			doSave(new NullProgressMonitor()); //serializes to new file
+			updateInput(newInput); //deserializes from file
+		} catch (Exception e) {
+			e.printStackTrace();
+			setInput(input);
+		}
 	}
 
 
-	@Override
-	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
-			setSite(site);
-			setPartName(input.getName());
+	private void updateInput(IEditorInput input) throws PartInitException {
+		setPartName(input.getName());
 
-			if(input instanceof FileStoreEditorInput
-					|| input instanceof FileEditorInput) {
-				String pathToFile = "";
-				if(input instanceof FileStoreEditorInput) {
-					//outside workspace
-					FileStoreEditorInput fileInput = (FileStoreEditorInput) input;
-					URI uri = fileInput.getURI();
-					pathToFile = uri.getPath();
-				} else 
+		if(input instanceof FileStoreEditorInput || input instanceof FileEditorInput) {
+			String pathToFile = "";
+			if(input instanceof FileStoreEditorInput) {
+				//outside workspace
+				FileStoreEditorInput fileInput = (FileStoreEditorInput) input;
+				URI uri = fileInput.getURI();
+				pathToFile = uri.getPath();
+			} else 
 				if(input instanceof FileEditorInput) {
 					//within workspace
 					FileEditorInput fileInput = (FileEditorInput) input;
@@ -496,38 +511,44 @@ public class TemplateEditor extends EditorPart {
 					setInput(new TemplateEditorInput());
 					return;
 				}
-				TemplateEditorInput actualInput = new TemplateEditorInput();
-				actualInput.setPathToPersistentFile(pathToFile);	
-				setInput(actualInput);
+			TemplateEditorInput actualInput = new TemplateEditorInput();
+			actualInput.setPathToPersistentFile(pathToFile);	
+			setInput(actualInput);
+			try {
+				Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(pathToFile);
+				this.templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+
+		if(input instanceof TemplateEditorInput) {
+			TemplateEditorInput actualInput = (TemplateEditorInput) input;
+			if(actualInput.associatedPersistentFileExists()) {
 				try {
-					Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(pathToFile);
+					Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(actualInput.getPathToPersistentFile());
 					this.templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				return;
 			}
-			
-			if(input instanceof TemplateEditorInput) {
-				ClojureFileEditorInput actualInput = (ClojureFileEditorInput) input;
-				if(actualInput.associatedPersistentFileExists()) {
-					try {
-						Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(actualInput.getPathToPersistentFile());
-						this.templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				
-				setInput(input);
-				return;
-			}
-			
-			
-			
-			throw new PartInitException("Unexpected input for TemplateEditor: " + input.toString());
+
+			setInput(input);
+			return;
+		}
+
+		throw new PartInitException("Unexpected input for TemplateEditor: " + input.toString());
+
+
 	}
-	
+
+	@Override
+	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
+		setSite(site);
+		updateInput(input);
+	}
+
 	@Override
 	public boolean isDirty() {
 		return isDirty;
@@ -535,14 +556,14 @@ public class TemplateEditor extends EditorPart {
 
 	@Override
 	public boolean isSaveAsAllowed() {
-		return false;
+		return true;
 	}
-	
+
 	public void becomeDirty() {
 		isDirty = true;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
 	}
-	
+
 	public void becomeClean() {
 		isDirty = false;
 		firePropertyChange(IEditorPart.PROP_DIRTY); 
@@ -559,8 +580,8 @@ public class TemplateEditor extends EditorPart {
 	public void restoreState(IMemento memento) {
 		storedTemplate.putString("TemplateFilePath", input.getPathToPersistentFile());
 	}
-	*/
-	
-	
-	
+	 */
+
+
+
 }

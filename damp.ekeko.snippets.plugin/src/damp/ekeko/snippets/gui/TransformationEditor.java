@@ -4,6 +4,7 @@ import java.net.URI;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IEditorInput;
@@ -86,12 +87,14 @@ public class TransformationEditor extends MultiPageEditorPart {
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 		setSite(site);
+		updateInput(input);
+	}
+
+	private void updateInput(IEditorInput input) throws PartInitException {
 		setPartName(input.getName());
 
 		lhsTemplateGroup = TemplateGroup.newFromGroupName("LHS");
 		rhsTemplateGroup = TemplateGroup.newFromGroupName("RHS");
-	
-		
 		
 		if(input instanceof FileStoreEditorInput
 				|| input instanceof FileEditorInput) {
@@ -135,11 +138,8 @@ public class TransformationEditor extends MultiPageEditorPart {
 			return;
 		}
 
-
-		throw new PartInitException("Unexpected input for TransformationEditor: " + input.toString());
+		throw new PartInitException("Unexpected input for TransformationEditor: " + input.toString());		
 	}
-
-
 
 	protected void onExecuteTransformation() {
 		// CompareUI.openCompareDialog(input);
@@ -229,22 +229,35 @@ public class TransformationEditor extends MultiPageEditorPart {
 		} else {
 			absoluteFilePathString = teinput.getPathToPersistentFile();
 		}
-		
-		Object transformation = getTransformation();
-		serializeClojureTransformation(transformation, absoluteFilePathString);		
-		subjectsEditor.becomeClean();
-		rewritesEditor.becomeClean();
+		try {
+			Object transformation = getTransformation();
+			serializeClojureTransformation(transformation, absoluteFilePathString);		
+			subjectsEditor.becomeClean();
+			rewritesEditor.becomeClean();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void doSaveAs() {
-		// TODO Auto-generated method stub
+		IEditorInput input = getEditorInput();
+		if(!(input instanceof TransformationEditorInput))
+			return;
+		TransformationEditorInput newInput = new TransformationEditorInput();
+		setInput(newInput); //fires no prop change, only sets field
+		try {
+			doSave(new NullProgressMonitor()); //serializes to new file
+			updateInput(newInput); //deserializes from file
+		} catch (Exception e) {
+			e.printStackTrace();
+			setInput(input);
+		}
 	}
 
 	@Override
 	public boolean isSaveAsAllowed() {
-		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override

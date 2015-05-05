@@ -2,9 +2,6 @@ package damp.ekeko.snippets.gui;
 
 import java.io.File;
 
-import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IPersistableElement;
-
 public class ClojureFileEditorInput {
 
 	protected String pathToFile = null;
