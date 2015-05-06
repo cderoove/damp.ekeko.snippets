@@ -88,12 +88,11 @@
             (catch Exception e
               (let [id (util/current-time)
                     tg (individual-templategroup individual)]
+                
                 (println "!")
 ;                (println "-" (individual-info individual :mutation-node))
-
 ;                (inspector-jay.core/inspect [id individual e])
 ;                (-> errors (.add [id individual e]))
-
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"

@@ -256,7 +256,7 @@
             directive-count-score (directive-count-measure templategroup)
             
             ; If > 0, we have more false positives ; if < 0, we have more false negatives
-            false-bias (- (falsep matches verifiedmatches) (falsen matches verifiedmatches))
+            false-bias (- (count (falsep matches verifiedmatches)) (count (falsen matches verifiedmatches)))
             
             weights (:fitness-weights config)
             ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
@@ -268,4 +268,4 @@
            (* (nth weights 1) partialscore)
            (* (nth weights 2) directive-count-score)
            )
-         [fscore partialscore directive-count-score  ]]))))
+         [fscore partialscore directive-count-score false-bias]]))))

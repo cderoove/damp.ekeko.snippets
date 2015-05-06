@@ -92,12 +92,12 @@
    :initial-population nil ; If nil, the initial population is generated from the verified matches
    
    :selection-weight 1/4
-   :mutation-weight 2/4
-   :crossover-weight 1/4
+   :mutation-weight 3/4
+   :crossover-weight 0/4
    
    :fitness-function fitness/make-fitness-function
-   :fitness-weights [19/20 1/20]
-   :fitness-threshold 0.95
+   :fitness-weights [17/20 2/20 1/20]
+   :fitness-threshold 0.9
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
    :match-timeout 10000
@@ -186,7 +186,7 @@
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
-        operator-bias (nth (individual/individual-fitness-components) 3)
+        operator-bias (nth (individual/individual-fitness-components individual) 3)
         snippet (rand-snippet group-copy)
         
         pick-operator
@@ -197,20 +197,19 @@
                 other-ops (filter (fn [x] (and (not= :refinement (operatorsrep/operator-category x))
                                                (not= :generalization (operatorsrep/operator-category x))) ) operators)
                 
-                operator (let [rand-num (rand 100)]
-                           (if (pos? operator-bias)
-                             (cond
-                               (<= rand-num 40) (rand-nth generalizing-ops)
-                               (>= rand-num 80) (rand-nth refining-ops)
-                               :else (rand-nth other-ops))
-                             (cond
-                               (<= rand-num 20) (rand-nth generalizing-ops)
-                               (>= rand-num 60) (rand-nth refining-ops)
-                               :else (rand-nth other-ops))
-                             )
-                           )
+;                operator (let [rand-num (rand 100)]
+;                           (if (pos? operator-bias)
+;                             (cond
+;                               (<= rand-num 20) (rand-nth generalizing-ops)
+;                               (>= rand-num 60) (rand-nth refining-ops)
+;                               :else (rand-nth other-ops))
+;                             (cond
+;                               (<= rand-num 40) (rand-nth generalizing-ops)
+;                               (>= rand-num 80) (rand-nth refining-ops)
+;                               :else (rand-nth other-ops))))
                 
-;                operator (rand-nth operators)
+                operator (rand-nth operators)
+
                 ; Pick an AST node that the chosen operator can be applied to
                 all-valid-nodes (filter
                                   (fn [node]
@@ -362,7 +361,9 @@
      csv-columns ["Generation" "Total time" "Generation time"
                   "Best fitness" "Worst fitness" "Average fitness"
                   "Best fscore" "Worst fscore" "Average fscore"
-                  "Best partial" "Worst partial" "Average partial"]
+                  "Best partial" "Worst partial" "Average partial"
+                  "Best dirscore" "Worst dirscore" "Average dirscore"
+                  "Average op-bias"]
      start-time (. System (nanoTime))
      
      config (merge config-default conf)
@@ -413,15 +414,20 @@
                                    (util/average (map (fn [ind] (first (individual/individual-fitness-components ind))) population))
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
-                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
+                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))
+                                   (nth (individual/individual-fitness-components (last population)) 2) ; Dirscore
+                                   (nth (individual/individual-fitness-components (first population)) 2)
+                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 2)) population))
+                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 3)) population)) ; Average op-bias
+                                   ])
         (util/make-dir (str output-dir "/" generation))
         (doall (map-indexed
                  (fn [idx individual]
                    (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
                                                   (individual/individual-templategroup individual))) 
                  population))
-        (doseq [x population]
-          (println "OP:" (individual/individual-info x :mutation-operator)))
+;        (doseq [x population]
+;          (println "OP:" (individual/individual-info x :mutation-operator)))
         (when (< generation (:max-generations config))
           (if
             (> best-fitness (:fitness-threshold config))
@@ -462,32 +468,17 @@
 (defn run-example []
   (def tg (new ThreadGroup "invokedby"))
   (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  
-  (def templategroup
-      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/solution.ekt"))
-  
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (def verifiedmatches (make-verified-matches matches []))
   (util/future-group tg (evolve verifiedmatches
                                 :selection-weight 1/4
                                 :mutation-weight 3/4
                                 :crossover-weight 0/4
-                                :max-generations 30
+                                :max-generations 10
                                 :match-timeout 12000
                                 :thread-group tg
                                 :population-size 10
                                 :tournament-rounds 5
-;                                :mutation-operators 
-;                                (filter 
-;                                  (fn [op] 
-;                                    (some #{(operatorsrep/operator-id op)} 
-;                                          ["replace-by-variable"
-;                                           "replace-by-wildcard"
-;                                           "add-directive-equals"
-;                                           "add-directive-invokes"
-;                                           "relax-scope-to-child*"
-;                                           ]))
-;                                  (operatorsrep/registered-operators))
                                 )))
 
 (comment
