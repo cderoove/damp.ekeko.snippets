@@ -100,20 +100,9 @@
                    (first (:content (first (:content cls))))))]
     (dissoc (zipmap keys values) nil)))
 
-(defn find-compilationunit [^String project-name ^String cls-name]
-  "Find a compilation unit, given an Eclipse project name and an absolute class name"
-  (let [all-projects (.getJavaProjects (JavaCore/create (.getRoot  (damp.ekeko.workspace.workspace/eclipse-workspace))))
-        project (first (filter 
-                        (fn [project]
-                          (= project-name (.getElementName project)))
-                        all-projects))]
-    (.getCompilationUnit (.findType project cls-name))))
-
-
-
 (defn templategroup-from-classes [name project-name class-list]
   (let [snippets (for [cls class-list]
-                   (try (-> (find-compilationunit project-name cls)
+                   (try (-> (util/find-compilationunit project-name cls)
                           damp.ekeko.jdt.astnode/jdt-parse-icu
                           .types
                           first ; Get the first type declaration in this ICU
@@ -142,8 +131,19 @@
                                        (preprocess-templategroup
                                          (templategroup-from-classes cls project-name [cls])))))]))))
 
+(defn slurp-templategroup-from-templates 
+  "Produce a templategroup given a number of .ekt files that contain only 1 template"
+  [files name]
+  (snippetgroup/make-snippetgroup 
+    name
+    (for [file files]
+      (first 
+        (snippetgroup/snippetgroup-snippetlist 
+          (persistence/slurp-snippet
+            file))))))
+
 (defn slurp-pattern-instances-as-templategroups
-  [folder-name pmart-xml project-names pattern-name]
+  [folder-name pmart-xml project-names pattern-name filter-func]
   (let [instances (apply concat
                          (for [name project-names]
                            (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
@@ -151,7 +151,12 @@
         templategroups (map-indexed
                          (fn [idx [project-name instance]]
                            (let [pattern-roles-map (pattern-roles instance)
-                                 class-lists (util/combinations pattern-roles-map)]
+                                 class-lists (util/combinations pattern-roles-map)
+;                                 class-lists raw-class-lists
+;                                 class-lists (filter 
+;                                               (fn [cls-list] (some filter-func cls-list))
+;                                               raw-class-lists)
+                                 ]
                              (for [class-list class-lists]
                                (snippetgroup/make-snippetgroup 
                                  (str pattern-name "-" idx " --- " project-name)
@@ -177,10 +182,7 @@
         templategroups (map-indexed
                          (fn [idx [project-name instance]]
                            (let [pattern-roles-map (pattern-roles instance)
-                                 class-lists (util/combinations pattern-roles-map)
-;                                 (for [role (keys pattern-roles-map)]
-;                                   (first (role pattern-roles-map)))
-                                 ]
+                                 class-lists (util/combinations pattern-roles-map)]
                              (for [class-list class-lists]
                                (templategroup-from-classes (str pattern-name "-" idx " --- " project-name) project-name class-list))))
                          instances)]
@@ -200,6 +202,9 @@
      :mapperxml "8 - MapperXML v1.9.7"
      :nutch "10 - Nutch v0.4"
      :pmd "11 - PMD v1.8"})
+
+
+
 
 (comment
   
@@ -223,12 +228,16 @@
   ; Spit all classes involved in the Singleton pattern to .ekt snippets
   (spit-pattern-instances "test" (parse-pmart-xml) [(projects :mapperxml)] "Singleton")
   
+  
   (spit-pattern-instances "test" (parse-pmart-xml) [(projects :mapperxml)] "Template Method")
+  
+  (spit-pattern-instances "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw" 
+                          (parse-pmart-xml) [(projects :jhotdraw)] "Template Method")
   
   (inspector-jay.core/inspect
     (slurp-pattern-instances-as-templategroups 
      "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/singleton-mapperxml" 
-     (parse-pmart-xml) [(projects :mapperxml)] "Singleton"))
+     (parse-pmart-xml) [(projects :mapperxml)] "Singleton" (fn [x] true)))
   
   ; Inspect which patterns are in a project..
   (do (inspector-jay.core/inspect (pattern-instances (program (parse-pmart-xml) (:jhotdraw projects)))) nil)

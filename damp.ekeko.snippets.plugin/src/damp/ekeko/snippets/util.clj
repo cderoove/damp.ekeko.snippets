@@ -3,8 +3,16 @@
     :author "Coen De Roover, Siltvani, Tim Molderez."}
   damp.ekeko.snippets.util
   (:require [damp.ekeko.jdt [astnode :as astnode]])
-  (:import (java.util.concurrent TimeoutException TimeUnit FutureTask)
-           (clojure.lang LispReader$ReaderException)))
+  (:import 
+    (java.util.concurrent TimeoutException TimeUnit FutureTask)
+    (clojure.lang LispReader$ReaderException)
+    [org.eclipse.core.resources ResourcesPlugin IWorkspace]
+           [org.eclipse.jdt.core  IMember IJavaElement ITypeHierarchy JavaCore IType IJavaModel IJavaProject IPackageFragment ICompilationUnit]
+           [org.eclipse.ui PlatformUI IWorkingSet IWorkingSetManager]
+           [org.eclipse.core.runtime.jobs Job]
+           [org.eclipse.core.runtime Status Path]
+           [damp.ekeko EkekoModel JavaProjectModel ProjectModel])
+  )
 
 (defn
   class-simplename
@@ -124,8 +132,14 @@
             (throw (Exception. (str "Don't know how to walk this value:" val)))
             ))))))
 
-
-
+(defn find-compilationunit [^String project-name ^String cls-name]
+  "Find a compilation unit, given an Eclipse project name and an absolute class name"
+  (let [all-projects (.getJavaProjects (JavaCore/create (.getRoot  (damp.ekeko.workspace.workspace/eclipse-workspace))))
+        project (first (filter 
+                        (fn [project]
+                          (= project-name (.getElementName project)))
+                        all-projects))]
+    (.getCompilationUnit (.findType project cls-name))))
 
 ; TODO: Maybe throw an exception after we retried X times? To avoid infinite recursions..
 (defn viable-repeat 
