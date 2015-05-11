@@ -78,10 +78,12 @@
                            (recur tail))))]
     (find-program all-programs)))
 
-(defn pattern-instances [program-xml]
+(defn 
+  pattern-instances 
   "Given a <program>, 
    return a map from a design pattern name to a list of <microArchitecture> of that pattern.
    (A <microArchitecture> is a design pattern instance)"
+  [program-xml]
   (let [patterns (rest (:content program-xml))
         keys (for [pattern patterns]
                (keyword (:name (:attrs pattern))))
@@ -89,9 +91,11 @@
                (:content (first (:content pattern))))]
     (zipmap keys vals)))
 
-(defn pattern-roles [microarchitecture-xml]
+(defn 
+  pattern-roles
   "Given a <microArchitecture>, (i.e. a design pattern instance)
    return a map from a role name to a list of class names implementing that role"
+  [microarchitecture-xml]
   (let [roles (:content (first (:content microarchitecture-xml)))
         keys (for [role roles] 
                (:tag (first (:content role))))
