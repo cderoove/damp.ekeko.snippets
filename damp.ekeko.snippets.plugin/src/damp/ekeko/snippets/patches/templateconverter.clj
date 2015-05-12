@@ -25,7 +25,8 @@ damp.ekeko.snippets.patches.templateconverter
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]
-             [transformation :as transformation]]))
+             [transformation :as transformation]]
+            [clojure.java.io :as io]))
 
 (defn diff-to-snippet [project-name prefix-length lines]
   (let [; Get the 3rd line of diff output, 6th character .. and strip the prefix off the file path
@@ -34,7 +35,7 @@ damp.ekeko.snippets.patches.templateconverter
         
         source-file-no-ext (first (clojure.string/split source-file #"\."))
         source-cls-absolute (clojure.string/replace source-file-no-ext #"/" ".")
-        cu (-> (find-compilationunit project-name source-cls-absolute)
+        cu (-> (util/find-compilationunit project-name source-cls-absolute)
                           damp.ekeko.jdt.astnode/jdt-parse-icu
 ;                          .types
 ;                          first ; Get the first type declaration in this ICU
