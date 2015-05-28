@@ -28,7 +28,7 @@ damp.ekeko.snippets.operatorsrep
      QualifiedName SimpleName ITypeBinding MethodDeclaration 
      MethodInvocation ClassInstanceCreation SuperConstructorInvocation SuperMethodInvocation
      SuperFieldAccess FieldAccess ConstructorInvocation ASTNode ASTNode$NodeList CompilationUnit
-     Annotation IAnnotationBinding TypeLiteral]))
+     Annotation IAnnotationBinding TypeLiteral Statement]))
 
 ;; Operator information
 
@@ -97,7 +97,6 @@ damp.ekeko.snippets.operatorsrep
       (applicability|methoddeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
       (ekekokeyword-owningproperty? value :name))))
 
-
 (defn 
   applicability|methodinvocation
   [snippetgroup snippet value]
@@ -164,6 +163,23 @@ damp.ekeko.snippets.operatorsrep
     (astnode/expression? value)
     (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
     (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
+
+(defn applicability|stmt
+  "The replace-parent-stmt operator can only be applied to Statements, whose grandparent isn't a MethodDeclaration."
+  [snippetgroup snippet value]
+  (and
+    (applicability|node snippetgroup snippet value)
+    (astnode/statement? value)))
+
+(defn applicability|replace-parent-stmt
+  "The replace-parent-stmt operator can only be applied to Statements, whose grandparent isn't a MethodDeclaration."
+  [snippetgroup snippet value]
+  (and
+    (applicability|stmt snippetgroup snippet value)
+    (not (instance? MethodDeclaration ; go 3 parents up: value > list > Block > X
+                    (snippet/snippet-node-parent|conceptually snippet
+                      (snippet/snippet-node-parent|conceptually snippet
+                       (snippet/snippet-node-parent|conceptually snippet value)))))))
 
 (defn 
   applicability|lst
@@ -1037,10 +1053,43 @@ damp.ekeko.snippets.operatorsrep
      "replace-parent"
      operators/replace-parent
      :destructive
-     "Replace parent node."
+     "Replace parent node (expressions)."
      opscope-subject
      applicability|replace-parent 
      "Make this expression node replace its parent."
+     []
+     false)
+   
+   (Operator. 
+     "replace-parent-stmt"
+     operators/replace-parent-stmt
+     :destructive
+     "Replace parent node (statements)."
+     opscope-subject
+     applicability|replace-parent-stmt 
+     "Make this statement replace its parent statement (e.g. a statement contained in a body of an if-statement)."
+     []
+     false)
+   
+   (Operator.
+     "isolate-stmt-in-block"
+     operators/isolate-stmt-in-block
+     :destructive
+     "Isolate statement in block."
+     opscope-subject
+     applicability|stmt 
+     "Removes all other statements in this block and adds set matching to the block."
+     []
+     false)
+   
+   (Operator.
+     "isolate-stmt-in-method"
+     operators/isolate-stmt-in-method
+     :destructive
+     "Isolate statement in method."
+     opscope-subject
+     applicability|stmt 
+     "Replaces the entire method body by just this statement, and adds set matching to the body."
      []
      false)
    
@@ -1329,6 +1378,14 @@ damp.ekeko.snippets.operatorsrep
   operators)
 
 (defn
+  operator-from-id
+  [id]
+  (first 
+    (filter (fn [operator]
+              (= id (operator-id operator)))
+            operators)))
+
+(defn
   registered-operators-in-category
   [category]
   (filter (fn [operator]
@@ -1580,6 +1637,7 @@ damp.ekeko.snippets.operatorsrep
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORCATEGORY_DESCRIPTION) category-description)
   
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_FROM_ID) operator-from-id)
   
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_BINDINGS_FOR_OPERANDS) operator-bindings-for-operands-and-subject)
   

@@ -110,7 +110,7 @@
               verifiedmatches (search/make-verified-matches
                                 (mapcat (fn [x] (into [] (fitness/templategroup-matches x)))
                                         verified)
-                                [])] 0
+                                [])] 42
 ;          (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2)))
           )))))
 
@@ -132,17 +132,20 @@
       (pmart/slurp-pattern-instances-as-templategroups 
         folder-name
         (pmart/parse-pmart-xml)
-        projects pattern (fn [x] true))))
+        projects pattern)))
   ([folder-name initial-pop projects pattern config]
     (run-experiment
       projects
       config
+      (pmart/slurp-templategroups
+        "Initial pop"
+        folder-name
+        initial-pop)
       (pmart/slurp-pattern-instances-as-templategroups 
         folder-name
         (pmart/parse-pmart-xml)
-        projects pattern
-        (fn [cls] 
-          (some (fn [individual] (= individual (str (hash cls) "-" (last (clojure.string/split cls #"\.")) ".ekt"))) initial-pop))))))
+        projects pattern)
+      )))
 
 (comment
   ; Sanity check
@@ -189,13 +192,29 @@
        :thread-group tg}))
   (.interrupt tg)
   
+  (do (inspector-jay.core/inspect (pmart/slurp-templategroups "Bla"
+                                                (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw")
+                                                [["-1685183065-AbstractFigure.ekt" "-2090076616-PolygonFigure.ekt"]
+                ["-1685183065-AbstractFigure.ekt" "1655477502-ImageFigure.ekt"]
+                ["2098468581-AttributeFigure.ekt" "-2090076616-PolygonFigure.ekt"]
+                ["2098468581-AttributeFigure.ekt" "1655477502-ImageFigure.ekt"]]
+                                       )
+                                  )
+    nil)
+  
   ; Template method in JHotDraw
   (def tg (new ThreadGroup "experiment"))
   (util/future-group 
     tg
     (run-pmart-experiment
       (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw")
-      ["1655477502-ImageFigure.ekt" "-2090076616-PolygonFigure.ekt" "-1685183065-AbstractFigure.ekt" "2098468581-AttributeFigure.ekt"]
+      [["-1685183065-AbstractFigure.ekt" "-2090076616-PolygonFigure.ekt"]
+       ["-1685183065-AbstractFigure.ekt" "1655477502-ImageFigure.ekt"]
+       ["2098468581-AttributeFigure.ekt" "-2090076616-PolygonFigure.ekt"]
+       ["2098468581-AttributeFigure.ekt" "1655477502-ImageFigure.ekt"]]
+      
+      
+      
       [(pmart/projects :jhotdraw)] "Template Method"
       {:max-generations 200
        :match-timeout 120000

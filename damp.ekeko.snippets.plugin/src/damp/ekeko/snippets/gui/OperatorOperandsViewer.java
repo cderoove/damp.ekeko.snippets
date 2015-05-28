@@ -1,6 +1,5 @@
 package damp.ekeko.snippets.gui;
 
-import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -25,7 +24,6 @@ import org.eclipse.ui.IEditorSite;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.handlers.HandlerUtil;
 
 import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;

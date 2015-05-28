@@ -146,8 +146,19 @@
           (persistence/slurp-snippet
             file))))))
 
+(defn slurp-templategroups
+  [group-name folder-name template-combinations]
+  (for [template-list template-combinations]
+    (snippetgroup/make-snippetgroup 
+      group-name
+      (for [template-file template-list]
+        (first 
+          (snippetgroup/snippetgroup-snippetlist 
+            (persistence/slurp-snippet 
+              (str folder-name "/" template-file))))))))
+
 (defn slurp-pattern-instances-as-templategroups
-  [folder-name pmart-xml project-names pattern-name filter-func]
+  [folder-name pmart-xml project-names pattern-name]
   (let [instances (apply concat
                          (for [name project-names]
                            (for [instance ((keyword pattern-name) (pattern-instances (program pmart-xml name)))]
@@ -155,17 +166,12 @@
         templategroups (map-indexed
                          (fn [idx [project-name instance]]
                            (let [pattern-roles-map (pattern-roles instance)
-                                 class-lists (util/combinations pattern-roles-map)
-;                                 class-lists raw-class-lists
-;                                 class-lists (filter 
-;                                               (fn [cls-list] (some filter-func cls-list))
-;                                               raw-class-lists)
-                                 ]
+                                 class-lists (util/combinations pattern-roles-map)]
                              (for [class-list class-lists]
-                               (snippetgroup/make-snippetgroup 
+                               (snippetgroup/make-snippetgroup
                                  (str pattern-name "-" idx " --- " project-name)
                                  (for [cls class-list]
-                                   (first 
+                                   (first
                                      (snippetgroup/snippetgroup-snippetlist 
                                        (persistence/slurp-snippet 
                                          (str folder-name 

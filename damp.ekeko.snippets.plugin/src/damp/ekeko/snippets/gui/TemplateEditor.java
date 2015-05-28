@@ -71,6 +71,9 @@ public class TemplateEditor extends EditorPart {
 
 	private ToolItem tltmEditBoundDirectives;
 	private ToolItem tltmRevealAnchor;
+	
+	private ToolItem tltmRemoveNode;
+	
 
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
@@ -148,8 +151,6 @@ public class TemplateEditor extends EditorPart {
 		tltmRevealAnchor.setImage(EkekoSnippetsPlugin.IMG_ANCHOR);
 		tltmRevealAnchor.setToolTipText("Reveal project anchor");
 		tltmRevealAnchor.setEnabled(false);
-
-
 
 		templateGroupViewer = new TemplateGroupViewer(parent, SWT.NONE);
 		templateGroupViewer.setParentTemplateEditor(this);		GridData gd_templateGroupViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);		gd_templateGroupViewer.heightHint = 400;		templateGroupViewer.setLayoutData(gd_templateGroupViewer);

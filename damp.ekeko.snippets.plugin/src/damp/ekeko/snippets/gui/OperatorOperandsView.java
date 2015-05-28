@@ -3,7 +3,6 @@ package damp.ekeko.snippets.gui;
 import java.util.LinkedList;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.SWT;
@@ -17,6 +16,7 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.part.ViewPart;
 
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
+import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class OperatorOperandsView extends ViewPart {
@@ -41,13 +41,24 @@ public class OperatorOperandsView extends ViewPart {
 		tltmApplyOperator.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onApplyOperator();
+				onApplyOperator(operatorOperandsViewer.getSelectedOperator(), operatorOperandsViewer.getOperands());
 			}
 		});
 		//tltmApplyOperator.setImage(ResourceManager.getPluginImage("org.eclipse.pde.ui", "/icons/etool16/validate.gif"));
 		tltmApplyOperator.setImage(EkekoSnippetsPlugin.IMG_OPERATOR_APPLY);
-		tltmApplyOperator.setToolTipText("Apply operator to template element");		
+		tltmApplyOperator.setToolTipText("Apply operator to template element");
 
+		// Remove node button
+//		ToolItem tltmRemoveNode = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
+//		tltmRemoveNode.setImage(EkekoSnippetsPlugin.IMG_DELETE);
+//		tltmRemoveNode.setToolTipText("Remove selected node");
+//		tltmRemoveNode.addSelectionListener(new SelectionAdapter() {
+//			public void widgetSelected(SelectionEvent e) {
+//				Object [] ops = SnippetOperator.getOperands(operatorOperandsViewer.getTemplateGroup(), operatorOperandsViewer.getSnippet(), operatorOperandsViewer.getSelectedSnippetNode(), SnippetOperator.operatorFromId("remove-node"));
+//				onApplyOperator(SnippetOperator.operatorFromId("remove-node"), ops);
+//			}
+//		});
+		
 		/*
 		ToolItem undoOperator = new ToolItem(snippetOperatorGroupToolbar, SWT.NONE);
 		undoOperator.addSelectionListener(new SelectionAdapter() {
@@ -88,9 +99,7 @@ public class OperatorOperandsView extends ViewPart {
 
 	}
 
-	protected void onApplyOperator() {
-		Object selectedOperator = operatorOperandsViewer.getSelectedOperator();
-		Object operands = operatorOperandsViewer.getOperands();
+	protected void onApplyOperator(Object selectedOperator, Object operands) {
 		TemplateGroup templateGroup = operatorOperandsViewer.getTemplateGroup();
 		if(operands == null || selectedOperator == null || templateGroup == null)
 			return;

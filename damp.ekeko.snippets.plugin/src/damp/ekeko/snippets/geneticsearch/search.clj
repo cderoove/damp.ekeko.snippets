@@ -445,7 +445,8 @@
                   (util/parallel-viable-repeat
                     (* (:mutation-weight config) (count population))
                     #(preprocess (mutate (select population tournament-size) (:mutation-operators config)))
-                    (fn [x] (not (nil? x))))
+                    (fn [x] (not (nil? x)))
+                    (:thread-group config))
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
@@ -456,13 +457,15 @@
                                    (select population tournament-size)
                                    (select population tournament-size)))
                            (fn [x]
-                             (not-any? nil? x))))
+                             (not-any? nil? x))
+                           (:thread-group config)))
                   
                   ; Selection
                   (util/parallel-viable-repeat 
                     (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
-                    (fn [ind] (pos? (individual/individual-fitness ind))))))
+                    (fn [ind] (pos? (individual/individual-fitness ind)))
+                    (:thread-group config))))
               @new-history)))))))
 
 (defn run-example []
@@ -474,7 +477,7 @@
                                 :selection-weight 1/4
                                 :mutation-weight 3/4
                                 :crossover-weight 0/4
-                                :max-generations 10
+                                :max-generations 5
                                 :match-timeout 12000
                                 :thread-group tg
                                 :population-size 10

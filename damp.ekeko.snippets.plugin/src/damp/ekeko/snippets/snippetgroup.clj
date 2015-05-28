@@ -106,7 +106,6 @@ damp.ekeko.snippets.snippetgroup
                 (snippetgroup-snippetlist snippetgroup)))
        newsnippet])))
 
-                     
 (defn
   replace-snippet
   [group oldsnippet newsnippet]

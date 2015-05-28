@@ -18,7 +18,7 @@ damp.ekeko.snippets.operators
      [rewrites :as rewrites]
      [ast :as ast]])
   (:import
-    [org.eclipse.jdt.core.dom ASTNode Comment]
+    [org.eclipse.jdt.core.dom ASTNode Comment Statement MethodDeclaration]
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
 ;; Operators for Snippet
@@ -669,6 +669,17 @@ damp.ekeko.snippets.operators
   (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
     (replace-node-with snippet parent-node snippet node)))
 
+(defn
+  replace-parent-stmt
+  "Make a statement replace its parent statement."
+  [snippet node]
+  (let [block (snippet/snippet-node-parent|conceptually snippet
+                (snippet/snippet-node-parent|conceptually snippet node))
+        block-parent (snippet/snippet-node-parent|conceptually snippet block)]
+    (if (instance? Statement block-parent)
+      (replace-node-with snippet block-parent snippet node)
+      (replace-node-with snippet block snippet node))))
+
 (defn-
   withoutimmediateparents
   "Removes the parents of the elements in the given seq of nodes."
@@ -683,6 +694,8 @@ damp.ekeko.snippets.operators
             sofar)))
       []
       nodes)))
+
+
   
 ;todo: also for var references rather than simply their declarations
   
@@ -1046,7 +1059,7 @@ damp.ekeko.snippets.operators
       (fn [val] 
         (when (instance? Comment val)
           (swap! newsnippet remove-node val))))
-    @newsnippet)) 
+    @newsnippet))
 
 
 (def docclasskeywords [:BlockComment :Javadoc :LineComment :Comment])
@@ -1175,6 +1188,44 @@ damp.ekeko.snippets.operators
       [(make-directiveoperandbinding-for-match value)])))
 
 (defn
+  isolate-stmt-in-block
+  "Removes all other statements in a block and adds set matching to the block."
+  [snippet node]
+  (let [parent-list (snippet/snippet-node-parent|conceptually snippet node)]
+    (consider-set|list
+      (reduce 
+        (fn [newsnippet child]
+          (if (= child node)
+            newsnippet
+            (remove-node newsnippet child)))
+        snippet
+        (into [] (snippet/snippet-node-children|conceptually snippet parent-list)))
+      parent-list)))
+
+(defn
+  isolate-stmt-in-method
+  "Removes all other statements in a block and adds set matching to the block."
+  [snippet node]
+  (let [pulledup-snippet
+        (loop [newsnippet snippet]
+          (let [parent3 (snippet/snippet-node-parent|conceptually newsnippet
+                          (snippet/snippet-node-parent|conceptually 
+                           newsnippet
+                           (snippet/snippet-node-parent|conceptually newsnippet node)))
+                
+;                (reduce 
+;                  (fn [cur-node ignore] (snippet/snippet-node-parent|conceptually newsnippet cur-node)) 
+;                  node
+;                  (range 0 3))
+                ]
+            (inspector-jay.core/inspect parent3)
+            (if (instance? MethodDeclaration parent3)
+              newsnippet
+              ; FIXME Can't reuse node after doing a replace-parent-stmt !!!
+              (recur (replace-parent-stmt newsnippet node)))))]
+    (isolate-stmt-in-block pulledup-snippet node)))
+
+(defn
   register-callbacks 
   []
   
@@ -1182,5 +1233,3 @@ damp.ekeko.snippets.operators
   )
 
 (register-callbacks)
-
-

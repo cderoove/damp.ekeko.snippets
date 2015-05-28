@@ -192,8 +192,8 @@
    @param func  The function to apply repeatedly (has no args)
    @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
    @return a list of cnt viable results"
-  [cnt func test-func]
-  (pmap
+  [cnt func test-func thread-group]
+  (pmap-group
     (fn [idx]
       (loop []
        (let [result (func)]
@@ -201,7 +201,8 @@
          (if (test-func result)
            result 
            (recur)))))
-    (range 0 cnt)))
+    (range 0 cnt)
+    thread-group))
 
 (defn average
   "Calculate the average in a collection of numbers"

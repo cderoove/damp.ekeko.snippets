@@ -14,7 +14,8 @@ damp.ekeko.snippets.patches.templateconverter
            [org.eclipse.ui PlatformUI IWorkingSet IWorkingSetManager]
            [org.eclipse.core.runtime.jobs Job]
            [org.eclipse.core.runtime Status Path]
-           [damp.ekeko EkekoModel JavaProjectModel ProjectModel])
+           [damp.ekeko EkekoModel JavaProjectModel ProjectModel]
+           [changenodes Differencer])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -40,11 +41,14 @@ damp.ekeko.snippets.patches.templateconverter
 ;                          .types
 ;                          first ; Get the first type declaration in this ICU
                           )
-        
-        node (-> cu .types first .getMethods second)
+        differencer (new changenodes.Differencer cu cu)
+;        node (-> cu .types first .getMethods second)
         ]
+    (.difference differencer)
+    (.getOperations differencer)
     
-    (-> cu (.getLineNumber (.getStartPosition node)) )
+;    (-> cu (.getLineNumber (.getStartPosition node)) )
+
 ;    (matching/snippet-from-node cu)
     ))
 
