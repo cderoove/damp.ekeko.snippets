@@ -352,6 +352,15 @@ damp.ekeko.snippets.snippet
       (snippet-list-containing snippet c)
       (snippet-node-owner snippet c))))
 
+(defn
+  snippet-node-ancestor|conceptually
+  "Go n levels up the tree to retrieve the desired ancestor node
+   (Transitive version of snippet-node-parent|conceptually)"
+  [snippet node n]
+  (reduce 
+    (fn [cur-node ignore] (snippet-node-parent|conceptually snippet cur-node)) 
+    node
+    (range 0 n)))
 
 (defn
   snippet-node-children|conceptually

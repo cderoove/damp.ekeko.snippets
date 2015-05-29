@@ -611,7 +611,9 @@ damp.ekeko.snippets.operators
 
 (defn
   replace-node-with
-  "Replaces a node within a snippet with another node from another snippet"
+  "Replaces a node within a snippet with another node from another snippet
+   Returns a pair with first the new snippet, 
+   and second the node that was replaced (in case you need to refer to this node in any subsequent operations; you can't use source-node for this)"
   [destination-snippet destination-node source-snippet source-node]
   (let [copy-of-source-node
         (ASTNode/copySubtree (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
@@ -656,7 +658,8 @@ damp.ekeko.snippets.operators
           (swap! newsnippet snippet/update-bounddirectives  destval destbds)
           (swap! newsnippet snippet/update-projectanchoridentifier destval srcpid)
           )))
-    @newsnippet))
+    
+    [@newsnippet copy-of-source-node]))
 
 
 
@@ -667,7 +670,7 @@ damp.ekeko.snippets.operators
   "Make an expression node replace its parent."
   [snippet node]
   (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
-    (replace-node-with snippet parent-node snippet node)))
+    (first (replace-node-with snippet parent-node snippet node))))
 
 (defn
   replace-parent-stmt
@@ -677,8 +680,8 @@ damp.ekeko.snippets.operators
                 (snippet/snippet-node-parent|conceptually snippet node))
         block-parent (snippet/snippet-node-parent|conceptually snippet block)]
     (if (instance? Statement block-parent)
-      (replace-node-with snippet block-parent snippet node)
-      (replace-node-with snippet block snippet node))))
+      (first (replace-node-with snippet block-parent snippet node))
+      (first (replace-node-with snippet block snippet node)))))
 
 (defn-
   withoutimmediateparents
@@ -1206,24 +1209,14 @@ damp.ekeko.snippets.operators
   isolate-stmt-in-method
   "Removes all other statements in a block and adds set matching to the block."
   [snippet node]
-  (let [pulledup-snippet
-        (loop [newsnippet snippet]
-          (let [parent3 (snippet/snippet-node-parent|conceptually newsnippet
-                          (snippet/snippet-node-parent|conceptually 
-                           newsnippet
-                           (snippet/snippet-node-parent|conceptually newsnippet node)))
-                
-;                (reduce 
-;                  (fn [cur-node ignore] (snippet/snippet-node-parent|conceptually newsnippet cur-node)) 
-;                  node
-;                  (range 0 3))
-                ]
-            (inspector-jay.core/inspect parent3)
+  (let [[pulledup-snippet new-node]
+        (loop [cur-node node]
+          (let [parent3 (snippet/snippet-node-ancestor|conceptually snippet cur-node 3)]
             (if (instance? MethodDeclaration parent3)
-              newsnippet
-              ; FIXME Can't reuse node after doing a replace-parent-stmt !!!
-              (recur (replace-parent-stmt newsnippet node)))))]
-    (isolate-stmt-in-block pulledup-snippet node)))
+              (replace-node-with snippet cur-node snippet node)
+              (recur parent3))))]
+    (isolate-stmt-in-block pulledup-snippet new-node)
+    ))
 
 (defn
   register-callbacks 
