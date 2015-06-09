@@ -85,8 +85,7 @@ damp.ekeko.snippets.operators
             expstring)]
         )))
 
-(defn 
-  replace-by-wildcard 
+(defn replace-by-wildcard 
   "Replace snippet AST node by a wildcard."
   [snippet node]
   (let [purged-of-children
@@ -103,6 +102,18 @@ damp.ekeko.snippets.operators
         matching/directive-replacedbywildcard
         [(make-directiveoperandbinding-for-match node)]))))
 
+(defn replace-by-checked-wildcard 
+  "Replace snippet AST node by a wildcard."
+  [snippet node]
+  (snippet/add-bounddirective
+    (matching/remove-directive
+      (replace-by-wildcard snippet node)
+      matching/directive-replacedbywildcard
+      node)
+    node
+    (directives/make-bounddirective 
+      matching/directive-replacedbywildcard-checked
+      [(make-directiveoperandbinding-for-match node)])))
 
 (defn
   add-unary-directive-opname-opvalue

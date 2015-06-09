@@ -1115,6 +1115,24 @@ damp.ekeko.snippets.matching
   (fn [snippet]
     `()))
 
+(defn
+  constrain-replacedbywildcard-checked
+  [snippet-val]
+  (fn [snippet]
+    (let [var-match (snippet/snippet-var-for-node snippet snippet-val)]
+      (cond 
+        (astnode/ast? snippet-val)
+        (let [ast-keyw (astnode/ekeko-keyword-for-class-of snippet-val)]
+          `((~generic-nongrounding-ast ~ast-keyw ~var-match)))
+        
+        (astnode/lstvalue? snippet-val)
+        `((~nongrounding-value|list ~var-match))
+        
+        (astnode/primitivevalue? snippet-val)
+        (ast/value|primitive ~var-match)
+        
+        (astnode/nilvalue? snippet-val)
+        `((~value|null ~var-match))))))
 
 ;constraining/grounding will be done by parent regexp in which snippet-val resides
 (defn
@@ -1134,16 +1152,14 @@ damp.ekeko.snippets.matching
       `((cl/== ~var ~var-match)))))
 
 (declare directive-replacedbywildcard)
+(declare directive-replacedbywildcard-checked)
 
 (defn 
   snippet-node-replaced-by-wilcard?
   [snippet node]
   (let [bds
         (snippet/snippet-bounddirectives-for-node snippet node)]
-    (boolean
-      (directives/bounddirective-for-directive 
-        bds
-        directive-replacedbywildcard))))
+    (boolean (directives/bounddirective-for-directive bds directive-replacedbywildcard))))
 
 (defn snippet-node-replaced?
   [snippet node]
@@ -1317,6 +1333,14 @@ damp.ekeko.snippets.matching
     []
     constrain-replacedbywildcard
     "Match is unconstrained."))
+
+(def 
+  directive-replacedbywildcard-checked
+  (directives/make-directive
+    "!"
+    []
+    constrain-replacedbywildcard-checked
+    "Match is unconstrained, except the AST node type."))
 
 (def 
   directive-invokes
@@ -1508,6 +1532,7 @@ damp.ekeko.snippets.matching
   directives-replacedby
   [directive-replacedbyvariable
    directive-replacedbywildcard
+   directive-replacedbywildcard-checked
    directive-replacedbyexp])
 
 

@@ -1231,6 +1231,17 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator. 
+     "replace-by-checked-wildcard"
+     operators/replace-by-checked-wildcard
+     :generalization
+     "Replace by checked wildcard."
+     opscope-subject
+     applicability|wildcard
+     "Replaces selection by wildcard, which still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
+     []
+     false)
+   
    ;todo: operator to rever to normal constraining of list elements
    ;needs to re-add ground-relative-to-parent
    
