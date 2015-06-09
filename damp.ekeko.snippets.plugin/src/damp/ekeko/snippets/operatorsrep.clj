@@ -1089,7 +1089,7 @@ damp.ekeko.snippets.operatorsrep
      "Isolate statement in method."
      opscope-subject
      applicability|stmt 
-     "Replaces the entire method body by just this statement, and adds set matching to the body."
+     "Replaces the entire method body by just this statement, adds set matching to the body, and child* to the selected statement."
      []
      false)
    

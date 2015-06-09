@@ -14,7 +14,8 @@
              ]
             [damp.ekeko.snippets 
              [snippetgroup :as snippetgroup]
-             [snippet :as snippet]])
+             [snippet :as snippet]
+             [util :as util]])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
@@ -263,22 +264,8 @@
   rawlist-element-remaining 
   [?lst ?el ?rem]
   (cl/all
-    (el/contains ?lst ?el) 
+    (el/contains ?lst ?el)
     (cl/project [?el ?lst]
                 (cl/== ?rem (remove (fn [e] (identical? e ?el)) ?lst)))))
               
     
-  
-  
-  
-
-
-
-
-    
-    
-        
-
-  
-
-

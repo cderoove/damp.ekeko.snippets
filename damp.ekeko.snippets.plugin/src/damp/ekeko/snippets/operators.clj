@@ -662,9 +662,6 @@ damp.ekeko.snippets.operators
     [@newsnippet copy-of-source-node]))
 
 
-
-
-
 (defn
   replace-parent
   "Make an expression node replace its parent."
@@ -1207,7 +1204,7 @@ damp.ekeko.snippets.operators
 
 (defn
   isolate-stmt-in-method
-  "Removes all other statements in a block and adds set matching to the block."
+  "Removes all other statements in a block and adds set matching to the block, and child* to the selected statement."
   [snippet node]
   (let [[pulledup-snippet new-node]
         (loop [cur-node node]
@@ -1215,8 +1212,9 @@ damp.ekeko.snippets.operators
             (if (instance? MethodDeclaration parent3)
               (replace-node-with snippet cur-node snippet node)
               (recur parent3))))]
-    (isolate-stmt-in-block pulledup-snippet new-node)
-    ))
+    (relax-scope-to-child*
+      (isolate-stmt-in-block pulledup-snippet new-node) 
+      new-node)))
 
 (defn
   register-callbacks 

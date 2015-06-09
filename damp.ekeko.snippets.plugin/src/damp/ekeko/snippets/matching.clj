@@ -126,6 +126,7 @@ damp.ekeko.snippets.matching
 
 
 (declare directive-child)
+(declare snippet-parent-match|set?)
 
 (defn 
   ground-relativetoparent
@@ -139,8 +140,8 @@ damp.ekeko.snippets.matching
         (let [snippet-ast-keyw
               (astnode/ekeko-keyword-for-class-of snippet-val)]
           `((~ast ~snippet-ast-keyw ~var-match)))
-        ;member of list
-        (astnode/valuelistmember? snippet-val)
+        ;member of list (no set matching on list)
+        (and (astnode/valuelistmember? snippet-val) (not (snippet-parent-match|set? snippet snippet-val)))
         (let [bounddirectives
               (snippet/snippet-bounddirectives-for-node snippet snippet-val)
               list-owner      
@@ -156,6 +157,9 @@ damp.ekeko.snippets.matching
           ;could check for parent list directives that might already have ground the element
           ;but for now rely on operators to switch correctly between directives (and e.g., remove ground-relative-to-parent from all list elements)
           `((runtime/list-nth-element ~list-match ~index-match ~var-match)))
+        ;member of list (set matching on list)
+        (and (astnode/valuelistmember? snippet-val) (snippet-parent-match|set? snippet snippet-val))
+        `() ; The list node has already done the grounding work for us..
         (or 
           (astnode/ast? snippet-val)
           (astnode/lstvalue? snippet-val)
@@ -183,32 +187,55 @@ damp.ekeko.snippets.matching
   (fn [snippet]
     (let [var-match (snippet/snippet-var-for-node snippet val)
           conditions-regular ((ground-relativetoparent val) snippet)
-          var-match-regular (util/gen-lvar "nonTranMatch")]
-      ;these conditions will refer to var-match, therefore shadow var-match
-      ;such that is is completely fresh
-      `((cl/fresh [~var-match-regular]
-                  (cl/fresh [~var-match] 
-                            ~@conditions-regular
-                            (cl/== ~var-match ~var-match-regular))
-                  (ast/astorvalue-offspring+ ~var-match-regular ~var-match))))))
+          var-match-regular (util/gen-lvar "nonTranMatch")
+          in-match|set (and (astnode/valuelistmember? val) (snippet-parent-match|set? snippet val))]
+      (if in-match|set
+        (let [list-owner (snippet/snippet-list-containing snippet val)
+              lstvar (:lstvar (meta snippet))
+              remaining (:remaininglstvar (meta snippet))] 
+          `((cl/fresh [~var-match-regular]
+                      (runtime/rawlist-element-remaining ~lstvar ~var-match-regular ~remaining)
+                      (cl/fresh [~var-match] 
+                                ~@conditions-regular
+                                (cl/== ~var-match ~var-match-regular))
+                      (ast/astorvalue-offspring+ ~var-match-regular ~var-match))))
+        ;these conditions will refer to var-match, therefore shadow var-match
+        ;such that is is completely fresh
+        `((cl/fresh [~var-match-regular]
+                    (cl/fresh [~var-match] 
+                              ~@conditions-regular
+                              (cl/== ~var-match ~var-match-regular))
+                    (ast/astorvalue-offspring+ ~var-match-regular ~var-match)))))))
 
 ;child* 
 (defn
   ground-relativetoparent*
   [val]
   (fn [snippet]
-    (let [var-match (snippet/snippet-var-for-node snippet val)
-          conditions-regular ((ground-relativetoparent val) snippet)
-          var-match-regular (util/gen-lvar "nonTranMatch")]
-      ;these conditions will refer to var-match, therefore shadow var-match
-      ;such that is is completely fresh
-      `((cl/fresh [~var-match-regular]
-                  (cl/fresh [~var-match] 
-                           ~@conditions-regular
-                           (cl/== ~var-match ~var-match-regular))
-                  (cl/conde 
-                    [(cl/== ~var-match-regular ~var-match)]
-                    [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)]))))))
+    (let [var-match-regular (util/gen-lvar "nonTranMatch")
+          var-match (snippet/snippet-var-for-node snippet val)
+          conditions-regular ((ground-relativetoparent val) (with-meta snippet {:var2 [val var-match-regular]}))
+          in-match|set (and (astnode/valuelistmember? val) (snippet-parent-match|set? snippet val))]
+      (if in-match|set
+        (let [list-owner (snippet/snippet-list-containing snippet val)
+              lstvar (:lstvar (meta snippet))
+              remaining (:remaininglstvar (meta snippet))] 
+          `((cl/fresh [~var-match-regular]
+                      (runtime/rawlist-element-remaining ~lstvar ~var-match-regular ~remaining)
+                      (cl/fresh [~var-match]
+                                ~@conditions-regular
+                                (cl/== ~var-match ~var-match-regular))
+                      (cl/conde 
+                        [(cl/== ~var-match-regular ~var-match)]
+                        [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)]))))
+        ; Regular case
+        `((cl/fresh [~var-match-regular]
+                    (cl/fresh [~var-match] 
+                              ~@conditions-regular
+                              (cl/== ~var-match ~var-match-regular))
+                    (cl/conde 
+                      [(cl/== ~var-match-regular ~var-match)]
+                      [(ast/astorvalue-offspring+ ~var-match-regular ~var-match)])))))))
 
 
 (defn
@@ -565,8 +592,7 @@ damp.ekeko.snippets.matching
 ;e.g. super declarations
 
 
-;(declare snippet-value-conditions-already-generated)
-
+(declare snippet-child*+?)
 
 (defn
   constrain-lst|set
@@ -591,16 +617,25 @@ damp.ekeko.snippets.matching
                   '()
                   (let [element 
                         (first elements)
+                        
                         elmatch                    
                         (snippet/snippet-var-for-node template element)
+                        
                         remaininglstvar (gensym "remaining")
+                        
                         elconditions ;snippet-node-conditions does not recurse into elements of lists with set matching
-                        (snippet-node-conditions template element)]
-                    (freshornot [remaininglstvar]
-                                (concat 
-                                  `((runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar))
-                                  elconditions
-                                  (generate remaininglstvar (rest elements)))))))]
+                        (snippet-node-conditions (with-meta template {:lstvar lstvar :remaininglstvar remaininglstvar}) element)
+                        ]
+                    (if (snippet-child*+? template element)
+                      (freshornot [remaininglstvar elmatch]
+                                  (concat
+                                    elconditions
+                                    (generate remaininglstvar (rest elements))))
+                      (freshornot [remaininglstvar elmatch]
+                                  (concat
+                                    `((runtime/rawlist-element-remaining ~lstvar ~elmatch ~remaininglstvar))
+                                    elconditions
+                                    (generate remaininglstvar (rest elements))))))))]
         `((~nongrounding-value|list ~lstvar)
            (cl/fresh [~listrawvar]
                      (~value-raw ~lstvar ~listrawvar)
@@ -1618,6 +1653,22 @@ damp.ekeko.snippets.matching
       bds
       directive-consider-as-set|lst)))
     
+(defn
+  snippet-child*+?
+  "Returns true for nodes with a child* directive."
+  [snippet value]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet value)]
+    (or
+      (directives/bounddirective-for-directive bds directive-child*)
+      (directives/bounddirective-for-directive bds directive-child+))))
+
+(defn
+  snippet-parent-match|set?
+  "Returns true if this node's parent has a match|set directive."
+  [snippet value]
+  (let [list-owner (snippet/snippet-list-containing snippet value)
+        bds (snippet/snippet-bounddirectives-for-node snippet list-owner)]
+    (directives/bounddirective-for-directive bds directive-consider-as-set|lst)))
 
 (defn
   snippet-value-element-of-list-satisfying 

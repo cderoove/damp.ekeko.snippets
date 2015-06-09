@@ -171,6 +171,9 @@
                   (partition-by 
                     (fn [condition] (= (first condition) `cl/fresh))
                     (snippet-conditions snippet))
+                  
+;                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
+                  
                   bodies
                   (rest potentialbodies)
                   standaloneconditions
@@ -290,7 +293,7 @@
     (let [qinfo (snippetgroup-snippetgroupqueryinfo snippetgroup)
           defines (:preddefs qinfo)
           query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
-      (pprint-sexps (conj defines query))
+;      (pprint-sexps (conj defines query))
       (doseq [define defines]
         (eval define))
       (eval query))))

@@ -328,3 +328,10 @@
       (for [val ((first (keys coll)) coll)
             combo rest-combinations]
         (cons val combo)))))
+
+(defn printStackTrace []
+  "Prints the current stack trace"
+  (try 
+    (throw (new Exception))
+    (catch Exception e
+      (.printStackTrace e))))

@@ -495,7 +495,13 @@
   (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/good-Debug.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/test6.ekt"))
+  (fitness/templategroup-matches templategroup)
+  
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution2.ekt"))
+  (fitness/templategroup-matches templategroup)
+  
   (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   
