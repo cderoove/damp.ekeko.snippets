@@ -500,8 +500,8 @@
   
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution2.ekt"))
-  (fitness/templategroup-matches templategroup)
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
+  (time (fitness/templategroup-matches templategroup))
   
   (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)

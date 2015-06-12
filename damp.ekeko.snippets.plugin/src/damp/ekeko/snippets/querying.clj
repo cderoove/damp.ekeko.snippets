@@ -172,7 +172,7 @@
                     (fn [condition] (= (first condition) `cl/fresh))
                     (snippet-conditions snippet))
                   
-;                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
+                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
                   
                   bodies
                   (rest potentialbodies)

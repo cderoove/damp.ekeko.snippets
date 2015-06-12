@@ -602,7 +602,6 @@ damp.ekeko.snippets.matching
   (fn [template]
     (let [typedecl (snippet/snippet-node-parent|conceptually template val)
           typedeclvar (snippet/snippet-var-for-node template typedecl)
-          
           lstvar (snippet/snippet-var-for-node template val)
           elements (astnode/value-unwrapped val)
           listrawvar (util/gen-lvar "lstraw")
@@ -613,8 +612,9 @@ damp.ekeko.snippets.matching
               (let [elemvar (snippet/snippet-var-for-node template elem)
                     normal-conditions (snippet-node-conditions template elem)]
                 (concat
+;                  `((el/succeeds (do (println (.getName ~typedeclvar)) true)))
                   `((aststructure/typedeclaration-member ~typedeclvar ~elemvar))
-                  `((cl/fresh [] ~@normal-conditions))
+                  `((cl/all ~@normal-conditions))
                   )))
             elements)
           
@@ -2047,7 +2047,26 @@ damp.ekeko.snippets.matching
                                (snippet-node-conditions|withoutfresh snippet val bdfilter) 
                                (if 
                                  (generatep val)
-                                 (mapcat conditions (snippet/snippet-node-children|conceptually snippet val))
+                                 ; Generating conditions for child nodes..
+                                 ; Performance optimization! Depending on the node type, we can reorder its children
+                                 ; such that the children with cheap constraints are handled first, 
+                                 ; which reduces the search space before we need to handle more expensive children.
+                                 ; For example, in a TypeDeclaration, it's better to handle its name before its members.
+                                 (let [children (snippet/snippet-node-children|conceptually snippet val)
+                                       
+                                       move-child-to-back
+                                       (fn [lst property-name]
+                                         (concat
+                                           (remove (fn [x] (= property-name (.getId (astnode/owner-property x)))) lst)
+                                           (filter (fn [x] (= property-name (.getId (astnode/owner-property x)))) lst)))
+                                       
+                                       reordered-children
+                                       (cond (astnode/typedeclaration? val)
+                                             (move-child-to-back children "bodyDeclarations")
+                                             :else
+                                             children)
+                                       ]
+                                   (mapcat conditions reordered-children))
                                  '())
                                (extraconditionsafter val)
                                ))
