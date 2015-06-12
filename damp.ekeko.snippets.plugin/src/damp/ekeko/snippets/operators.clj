@@ -1199,6 +1199,24 @@ damp.ekeko.snippets.operators
       [(make-directiveoperandbinding-for-match value)])))
 
 (defn
+  include-inherited
+  "Also include inherited class members in a type declaration.
+   Also acts similar to match|set, except that the ordering of members is disregarded"
+  [snippet value]
+  (snippet/add-bounddirective
+    ;remove grounding directives from elements 
+    (reduce
+      (fn [newsnippet lstel]
+        (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
+      ;remove exact match directive from list itself
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst matching/directive-consider-as-regexp|cfglst])
+      (astnode/value-unwrapped value))
+    value 
+    (directives/make-bounddirective
+      matching/directive-include-inherited
+      [(make-directiveoperandbinding-for-match value)])))
+
+(defn
   isolate-stmt-in-block
   "Removes all other statements in a block and adds set matching to the block."
   [snippet node]

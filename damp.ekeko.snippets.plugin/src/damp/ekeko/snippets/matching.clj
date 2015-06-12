@@ -595,6 +595,36 @@ damp.ekeko.snippets.matching
 (declare snippet-child*+?)
 
 (defn
+  constrain-inherited
+  "Similar to constrain-lst|set, but applies only to type declarations,
+   includes inherited members, and ignores the ordering of these members"
+  [val]
+  (fn [template]
+    (let [typedecl (snippet/snippet-node-parent|conceptually template val)
+          typedeclvar (snippet/snippet-var-for-node template typedecl)
+          
+          lstvar (snippet/snippet-var-for-node template val)
+          elements (astnode/value-unwrapped val)
+          listrawvar (util/gen-lvar "lstraw")
+          
+          element-conditions 
+          (mapcat
+            (fn [elem]
+              (let [elemvar (snippet/snippet-var-for-node template elem)
+                    normal-conditions (snippet-node-conditions template elem)]
+                (concat
+                  `((aststructure/typedeclaration-member ~typedeclvar ~elemvar))
+                  `((cl/fresh [] ~@normal-conditions))
+                  )))
+            elements)
+          
+          ]
+      `((~nongrounding-value|list ~lstvar)
+         (cl/fresh [~listrawvar]
+                   (~value-raw ~lstvar ~listrawvar)
+                   ~@element-conditions)))))
+
+(defn
   constrain-lst|set
   "Considers candidate matches as a set in which elements are matched.
    Once an element from the list has been matched, remaining template elements cannot match it anymore.
@@ -1488,6 +1518,14 @@ damp.ekeko.snippets.matching
     constrain-lst|set
     "Use set matching for list elements."))
 
+(def
+  directive-include-inherited
+  (directives/make-directive
+    "withinherited"
+    []
+    constrain-inherited
+    "Include inherited members."))
+
 (def 
   directive-consider-as-regexp|lst
   (directives/make-directive
@@ -1558,6 +1596,7 @@ damp.ekeko.snippets.matching
    directive-consider-as-regexp|lst
    directive-consider-as-regexp|cfglst
    directive-consider-as-set|lst
+   directive-include-inherited
    directive-multiplicity
    directive-invokes
    directive-invokedby

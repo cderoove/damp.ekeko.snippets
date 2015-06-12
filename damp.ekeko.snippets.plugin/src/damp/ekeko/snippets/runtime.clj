@@ -124,17 +124,12 @@
                         [(ast/ast :MethodDeclaration ?ast)
                          (aststructure/constructorinvocation-constructordeclaration ?invocation ?ast)]))))
                                   
-          
-
 (defn
   overrides
   [?ast ?overridden]
   (cl/all
     (el/v+ ?ast)
     (aststructure/methoddeclaration-methoddeclaration|overrides ?overridden ?ast)))
-
-  
-
 
 
 

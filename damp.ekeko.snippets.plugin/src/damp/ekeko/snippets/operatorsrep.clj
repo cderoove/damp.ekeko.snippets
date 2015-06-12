@@ -323,6 +323,15 @@ damp.ekeko.snippets.operatorsrep
     (some #{(astnode/ekeko-keyword-for-class-of node)} 
           classkeywords)))
 
+(defn applicability|typedecl-bodydeclarations
+  [snippetgroup snippet value]
+  (and
+    (applicability|lst snippetgroup snippet value)
+    (let [parent (snippet/snippet-node-parent|conceptually snippet value)
+          typeclasskeywords [:TypeDeclaration]]
+      (or 
+        (applicability|node-classkeywords snippetgroup snippet parent typeclasskeywords)
+        (applicability|absentvalue-classkeywords snippetgroup snippet parent typeclasskeywords)))))
 
 (defn
   applicability|type
@@ -1238,12 +1247,9 @@ damp.ekeko.snippets.operatorsrep
      "Replace by checked wildcard."
      opscope-subject
      applicability|wildcard
-     "Replaces selection by wildcard, which still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
+     "Replaces selection by wildcard, but still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
      []
      false)
-   
-   ;todo: operator to rever to normal constraining of list elements
-   ;needs to re-add ground-relative-to-parent
    
    (Operator. 
      "consider-regexp|list"
@@ -1280,6 +1286,28 @@ damp.ekeko.snippets.operatorsrep
    
    (Operator. 
      "consider-set|lst"
+     operators/consider-set|list
+     :generalization
+     "Use set matching for elements."
+     opscope-subject
+     applicability|lst
+     "Set matching will be used for elements of list."
+     []
+     false)
+   
+   (Operator.
+     "include-inherited"
+     operators/include-inherited
+     :generalization
+     "Include inherited members."
+     opscope-subject
+     applicability|typedecl-bodydeclarations
+     "Inherited class members are also included in list matching."
+     []
+     false)
+   
+   (Operator. 
+     "include-inherited"
      operators/consider-set|list
      :generalization
      "Use set matching for elements."
