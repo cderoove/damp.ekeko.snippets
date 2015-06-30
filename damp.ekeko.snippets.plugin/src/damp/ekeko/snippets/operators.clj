@@ -261,6 +261,16 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match node)])))
 
 (defn
+  add-directive-orexpression
+  "Adds directive-orexpression to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    (matching/remove-directives snippet node (conj matching/directives-match (matching/registered-grounding-directives)))
+    node
+    (directives/make-bounddirective matching/directive-orexpression
+                                    [(make-directiveoperandbinding-for-match node)])))
+
+(defn
   relax-size-to-atleast
   "Uses match-size|atleast/0 for constraining match candidates for a template list."
   [template lst]
@@ -426,7 +436,7 @@ damp.ekeko.snippets.operators
         (snippet/snippet-node-parent|conceptually snippet node)
         ownerproperty 
         (astnode/owner-property node)
-        ]     
+        ]
     (do 
       (snippet/walk-snippet-element ;dissoc children 
                                     snippet
@@ -1244,6 +1254,35 @@ damp.ekeko.snippets.operators
     (relax-scope-to-child*
       (isolate-stmt-in-block pulledup-snippet new-node) 
       new-node)))
+
+(defn
+  isolate-expr-in-method
+  "Replaces method body such that it matches with any method body containing the selected expression"
+  [snippet node]
+  (let [a (.getAST (snippet/snippet-root snippet))
+        expr-stmt (newnode|classkeyword a :ExpressionStatement)
+        dummy (newnode|classkeyword a :NullLiteral)
+        side-eff (.setExpression expr-stmt dummy)
+        [pulledup-snippet replaced-node]
+        (loop [cur-node node]
+          (let [parent (snippet/snippet-node-ancestor|conceptually snippet cur-node 1)
+                parent2 (snippet/snippet-node-ancestor|conceptually snippet cur-node 2)]
+            (if (instance? MethodDeclaration parent2)
+              ; Once we found the method declaration
+              ; Remove all statements, insert an expression statement, then replace the expression with the one we want
+              (replace-node-with
+                (insert-at 
+                 (erase-list snippet cur-node)
+                 expr-stmt (astnode/value-unwrapped cur-node) 0)
+                dummy snippet node
+                )
+              (recur parent))))]
+    
+    pulledup-snippet
+;    (relax-scope-to-child*
+;      (isolate-stmt-in-block pulledup-snippet new-node) 
+;      new-node)
+    ))
 
 (defn
   register-callbacks 

@@ -154,13 +154,26 @@ damp.ekeko.snippets.operatorsrep
     (applicability|node snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)))
 
+(defn
+  applicability|expr
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (astnode/expression? value)))
+
+(defn
+  applicability|expressionstmt
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (astnode/expressionstmt? value)))
+
 (defn applicability|replace-parent
   "The replace-parent operator can only be applied to Expression nodes, whose parent is an Expression as well."
   [snippetgroup snippet value]
   (and
-    (applicability|node snippetgroup snippet value)
+    (applicability|expr snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)
-    (astnode/expression? value)
     (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
     (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
 
@@ -1102,6 +1115,17 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator.
+     "isolate-expr-in-method"
+     operators/isolate-expr-in-method
+     :destructive
+     "Isolate expression in method."
+     opscope-subject
+     applicability|expr 
+     "Replaces the entire method body such that it matches any method body containing the selected expression."
+     []
+     false)
+   
    (Operator. 
      "insert-node-before"
      operators/insert-newnodefromclasskeyw-before
@@ -1339,6 +1363,16 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator. 
+     "add-directive-orexpression"
+     operators/add-directive-orexpression
+     :generalization
+     "Add directive orexpression."
+     opscope-subject
+     applicability|expressionstmt
+     "Matches either with this ExpressionStatement, or the Expression contained within"
+     []
+     false)
    
    (Operator. 
      "generalize-references"

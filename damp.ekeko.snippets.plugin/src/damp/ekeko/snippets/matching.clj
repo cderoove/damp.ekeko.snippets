@@ -368,6 +368,29 @@ damp.ekeko.snippets.matching
                   [(~value|null ~var-match)])))))
 
 (defn
+  constrain-orexpression
+  "Matches either directly with an ExpressionStatement, or the Expression contained within"
+  [snippet-val]
+  (fn [snippet]
+    (let [
+          
+          stmtconditions (snippet-node-conditions snippet snippet-val)
+          expr (.getExpression (snippet/snippet-value-node-unwrapped snippet snippet-val))
+          exprconditions (snippet-node-conditions snippet expr)
+          
+          var-stmt (snippet/snippet-var-for-node snippet snippet-val)
+          var-expr (snippet/snippet-var-for-node snippet expr)
+          ]
+      exprconditions
+;      `((
+;          (cl/fresh [~var-expr]
+;            (cl/== ~var-stmt ~var-expr)
+;            ~@exprconditions)))
+;      `((cl/conde [~@stmtconditions]
+;                  [~@exprconditions]))
+      )))
+
+(defn
   constrain-orsimple
   "Allows simple types and names to match their fully qualified equivalent in the template."
   [snippet-val]
@@ -1567,6 +1590,14 @@ damp.ekeko.snippets.matching
     "Simple types resolving to name of qualified type in template will match as well."))
 
 (def
+  directive-orexpression
+  (directives/make-directive
+    "orexpr"
+    []
+    constrain-orexpression
+    "Matches either with an expression statement, or directly with the expression it contains"))
+
+(def
   directives-replacedby
   [directive-replacedbyvariable
    directive-replacedbywildcard
@@ -1628,6 +1659,7 @@ damp.ekeko.snippets.matching
    directive-child*
    directive-member
    directive-orblock
+   directive-orexpression
    ])
 
 (def
@@ -2054,6 +2086,14 @@ damp.ekeko.snippets.matching
                                  ; For example, in a TypeDeclaration, it's better to handle its name before its members.
                                  (let [children (snippet/snippet-node-children|conceptually snippet val)
                                        
+                                       remove-children
+                                       (fn [lst property-names]
+                                         (remove (fn [child]
+                                                   (some 
+                                                     (fn [property-name] (= property-name (.getId (astnode/owner-property child))))
+                                                     property-names))
+                                                 lst))
+                                       
                                        move-child-to-back
                                        (fn [lst property-name]
                                          (concat
@@ -2062,7 +2102,14 @@ damp.ekeko.snippets.matching
                                        
                                        reordered-children
                                        (cond (astnode/typedeclaration? val)
-                                             (move-child-to-back children "bodyDeclarations")
+                                             (-> children
+                                               (move-child-to-back "bodyDeclarations")
+                                               (remove-children ["javadoc"]))
+                                             
+                                             (astnode/methoddeclaration? val)
+                                             (-> children
+                                               (move-child-to-back "body")
+                                               (remove-children ["extraDimensions2" "javadoc"]))
                                              :else
                                              children)
                                        ]

@@ -25,7 +25,7 @@
 ;; Converting a snippet to a query
 ;; -------------------------------
 
-                 
+
 (defn
   snippet-conditions 
   ([snippet]
@@ -180,7 +180,6 @@
                   (first potentialbodies)
                   conditionsvars
                   (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet))
-                  
                   
                   predvars
                   (concat

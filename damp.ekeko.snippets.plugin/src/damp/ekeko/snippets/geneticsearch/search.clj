@@ -495,7 +495,7 @@
   (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/orinherited-test.ekt"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/test9.ekt"))
   (fitness/templategroup-matches templategroup)
   
   

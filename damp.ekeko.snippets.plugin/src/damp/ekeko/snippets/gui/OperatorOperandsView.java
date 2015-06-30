@@ -106,6 +106,7 @@ public class OperatorOperandsView extends ViewPart {
 		try {
 			templateGroup.applyOperator(selectedOperator, operands);
 		} catch(IllegalArgumentException e) {
+			e.printStackTrace();
 			ErrorDialog.openError(getSite().getShell(), "Could not apply operator", "An error occurred while applying the operator to the template.", new Status(IStatus.ERROR, EkekoSnippetsPlugin.PLUGIN_ID, e.getMessage(), e));
 
 		}
