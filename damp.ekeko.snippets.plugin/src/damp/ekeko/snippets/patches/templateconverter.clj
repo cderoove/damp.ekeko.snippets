@@ -29,19 +29,32 @@ damp.ekeko.snippets.patches.templateconverter
              [transformation :as transformation]]
             [clojure.java.io :as io]))
 
+(defn extract-filepath [line prefix-length]
+  "Extract the "
+  (let [source-file (subs line (+ 6 prefix-length))
+        assert1 (assert (.endsWith source-file ".java"))
+        source-file-no-ext (first (clojure.string/split source-file #"\."))
+        source-cls-absolute (clojure.string/replace source-file-no-ext #"/" ".")]
+    source-cls-absolute))
+
 (defn diff-to-snippet [project-name prefix-length lines]
   (let [; Get the 3rd line of diff output, 6th character .. and strip the prefix off the file path
-        source-file (subs (nth lines 2) (+ 6 prefix-length))
-        assert1 (assert (.endsWith source-file ".java"))
+        source-file1 (extract-filepath (nth lines 2) prefix-length)
+        source-file2 (extract-filepath (nth lines 3) prefix-length)
         
-        source-file-no-ext (first (clojure.string/split source-file #"\."))
-        source-cls-absolute (clojure.string/replace source-file-no-ext #"/" ".")
-        cu (-> (util/find-compilationunit project-name source-cls-absolute)
-                          damp.ekeko.jdt.astnode/jdt-parse-icu
+        cu1 (-> (util/find-compilationunit project-name source-file1)
+                           damp.ekeko.jdt.astnode/jdt-parse-icu
 ;                          .types
 ;                          first ; Get the first type declaration in this ICU
                           )
-        differencer (new changenodes.Differencer cu cu)
+        
+        cu2 (-> (util/find-compilationunit project-name source-file2)
+                           damp.ekeko.jdt.astnode/jdt-parse-icu
+;                          .types
+;                          first ; Get the first type declaration in this ICU
+                          )
+        
+        differencer (new changenodes.Differencer cu1 cu2)
 ;        node (-> cu .types first .getMethods second)
         ]
     (.difference differencer)

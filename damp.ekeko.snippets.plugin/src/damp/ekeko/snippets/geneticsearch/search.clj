@@ -12,9 +12,9 @@
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko]
+;            [damp.ekeko.snippets :as snippets]
             [damp.ekeko.jdt
-             [astnode :as astnode]
-             [rewrites :as rewrites]])
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -25,6 +25,7 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]
+             [rewrites :as rewrites]
              [transformation :as transformation]])
   (:require [damp.ekeko.snippets.geneticsearch 
              [individual :as individual]
@@ -502,11 +503,28 @@
   (def templategroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
   (time (fitness/templategroup-matches templategroup))
-  
-  (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   
+  (defn
+    transform-by-snippetgroups
+    "Performs the program transformation defined by the lhs and rhs snippetgroups." 
+    [snippetgroup|lhs snippetgroup|rhs]
+    (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
+          defines (:preddefs qinfo)
+          lhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|lhs))
+          rhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|rhs))
+          rhsconditions (querying/snippetgroup-conditions|rewrite snippetgroup|rhs lhsuservars)
+          query (querying/snippetgroupqueryinfo-query qinfo 'damp.ekeko/ekeko rhsconditions rhsuservars false)] ;should these be hidden?
+      (querying/pprint-sexps (conj defines query))
+      (doseq [define defines]
+        (eval define))
+      (eval query)
+      (rewrites/apply-and-reset-rewrites)))
   
+  ; Test a nested transformation
+  (def transfogroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox4.ekx"))
+  (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
   (fitness/templategroup-matches templategroup) 

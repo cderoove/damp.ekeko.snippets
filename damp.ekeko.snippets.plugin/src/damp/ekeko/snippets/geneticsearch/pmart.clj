@@ -15,8 +15,7 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko]
             [damp.ekeko.jdt
-             [astnode :as astnode]
-             [rewrites :as rewrites]])
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]

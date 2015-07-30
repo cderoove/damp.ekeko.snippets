@@ -189,10 +189,9 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value]
   (and
     (applicability|stmt snippetgroup snippet value)
+    
     (not (instance? MethodDeclaration ; go 3 parents up: value > list > Block > X
-                    (snippet/snippet-node-parent|conceptually snippet
-                      (snippet/snippet-node-parent|conceptually snippet
-                       (snippet/snippet-node-parent|conceptually snippet value)))))))
+                    (snippet/snippet-node-ancestor|conceptually snippet value 3)))))
 
 (defn 
   applicability|lst
@@ -1327,17 +1326,6 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|typedecl-bodydeclarations
      "Inherited class members are also included in list matching."
-     []
-     false)
-   
-   (Operator. 
-     "include-inherited"
-     operators/consider-set|list
-     :generalization
-     "Use set matching for elements."
-     opscope-subject
-     applicability|lst
-     "Set matching will be used for elements of list."
      []
      false)
    

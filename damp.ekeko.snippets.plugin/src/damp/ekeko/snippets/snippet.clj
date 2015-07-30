@@ -304,7 +304,7 @@ damp.ekeko.snippets.snippet
     
     (if already-added 
       (do
-        (println "Can't add same directive twice!")
+;        (println "Can't add same directive twice!")
         snippet)
       (update-in snippet
                  [:ast2bounddirectives node]
@@ -355,10 +355,14 @@ damp.ekeko.snippets.snippet
 (defn
   snippet-node-ancestor|conceptually
   "Go n levels up the tree to retrieve the desired ancestor node
+   Returns nil when going beyond the root.
+
    (Transitive version of snippet-node-parent|conceptually)"
   [snippet node n]
   (reduce 
-    (fn [cur-node ignore] (snippet-node-parent|conceptually snippet cur-node)) 
+    (fn [cur-node ignore] (if (nil? cur-node)
+                            nil
+                            (snippet-node-parent|conceptually snippet cur-node)))
     node
     (range 0 n)))
 

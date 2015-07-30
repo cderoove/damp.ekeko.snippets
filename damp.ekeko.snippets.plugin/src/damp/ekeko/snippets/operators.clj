@@ -15,7 +15,6 @@ damp.ekeko.snippets.operators
   (:require 
     [damp.ekeko.jdt
      [astnode :as astnode]
-     [rewrites :as rewrites]
      [ast :as ast]])
   (:import
     [org.eclipse.jdt.core.dom ASTNode Comment Statement MethodDeclaration]

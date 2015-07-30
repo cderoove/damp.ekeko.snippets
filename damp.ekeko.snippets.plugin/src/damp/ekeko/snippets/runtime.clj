@@ -9,9 +9,7 @@
              [ast :as ast]
              [aststructure :as aststructure]
              [structure :as structure]
-             [astbindings :as astbindings]
-             [rewrites :as rewrites]
-             ]
+             [astbindings :as astbindings]]
             [damp.ekeko.snippets 
              [snippetgroup :as snippetgroup]
              [snippet :as snippet]

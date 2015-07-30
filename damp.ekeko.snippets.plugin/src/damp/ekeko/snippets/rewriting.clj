@@ -13,9 +13,48 @@
              ])
   (:require 
     [damp.ekeko [logic :as el]]
+    [damp.ekeko.snippets
+     [rewrites :as rewrites]]
     [damp.ekeko.jdt 
-     [astnode :as astnode]
-     [rewrites :as rewrites]]))
+     [astnode :as astnode]]))
+
+(declare directives-rewriting)
+
+(def ^:dynamic *sgroup-rhs* nil) ; Returns the RHS snippetgroup; its value is bound dynamically by querying/snippetgroup-conditions|rewrite TODO Would be better to refactor this
+
+(defn find-equals-rhs-snippet [uservar rhs-snippets]
+  "Find the snippet in which an equals directive occurs with uservar as its operand"
+  (some 
+    (fn [snippet]
+      (some
+        (fn [node]
+          (let [bds (snippet/snippet-bounddirectives-for-node snippet node)
+                equals-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-equals)]
+            (if (and 
+                  (not (nil? equals-rhs))
+                  (= uservar (symbol (.getValue (second (directives/bounddirective-operandbindings equals-rhs))))))
+              snippet)))
+        (snippet/snippet-nodes snippet)))
+    rhs-snippets))
+
+(defn determine-rewrite-cu
+  "Determine which compilation unit should be rewritten.
+   This function actually returns a meta-variable. Its value is an AST node in the compilation unit that should be rewritten."
+  [var]
+  (let [snippet (find-equals-rhs-snippet var *sgroup-rhs*)]
+    (if (nil? snippet)
+      ; Base case: If we can't find an equals directive referring to var, then it must be bound in the LHS
+      var
+      ; Recursive step: If we find a RHS snippet in which the desired equals occurs, then check the variable in the rewrite directive (assumed to be in the root)
+      (let [root-bds (snippet/snippet-bounddirectives-for-node snippet (snippet/snippet-root snippet))
+            rewrite-bd (first (filter (fn [bd]
+                                        (some (fn [rewr-dir]
+                                                (= (directives/directive-name rewr-dir)
+                                                   (directives/directive-name (directives/bounddirective-directive bd))))
+                                              directives-rewriting))
+                                      root-bds))
+            new-var (symbol (.getValue (second (directives/bounddirective-operandbindings rewrite-bd))))]
+        (recur new-var)))))
 
 (def replace-node `rewrites/replace-node)
 (def replace-value `rewrites/replace-value)
@@ -39,50 +78,30 @@
   rewrite-replace
   [val replacement-var-string]
   (fn [snippet]
-    (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
+    (let [cu-var (determine-rewrite-cu (symbol replacement-var-string))
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
-      `((el/perform (~replace-node ~var ~var-generatedcode))))))
+      `((el/perform (~replace-node ~cu-var ~var ~var-generatedcode))))))
 
 (defn
   rewrite-replace-value
   [val replacement-var-string]
   (fn [snippet]
-    (let [var-generatedcode (snippet/snippet-var-for-node snippet val)
+    (let [cu-var (determine-rewrite-cu (symbol replacement-var-string))
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol replacement-var-string)]
       `((el/perform 
-          (~replace-value ~var ~var-generatedcode))))))
-
-
-;(defn
-;  rewrite-replace-value
- ; [val replacement-var-or-sexp-string]
- ; (fn [snippet]
-  ;  (let [var-generatedcode
-  ;;        (snippet/snippet-var-for-node snippet val)
-  ;        replacementexp
-  ;        (if 
-  ;          (matching/string-represents-variable? replacement-var-or-sexp-string)
-   ;         (symbol replacement-var-or-sexp-string)
-   ;;         (read-string replacement-var-string))
-   ;       var-replacementvalue
-   ;       (util/gen-lvar 'replacement)]
-    ;  `((cl/fresh [~var-replacementvalue]
-    ;;              ;to project vars in replacementexp
-    ;              (el/equals ~var-replacementvalue ~replacementexp) 
-    ;              (el/perform (rewrites/replace-node ~var ~var-generatedcode)))))))
-
-
+          (~replace-value ~cu-var ~var ~var-generatedcode))))))
+    
 (defn
   rewrite-add-element
   [val target-list-var-string]
   (fn [snippet]
-    (let [var-generatedcode 
-          (snippet/snippet-var-for-node snippet val)
-          var
-          (symbol target-list-var-string)]
+    (let [cu-var (determine-rewrite-cu (symbol target-list-var-string))
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
+          var (symbol target-list-var-string)]
       `((el/perform 
-          (~add-element ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
-
+          (~add-element ~cu-var ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
 
 (def
   directive-replace
@@ -92,8 +111,6 @@
     rewrite-replace 
     "Replaces its ASTNode operand by the instantiated template."))
 
-
-
 (def
   directive-replace-value
   (directives/make-directive
@@ -101,8 +118,6 @@
     [(directives/make-directiveoperand "Replacement")]
     rewrite-replace-value 
     "Replaces its value operand by the instantiated template."))
-
-
 
 (def
   directive-add-element
@@ -112,20 +127,16 @@
     rewrite-add-element
     "Adds the instantiated template to the list operand."))
 
-
-
 (def 
   directives-rewriting
   [directive-replace
    directive-replace-value
    directive-add-element])
 
-
 (defn 
   registered-directives
   []
   directives-rewriting)
-
 
 (defn
   registered-rewriting-directive?
@@ -133,7 +144,6 @@
   (let [name (directives/directive-name directive)]
     (some #{name}
           (map directives/directive-name directives-rewriting))))
-
 
 (defn
   registered-directive-for-name
