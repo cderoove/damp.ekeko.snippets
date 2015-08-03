@@ -1026,7 +1026,6 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive replace."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|node
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
@@ -1038,13 +1037,10 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive replace-value."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|simplepropertyvalue
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false) 
-   
-   
    
    (Operator. 
      "add-directive-add-element"
@@ -1052,12 +1048,21 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive add-element."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|node
      "Adds the instantiated template to its list operand."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false) 
    
+   (Operator. 
+     "add-directive-remove-element"
+     operators/add-directive-remove-element
+     :rewrite
+     "Add directive remove-element."
+     opscope-subject 
+     applicability|node
+     "Removes the instantiated template from its list operand."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
    
    (Operator. 
      "remove-node"

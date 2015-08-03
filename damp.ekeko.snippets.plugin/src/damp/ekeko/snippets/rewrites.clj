@@ -107,18 +107,25 @@
 
 ;;Operations
 
-;(defn ; This function seems unfinished; will check back later..
-;  remove-node 
-;  "Remove node."
-;  ([rewrite cu-var node]
-;    (let [property (astnode/node-property-descriptor-for-ekeko-keyword (.getParent node) propertykey)
-;          parent-in-ctxt (compatible-parent (.getParent node))
-;          list-rewrite (.getListRewrite rewrite parent-in-ctxt property)]
-;      (.remove list-rewrite node nil)))
-;  ([cu-var node]
-;    (let [cu (determine-rewrite-cu cu-var)
-;          rewrite (current-rewrite-for-cu cu)]
-;      (remove-node rewrite cu-var node))))
+(defn
+  remove-node 
+  "Remove node."
+  ([cu-var parent propertykey removenode]
+    (let [cu (determine-rewrite-cu cu-var)
+          rewrite (current-rewrite-for-cu cu)]
+      (remove-node rewrite cu-var parent propertykey removenode)))
+  ([rewrite cu-var parent propertykey removenode]
+    (let [property (astnode/node-property-descriptor-for-ekeko-keyword parent propertykey)
+          parent-in-ctxt (compatible-via-rewrite-map parent)
+          list-rewrite (.getListRewrite rewrite parent-in-ctxt property)
+          compatible-removenode (some (fn [child] 
+                                        ; TODO Isn't there a better way to do this than String matching? 
+                                        ; Even if there was, it still could be ambiguous unless it's
+                                        ; specified which index needs to be removed..
+                                        (if (= (.toString child) (.toString removenode))
+                                          child))
+                                      (.getStructuralProperty parent property))]
+      (.remove list-rewrite compatible-removenode nil))))
 
 (defn 
   add-node 
@@ -132,7 +139,6 @@
           x (swap! rewrite-root-map (fn [x] (assoc x newnode value)))
           property (astnode/node-property-descriptor-for-ekeko-keyword parent propertykey)
           parent-in-ctxt (compatible-via-rewrite-map parent)
-
           list-rewrite 
           (.getListRewrite rewrite parent-in-ctxt property)
           index 
@@ -152,6 +158,19 @@
 (let [owner (astnode/owner lst)
       ownerproperty (astnode/owner-property lst)]
       (add-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) newnode idx))
+    ))
+
+(defn
+  remove-element
+  "Remove removenode from the given list."
+  ([rewrite cu-var lst removenode]
+    (let [owner (astnode/owner lst)
+          ownerproperty (astnode/owner-property lst)]
+      (remove-node rewrite cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode)))
+  ([cu-var lst removenode]
+    (let [owner (astnode/owner lst)
+          ownerproperty (astnode/owner-property lst)]
+      (remove-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))
     ))
 
 (defn 

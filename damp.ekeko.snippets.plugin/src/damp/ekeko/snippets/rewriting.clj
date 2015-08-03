@@ -10,11 +10,9 @@
              [util :as util]
              [parsing :as parsing]
              [runtime :as runtime]
-             ])
+             [rewrites :as rewrites]])
   (:require 
     [damp.ekeko [logic :as el]]
-    [damp.ekeko.snippets
-     [rewrites :as rewrites]]
     [damp.ekeko.jdt 
      [astnode :as astnode]]))
 
@@ -59,6 +57,7 @@
 (def replace-node `rewrites/replace-node)
 (def replace-value `rewrites/replace-value)
 (def add-element `rewrites/add-element)
+(def remove-element `rewrites/remove-element)
 
 ;used to instantiate templates
 (defn
@@ -103,6 +102,21 @@
       `((el/perform 
           (~add-element ~cu-var ~var ~var-generatedcode -1)))))) ;-1 indicates last position for ListRewrite
 
+(defn
+  rewrite-remove-element
+  [val target-list-var-string]
+  (fn [snippet]
+    (let [cu-var (determine-rewrite-cu (symbol target-list-var-string))
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
+          var (symbol target-list-var-string)
+;          idx-var (util/gen-lvar "idx")
+          ]
+      `((cl/fresh []
+;                  (el/contains ~var ~var-generatedcode)
+;                  (runtime/list-nth-element ~var 0 ~var-generatedcode) 
+                  (el/perform
+                    (~remove-element ~cu-var ~var ~var-generatedcode)))))))
+
 (def
   directive-replace
   (directives/make-directive
@@ -127,11 +141,20 @@
     rewrite-add-element
     "Adds the instantiated template to the list operand."))
 
+(def
+  directive-remove-element
+  (directives/make-directive
+    "remove-element"
+    [(directives/make-directiveoperand "Target list")]
+    rewrite-remove-element
+    "Removes the given template to the list operand."))
+
 (def 
   directives-rewriting
   [directive-replace
    directive-replace-value
-   directive-add-element])
+   directive-add-element
+   directive-remove-element])
 
 (defn 
   registered-directives

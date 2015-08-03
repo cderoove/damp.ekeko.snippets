@@ -1,4 +1,4 @@
-(ns 
+(ns
   ^{:doc "Matching directives for template-based program transformation."
     :author "Coen De Roover, Siltvani"}
 damp.ekeko.snippets.matching
@@ -11,7 +11,7 @@ damp.ekeko.snippets.matching
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
              [runtime :as runtime]])
-  (:require 
+  (:require
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
      [astnode :as astnode]

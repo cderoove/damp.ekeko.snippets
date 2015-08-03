@@ -519,11 +519,12 @@
       (doseq [define defines]
         (eval define))
       (eval query)
-      (rewrites/apply-and-reset-rewrites)))
+      (rewrites/apply-and-reset-rewrites)
+      ))
   
   ; Test a nested transformation
   (def transfogroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox4.ekx"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox5.ekx"))
   (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))

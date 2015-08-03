@@ -371,7 +371,12 @@ damp.ekeko.snippets.operators
 (defn 
   add-directive-add-element
   [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))        
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))
+
+(defn 
+  add-directive-remove-element
+  [snippet subject uservar]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element uservar))
   
 
 (defn
