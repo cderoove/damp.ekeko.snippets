@@ -395,6 +395,15 @@ damp.ekeko.snippets.operatorsrep
   (string? operandvalue))
 
 (defn
+  validity|integer
+  [snippetgroup snippet subject operandvalue]
+  (try (do
+         (java.lang.Integer/parseInt operandvalue)
+         true)
+    (catch Exception e false))
+  (string? operandvalue))
+
+(defn
   validity|subject
   [snippetgroup snippet subject operandvalue]
   (= operandvalue subject))
@@ -714,7 +723,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by meta-variable."
      opscope-subject
-     applicability|nonroot
+     applicability|always
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -1062,6 +1071,18 @@ damp.ekeko.snippets.operatorsrep
      applicability|node
      "Removes the instantiated template from its list operand."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-move-element"
+     operators/add-directive-move-element
+     :rewrite
+     "Add directive move-element."
+     opscope-subject 
+     applicability|node
+     "Moves the subject, a list element, into the target list at a given index."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
      false)
    
    (Operator. 

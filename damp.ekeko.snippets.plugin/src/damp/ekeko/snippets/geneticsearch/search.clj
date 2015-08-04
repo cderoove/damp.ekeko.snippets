@@ -524,7 +524,7 @@
   
   ; Test a nested transformation
   (def transfogroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox5.ekx"))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox-move.ekx"))
   (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   
   (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))

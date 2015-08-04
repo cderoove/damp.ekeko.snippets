@@ -126,6 +126,17 @@ damp.ekeko.snippets.operators
                                    (directives/make-directiveoperand opname)
                                    opvalue)])))
 
+(defn
+  add-binary-directive-opname-opvalue
+  [snippet node directive opname1 opvalue1 opname2 opvalue2]
+  (snippet/add-bounddirective snippet
+                              node 
+                              (directives/make-bounddirective 
+                                directive 
+                                [(make-directiveoperandbinding-for-match node)
+                                 (directives/make-directiveoperand-binding (directives/make-directiveoperand opname1) opvalue1)
+                                 (directives/make-directiveoperand-binding (directives/make-directiveoperand opname2) opvalue2)])))
+
 
 
 (defn 
@@ -355,9 +366,6 @@ damp.ekeko.snippets.operators
     ;  (throw (IllegalArgumentException. "Rewriting operators are only valid for template roots.")))
     (add-unary-directive-opname-opvalue snippet subject directive "Rewrite target" uservar)))
     
-
-
-    
 (defn 
   add-directive-replace
   [snippet subject uservar]
@@ -377,6 +385,11 @@ damp.ekeko.snippets.operators
   add-directive-remove-element
   [snippet subject uservar]
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element uservar))
+
+(defn 
+  add-directive-move-element
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-move-element "Target list" tgt "Target index" idx))
   
 
 (defn
@@ -596,9 +609,10 @@ damp.ekeko.snippets.operators
     (cond 
       ;special case that can only occur when instantiating a snippet .. or when using the replace-parent operator
       (= value (snippet/snippet-root snippet))
-      (throw (IllegalArgumentException. (str "Still to be implemented, replacing root node of snippet by creating new snippet: " value)))
-      ; Can't do this as a side-effect.. All uses of snippet-jdt-replace would have to be refactored, as it would now return a new snippet
-      
+      nil ; TODO Needs fixing.. !! Should currently only be used when the root has a move-element rewrite directive. (It expects the subject to be a metavar)
+      ; (throw (IllegalArgumentException. (str "Still to be implemented, replacing root node of snippet by creating new snippet: " value)))
+      ; TODO Can't fix this as a side-effect.. All uses of snippet-jdt-replace would have to be refactored, as it would now return a new snippet
+
       (astnode/property-descriptor-child? property)
       (let [parent (astnode/owner value)]
         (.setStructuralProperty parent property newnode))

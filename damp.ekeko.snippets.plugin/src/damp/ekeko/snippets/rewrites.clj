@@ -90,8 +90,12 @@
 (defn determine-rewrite-cu 
   "Determine the CompilationUnit to be rewritten, based on the value of cu-var.. which must a node in that CU"
   [cu-var]
-  (if (astnode/lstvalue? cu-var)
+  (cond 
+    (astnode/lstvalue? cu-var)
     (.getRoot (first (astnode/value-unwrapped cu-var)))
+    (astnode/ast? cu-var)
+    (.getRoot cu-var)
+    :else
     (.getRoot (astnode/value-unwrapped cu-var))))
 
 (defn compatible-via-rewrite-map
@@ -172,6 +176,18 @@
           ownerproperty (astnode/owner-property lst)]
       (remove-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))
     ))
+
+(defn
+  move-element
+  "Move source-elem from its list into target-list at idx."
+  [src-cu-var tgt-cu-var source-elem target-list idx]
+  (let [src-parent (astnode/owner source-elem)
+        src-property (astnode/ekeko-keyword-for-property-descriptor (astnode/owner-property source-elem))
+        target-parent (astnode/owner target-list)
+        target-property (astnode/ekeko-keyword-for-property-descriptor (astnode/owner-property target-list))]
+    (do
+      (remove-node src-cu-var src-parent src-property source-elem)
+      (add-node tgt-cu-var target-parent target-property source-elem idx))))
 
 (defn 
   replace-node 

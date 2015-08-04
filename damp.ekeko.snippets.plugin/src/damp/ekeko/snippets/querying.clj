@@ -416,7 +416,7 @@
                             (not (or (matching/registered-replacedby-directive? directive)
                                      (rewriting/registered-rewriting-directive? directive)))))
                         (fn [val]
-                          (concat 
+                          (concat
                             (snippet-node-conditions|replacedby snippet val snippetruntimevar) ;node replaced by var in template being instantiated
                             (when
                               (= val root)

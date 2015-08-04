@@ -58,6 +58,7 @@
 (def replace-value `rewrites/replace-value)
 (def add-element `rewrites/add-element)
 (def remove-element `rewrites/remove-element)
+(def move-element `rewrites/move-element)
 
 ;used to instantiate templates
 (defn
@@ -117,6 +118,21 @@
                   (el/perform
                     (~remove-element ~cu-var ~var ~var-generatedcode)))))))
 
+(defn
+  rewrite-move-element
+  [source-elem target-list idx]
+  (fn [snippet]
+    (let [bds (snippet/snippet-bounddirectives-for-node snippet source-elem)
+          repl-by-var (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-replacedbyvariable)
+          source-lst-var (symbol (.getValue (second (directives/bounddirective-operandbindings repl-by-var))))
+          src-cu-var (determine-rewrite-cu (symbol (.getValue (second (directives/bounddirective-operandbindings repl-by-var)))))
+          tgt-cu-var (determine-rewrite-cu (symbol target-list))
+;          source-elem-val (snippet/snippet-var-for-node snippet source-elem)
+          target-list-val (symbol target-list)]
+      `((el/perform
+          (~move-element ~src-cu-var ~tgt-cu-var 
+                         ~source-lst-var ~target-list-val ~idx))))))
+
 (def
   directive-replace
   (directives/make-directive
@@ -149,12 +165,22 @@
     rewrite-remove-element
     "Removes the given template to the list operand."))
 
+(def
+  directive-move-element
+  (directives/make-directive
+    "move-element"
+    [(directives/make-directiveoperand "Target list")
+     (directives/make-directiveoperand "Target index")]
+    rewrite-move-element
+    "Moves the subject (a list element) into a target list at the given index."))
+
 (def 
   directives-rewriting
   [directive-replace
    directive-replace-value
    directive-add-element
-   directive-remove-element])
+   directive-remove-element
+   directive-move-element])
 
 (defn 
   registered-directives
