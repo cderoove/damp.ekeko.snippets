@@ -167,7 +167,6 @@ damp.ekeko.snippets.snippet
   ;  (snippet-nodes snippet)))
   (astnode/node-propertyvalues node))
 
-
 (defn 
   snippet-vars
   "Returns the logic variables that correspond to the AST nodes
@@ -175,7 +174,6 @@ damp.ekeko.snippets.snippet
    AST nodes from the queried Java project."
   [snippet]
   (vals (:ast2var snippet)))
-
 
 (defn 
   snippet-userquery
@@ -185,7 +183,6 @@ damp.ekeko.snippets.snippet
     (if (nil? query)
       '()
       query)))
-
 
 (defn
   snippet-value-list?
@@ -378,6 +375,16 @@ damp.ekeko.snippets.snippet
     (snippet-node-children snippet node)
     :default
     []))
+
+(defn
+  snippet-node-child|conceptually
+  "Returns conceptual child of this snippet element 
+   (will have a wrapper if applicable)."
+  [snippet node property]
+  (some (fn [child]
+          (if (= property (:property child))
+            child))
+        (snippet-node-children|conceptually snippet node)))
 
 (defn 
   walk-snippet-element
