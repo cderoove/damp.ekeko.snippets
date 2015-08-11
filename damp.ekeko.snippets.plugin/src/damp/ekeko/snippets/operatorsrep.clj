@@ -860,7 +860,6 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)]
      false)
    
-   
    (Operator. 
      "add-directive-subtype+"
      operators/add-directive-subtype+
@@ -1059,7 +1058,8 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject 
      applicability|node
      "Adds the instantiated template to its list operand."
-     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
      false) 
    
    (Operator. 
@@ -1069,8 +1069,31 @@ damp.ekeko.snippets.operatorsrep
      "Add directive remove-element."
      opscope-subject 
      applicability|node
+     "Removes the element at the given index from the list in the subject."
+     [(make-operand "Index" opscope-string validity|integer)]
+     false)
+   
+   (Operator. 
+     "add-directive-remove-element-alt"
+     operators/add-directive-remove-element-alt
+     :rewrite
+     "Add directive remove-element-alt."
+     opscope-subject 
+     applicability|node
      "Removes the instantiated template from its list operand."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-copy-node"
+     operators/add-directive-copy-node
+     :rewrite
+     "Add directive copy-node."
+     opscope-subject 
+     applicability|node
+     "Copies the subject (only the node itself!) into the target list at a given index."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
      false)
    
    (Operator. 

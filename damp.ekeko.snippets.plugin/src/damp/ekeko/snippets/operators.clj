@@ -356,8 +356,6 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match value)])))
 
 
-  
-
 (defn
   add-unary-directive-opname-opvalue|rewriting
   [snippet subject directive uservar]
@@ -369,29 +367,38 @@ damp.ekeko.snippets.operators
 (defn 
   add-directive-replace
   [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))        
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))
 
 (defn 
   add-directive-replace-value
   [snippet subject uservar]
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace-value uservar))        
     
-(defn 
+(defn
   add-directive-add-element
-  [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-add-element "Target list" tgt "Target index" idx))
 
 (defn 
   add-directive-remove-element
+  [snippet subject idx]
+  (add-unary-directive-opname-opvalue snippet subject rewriting/directive-remove-element "Target index" idx))
+
+(defn 
+  add-directive-remove-element-alt
   [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element uservar))
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element-alt uservar))
 
 (defn 
   add-directive-move-element
   [snippet subject tgt idx]
   (add-binary-directive-opname-opvalue snippet subject rewriting/directive-move-element "Target list" tgt "Target index" idx))
-  
 
+(defn 
+  add-directive-copy-node
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-copy-node "Target list" tgt "Target index" idx))
+  
 (defn
   generalize-directive
   "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"

@@ -112,8 +112,22 @@
 ;;Operations
 
 (defn
-  remove-node 
-  "Remove node."
+  remove-node
+  "Remove a node from a list given its index."
+  ([cu-var parent propertykey idx]
+    (let [cu (determine-rewrite-cu cu-var)
+          rewrite (current-rewrite-for-cu cu)]
+      (remove-node rewrite cu-var parent propertykey idx)))
+  ([rewrite cu-var parent propertykey idx]
+    (let [property (astnode/node-property-descriptor-for-ekeko-keyword parent propertykey)
+          parent-in-ctxt (compatible-via-rewrite-map parent)
+          list-rewrite (.getListRewrite rewrite parent-in-ctxt property)
+          compatible-removenode (nth (.getStructuralProperty parent property) idx)]
+      (.remove list-rewrite compatible-removenode nil))))
+
+(defn
+  remove-node-alt
+  "Remove a given node from a list."
   ([cu-var parent propertykey removenode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
@@ -123,9 +137,7 @@
           parent-in-ctxt (compatible-via-rewrite-map parent)
           list-rewrite (.getListRewrite rewrite parent-in-ctxt property)
           compatible-removenode (some (fn [child] 
-                                        ; TODO Isn't there a better way to do this than String matching? 
-                                        ; Even if there was, it still could be ambiguous unless it's
-                                        ; specified which index needs to be removed..
+                                        ; If there are multiple equivalent children, the first one will be removed!
                                         (if (= (.toString child) (.toString removenode))
                                           child))
                                       (.getStructuralProperty parent property))]
@@ -166,15 +178,27 @@
 
 (defn
   remove-element
+  "Remove the element at index idx from the given list."
+  ([rewrite cu-var lst idx]
+    (let [owner (astnode/owner lst)
+          ownerproperty (astnode/owner-property lst)]
+      (remove-node rewrite cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) idx)))
+  ([cu-var lst idx]
+    (let [owner (astnode/owner lst)
+          ownerproperty (astnode/owner-property lst)]
+      (remove-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) idx))))
+
+(defn
+  remove-element-alt
   "Remove removenode from the given list."
   ([rewrite cu-var lst removenode]
     (let [owner (astnode/owner lst)
           ownerproperty (astnode/owner-property lst)]
-      (remove-node rewrite cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode)))
+      (remove-node-alt rewrite cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode)))
   ([cu-var lst removenode]
     (let [owner (astnode/owner lst)
           ownerproperty (astnode/owner-property lst)]
-      (remove-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))
+      (remove-node-alt cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))
     ))
 
 (defn
@@ -188,6 +212,34 @@
     (do
       (remove-node src-cu-var src-parent src-property source-elem)
       (add-node tgt-cu-var target-parent target-property source-elem idx))))
+
+(defn
+  copy-node
+  "Copy source-elem (only the node itself) to target-list at idx."
+  [src-cu-var tgt-cu-var source-elem target-list idx]
+  (let [cu (determine-rewrite-cu tgt-cu-var)
+        rewrite (current-rewrite-for-cu cu)
+        
+        newnode source-elem
+        parent (astnode/owner target-list)
+        propertykey (astnode/ekeko-keyword-for-property-descriptor (astnode/owner-property target-list))]
+    
+    (let [value (compatible (.getAST rewrite) newnode)
+          minimized-value (astnode/minimize-node value)
+          
+          x (swap! rewrite-root-map (fn [x] (assoc x newnode value)))
+          property (astnode/node-property-descriptor-for-ekeko-keyword parent propertykey)
+          parent-in-ctxt (compatible-via-rewrite-map parent)
+          list-rewrite 
+          (.getListRewrite rewrite parent-in-ctxt property)
+          index 
+          (if (instance? java.lang.String idx)
+            (Integer/parseInt idx)
+            idx)] 
+      (.insertAt list-rewrite minimized-value index nil))
+    
+    
+    ))
 
 (defn 
   replace-node 
