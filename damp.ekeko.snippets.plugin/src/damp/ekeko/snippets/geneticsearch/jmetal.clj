@@ -4,7 +4,6 @@
     :author "Tim Molderez"}
   damp.ekeko.snippets.geneticsearch.jmetal
   (:refer-clojure :exclude [rand-nth rand-int rand])
-  (:require [inspector-jay [core :as jay]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]

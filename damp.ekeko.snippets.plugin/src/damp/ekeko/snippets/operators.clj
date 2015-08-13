@@ -145,6 +145,11 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (add-unary-directive-opname-opvalue snippet node matching/directive-equals "Meta-variable" uservar))
 
+(defn 
+  add-directive-equivalent
+  "Adds directive-equivalent to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-equivalent "Meta-variable" uservar))
 
 (defn 
   add-directive-invokes
@@ -258,6 +263,15 @@ damp.ekeko.snippets.operators
     node
     (directives/make-bounddirective matching/directive-orimplicit
                                     [(make-directiveoperandbinding-for-match node)])))
+
+(defn
+  add-directive-notnil
+  "Adds directive-notnil to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    snippet
+    node
+    (directives/make-bounddirective matching/directive-notnil [(make-directiveoperandbinding-for-match node)])))
 
 
 (defn
@@ -608,11 +622,23 @@ damp.ekeko.snippets.operators
 (defn
   snippet-jdt-replace
   [snippet value newnode]
-  (when-not (astnode/ast? value)
-    (throw (IllegalArgumentException. (str "Can only replace JDT ASTNode, given: " value))))
-  (when-not (astnode/ast? newnode)
-    (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode))))
-  (let [property (astnode/owner-property value)]
+  (cond
+    
+    (astnode/lstvalue? value)
+    (let [owner (astnode/owner value)
+          prop (astnode/owner-property value)
+          lst (astnode/property-value owner prop)]
+      (.clear lst)
+      (.addAll lst newnode))    
+
+    (not (astnode/ast? value))
+    (throw (IllegalArgumentException. (str "Can only replace JDT ASTNode, given: " value)))
+    
+    (not (astnode/ast? newnode))
+    (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode)))
+    
+    :else
+    (let [property (astnode/owner-property value)]
     (cond 
       ;special case that can only occur when instantiating a snippet .. or when using the replace-parent operator
       (= value (snippet/snippet-root snippet))
@@ -629,7 +655,7 @@ damp.ekeko.snippets.operators
             idx (.indexOf lst-raw value)]
         (.set lst-raw idx newnode))
       :default
-      (throw (IllegalArgumentException. "Unexpected property descriptor.")))))
+      (throw (IllegalArgumentException. "Unexpected property descriptor."))))))
 
 (defn
   replace-node

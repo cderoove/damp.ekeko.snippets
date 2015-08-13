@@ -320,8 +320,16 @@
         var-generatedcode 
         (snippet/snippet-var-for-node template root)
         stemplate
-        (persistence/snippet-as-persistent-string template)]
-    `((cl/== ~runtime-template-var (persistence/snippet-from-persistent-string ~stemplate))
+        (persistence/snippet-as-persistent-string template)
+        
+        chunks (clojure.string/split stemplate #"#")
+        
+;        tmp (println (read-string (clojure.string/join "#" chunks)))
+        
+;        tmp (spit "spit.ekt" stemplate)
+        ]
+    `((cl/== ~runtime-template-var (read-string (clojure.string/join "#" [~@chunks])) ;(read-string (slurp "spit.ekt")) ;(read-string ~stemplate) ;(persistence/snippet-from-persistent-string ~stemplate)
+             )
        (el/equals ~var-generatedcode  (snippet/snippet-root ~runtime-template-var)))))
   
 
@@ -338,6 +346,11 @@
         (directives/snippet-bounddirective-conditions snippet bounddirective))
       rewriting-bounddirectives)))
 
+(defn gAST [node]
+  (if (astnode/value? node)
+    (.getAST (astnode/owner node))
+    (.getAST node))
+  )
 
 (defn
   snippet-node-conditions|replacedby
@@ -363,7 +376,7 @@
                  ;        (el/equals ~compatiblevaluevar (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject)))
                  ;nil should be replaced by runtime snippet, like before
                  (el/perform 
-                   (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject))))
+                   (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  (rewriting/clone-compatible-with-ast ~varoperand (gAST ~varsubject))))
                  ;cannot use replace for this... astrewrite api 
                  ;(el/perform (rewrites/replace-node ~varsubject ~compatiblevaluevar))
                  ))
@@ -390,16 +403,13 @@
         (map (fn [snippet]
                (util/gen-lvar 'runtimesnippet))
              snippets)
-        
-             
+      
         ;create run-time instance of snippet and an ast for its root
         instantiations
         (mapcat (fn [snippet runtimevar] 
                   (newnode-from-template snippet runtimevar))
                 snippets
-                snippetsruntimevars) 
-        
-        
+                snippetsruntimevars)
         
         ;bind match-vars of run-time snippet to ast components, such that they can be rewritten later on
         ;ignoring replacedbysexp and replacedbyvar
@@ -438,7 +448,7 @@
           (fn [snippet]
             (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet)))
           snippets)
-            
+        
         rootvars
         (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) 
         ;vars
@@ -447,10 +457,10 @@
         ;(clojure.set/difference vars lhsuservars)
         ]
     `((cl/fresh [~@snippetsruntimevars ~@rootvars]; ~@allvarsexceptrootsandlhsandusers] 
-           ~@instantiations
-           (cl/fresh [~@instantiationconditionsvars]
-                     ~@conditions-on-instantiations-without-grounding-of-root-node
-                     )))))
+                ~@instantiations
+                (cl/fresh [~@instantiationconditionsvars]
+                          ~@conditions-on-instantiations-without-grounding-of-root-node
+                          )))))
 
 
 

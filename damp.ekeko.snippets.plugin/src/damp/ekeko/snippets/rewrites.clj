@@ -251,7 +251,7 @@
   ([cu-var node newnode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
-      (replace-node rewrite node newnode))))
+      (replace-node rewrite cu-var node newnode))))
 
 (def 
   ast-for-newlycreatednodes

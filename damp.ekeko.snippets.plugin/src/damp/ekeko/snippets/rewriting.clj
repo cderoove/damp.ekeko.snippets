@@ -226,7 +226,8 @@
    directive-add-element
    directive-remove-element
    directive-remove-element-alt
-   directive-move-element])
+   directive-move-element
+   directive-copy-node])
 
 (defn 
   registered-directives

@@ -37,6 +37,13 @@ damp.ekeko.snippets.matching
   (el/succeeds (astnode/nilvalue? ?value)))
 
 (defn
+  nongrounding-equivalent
+  [?a ?b]
+  (cl/conde 
+    [(cl/== ?a ?b)]
+    [(el/succeeds (= (.toString ?a) (.toString ?b)))]))
+
+(defn
   nongrounding-value|list
   [?value]
   (el/succeeds (astnode/lstvalue? ?value)))
@@ -366,6 +373,24 @@ damp.ekeko.snippets.matching
           (snippet/snippet-var-for-node snippet snippet-val)]          
       `((cl/conde [~@normalconditions]
                   [(~value|null ~var-match)])))))
+
+(defn 
+  constrain-notnil
+  "Like constrain-exact for MethodInvocation receivers, but allows implicit this-receiver."
+  [snippet-val]
+  (fn [snippet]
+    (let [exactnodeconditions
+          ((constrain-exact snippet-val) snippet)
+          offspringconditions
+          (snippet-node-conditions+ snippet snippet-val)
+          var-match
+          (snippet/snippet-var-for-node snippet snippet-val)
+          nilcheck
+          `(el/succeeds (not (astnode/nilvalue? ~var-match)))
+          allconditions
+          (concat exactnodeconditions offspringconditions)]
+      `( ~nilcheck
+         ~@allconditions))))
 
 (defn
   constrain-orexpression
@@ -1204,6 +1229,16 @@ damp.ekeko.snippets.matching
           var (symbol var-string)]
       `((cl/== ~var ~var-match)))))
 
+(defn
+  constrain-equivalent
+  "Constraining directive that tests whether the subject and meta-variable have the same .toString value."
+  [snippet-ast var-string]
+  (fn [snippet]
+    (let [var-match (snippet/snippet-var-for-node snippet snippet-ast)
+          var (symbol var-string)]
+      `((nongrounding-equivalent ~var-match ~var)
+         ))))
+
 (declare directive-replacedbywildcard)
 (declare directive-replacedbywildcard-checked)
 
@@ -1368,6 +1403,15 @@ damp.ekeko.snippets.matching
     [(directives/make-directiveoperand "Meta-variable")]
     constrain-equals
     "Match unifies with variable."
+    ))
+
+(def 
+  directive-equivalent
+  (directives/make-directive
+    "equivalent"
+    [(directives/make-directiveoperand "Meta-variable")]
+    constrain-equivalent
+    "Match should be equivalent to the variable's value."
     ))
 
 
@@ -1582,6 +1626,14 @@ damp.ekeko.snippets.matching
     "Invocations with implicit this-receiver match as well."))
 
 (def
+  directive-notnil
+  (directives/make-directive
+    "notnil"
+    []
+    constrain-notnil
+    "Nodes with a nil value will not match."))
+
+(def
   directive-orsimple
   (directives/make-directive
     "orsimple"
@@ -1624,6 +1676,8 @@ damp.ekeko.snippets.matching
   [;can be added to the above
    directive-size|atleast
    directive-equals
+   directive-equivalent
+   directive-notnil
    directive-consider-as-regexp|lst
    directive-consider-as-regexp|cfglst
    directive-consider-as-set|lst

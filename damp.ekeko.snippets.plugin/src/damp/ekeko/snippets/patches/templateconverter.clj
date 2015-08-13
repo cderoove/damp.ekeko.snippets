@@ -291,7 +291,6 @@ damp.ekeko.snippets.patches.templateconverter
         ))))
 
 (defn changes-to-template [changes changedeps cu]
-  (inspector-jay.core/inspect changes)
   "Convert a list of distilled Changes into a CU"
   (let [init-lhs (matching/snippet-from-node cu)
         init-transfo (transformation/make-transformation

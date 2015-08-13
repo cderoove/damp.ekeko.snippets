@@ -749,6 +749,17 @@ damp.ekeko.snippets.operatorsrep
      "Requires match to unify with meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
+   
+   (Operator. 
+     "add-directive-equivalent"
+     operators/add-directive-equivalent
+     :neutral
+     "Add directive equivalent."
+     opscope-subject
+     applicability|always
+     "Requires match to be equivalent to the meta-variable's value. (i.e. they don't have to be the same node, but they should look the same)"
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
   
    (Operator. 
      "add-directive-invokes"
@@ -1386,6 +1397,17 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|receiver
      "Implicit this receiver will match."
+     []
+     false)
+   
+   (Operator. 
+     "add-directive-notnil"
+     operators/add-directive-notnil
+     :refinement
+     "Add directive notnil."
+     opscope-subject
+     applicability|always
+     "Matches if the subject is not nil/null."
      []
      false)
    
