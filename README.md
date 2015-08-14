@@ -20,7 +20,7 @@ For our SCAM14 submission, the relevant files start with a ``chaqdemo_`` prefix.
 
 The Ekeko/X plugin can be built from source ([EkekoSnippets](https://github.com/cderoove/damp.ekeko.snippets/tree/master/EkekoSnippets)) or installed from our Eclipse update-site: [http://soft.vub.ac.be/~cderoove/eclipse/](http://soft.vub.ac.be/~cderoove/eclipse/)
 
-The installation instructions for [Ekeko](https://github.com/cderoove/damp.ekeko/tree/master/EkekoPlugin) should be consulted as well: [README.md](https://github.com/cderoove/damp.ekeko/blob/master/EkekoPlugin/README.md)
+The installation instructions for [Ekeko](https://github.com/cderoove/damp.ekeko/tree/master/EkekoPlugin) should be consulted as well: [README.md](https://github.com/cderoove/damp.ekeko/blob/master/damp.ekeko.plugin/README.md)
 
 Ekeko/X has been tested against [Eclipse Kepler (4.4)](http://www.eclipse.org)
 
