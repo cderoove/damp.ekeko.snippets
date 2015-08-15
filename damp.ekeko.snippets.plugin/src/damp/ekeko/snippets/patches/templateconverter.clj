@@ -147,19 +147,16 @@ damp.ekeko.snippets.patches.templateconverter
         parent (.getAffectedNode change)
         compat-parent (find-compatible-node parent (snippet/snippet-root lhs))
         inserted (astnode/minimize-node (.getRightNode change)) 
-        
         parent-change (parent-change change-idx changedeps change-snippetmap)
-;        (let [deps (nth (:dependencies changedeps) change-idx)
-;              idx-to-change (zipmap 
-;                              (map (fn [[idx snip]] idx) (vals change-snippetmap)) 
-;                              (keys change-snippetmap))]
-;          (get idx-to-change (first deps)))
-        
         prop (.getProperty change)
         insert-idx (.getIndex change)
         init-insert-rhs (matching/snippet-from-node inserted)
         insert-rhs-idx (count (snippetgroup/snippetgroup-snippetlist (:rhs transfo)))
         new-change-snippetmap (assoc change-snippetmap change [change-idx insert-rhs-idx])
+        add-rewrite-dir (fn [eq-var]
+                          (if (astnode/property-descriptor-list? prop)
+                            (operators/add-directive-add-element init-insert-rhs (snippet/snippet-root init-insert-rhs) eq-var insert-idx)
+                            (operators/add-directive-replace init-insert-rhs (snippet/snippet-root init-insert-rhs) eq-var)))
         ]
     (if (nil? parent-change)
       
@@ -167,8 +164,7 @@ damp.ekeko.snippets.patches.templateconverter
       (let [compat-parent-lst (snippet/snippet-node-child|conceptually lhs compat-parent prop)
             eq-var (determine-eq-var lhs compat-parent-lst)
             new-lhs (operators/add-directive-equals lhs compat-parent-lst eq-var)
-            new-insert-rhs (operators/add-directive-add-element init-insert-rhs (snippet/snippet-root init-insert-rhs) eq-var insert-idx)
-            ]
+            new-insert-rhs (add-rewrite-dir eq-var)]
         [(transformation/make-transformation (snippetgroup/replace-snippet (:lhs transfo) lhs new-lhs) 
                                              (snippetgroup/add-snippet (:rhs transfo) new-insert-rhs))
          new-change-snippetmap])
@@ -180,8 +176,7 @@ damp.ekeko.snippets.patches.templateconverter
             eq-var (determine-eq-var ctxt-rhs ctxt-lst)
             new-ctxt-rhs (operators/add-directive-equals ctxt-rhs ctxt-lst eq-var)
             new-rhs-group (snippetgroup/replace-snippet (:rhs transfo) ctxt-rhs new-ctxt-rhs)
-            new-insert-rhs (operators/add-directive-add-element init-insert-rhs (snippet/snippet-root init-insert-rhs) eq-var insert-idx)
-            ]
+            new-insert-rhs (add-rewrite-dir eq-var)]
         [(transformation/make-transformation (:lhs transfo)
                                              (snippetgroup/add-snippet new-rhs-group new-insert-rhs))
          new-change-snippetmap]
@@ -292,6 +287,7 @@ damp.ekeko.snippets.patches.templateconverter
 
 (defn changes-to-template [changes changedeps cu]
   "Convert a list of distilled Changes into a CU"
+  (inspector-jay.core/inspect changes)
   (let [init-lhs (matching/snippet-from-node cu)
         init-transfo (transformation/make-transformation
                        (snippetgroup/make-snippetgroup "LHS" [init-lhs])

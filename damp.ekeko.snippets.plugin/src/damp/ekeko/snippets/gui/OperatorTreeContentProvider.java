@@ -27,7 +27,7 @@ public class OperatorTreeContentProvider implements ITreeContentProvider {
 			selectedSnippet = inp.getTemplate();
 			selectedSnippetNode = inp.getValue();	
 		} else {
-			throw new IllegalArgumentException("OperatorTreeContentProvider expects input of type TemplateGroupTemplateElement" + newInput);
+//			throw new IllegalArgumentException("OperatorTreeContentProvider expects input of type TemplateGroupTemplateElement" + newInput);
 		}
 	}
 

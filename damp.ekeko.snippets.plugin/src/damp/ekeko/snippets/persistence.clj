@@ -378,7 +378,9 @@
 (defn
   slurp-from-resource
   [pathrelativetobundle]
-  (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+  (slurp-snippetgroup nil ;(test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)
+                      ; TODO Rewrite to not depend on test.damp.ekeko! As this will break Ekeko when it's published to the update site
+                      ))
 
 
 (defn
