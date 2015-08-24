@@ -19,13 +19,12 @@
     [damp.ekeko 
      [logic :as el]]
     [damp.ekeko.jdt
-     [rewrites :as rewrites]
      [astnode :as astnode]]))
 
 ;; Converting a snippet to a query
 ;; -------------------------------
 
-                 
+
 (defn
   snippet-conditions 
   ([snippet]
@@ -171,13 +170,15 @@
                   (partition-by 
                     (fn [condition] (= (first condition) `cl/fresh))
                     (snippet-conditions snippet))
+                  
+;                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
+                  
                   bodies
                   (rest potentialbodies)
                   standaloneconditions
                   (first potentialbodies)
                   conditionsvars
                   (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet))
-                  
                   
                   predvars
                   (concat
@@ -290,7 +291,7 @@
     (let [qinfo (snippetgroup-snippetgroupqueryinfo snippetgroup)
           defines (:preddefs qinfo)
           query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
-      (pprint-sexps (conj defines query))
+;      (pprint-sexps (conj defines query))
       (doseq [define defines]
         (eval define))
       (eval query))))
@@ -319,8 +320,16 @@
         var-generatedcode 
         (snippet/snippet-var-for-node template root)
         stemplate
-        (persistence/snippet-as-persistent-string template)]
-    `((cl/== ~runtime-template-var (persistence/snippet-from-persistent-string ~stemplate))
+        (persistence/snippet-as-persistent-string template)
+        
+        chunks (clojure.string/split stemplate #"#")
+        
+;        tmp (println (read-string (clojure.string/join "#" chunks)))
+        
+;        tmp (spit "spit.ekt" stemplate)
+        ]
+    `((cl/== ~runtime-template-var (read-string (clojure.string/join "#" [~@chunks])) ;(read-string (slurp "spit.ekt")) ;(read-string ~stemplate) ;(persistence/snippet-from-persistent-string ~stemplate)
+             )
        (el/equals ~var-generatedcode  (snippet/snippet-root ~runtime-template-var)))))
   
 
@@ -337,6 +346,11 @@
         (directives/snippet-bounddirective-conditions snippet bounddirective))
       rewriting-bounddirectives)))
 
+(defn gAST [node]
+  (if (astnode/value? node)
+    (.getAST (astnode/owner node))
+    (.getAST node))
+  )
 
 (defn
   snippet-node-conditions|replacedby
@@ -362,7 +376,7 @@
                  ;        (el/equals ~compatiblevaluevar (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject)))
                  ;nil should be replaced by runtime snippet, like before
                  (el/perform 
-                   (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  (rewriting/clone-compatible-with-ast ~varoperand (.getAST ~varsubject))))
+                   (damp.ekeko.snippets.operators/snippet-jdt-replace ~snippetruntimevar ~varsubject  (rewriting/clone-compatible-with-ast ~varoperand (gAST ~varsubject))))
                  ;cannot use replace for this... astrewrite api 
                  ;(el/perform (rewrites/replace-node ~varsubject ~compatiblevaluevar))
                  ))
@@ -378,8 +392,6 @@
 ;new strategy:
 ;generate conditions for instantiating template
 ;then generate querying conditions over the code in the instantiated template
-;this way, there can also be rewriting directives that refer to non-root targets
-
 
 (defn
   snippetgroup-conditions|rewrite
@@ -391,39 +403,37 @@
         (map (fn [snippet]
                (util/gen-lvar 'runtimesnippet))
              snippets)
-        
-             
+      
         ;create run-time instance of snippet and an ast for its root
         instantiations
         (mapcat (fn [snippet runtimevar] 
                   (newnode-from-template snippet runtimevar))
                 snippets
-                snippetsruntimevars) 
-        
-        
+                snippetsruntimevars)
         
         ;bind match-vars of run-time snippet to ast components, such that they can be rewritten later on
         ;ignoring replacedbysexp and replacedbyvar
         conditions-on-instantiations
-        (apply concat
-               (map 
-                 (fn [snippet snippetruntimevar] 
-                   (let [root (snippet/snippet-root snippet)]
-                     (snippet-conditions 
-                       snippet
-                       (fn [bounddirective]
-                         (let [directive (directives/bounddirective-directive bounddirective)]
-                           (not (or (matching/registered-replacedby-directive? directive)
-                                    (rewriting/registered-rewriting-directive? directive)))))
-                       (fn [val]
-                         (concat 
-                           (snippet-node-conditions|replacedby snippet val snippetruntimevar) ;node replaced by var in template being instantiated
-                           (when
-                             (= val root)
-                             (snippet-node-conditions|rewriting snippet val snippetruntimevar)))) ;program change
-                              )))
-                 snippets
-                 snippetsruntimevars))
+        (binding [rewriting/*sgroup-rhs* snippets] ; Because we want access to the RHS snippetgroup from rewrite directives.. TODO Should refactor this and pass around an (optional) snippetgroup param instead..
+          (apply concat
+                (map 
+                  (fn [snippet snippetruntimevar] 
+                    (let [root (snippet/snippet-root snippet)]
+                      (snippet-conditions 
+                        snippet
+                        (fn [bounddirective]
+                          (let [directive (directives/bounddirective-directive bounddirective)]
+                            (not (or (matching/registered-replacedby-directive? directive)
+                                     (rewriting/registered-rewriting-directive? directive)))))
+                        (fn [val]
+                          (concat
+                            (snippet-node-conditions|replacedby snippet val snippetruntimevar) ;node replaced by var in template being instantiated
+                            (when
+                              (= val root)
+                              (snippet-node-conditions|rewriting snippet val snippetruntimevar)))) ;program change
+                               )))
+                  snippets
+                  snippetsruntimevars)))
         ;todo: fix this hack .. 
         ;none of these conditions should ground against the base program
         ;they are walking a newly generated piece of code
@@ -438,25 +448,19 @@
           (fn [snippet]
             (matching/snippet-node-matchvarsforproperties snippet (snippet/snippet-root snippet)))
           snippets)
-            
-        
-        
-        
         
         rootvars
         (into #{} (snippetgroup/snippetgroup-rootvars snippetgrouprhs)) 
-        uservars 
-        (snippetgroup-uservars snippetgrouprhs) ;uservars should be added to the ekeko [..] instead of here 
         ;vars
         ;(into #{} (snippetgroup/snippetgroup-vars snippetgrouprhs))
         ;allvarsexceptrootsandlhsandusers
         ;(clojure.set/difference vars lhsuservars)
         ]
     `((cl/fresh [~@snippetsruntimevars ~@rootvars]; ~@allvarsexceptrootsandlhsandusers] 
-           ~@instantiations
-           (cl/fresh [~@instantiationconditionsvars]
-                     ~@conditions-on-instantiations-without-grounding-of-root-node
-                     )))))
+                ~@instantiations
+                (cl/fresh [~@instantiationconditionsvars]
+                          ~@conditions-on-instantiations-without-grounding-of-root-node
+                          )))))
 
 
 

@@ -165,8 +165,8 @@
 ;  (search/evolve verified-matches 200)
 ;  (jmetal/ibea-evolve verified-matches 400)
   
-  (inspector-jay.core/inspect 
-    (run-qualitas-clone-suite "jgrapht" "0.8.1"))
+;  (inspector-jay.core/inspect 
+;    (run-qualitas-clone-suite "jgrapht" "0.8.1"))
   
   (set-other-compilation-units-enabled! [] false)
   (set-other-compilation-units-enabled! [] true)

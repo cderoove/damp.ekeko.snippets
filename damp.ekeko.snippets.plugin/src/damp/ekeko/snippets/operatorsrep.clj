@@ -28,7 +28,7 @@ damp.ekeko.snippets.operatorsrep
      QualifiedName SimpleName ITypeBinding MethodDeclaration 
      MethodInvocation ClassInstanceCreation SuperConstructorInvocation SuperMethodInvocation
      SuperFieldAccess FieldAccess ConstructorInvocation ASTNode ASTNode$NodeList CompilationUnit
-     Annotation IAnnotationBinding TypeLiteral]))
+     Annotation IAnnotationBinding TypeLiteral Statement]))
 
 ;; Operator information
 
@@ -97,7 +97,6 @@ damp.ekeko.snippets.operatorsrep
       (applicability|methoddeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
       (ekekokeyword-owningproperty? value :name))))
 
-
 (defn 
   applicability|methodinvocation
   [snippetgroup snippet value]
@@ -155,15 +154,44 @@ damp.ekeko.snippets.operatorsrep
     (applicability|node snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)))
 
+(defn
+  applicability|expr
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (astnode/expression? value)))
+
+(defn
+  applicability|expressionstmt
+  [snippetgroup snippet value]
+  (and 
+    (applicability|node snippetgroup snippet value)
+    (astnode/expressionstmt? value)))
+
 (defn applicability|replace-parent
   "The replace-parent operator can only be applied to Expression nodes, whose parent is an Expression as well."
   [snippetgroup snippet value]
   (and
-    (applicability|node snippetgroup snippet value)
+    (applicability|expr snippetgroup snippet value)
     (applicability|nonroot snippetgroup snippet value)
-    (astnode/expression? value)
     (astnode/expression? (snippet/snippet-node-parent|conceptually snippet value))
     (applicability|nonroot snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))))
+
+(defn applicability|stmt
+  "The replace-parent-stmt operator can only be applied to Statements, whose grandparent isn't a MethodDeclaration."
+  [snippetgroup snippet value]
+  (and
+    (applicability|node snippetgroup snippet value)
+    (astnode/statement? value)))
+
+(defn applicability|replace-parent-stmt
+  "The replace-parent-stmt operator can only be applied to Statements, whose grandparent isn't a MethodDeclaration."
+  [snippetgroup snippet value]
+  (and
+    (applicability|stmt snippetgroup snippet value)
+    
+    (not (instance? MethodDeclaration ; go 3 parents up: value > list > Block > X
+                    (snippet/snippet-node-ancestor|conceptually snippet value 3)))))
 
 (defn 
   applicability|lst
@@ -307,6 +335,15 @@ damp.ekeko.snippets.operatorsrep
     (some #{(astnode/ekeko-keyword-for-class-of node)} 
           classkeywords)))
 
+(defn applicability|typedecl-bodydeclarations
+  [snippetgroup snippet value]
+  (and
+    (applicability|lst snippetgroup snippet value)
+    (let [parent (snippet/snippet-node-parent|conceptually snippet value)
+          typeclasskeywords [:TypeDeclaration]]
+      (or 
+        (applicability|node-classkeywords snippetgroup snippet parent typeclasskeywords)
+        (applicability|absentvalue-classkeywords snippetgroup snippet parent typeclasskeywords)))))
 
 (defn
   applicability|type
@@ -355,6 +392,15 @@ damp.ekeko.snippets.operatorsrep
 (defn
   validity|string
   [snippetgroup snippet subject operandvalue]
+  (string? operandvalue))
+
+(defn
+  validity|integer
+  [snippetgroup snippet subject operandvalue]
+  (try (do
+         (java.lang.Integer/parseInt operandvalue)
+         true)
+    (catch Exception e false))
   (string? operandvalue))
 
 (defn
@@ -677,7 +723,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by meta-variable."
      opscope-subject
-     applicability|nonroot
+     applicability|always
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -701,6 +747,17 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|always
      "Requires match to unify with meta-variable."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-equivalent"
+     operators/add-directive-equivalent
+     :neutral
+     "Add directive equivalent."
+     opscope-subject
+     applicability|always
+     "Requires match to be equivalent to the meta-variable's value. (i.e. they don't have to be the same node, but they should look the same)"
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
   
@@ -813,7 +870,6 @@ damp.ekeko.snippets.operatorsrep
      "Match should resolve to a type with the given simple name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)]
      false)
-   
    
    (Operator. 
      "add-directive-subtype+"
@@ -989,7 +1045,6 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive replace."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|node
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
@@ -1001,13 +1056,10 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive replace-value."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|simplepropertyvalue
      "Rewrites the operand by replacing it with the code corresponding to the template."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false) 
-   
-   
    
    (Operator. 
      "add-directive-add-element"
@@ -1015,12 +1067,57 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Add directive add-element."
      opscope-subject 
-     ;(complement applicability|nonroot) 
      applicability|node
      "Adds the instantiated template to its list operand."
-     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
      false) 
    
+   (Operator. 
+     "add-directive-remove-element"
+     operators/add-directive-remove-element
+     :rewrite
+     "Add directive remove-element."
+     opscope-subject 
+     applicability|node
+     "Removes the element at the given index from the list in the subject."
+     [(make-operand "Index" opscope-string validity|integer)]
+     false)
+   
+   (Operator. 
+     "add-directive-remove-element-alt"
+     operators/add-directive-remove-element-alt
+     :rewrite
+     "Add directive remove-element-alt."
+     opscope-subject 
+     applicability|node
+     "Removes the instantiated template from its list operand."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-copy-node"
+     operators/add-directive-copy-node
+     :rewrite
+     "Add directive copy-node."
+     opscope-subject 
+     applicability|node
+     "Copies the subject (only the node itself!) into the target list at a given index."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
+     false)
+   
+   (Operator. 
+     "add-directive-move-element"
+     operators/add-directive-move-element
+     :rewrite
+     "Add directive move-element."
+     opscope-subject 
+     applicability|node
+     "Moves the subject, a list element, into the target list at a given index."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
+      (make-operand "Index" opscope-string validity|integer)]
+     false)
    
    (Operator. 
      "remove-node"
@@ -1037,10 +1134,54 @@ damp.ekeko.snippets.operatorsrep
      "replace-parent"
      operators/replace-parent
      :destructive
-     "Replace parent node."
+     "Replace parent node (expressions)."
      opscope-subject
      applicability|replace-parent 
      "Make this expression node replace its parent."
+     []
+     false)
+   
+   (Operator. 
+     "replace-parent-stmt"
+     operators/replace-parent-stmt
+     :destructive
+     "Replace parent node (statements)."
+     opscope-subject
+     applicability|replace-parent-stmt 
+     "Make this statement replace its parent statement (e.g. a statement contained in a body of an if-statement)."
+     []
+     false)
+   
+   (Operator.
+     "isolate-stmt-in-block"
+     operators/isolate-stmt-in-block
+     :destructive
+     "Isolate statement in block."
+     opscope-subject
+     applicability|stmt 
+     "Removes all other statements in this block and adds set matching to the block."
+     []
+     false)
+   
+   (Operator.
+     "isolate-stmt-in-method"
+     operators/isolate-stmt-in-method
+     :destructive
+     "Isolate statement in method."
+     opscope-subject
+     applicability|stmt 
+     "Replaces the entire method body by just this statement, adds set matching to the body, and child* to the selected statement."
+     []
+     false)
+   
+   (Operator.
+     "isolate-expr-in-method"
+     operators/isolate-expr-in-method
+     :destructive
+     "Isolate expression in method."
+     opscope-subject
+     applicability|expr 
+     "Replaces the entire method body such that it matches any method body containing the selected expression."
      []
      false)
    
@@ -1182,8 +1323,16 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
-   ;todo: operator to rever to normal constraining of list elements
-   ;needs to re-add ground-relative-to-parent
+   (Operator. 
+     "replace-by-checked-wildcard"
+     operators/replace-by-checked-wildcard
+     :generalization
+     "Replace by checked wildcard."
+     opscope-subject
+     applicability|wildcard
+     "Replaces selection by wildcard, but still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
+     []
+     false)
    
    (Operator. 
      "consider-regexp|list"
@@ -1229,6 +1378,17 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator.
+     "include-inherited"
+     operators/include-inherited
+     :generalization
+     "Include inherited members."
+     opscope-subject
+     applicability|typedecl-bodydeclarations
+     "Inherited class members are also included in list matching."
+     []
+     false)
+   
    (Operator. 
      "add-directive-orimplicit"
      operators/add-directive-orimplicit
@@ -1237,6 +1397,17 @@ damp.ekeko.snippets.operatorsrep
      opscope-subject
      applicability|receiver
      "Implicit this receiver will match."
+     []
+     false)
+   
+   (Operator. 
+     "add-directive-notnil"
+     operators/add-directive-notnil
+     :refinement
+     "Add directive notnil."
+     opscope-subject
+     applicability|always
+     "Matches if the subject is not nil/null."
      []
      false)
    
@@ -1251,6 +1422,16 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   (Operator. 
+     "add-directive-orexpression"
+     operators/add-directive-orexpression
+     :generalization
+     "Add directive orexpression."
+     opscope-subject
+     applicability|expressionstmt
+     "Matches either with this ExpressionStatement, or the Expression contained within"
+     []
+     false)
    
    (Operator. 
      "generalize-references"
@@ -1327,6 +1508,14 @@ damp.ekeko.snippets.operatorsrep
   "Returns collection of registered operators."
   []
   operators)
+
+(defn
+  operator-from-id
+  [id]
+  (first 
+    (filter (fn [operator]
+              (= id (operator-id operator)))
+            operators)))
 
 (defn
   registered-operators-in-category
@@ -1580,6 +1769,7 @@ damp.ekeko.snippets.operatorsrep
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATORCATEGORY_DESCRIPTION) category-description)
   
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_NAME) operator-name)
+  (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_FROM_ID) operator-from-id)
   
   (set! (damp.ekeko.snippets.data.SnippetOperator/FN_OPERATOR_BINDINGS_FOR_OPERANDS) operator-bindings-for-operands-and-subject)
   

@@ -21,6 +21,7 @@ public class SnippetOperator {
 	
 	public static IFn FN_IS_OPERATOR;
 	public static IFn FN_OPERATOR_BINDINGS_FOR_OPERANDS;
+	public static IFn FN_OPERATOR_FROM_ID;
 
 	
 	public static boolean isOperator(Object value) {
@@ -29,6 +30,10 @@ public class SnippetOperator {
 	
 	public static Object[] getArray(Object clojureList) {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
+	}
+	
+	public static Object operatorFromId(String id) {
+		return FN_OPERATOR_FROM_ID.invoke(id);
 	}
 	
 	public static void setInputForTransformation(Tree tree, Object selectedNode) {

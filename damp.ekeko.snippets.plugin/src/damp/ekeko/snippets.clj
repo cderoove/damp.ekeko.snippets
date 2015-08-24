@@ -18,14 +18,12 @@
              [gui]
              [runtime]
              [transformation]
-             [rewriting :as rewriting] 
-             ])
+             [rewrites :as rewrites]
+             [rewriting :as rewriting]])
   (:require [damp.ekeko.snippets.geneticsearch 
              [search :as search]])
   (:require [damp.ekeko.jdt 
-             [astnode :as astnode]
-             [rewrites :as rewrites]
-             ])
+             [astnode :as astnode]])
   (:require [damp.ekeko
              [gui]
              [logic :as el]]))

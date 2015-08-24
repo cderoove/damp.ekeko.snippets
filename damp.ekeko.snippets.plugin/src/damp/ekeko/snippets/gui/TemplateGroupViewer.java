@@ -16,11 +16,20 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
@@ -28,6 +37,7 @@ import org.eclipse.swt.widgets.TreeItem;
 
 import clojure.lang.IFn;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
+import damp.ekeko.snippets.data.SnippetOperator;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplateGroupViewer extends Composite {
@@ -154,13 +164,45 @@ public class TemplateGroupViewer extends Composite {
 			}
 		});	
 
+		// Set context menu for selected tree nodes
+	    Menu popupMenu = new Menu(treeSnippet);
+	    
+	    MenuItem deleteItem = new MenuItem(popupMenu, SWT.NONE);
+	    deleteItem.setText("Remove node");
+	    deleteItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				jGroup.applyOperator(SnippetOperator.operatorFromId("remove-node"), 
+						SnippetOperator.getOperands(
+								jGroup, getSelectedSnippet(), getSelectedSnippetNode(), 
+								SnippetOperator.operatorFromId("remove-node")));
+				updateWidgets();
+				parentTemplateEditor.becomeDirty();
+			}
+		});
+
+	    MenuItem replaceByWildCardItem = new MenuItem(popupMenu, SWT.NONE);
+	    replaceByWildCardItem.setText("Replace by wildcard");
+	    replaceByWildCardItem.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				jGroup.applyOperator(SnippetOperator.operatorFromId("replace-by-wildcard"), 
+						SnippetOperator.getOperands(
+								jGroup, getSelectedSnippet(), getSelectedSnippetNode(), 
+								SnippetOperator.operatorFromId("replace-by-wildcard")));
+				updateWidgets();
+				parentTemplateEditor.becomeDirty();
+			}
+		});
+	    
+	    treeSnippet.setMenu(popupMenu);
+		
 		snippetTreeViewer.addDoubleClickListener(new IDoubleClickListener() {
 			@Override
 			public void doubleClick(DoubleClickEvent event) {
 				onNodeDoubleClickInternal();
 			}
 		}); 
-
 		
 		styledText.setBlockSelection(false);
 

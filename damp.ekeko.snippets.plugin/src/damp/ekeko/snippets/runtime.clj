@@ -9,12 +9,11 @@
              [ast :as ast]
              [aststructure :as aststructure]
              [structure :as structure]
-             [astbindings :as astbindings]
-             [rewrites :as rewrites]
-             ]
+             [astbindings :as astbindings]]
             [damp.ekeko.snippets 
              [snippetgroup :as snippetgroup]
-             [snippet :as snippet]])
+             [snippet :as snippet]
+             [util :as util]])
   (:import 
     [org.eclipse.jdt.core.dom PrimitiveType Modifier$ModifierKeyword Assignment$Operator
      InfixExpression$Operator PrefixExpression$Operator PostfixExpression$Operator
@@ -123,17 +122,12 @@
                         [(ast/ast :MethodDeclaration ?ast)
                          (aststructure/constructorinvocation-constructordeclaration ?invocation ?ast)]))))
                                   
-          
-
 (defn
   overrides
   [?ast ?overridden]
   (cl/all
     (el/v+ ?ast)
     (aststructure/methoddeclaration-methoddeclaration|overrides ?overridden ?ast)))
-
-  
-
 
 
 
@@ -263,22 +257,8 @@
   rawlist-element-remaining 
   [?lst ?el ?rem]
   (cl/all
-    (el/contains ?lst ?el) 
+    (el/contains ?lst ?el)
     (cl/project [?el ?lst]
                 (cl/== ?rem (remove (fn [e] (identical? e ?el)) ?lst)))))
               
     
-  
-  
-  
-
-
-
-
-    
-    
-        
-
-  
-
-

@@ -167,7 +167,6 @@ damp.ekeko.snippets.snippet
   ;  (snippet-nodes snippet)))
   (astnode/node-propertyvalues node))
 
-
 (defn 
   snippet-vars
   "Returns the logic variables that correspond to the AST nodes
@@ -175,7 +174,6 @@ damp.ekeko.snippets.snippet
    AST nodes from the queried Java project."
   [snippet]
   (vals (:ast2var snippet)))
-
 
 (defn 
   snippet-userquery
@@ -185,7 +183,6 @@ damp.ekeko.snippets.snippet
     (if (nil? query)
       '()
       query)))
-
 
 (defn
   snippet-value-list?
@@ -304,7 +301,7 @@ damp.ekeko.snippets.snippet
     
     (if already-added 
       (do
-        (println "Can't add same directive twice!")
+;        (println "Can't add same directive twice!")
         snippet)
       (update-in snippet
                  [:ast2bounddirectives node]
@@ -352,6 +349,19 @@ damp.ekeko.snippets.snippet
       (snippet-list-containing snippet c)
       (snippet-node-owner snippet c))))
 
+(defn
+  snippet-node-ancestor|conceptually
+  "Go n levels up the tree to retrieve the desired ancestor node
+   Returns nil when going beyond the root.
+
+   (Transitive version of snippet-node-parent|conceptually)"
+  [snippet node n]
+  (reduce 
+    (fn [cur-node ignore] (if (nil? cur-node)
+                            nil
+                            (snippet-node-parent|conceptually snippet cur-node)))
+    node
+    (range 0 n)))
 
 (defn
   snippet-node-children|conceptually
@@ -365,6 +375,16 @@ damp.ekeko.snippets.snippet
     (snippet-node-children snippet node)
     :default
     []))
+
+(defn
+  snippet-node-child|conceptually
+  "Returns conceptual child of this snippet element 
+   (will have a wrapper if applicable)."
+  [snippet node property]
+  (some (fn [child]
+          (if (= property (:property child))
+            child))
+        (snippet-node-children|conceptually snippet node)))
 
 (defn 
   walk-snippet-element

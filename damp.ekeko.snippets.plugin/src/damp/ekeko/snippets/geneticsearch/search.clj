@@ -12,9 +12,9 @@
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko]
+;            [damp.ekeko.snippets :as snippets]
             [damp.ekeko.jdt
-             [astnode :as astnode]
-             [rewrites :as rewrites]])
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -25,6 +25,7 @@
              [operatorsrep :as operatorsrep]
              [util :as util]
              [directives :as directives]
+             [rewrites :as rewrites]
              [transformation :as transformation]])
   (:require [damp.ekeko.snippets.geneticsearch 
              [individual :as individual]
@@ -445,7 +446,8 @@
                   (util/parallel-viable-repeat
                     (* (:mutation-weight config) (count population))
                     #(preprocess (mutate (select population tournament-size) (:mutation-operators config)))
-                    (fn [x] (not (nil? x))))
+                    (fn [x] (not (nil? x)))
+                    (:thread-group config))
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
@@ -456,13 +458,15 @@
                                    (select population tournament-size)
                                    (select population tournament-size)))
                            (fn [x]
-                             (not-any? nil? x))))
+                             (not-any? nil? x))
+                           (:thread-group config)))
                   
                   ; Selection
                   (util/parallel-viable-repeat 
                     (* (:selection-weight config) (count population)) 
                     #(select population tournament-size) 
-                    (fn [ind] (pos? (individual/individual-fitness ind))))))
+                    (fn [ind] (pos? (individual/individual-fitness ind)))
+                    (:thread-group config))))
               @new-history)))))))
 
 (defn run-example []
@@ -474,12 +478,11 @@
                                 :selection-weight 1/4
                                 :mutation-weight 3/4
                                 :crossover-weight 0/4
-                                :max-generations 10
+                                :max-generations 5
                                 :match-timeout 12000
                                 :thread-group tg
                                 :population-size 10
-                                :tournament-rounds 5
-                                )))
+                                :tournament-rounds 5)))
 
 (comment
   (run-example) ; To start
@@ -489,12 +492,43 @@
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   
   (def matches (into [] (fitness/templategroup-matches templategroup)))
-  (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
+;  (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/good-Debug.ekt"))
-  (time (util/with-timeout 15000 (fitness/templategroup-matches templategroup)))
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/test9.ekt"))
+  (fitness/templategroup-matches templategroup)
+  
+  
+  (def templategroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
+  (time (fitness/templategroup-matches templategroup))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
+  
+  (defn
+    transform-by-snippetgroups
+    "Performs the program transformation defined by the lhs and rhs snippetgroups." 
+    [snippetgroup|lhs snippetgroup|rhs]
+    (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
+          defines (:preddefs qinfo)
+          lhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|lhs))
+          rhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|rhs))
+          rhsconditions (querying/snippetgroup-conditions|rewrite snippetgroup|rhs lhsuservars)
+          query (querying/snippetgroupqueryinfo-query qinfo 'damp.ekeko/ekeko rhsconditions rhsuservars false)] ;should these be hidden?
+      (querying/pprint-sexps (conj defines query))
+      (doseq [define defines]
+        (eval define))
+      (eval query)
+      (rewrites/apply-and-reset-rewrites)
+      ))
+  
+  ; Test a nested transformation
+;  (def transfogroup
+;    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox-move.ekx"))
+  (def transfogroup
+    (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/test.ekx"))
+  (def transfogroup
+    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/dbg.ekx"))
+  (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   
   
   
@@ -530,5 +564,5 @@
     nil)
   
   ; Selection 
-  (inspector-jay.core/inspect (select (population-from-snippets matches 10) 2))
+;  (inspector-jay.core/inspect (select (population-from-snippets matches 10) 2))
   )

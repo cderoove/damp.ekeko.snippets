@@ -12,8 +12,7 @@
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko]
             [damp.ekeko.jdt
-             [astnode :as astnode]
-             [rewrites :as rewrites]])
+             [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
@@ -130,14 +129,6 @@
   
 ;  (/ 1 (inc (* 1/2 (count-directives templategroup))))
   )
-
-  (def templategroup1
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  
-  (def templategroup2
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby2.ekt"))
-
-  (double (directive-count-measure templategroup1))
 
 ;
 ;(defn simple-measure

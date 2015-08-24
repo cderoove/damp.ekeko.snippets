@@ -15,10 +15,9 @@ damp.ekeko.snippets.operators
   (:require 
     [damp.ekeko.jdt
      [astnode :as astnode]
-     [rewrites :as rewrites]
      [ast :as ast]])
   (:import
-    [org.eclipse.jdt.core.dom ASTNode Comment]
+    [org.eclipse.jdt.core.dom ASTNode Comment Statement MethodDeclaration]
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]))
 
 ;; Operators for Snippet
@@ -85,8 +84,7 @@ damp.ekeko.snippets.operators
             expstring)]
         )))
 
-(defn 
-  replace-by-wildcard 
+(defn replace-by-wildcard 
   "Replace snippet AST node by a wildcard."
   [snippet node]
   (let [purged-of-children
@@ -103,6 +101,18 @@ damp.ekeko.snippets.operators
         matching/directive-replacedbywildcard
         [(make-directiveoperandbinding-for-match node)]))))
 
+(defn replace-by-checked-wildcard 
+  "Replace snippet AST node by a wildcard."
+  [snippet node]
+  (snippet/add-bounddirective
+    (matching/remove-directive
+      (replace-by-wildcard snippet node)
+      matching/directive-replacedbywildcard
+      node)
+    node
+    (directives/make-bounddirective 
+      matching/directive-replacedbywildcard-checked
+      [(make-directiveoperandbinding-for-match node)])))
 
 (defn
   add-unary-directive-opname-opvalue
@@ -116,6 +126,17 @@ damp.ekeko.snippets.operators
                                    (directives/make-directiveoperand opname)
                                    opvalue)])))
 
+(defn
+  add-binary-directive-opname-opvalue
+  [snippet node directive opname1 opvalue1 opname2 opvalue2]
+  (snippet/add-bounddirective snippet
+                              node 
+                              (directives/make-bounddirective 
+                                directive 
+                                [(make-directiveoperandbinding-for-match node)
+                                 (directives/make-directiveoperand-binding (directives/make-directiveoperand opname1) opvalue1)
+                                 (directives/make-directiveoperand-binding (directives/make-directiveoperand opname2) opvalue2)])))
+
 
 
 (defn 
@@ -124,6 +145,11 @@ damp.ekeko.snippets.operators
   [snippet node uservar]
   (add-unary-directive-opname-opvalue snippet node matching/directive-equals "Meta-variable" uservar))
 
+(defn 
+  add-directive-equivalent
+  "Adds directive-equivalent to node."
+  [snippet node uservar]
+  (add-unary-directive-opname-opvalue snippet node matching/directive-equivalent "Meta-variable" uservar))
 
 (defn 
   add-directive-invokes
@@ -238,6 +264,15 @@ damp.ekeko.snippets.operators
     (directives/make-bounddirective matching/directive-orimplicit
                                     [(make-directiveoperandbinding-for-match node)])))
 
+(defn
+  add-directive-notnil
+  "Adds directive-notnil to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    snippet
+    node
+    (directives/make-bounddirective matching/directive-notnil [(make-directiveoperandbinding-for-match node)])))
+
 
 (defn
   add-directive-orsimple
@@ -247,6 +282,16 @@ damp.ekeko.snippets.operators
     (matching/remove-directives snippet node matching/directives-match)
     node
     (directives/make-bounddirective matching/directive-orsimple
+                                    [(make-directiveoperandbinding-for-match node)])))
+
+(defn
+  add-directive-orexpression
+  "Adds directive-orexpression to node."
+  [snippet node]
+  (snippet/add-bounddirective 
+    (matching/remove-directives snippet node (conj matching/directives-match (matching/registered-grounding-directives)))
+    node
+    (directives/make-bounddirective matching/directive-orexpression
                                     [(make-directiveoperandbinding-for-match node)])))
 
 (defn
@@ -325,8 +370,6 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match value)])))
 
 
-  
-
 (defn
   add-unary-directive-opname-opvalue|rewriting
   [snippet subject directive uservar]
@@ -335,25 +378,41 @@ damp.ekeko.snippets.operators
     ;  (throw (IllegalArgumentException. "Rewriting operators are only valid for template roots.")))
     (add-unary-directive-opname-opvalue snippet subject directive "Rewrite target" uservar)))
     
-
-
-    
 (defn 
   add-directive-replace
   [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))        
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace uservar))
 
 (defn 
   add-directive-replace-value
   [snippet subject uservar]
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-replace-value uservar))        
     
-(defn 
+(defn
   add-directive-add-element
-  [snippet subject uservar]
-  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-add-element uservar))        
-  
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-add-element "Target list" tgt "Target index" idx))
 
+(defn 
+  add-directive-remove-element
+  [snippet subject idx]
+  (add-unary-directive-opname-opvalue snippet subject rewriting/directive-remove-element "Target index" idx))
+
+(defn 
+  add-directive-remove-element-alt
+  [snippet subject uservar]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element-alt uservar))
+
+(defn 
+  add-directive-move-element
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-move-element "Target list" tgt "Target index" idx))
+
+(defn 
+  add-directive-copy-node
+  [snippet subject tgt idx]
+  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-copy-node "Target list" tgt "Target index" idx))
+  
 (defn
   generalize-directive
   "Generalize a directive (e.g. convert an existing 'type' directive to 'type*')"
@@ -415,7 +474,7 @@ damp.ekeko.snippets.operators
         (snippet/snippet-node-parent|conceptually snippet node)
         ownerproperty 
         (astnode/owner-property node)
-        ]     
+        ]
     (do 
       (snippet/walk-snippet-element ;dissoc children 
                                     snippet
@@ -563,17 +622,30 @@ damp.ekeko.snippets.operators
 (defn
   snippet-jdt-replace
   [snippet value newnode]
-  (when-not (astnode/ast? value)
-    (throw (IllegalArgumentException. (str "Can only replace JDT ASTNode, given: " value))))
-  (when-not (astnode/ast? newnode)
-    (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode))))
-  (let [property (astnode/owner-property value)]
+  (cond
+    
+    (astnode/lstvalue? value)
+    (let [owner (astnode/owner value)
+          prop (astnode/owner-property value)
+          lst (astnode/property-value owner prop)]
+      (.clear lst)
+      (.addAll lst newnode))    
+
+    (not (astnode/ast? value))
+    (throw (IllegalArgumentException. (str "Can only replace JDT ASTNode, given: " value)))
+    
+    (not (astnode/ast? newnode))
+    (throw (IllegalArgumentException. (str "JDT ASTNode can only be replaced by another JDT ASTNode, given: " newnode)))
+    
+    :else
+    (let [property (astnode/owner-property value)]
     (cond 
       ;special case that can only occur when instantiating a snippet .. or when using the replace-parent operator
       (= value (snippet/snippet-root snippet))
-      (throw (IllegalArgumentException. (str "Still to be implemented, replacing root node of snippet by creating new snippet: " value)))
-      ; Can't do this as a side-effect.. All uses of snippet-jdt-replace would have to be refactored, as it would now return a new snippet
-      
+      nil ; TODO Needs fixing.. !! Should currently only be used when the root has a move-element rewrite directive. (It expects the subject to be a metavar)
+      ; (throw (IllegalArgumentException. (str "Still to be implemented, replacing root node of snippet by creating new snippet: " value)))
+      ; TODO Can't fix this as a side-effect.. All uses of snippet-jdt-replace would have to be refactored, as it would now return a new snippet
+
       (astnode/property-descriptor-child? property)
       (let [parent (astnode/owner value)]
         (.setStructuralProperty parent property newnode))
@@ -583,7 +655,7 @@ damp.ekeko.snippets.operators
             idx (.indexOf lst-raw value)]
         (.set lst-raw idx newnode))
       :default
-      (throw (IllegalArgumentException. "Unexpected property descriptor.")))))
+      (throw (IllegalArgumentException. "Unexpected property descriptor."))))))
 
 (defn
   replace-node
@@ -611,7 +683,9 @@ damp.ekeko.snippets.operators
 
 (defn
   replace-node-with
-  "Replaces a node within a snippet with another node from another snippet"
+  "Replaces a node within a snippet with another node from another snippet
+   Returns a pair with first the new snippet, 
+   and second the node that was replaced (in case you need to refer to this node in any subsequent operations; you can't use source-node for this)"
   [destination-snippet destination-node source-snippet source-node]
   (let [copy-of-source-node
         (ASTNode/copySubtree (.getAST destination-node) source-node) ;copy to ensure ASTs are compatible
@@ -656,10 +730,8 @@ damp.ekeko.snippets.operators
           (swap! newsnippet snippet/update-bounddirectives  destval destbds)
           (swap! newsnippet snippet/update-projectanchoridentifier destval srcpid)
           )))
-    @newsnippet))
-
-
-
+    
+    [@newsnippet copy-of-source-node]))
 
 
 (defn
@@ -667,7 +739,18 @@ damp.ekeko.snippets.operators
   "Make an expression node replace its parent."
   [snippet node]
   (let [parent-node (snippet/snippet-node-parent|conceptually snippet node)]
-    (replace-node-with snippet parent-node snippet node)))
+    (first (replace-node-with snippet parent-node snippet node))))
+
+(defn
+  replace-parent-stmt
+  "Make a statement replace its parent statement."
+  [snippet node]
+  (let [block (snippet/snippet-node-parent|conceptually snippet
+                (snippet/snippet-node-parent|conceptually snippet node))
+        block-parent (snippet/snippet-node-parent|conceptually snippet block)]
+    (if (instance? Statement block-parent)
+      (first (replace-node-with snippet block-parent snippet node))
+      (first (replace-node-with snippet block snippet node)))))
 
 (defn-
   withoutimmediateparents
@@ -683,6 +766,8 @@ damp.ekeko.snippets.operators
             sofar)))
       []
       nodes)))
+
+
   
 ;todo: also for var references rather than simply their declarations
   
@@ -1046,7 +1131,7 @@ damp.ekeko.snippets.operators
       (fn [val] 
         (when (instance? Comment val)
           (swap! newsnippet remove-node val))))
-    @newsnippet)) 
+    @newsnippet))
 
 
 (def docclasskeywords [:BlockComment :Javadoc :LineComment :Comment])
@@ -1175,6 +1260,82 @@ damp.ekeko.snippets.operators
       [(make-directiveoperandbinding-for-match value)])))
 
 (defn
+  include-inherited
+  "Also include inherited class members in a type declaration.
+   Also acts similar to match|set, except that the ordering of members is disregarded"
+  [snippet value]
+  (snippet/add-bounddirective
+    ;remove grounding directives from elements 
+    (reduce
+      (fn [newsnippet lstel]
+        (matching/remove-directives newsnippet lstel [matching/directive-child]));also directive-member?  
+      ;remove exact match directive from list itself
+      (matching/remove-directives snippet value [matching/directive-exact matching/directive-consider-as-regexp|lst matching/directive-consider-as-regexp|cfglst])
+      (astnode/value-unwrapped value))
+    value 
+    (directives/make-bounddirective
+      matching/directive-include-inherited
+      [(make-directiveoperandbinding-for-match value)])))
+
+(defn
+  isolate-stmt-in-block
+  "Removes all other statements in a block and adds set matching to the block."
+  [snippet node]
+  (let [parent-list (snippet/snippet-node-parent|conceptually snippet node)]
+    (consider-set|list
+      (reduce 
+        (fn [newsnippet child]
+          (if (= child node)
+            newsnippet
+            (remove-node newsnippet child)))
+        snippet
+        (into [] (snippet/snippet-node-children|conceptually snippet parent-list)))
+      parent-list)))
+
+(defn
+  isolate-stmt-in-method
+  "Removes all other statements in a block and adds set matching to the block, and child* to the selected statement."
+  [snippet node]
+  (let [[pulledup-snippet new-node]
+        (loop [cur-node node]
+          (let [parent3 (snippet/snippet-node-ancestor|conceptually snippet cur-node 3)]
+            (if (instance? MethodDeclaration parent3)
+              (replace-node-with snippet cur-node snippet node)
+              (recur parent3))))]
+    (relax-scope-to-child*
+      (isolate-stmt-in-block pulledup-snippet new-node) 
+      new-node)))
+
+(defn
+  isolate-expr-in-method
+  "Replaces method body such that it matches with any method body containing the selected expression"
+  [snippet node]
+  (let [a (.getAST (snippet/snippet-root snippet))
+        expr-stmt (newnode|classkeyword a :ExpressionStatement)
+        dummy (newnode|classkeyword a :NullLiteral)
+        side-eff (.setExpression expr-stmt dummy)
+        [pulledup-snippet replaced-node]
+        (loop [cur-node node]
+          (let [parent (snippet/snippet-node-ancestor|conceptually snippet cur-node 1)
+                parent2 (snippet/snippet-node-ancestor|conceptually snippet cur-node 2)]
+            (if (instance? MethodDeclaration parent2)
+              ; Once we found the method declaration
+              ; Remove all statements, insert an expression statement, then replace the expression with the one we want
+              (replace-node-with
+                (insert-at 
+                 (erase-list snippet cur-node)
+                 expr-stmt (astnode/value-unwrapped cur-node) 0)
+                dummy snippet node
+                )
+              (recur parent))))]
+    
+    pulledup-snippet
+;    (relax-scope-to-child*
+;      (isolate-stmt-in-block pulledup-snippet new-node) 
+;      new-node)
+    ))
+
+(defn
   register-callbacks 
   []
   
@@ -1182,5 +1343,3 @@ damp.ekeko.snippets.operators
   )
 
 (register-callbacks)
-
-
