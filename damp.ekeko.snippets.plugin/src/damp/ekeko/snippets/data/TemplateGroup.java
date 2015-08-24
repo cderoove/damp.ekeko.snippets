@@ -61,7 +61,8 @@ public class TemplateGroup {
 	
 	public static IFn FN_SNIPPETGROUP_NORMALIZED_MATCH_VARS;
 	
-
+	public static IFn FN_COPY_SNIPPETGROUP;
+	
 	protected Object cljGroup;
 
 
@@ -69,8 +70,7 @@ public class TemplateGroup {
 
 	public static void transformBySnippetGroups(Object cljLHSGroup, Object cljRHSGroup) {
 		FN_TRANSFORM_BY_SNIPPETGROUPS.invoke(cljLHSGroup, cljRHSGroup);
-	}
-	
+	} 
 	
 	//returns new snippet group
 	public static Object updateSnippetInSnippetGroup(Object cljGroup, Object cljSnippet, IFn updater) {
@@ -96,6 +96,16 @@ public class TemplateGroup {
 		return (Object[]) RT.var("clojure.core", "to-array").invoke(clojureList);
 	}
 	
+	public static Object copyClojureTemplateGroup(Object cljGroup) {
+		return FN_COPY_SNIPPETGROUP.invoke(cljGroup);
+	}
+	public Object copyOfClojureTemplateGroup() {
+		return copyClojureTemplateGroup(cljGroup);
+	}
+	
+	public TemplateGroup copy() {
+		return newFromClojureGroup(copyOfClojureTemplateGroup());
+	}
 	
 	public Object getGroup() {
 		return cljGroup;
@@ -167,6 +177,10 @@ public class TemplateGroup {
 		cljGroup = FN_REMOVE_SNIPPET_FROM_SNIPPETGROUP.invoke(cljGroup, snippet);
 	}
 
+	public void setClojureGroup(Object cljGroup) {
+		this.cljGroup = cljGroup;
+	}
+	
 	/*
 	public String getQuery(Object node) {
 		Object snippet = getSnippet(node);

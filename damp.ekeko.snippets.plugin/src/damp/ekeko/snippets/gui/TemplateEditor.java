@@ -1,10 +1,10 @@
 package damp.ekeko.snippets.gui;
 
-import java.io.File;
 import java.net.URI;
 
+import org.eclipse.core.commands.operations.IUndoContext;
+import org.eclipse.core.commands.operations.UndoContext;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -16,7 +16,6 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -34,14 +33,14 @@ import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.dialogs.SaveAsDialog;
 import org.eclipse.ui.ide.FileStoreEditorInput;
+import org.eclipse.ui.operations.UndoRedoActionGroup;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.ITextEditor;
 
-import clojure.lang.IFn;
 import baristaui.util.MarkerUtility;
+import clojure.lang.IFn;
 import damp.ekeko.JavaProjectModel;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
@@ -71,6 +70,8 @@ public class TemplateEditor extends EditorPart {
 
 	private ToolItem tltmEditBoundDirectives;
 	private ToolItem tltmRevealAnchor;
+	private IUndoContext templateEditorUndoContext;
+	private UndoRedoActionGroup templateEditorHistoryActionGroup;
 
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		
@@ -81,12 +82,18 @@ public class TemplateEditor extends EditorPart {
 		refreshWidgets();
 	}
 
+	public TemplateGroupViewer getTemplateGroupViewer() {
+		return templateGroupViewer;
+	}
+	
 	public TemplateGroup getGroup() {
 		return templateGroup;
 	}
-
-
-
+	
+	public IUndoContext getUndoContext() {
+		return templateEditorUndoContext;
+	}
+	
 
 	/**
 	 * Create contents of the view part.
@@ -436,14 +443,10 @@ public class TemplateEditor extends EditorPart {
 		templateGroup.runQuery(templateGroupViewer.getSelectedSnippet());
 	}
 
-	private void updateTemplate() {
-		templateGroupViewer.setInput(templateGroup, templateGroupViewer.getSelectedSnippet(), templateGroupViewer.getSelectedSnippetNode());
-
-	}
-
-
+	
 	protected void refreshWidgets() {
-		updateTemplate();
+		templateGroupViewer.clearSelection();
+		templateGroupViewer.setInput(templateGroup, null, null);
 	}
 
 
@@ -547,6 +550,9 @@ public class TemplateEditor extends EditorPart {
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 		setSite(site);
 		updateInput(input);
+	    templateEditorUndoContext = new UndoContext();
+		templateEditorHistoryActionGroup = new UndoRedoActionGroup(site, templateEditorUndoContext, true);
+		templateEditorHistoryActionGroup.fillActionBars(site.getActionBars());
 	}
 
 	@Override

@@ -391,8 +391,8 @@
   
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPET_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippet)
   (set! (damp.ekeko.snippets.data.TemplateGroup/FN_ADD_COPY_OF_SNIPPETGROUP_TO_SNIPPETGROUP) snippetgroup-add-copy-of-snippetgroup)
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_COPY_SNIPPETGROUP) copy-snippetgroup)
 
-  
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_VALUE_IDENTIFIER) snippet/snippet-value-identifier)
   (set! (damp.ekeko.snippets.gui.TemplateGroupViewer/FN_SNIPPET_VALUE_FOR_IDENTIFIER) snippet/snippet-value-corresponding-to-identifier)
   

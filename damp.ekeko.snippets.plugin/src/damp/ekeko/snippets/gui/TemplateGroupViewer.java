@@ -330,6 +330,8 @@ public class TemplateGroupViewer extends Composite {
 	}
 
 	public void clearSelection() {
+		cljTemplate = null;
+		cljNode = null;
 		snippetTreeViewer.setSelection(null);
 	}
 
@@ -337,21 +339,8 @@ public class TemplateGroupViewer extends Composite {
 		setInput(jGroup, cljTemplate, cljNode);
 		updateTextFields();
 	}
-
-	public void setInput(TemplateGroup jGroup, Object cljTemplate, Object cljNode) {
-		this.jGroup = jGroup;
-		this.cljTemplate = cljTemplate;
-		this.cljNode = cljNode;
-
-		Object cljGroup = jGroup.getGroup();
-
-		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));	
-		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(cljGroup));		
-		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(cljGroup));
-		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
-		snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(cljGroup));
-		snippetTreeViewer.setInput(cljGroup);
-
+	
+	public void setSelection(Object cljTemplate, Object cljNode) {
 		if(cljNode != null) {
 			//set selection to node
 			snippetTreeViewer.setSelection(new StructuredSelection(cljNode), true);
@@ -367,8 +356,24 @@ public class TemplateGroupViewer extends Composite {
 			if(items.length > 0)
 				tree.setSelection(items[0]);
 		}
+	}
 
+	public void setInput(TemplateGroup jGroup, Object cljTemplate, Object cljNode) {
+		this.jGroup = jGroup;
+		this.cljTemplate = cljTemplate;
+		this.cljNode = cljNode;
+
+		Object cljGroup = jGroup.getGroup();
+
+		snippetElementCol.setLabelProvider(new TemplateTreeLabelProviders.ElementColumnLabelProvider(cljGroup));	
+		snippetNodeCol.setLabelProvider(new TemplateTreeLabelProviders.NodeColumnLabelProvider(cljGroup));		
+		snippetPropCol.setLabelProvider(new TemplateTreeLabelProviders.PropertyColumnLabelProvider(cljGroup));
+		snippetKindCol.setLabelProvider(new TemplateTreeLabelProviders.KindColumnLabelProvider(cljGroup));
+		snippetDirectivesCol.setLabelProvider(new TemplateTreeLabelProviders.DirectivesColumnLabelProvider(cljGroup));
+		snippetTreeViewer.setInput(cljGroup);
+		setSelection(cljTemplate, cljNode);
 		onNodeSelectionInternal();
+
 
 	}
 

@@ -2,6 +2,11 @@ package damp.ekeko.snippets.gui;
 
 import java.util.LinkedList;
 
+import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.commands.operations.AbstractOperation;
+import org.eclipse.core.commands.operations.OperationHistoryFactory;
+import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Status;
@@ -27,13 +32,13 @@ public class OperatorOperandsView extends ViewPart {
 
 	private TemplateGroupViewerNodeSelectionListener listener;
 	private LinkedList<TemplateGroupViewer> selectionProviders;
-	
+
 	@Override
 	public void createPartControl(Composite parent) {
 		selectionProviders = new LinkedList<TemplateGroupViewer>();
-		
+
 		parent.setLayout(new GridLayout(1, true));
-		
+
 		ToolBar snippetOperatorGroupToolbar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		snippetOperatorGroupToolbar.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
 
@@ -76,7 +81,7 @@ public class OperatorOperandsView extends ViewPart {
 		GridData gd_operatorOperandsViewer = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
 		//gd_operatorOperandsViewer.heightHint = 297;
 		operatorOperandsViewer.setLayoutData(gd_operatorOperandsViewer);
-		
+
 		listener = new TemplateGroupViewerNodeSelectionListener() {	
 			@Override
 			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
@@ -88,31 +93,83 @@ public class OperatorOperandsView extends ViewPart {
 
 	}
 
-	protected void onApplyOperator() {
-		Object selectedOperator = operatorOperandsViewer.getSelectedOperator();
-		Object operands = operatorOperandsViewer.getOperands();
+	private TemplateEditor getAssociatedTemplateEditor() {
+		//assumes there is only one editor opened on the same template (configurable in plugin.xml)
 		TemplateGroup templateGroup = operatorOperandsViewer.getTemplateGroup();
-		if(operands == null || selectedOperator == null || templateGroup == null)
-			return;
-		try {
-			templateGroup.applyOperator(selectedOperator, operands);
-		} catch(IllegalArgumentException e) {
-			ErrorDialog.openError(getSite().getShell(), "Could not apply operator", "An error occurred while applying the operator to the template.", new Status(IStatus.ERROR, EkekoSnippetsPlugin.PLUGIN_ID, e.getMessage(), e));
-
-		}
-		
+		if(templateGroup == null)
+			return null;
 		for(TemplateGroupViewer viewer : selectionProviders) {
 			if(!viewer.isDisposed()) {
 				TemplateEditor parentTemplateEditor = viewer.getParentTemplateEditor();
 				if(parentTemplateEditor != null) {
 					if(templateGroup.equals(parentTemplateEditor.getGroup())) {
-						viewer.updateWidgets();
-						parentTemplateEditor.becomeDirty();
+						return parentTemplateEditor;
 					}
-
 				}}
 		}
+		return null;
 	}
+
+	protected void onApplyOperator() {
+		final Object selectedOperator = operatorOperandsViewer.getSelectedOperator();
+		final String operatorString = (String) OperatorTreeLabelProvider.FN_LABELPROVIDER_OPERATOR.invoke(selectedOperator);
+		final Object operands = operatorOperandsViewer.getOperands();
+
+		final TemplateGroup templateGroup = operatorOperandsViewer.getTemplateGroup();
+		final Object savedCLJTemplateGroup = templateGroup.copyOfClojureTemplateGroup();
+		
+		if(operands == null || selectedOperator == null || templateGroup == null)
+			return;
+
+		final TemplateEditor associatedTemplateEditor = getAssociatedTemplateEditor();
+		final boolean wasDirty = associatedTemplateEditor.isDirty();
+
+		
+		AbstractOperation operation = new AbstractOperation("Operator: " + operatorString) {
+			@Override
+			public IStatus execute(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
+				try {
+					templateGroup.applyOperator(selectedOperator, operands);
+					associatedTemplateEditor.refreshWidgets();
+					associatedTemplateEditor.becomeDirty();
+					return Status.OK_STATUS;
+				} catch(IllegalArgumentException e) {
+					Status errorStatus = new Status(IStatus.ERROR, EkekoSnippetsPlugin.PLUGIN_ID, e.getMessage(), e);
+					return errorStatus;
+				}
+			}
+
+			@Override
+			public IStatus redo(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
+				templateGroup.setClojureGroup(savedCLJTemplateGroup);
+				return execute(monitor, info);
+			}
+
+			@Override
+			public IStatus undo(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
+				templateGroup.setClojureGroup(savedCLJTemplateGroup);
+				associatedTemplateEditor.refreshWidgets();
+				if(wasDirty) 
+					associatedTemplateEditor.becomeDirty();
+				else
+					associatedTemplateEditor.becomeClean();
+				return Status.OK_STATUS;
+			}
+
+		};
+
+		operation.addContext(associatedTemplateEditor.getUndoContext());
+		try {
+			IStatus status = OperationHistoryFactory.getOperationHistory().execute(operation, null, null);
+			if(!status.isOK()) 
+				ErrorDialog.openError(getSite().getShell(), "Could not apply operator", "An error occurred while applying the operator to the template.", status);	
+		}
+		catch (ExecutionException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 
 	@Override
 	public void setFocus() {
@@ -133,5 +190,5 @@ public class OperatorOperandsView extends ViewPart {
 		templateGroupViewer.addNodeSelectionListener(listener);
 		selectionProviders.add(templateGroupViewer);
 	}
-	
+
 }
