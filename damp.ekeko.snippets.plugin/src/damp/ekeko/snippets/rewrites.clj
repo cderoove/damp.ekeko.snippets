@@ -133,7 +133,7 @@
   ([cu-var parent propertykey removenode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
-      (remove-node rewrite cu-var parent propertykey removenode)))
+      (remove-node-alt rewrite cu-var parent propertykey removenode)))
   ([rewrite cu-var parent propertykey removenode]
     (let [property (astnode/node-property-descriptor-for-ekeko-keyword parent propertykey)
           parent-in-ctxt (compatible-via-rewrite-map parent)
@@ -177,6 +177,39 @@
       ownerproperty (astnode/owner-property lst)]
       (add-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) newnode idx))
     ))
+
+(defn insert-before-or-after [rewrite cu-var lst-or-elem before-after-node newnode after]
+  (let [owner (astnode/owner lst-or-elem)
+        ownerproperty (astnode/owner-property lst-or-elem)
+        propertykey (astnode/ekeko-keyword-for-property-descriptor ownerproperty)
+        value (compatible (.getAST rewrite) newnode)
+        x (swap! rewrite-root-map (fn [x] (assoc x newnode value)))
+        property (astnode/node-property-descriptor-for-ekeko-keyword owner propertykey)
+        parent-in-ctxt (compatible-via-rewrite-map owner)
+        list-rewrite (.getListRewrite rewrite parent-in-ctxt property)]
+    (if after 
+      (.insertAfter list-rewrite value before-after-node nil)
+      (.insertBefore list-rewrite value before-after-node nil))))
+
+(defn
+  insert-before
+  "Add newnode before before-node."
+  ([cu-var lst-or-elem before-node newnode]
+    (let [cu (determine-rewrite-cu cu-var)
+          rewrite (current-rewrite-for-cu cu)]
+      (insert-before cu-var lst-or-elem before-node newnode)))
+  ([rewrite cu-var lst-or-elem before-node newnode]
+    (insert-before-or-after rewrite cu-var lst-or-elem before-node newnode false)))
+
+(defn
+  insert-after
+  "Add newnode after after-node."
+  ([cu-var lst-or-elem after-node newnode]
+    (let [cu (determine-rewrite-cu cu-var)
+          rewrite (current-rewrite-for-cu cu)]
+      (insert-after cu-var lst-or-elem before-node newnode)))
+  ([rewrite cu-var lst-or-elem before-node newnode]
+    (insert-before-or-after rewrite cu-var lst-or-elem before-node newnode true)))
 
 (defn
   remove-element

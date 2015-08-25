@@ -395,6 +395,16 @@ damp.ekeko.snippets.operators
 ;  (add-binary-directive-opname-opvalue snippet subject rewriting/directive-add-element "Target list" tgt "Target index" idx)
   )
 
+(defn
+  add-directive-insert-before
+  [snippet subject tgt]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-insert-before tgt))
+
+(defn
+  add-directive-insert-after
+  [snippet subject tgt]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-insert-after tgt))
+
 (defn 
   add-directive-remove-element
   [snippet subject idx]

@@ -17,11 +17,16 @@
      [astnode :as astnode]]))
 
 (declare directives-rewriting)
+(declare directive-replace)
+(declare directive-insert-after)
+(declare directive-insert-before)
+(declare directive-add-element)
+(declare directive-move-element)
 
-(def ^:dynamic *sgroup-rhs* nil) ; Returns the RHS snippetgroup; its value is bound dynamically by querying/snippetgroup-conditions|rewrite TODO Would be better to refactor this
+(def ^:dynamic *sgroup-rhs* nil) ; Returns the RHS snippetgroup; its value is bound dynamically by querying/snippetgroup-conditions|rewrite TODO Would be better to refactor this..
 
 (defn find-equals-rhs-snippet [uservar rhs-snippets]
-  "Find the snippet in which an equals/replace-by-variable directive occurs with uservar as its operand"
+  "Find the snippet and node in which an equals/replace-by-variable directive occurs with uservar as its operand"
   (some 
     (fn [snippet]
       (some
@@ -31,12 +36,11 @@
                 metavar-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-replacedbyvariable)
                 bd-rhs (if (nil? equals-rhs) 
                          metavar-rhs
-                         equals-rhs)
-                ]
+                         equals-rhs)]
             (if (and 
                   (not (nil? bd-rhs))
                   (= uservar (symbol (.getValue (second (directives/bounddirective-operandbindings bd-rhs))))))
-              snippet)))
+              [snippet node])))
         (snippet/snippet-nodes snippet)))
     rhs-snippets))
 
@@ -44,7 +48,7 @@
   "Determine which compilation unit should be rewritten.
    This function actually returns a meta-variable. Its value is an AST node in the compilation unit that should be rewritten."
   [var]
-  (let [snippet (find-equals-rhs-snippet var *sgroup-rhs*)]
+  (let [snippet (first (find-equals-rhs-snippet var *sgroup-rhs*))]
     (if (nil? snippet)
       ; Base case: If we can't find an equals directive referring to var, then it must be bound in the LHS
       var
@@ -59,9 +63,48 @@
             new-var (symbol (.getValue (second (directives/bounddirective-operandbindings rewrite-bd))))]
         (recur new-var)))))
 
+(defn determine-rewrite-list
+  "Determine the list in which a given element should be inserted.
+   This function actually returns a meta-variable to which that list is bound .. or a list element of which you can directly get the owner."
+  [var]
+  (let [[snippet eq-node] (find-equals-rhs-snippet var *sgroup-rhs*)
+        second-op (fn [rewrite-bd]
+                    (symbol (.getValue (second (directives/bounddirective-operandbindings rewrite-bd)))))]
+    (cond 
+      ; Base case: If we can't find an equals directive referring to var, then it must be bound in the LHS
+      (nil? snippet) 
+      var
+      
+      ; Base case: If the node where the variable was bound is not the root (and so does not have a rewrite directive), then we should be able to directly get the owner
+      (not (= eq-node (snippet/snippet-root snippet)))
+      var
+      
+      :else
+      (let [root-bds (snippet/snippet-bounddirectives-for-node snippet (snippet/snippet-root snippet))
+            elem-bd (first (filter (fn [bd]
+                                     (some (fn [rewr-dir]
+                                             (= (directives/directive-name rewr-dir)
+                                                (directives/directive-name (directives/bounddirective-directive bd))))
+                                           [directive-replace directive-insert-after directive-insert-before])) ; These directives have a list element as their operand
+                                   root-bds))]
+        (if (nil? elem-bd)
+          ; Base case: If the equals node has a rewrite directive, which has a list operand
+          (let [list-bd (first (filter (fn [bd]
+                                         (some (fn [rewr-dir]
+                                                 (= (directives/directive-name rewr-dir)
+                                                    (directives/directive-name (directives/bounddirective-directive bd))))
+                                               [directive-add-element directive-move-element])) ; These directives have a list as their operand
+                                       root-bds))]
+            
+            (second-op elem-bd))
+          ; Recursive case: If the equals-node has a rewrite directive, which has a list-element as operand
+          (recur (second-op elem-bd)))))))
+
 (def replace-node `rewrites/replace-node)
 (def replace-value `rewrites/replace-value)
 (def add-element `rewrites/add-element)
+(def insert-before `rewrites/insert-before)
+(def insert-after `rewrites/insert-after)
 (def remove-element `rewrites/remove-element)
 (def remove-element-alt `rewrites/remove-element-alt)
 (def move-element `rewrites/move-element)
@@ -110,6 +153,29 @@
       `((el/perform 
           (~add-element ~cu-var ~var ~var-generatedcode -1))))))
 
+(defn
+  rewrite-insert-before
+  [val elem-var-string]
+  (fn [snippet]
+    (let [cu-var (determine-rewrite-cu (symbol elem-var-string))
+          list-var (determine-rewrite-list (symbol elem-var-string))
+          
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
+          var (symbol elem-var-string)]
+      `((el/perform 
+          (~insert-before ~cu-var ~list-var ~var ~var-generatedcode))))))
+
+(defn
+  rewrite-insert-after
+  [val elem-var-string]
+  (fn [snippet]
+    (let [cu-var (determine-rewrite-cu (symbol elem-var-string))
+          list-var (determine-rewrite-list (symbol elem-var-string))
+          
+          var-generatedcode (snippet/snippet-var-for-node snippet val)
+          var (symbol elem-var-string)]
+      `((el/perform 
+          (~insert-after ~cu-var ~list-var ~var ~var-generatedcode))))))
 (defn
   rewrite-remove-element
   [val idx]
@@ -191,6 +257,22 @@
     "Adds the instantiated template to the list operand at the given index (-1 inserts at the end)."))
 
 (def
+  directive-insert-before
+  (directives/make-directive
+    "insert-before"
+    [(directives/make-directiveoperand "Target element")]
+    rewrite-insert-before
+    "Adds the instantiated template before the operand, a list element."))
+
+(def
+  directive-insert-after
+  (directives/make-directive
+    "insert-after"
+    [(directives/make-directiveoperand "Target element")]
+    rewrite-insert-after
+    "Adds the instantiated template after the operand, a list element."))
+
+(def
   directive-remove-element
   (directives/make-directive
     "remove-element"
@@ -229,6 +311,8 @@
   [directive-replace
    directive-replace-value
    directive-add-element
+   directive-insert-before
+   directive-insert-after
    directive-remove-element
    directive-remove-element-alt
    directive-move-element

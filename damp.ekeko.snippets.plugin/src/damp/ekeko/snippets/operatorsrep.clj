@@ -1072,7 +1072,29 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
 ;      (make-operand "Index" opscope-string validity|integer)
       ]
-     false) 
+     false)
+   
+   (Operator. 
+     "add-directive-insert-before"
+     operators/add-directive-insert-before
+     :rewrite
+     "Add directive insert-before."
+     opscope-subject 
+     applicability|node
+     "Adds the instantiated template before the operand (a list element)."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-insert-after"
+     operators/add-directive-insert-after
+     :rewrite
+     "Add directive insert-after."
+     opscope-subject 
+     applicability|node
+     "Adds the instantiated template after the operand (a list element)."
+     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
    
    (Operator. 
      "add-directive-remove-element"
