@@ -1070,7 +1070,8 @@ damp.ekeko.snippets.operatorsrep
      applicability|node
      "Adds the instantiated template to its list operand."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)
-      (make-operand "Index" opscope-string validity|integer)]
+;      (make-operand "Index" opscope-string validity|integer)
+      ]
      false) 
    
    (Operator. 

@@ -101,7 +101,7 @@
 (defn compatible-via-rewrite-map
   "Find a compatible node via the rewrite-root-map"
   [node]
-  (if (instance? CompilationUnit (.getRoot node))
+  (if (instance? CompilationUnit (astnode/root node))
     ; If we're already in the right AST
     node
     ; Otherwise, go find the same node in the right AST using the rewrite-root-map

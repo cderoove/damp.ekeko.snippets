@@ -97,13 +97,13 @@
     
 (defn
   rewrite-add-element
-  [val target-list-var-string idx]
+  [val target-list-var-string]
   (fn [snippet]
     (let [cu-var (determine-rewrite-cu (symbol target-list-var-string))
           var-generatedcode (snippet/snippet-var-for-node snippet val)
           var (symbol target-list-var-string)]
       `((el/perform 
-          (~add-element ~cu-var ~var ~var-generatedcode ~idx))))))
+          (~add-element ~cu-var ~var ~var-generatedcode -1))))))
 
 (defn
   rewrite-remove-element
