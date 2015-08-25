@@ -153,6 +153,11 @@ damp.ekeko.snippets.snippet
     (snippet-value snippet owner)))
 
 (defn
+  snippet-node-property
+  [snippet node propertydescriptor]
+  (astnode/node-property-value|reified node propertydescriptor))
+
+(defn
   snippet-node-children
   "Returns representations in snippet for children of given node. 
    Corresponds to JDT children: other nodes, simple values, and lists.
@@ -652,6 +657,9 @@ damp.ekeko.snippets.snippet
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISNODE) snippet-value-node?)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_NODE) snippet-value-node-unwrapped)
   (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_ELEMENT_ISNULL) snippet-value-null?)
+  
+  (set! (damp.ekeko.snippets.gui.TemplatePrettyPrinter/FN_SNIPPET_NODE_PROPERTY) snippet-node-property)
+  
   
   (set! (damp.ekeko.snippets.gui.BoundDirectivesViewer/FN_BOUNDDIRECTIVES_FOR_NODE) snippet-bounddirectives-for-node)
   

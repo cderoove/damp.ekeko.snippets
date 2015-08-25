@@ -5,7 +5,6 @@ Bundle-SymbolicName: damp.ekeko.snippets.plugin;singleton:=true
 Bundle-Version: 1.0.5.qualifier
 Bundle-Activator: damp.ekeko.snippets.EkekoSnippetsPlugin
 Export-Package: damp.ekeko,
- damp.ekeko.jdt,
  damp.ekeko.snippets,
  damp.ekeko.snippets.data,
  damp.ekeko.snippets.geneticsearch,

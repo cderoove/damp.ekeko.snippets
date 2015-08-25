@@ -72,9 +72,7 @@ public class TemplateEditor extends EditorPart {
 	private ToolItem tltmRevealAnchor;
 	private IUndoContext templateEditorUndoContext;
 	private UndoRedoActionGroup templateEditorHistoryActionGroup;
-	
-	private ToolItem tltmRemoveNode;
-	
+		
 
 	public TemplateEditor() {
 		templateGroup = TemplateGroup.newFromGroupName("Anonymous Template Group");		

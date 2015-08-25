@@ -1,26 +1,36 @@
 package damp.ekeko.snippets.gui;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
+import org.eclipse.jdt.core.dom.Dimension;
+import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
-
-import damp.ekeko.jdt.NaiveASTFlattener;
-
+import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.TypeParameter;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.texteditor.HyperlinkDetectorDescriptor;
 
 import clojure.lang.IFn;
 import clojure.lang.RT;
-
-import com.google.common.base.Joiner;
-
+import damp.ekeko.snippets.NaiveASTFlattener;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 public class TemplatePrettyPrinter extends NaiveASTFlattener {
@@ -50,9 +60,7 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	public static IFn FN_SNIPPET_VALUE_IDENTIFIER;
 
-
-
-
+	public static IFn FN_SNIPPET_NODE_PROPERTY;
 
 	protected Object snippet;
 	protected Object highlightNode;
@@ -110,6 +118,10 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	public Object getUserExp(Object node) {
 		return FN_SNIPPET_EXP_FOR_NODE.invoke(snippet, node);
+	}
+	
+	public Object getValueOfProperty(ASTNode node, StructuralPropertyDescriptor prop) {
+		return FN_SNIPPET_NODE_PROPERTY.invoke(snippet, node, prop);
 	}
 
 
@@ -464,78 +476,15 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		} 
 
 		if(isListValueInTemplate(snippet, element)) {
-			printOpeningNode(element);
-
-			Object listReplacementVar = getUserVar(element);
-			if(listReplacementVar != null) {
-				printVariableReplacement(listReplacementVar);
-				printClosingNode(element);
-				return getResult();
-			}
-
-			if(hasBeenReplacedByWildcard(element)) {
-				printWildcardReplacement();
-				printClosingNode(element);
-				return getResult();
-			}
-
-
-			listWrapperForWhichToIgnoreListDecorations.push(element);
-
-			@SuppressWarnings("rawtypes")
-			Collection lst = getActualListValueInTemplate(snippet, element);
-
-			for(Object member : lst) {
-				prettyPrintElement(snippet, member);
-				this.buffer.append(" ");
-			}
-
-			if(!lst.isEmpty()) {
-				this.buffer.deleteCharAt(getCurrentCharacterIndex()-1);
-			}
-
-			listWrapperForWhichToIgnoreListDecorations.pop();
-			printClosingNode(element);
-
-			return getResult().trim();
+			return prettyPrintList(element);
 		}
 
 		if(isPrimitiveValueInTemplate(snippet, element)) {
-			Object value = getActualPrimitiveValueInTemplate(snippet, element);
-			printOpeningNode(element);
-			Object primReplacementVar = getUserVar(element);
-			if(primReplacementVar != null) {
-				printVariableReplacement(primReplacementVar);
-			} else if(hasBeenReplacedByWildcard(element)) {
-				printWildcardReplacement();
-			} else {
-				Object replacementExp = getUserExp(element);
-				if (replacementExp != null) {
-					printExpReplacement(replacementExp);
-				} 	
-				else { 
-					this.buffer.append(value.toString());
-				}
-			}
-			printClosingNode(element);
-			return getResult();
+			return prettyPrintPrimitive(element);
 		} 
 
 		if(isNullValueInTemplate(snippet, element)) {
-			printOpeningNode(element);
-			
-			
-			Object nullReplacementVar = getUserVar(element);
-			if(nullReplacementVar != null) {
-				printVariableReplacement(nullReplacementVar);
-			} 
-			else if(hasBeenReplacedByWildcard(element)) {
-					printWildcardReplacement();
-			} else {
-				this.buffer.append("null");	
-			}
-			printClosingNode(element);	
-			return getResult();
+			return prettyPrintNull(element);
 		} 
 
 		if(element == null) {
@@ -547,6 +496,90 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 	}
 
+	private String prettyPrintNull(Object element) {
+		printOpeningNode(element);
+		
+		Object nullReplacementVar = getUserVar(element);
+		if(nullReplacementVar != null) {
+			printVariableReplacement(nullReplacementVar);
+		} 
+		else if(hasBeenReplacedByWildcard(element)) {
+				printWildcardReplacement();
+		} else {
+			this.buffer.append("");	
+			//this.buffer.append("null");	
+		}
+		printClosingNode(element);	
+		return getResult();
+	}
+
+	private String prettyPrintPrimitive(Object element) {
+		Object value = getActualPrimitiveValueInTemplate(snippet, element);
+		printOpeningNode(element);
+		Object primReplacementVar = getUserVar(element);
+		if(primReplacementVar != null) {
+			printVariableReplacement(primReplacementVar);
+		} else if(hasBeenReplacedByWildcard(element)) {
+			printWildcardReplacement();
+		} else {
+			Object replacementExp = getUserExp(element);
+			if (replacementExp != null) {
+				printExpReplacement(replacementExp);
+			} 	
+			else { 
+				this.buffer.append(value.toString());
+			}
+		}
+		printClosingNode(element);
+		return getResult();
+	}
+
+	public boolean hasBeenReplacedByVariable(Object element) {
+		Object listReplacementVar = getUserVar(element);
+		return listReplacementVar != null;
+	}
+	
+	private String prettyPrintList(Object element, String separator) {
+		printOpeningNode(element);
+
+		Object listReplacementVar = getUserVar(element);
+		if(listReplacementVar != null) {
+			printVariableReplacement(listReplacementVar);
+			printClosingNode(element);
+			return getResult();
+		}
+
+		if(hasBeenReplacedByWildcard(element)) {
+			printWildcardReplacement();
+			printClosingNode(element);
+			return getResult();
+		}
+
+		listWrapperForWhichToIgnoreListDecorations.push(element);
+
+		@SuppressWarnings("rawtypes")
+		Collection lst = getActualListValueInTemplate(snippet, element);
+
+		for(Object member : lst) {
+			prettyPrintElement(snippet, member);
+			this.buffer.append(separator);
+		}
+
+		if(!lst.isEmpty()) {
+			this.buffer.delete(getCurrentCharacterIndex() - separator.length(), getCurrentCharacterIndex());
+		}
+
+		listWrapperForWhichToIgnoreListDecorations.pop();
+		printClosingNode(element);
+
+		return getResult().trim();
+	}
+	
+	private String prettyPrintList(Object element) {
+		return prettyPrintList(element, " ");
+	}
+		
+	
 
 	public String prettyPrint() {
 		for(Object groupElement : templateGroup.getSnippets()) {
@@ -579,5 +612,234 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 
 		return getResult();
 	}
+	
+	
+	
+	
+	
+	/*
+	 * 
+	 * Special cases
+	 * 
+	 */
+	@Override
+	public boolean visit(SimpleName node) {
+		prettyPrintPrimitive(getValueOfProperty(node, SimpleName.IDENTIFIER_PROPERTY));
+		return false;
+	}
+
+	
+	@Override
+	public boolean visit(TypeDeclaration node) {
+		if (node.getJavadoc() != null) {
+			node.getJavadoc().accept(this);
+		}
+		prettyPrintList(getValueOfProperty(node, TypeDeclaration.MODIFIERS2_PROPERTY), " ");
+		this.buffer.append(" "); 
+
+		
+		this.buffer.append(node.isInterface() ? "interface " : "class ");
+		node.getName().accept(this);
+		
+		
+		Object typeParamList = getValueOfProperty(node, TypeDeclaration.TYPE_PARAMETERS_PROPERTY);
+		if(!isInvisibleList(typeParamList)) {
+			this.buffer.append("<"); 
+			prettyPrintList(typeParamList, ",");
+			this.buffer.append(">"); 
+		}
+		
+		this.buffer.append(" "); 
+			if (node.getSuperclassType() != null) {
+				this.buffer.append("extends "); 
+				node.getSuperclassType().accept(this);
+				this.buffer.append(" "); 
+			}
+			if (!node.superInterfaceTypes().isEmpty()) {
+				this.buffer.append(node.isInterface() ? "extends " : "implements ");//$NON-NLS-2$ 
+				
+				prettyPrintList(getValueOfProperty(node, TypeDeclaration.SUPER_INTERFACE_TYPES_PROPERTY), ", ");
+				
+				this.buffer.append(" "); 
+			}
+		this.buffer.append("{\n"); 
+		this.indent++;
+
+		prettyPrintList(getValueOfProperty(node, TypeDeclaration.BODY_DECLARATIONS_PROPERTY), "\n");	
+		
+		this.buffer.append("  \n"); 
+		
+		this.indent--;
+		printIndent();
+		this.buffer.append("}"); 
+		return false;
+	}
+	
+	
+	@Override
+	public boolean visit(FieldDeclaration node) {
+		if (node.getJavadoc() != null) {
+			node.getJavadoc().accept(this);
+		}
+		printIndent();
+
+		prettyPrintList(getValueOfProperty(node, FieldDeclaration.MODIFIERS2_PROPERTY));	
+		this.buffer.append(" "); 
+
+		
+		node.getType().accept(this);
+		this.buffer.append(" ");
+		
+		prettyPrintList(getValueOfProperty(node, FieldDeclaration.FRAGMENTS_PROPERTY), ", ");
+			
+		this.buffer.append(";\n");//$NON-NLS-1$
+		return false;
+	}
+	
+	private boolean isInvisibleList(Object list) {
+		if(hasBeenReplacedByVariable(list) || hasBeenReplacedByWildcard(list))
+			return false;
+		else 
+			return getActualListValueInTemplate(snippet, list).isEmpty();
+	}
+	
+	private boolean isInvisibleNullValue(Object nullvalue) {
+		return !(hasBeenReplacedByVariable(nullvalue) || hasBeenReplacedByWildcard(nullvalue));
+	}
+	
+	@Override
+	public boolean visit(MethodInvocation node) {
+		if (node.getExpression() != null) {
+			node.getExpression().accept(this);
+			this.buffer.append(".");
+		}
+				
+		Object typeArgList = getValueOfProperty(node, MethodInvocation.TYPE_ARGUMENTS_PROPERTY);
+		if(!isInvisibleList(typeArgList)) {
+				this.buffer.append("<");
+				prettyPrintList(typeArgList, ",");
+				this.buffer.append(">");
+		}
+			
+		node.getName().accept(this);
+		this.buffer.append("(");
+		prettyPrintList(getValueOfProperty(node, MethodInvocation.ARGUMENTS_PROPERTY), ",");
+		this.buffer.append(")");
+		return false;
+	}
+	
+	@Override
+	public boolean visit(MethodDeclaration node) {
+		if (node.getJavadoc() != null) {
+			node.getJavadoc().accept(this);
+		}
+		printIndent();
+		prettyPrintList(getValueOfProperty(node, MethodDeclaration.MODIFIERS2_PROPERTY));
+		this.buffer.append(" "); 
+
+		Object typeParamList = getValueOfProperty(node, MethodDeclaration.TYPE_PARAMETERS_PROPERTY);
+		if(!isInvisibleList(typeParamList)) {
+				this.buffer.append("<");
+				prettyPrintList(typeParamList, ",");
+				this.buffer.append(">");
+		}
+			
+		if (!node.isConstructor()) {
+			if (node.getReturnType2() != null) {
+				node.getReturnType2().accept(this);
+			} else {
+				// methods really ought to have a return type
+				this.buffer.append("void");
+			}
+			this.buffer.append(" ");
+		}
+		
+		node.getName().accept(this);
+		this.buffer.append("(");//$NON-NLS-1$
+		
+		
+	
+		Type receiverType = node.getReceiverType();
+		if (receiverType != null) {
+				receiverType.accept(this);
+				this.buffer.append(' ');
+				SimpleName qualifier = node.getReceiverQualifier();
+				if (qualifier != null) {
+					qualifier.accept(this);
+					this.buffer.append('.');
+				}
+				this.buffer.append("this"); //$NON-NLS-1$
+				if (node.parameters().size() > 0) {
+					this.buffer.append(',');
+				}
+			}
+		
+		prettyPrintList(getValueOfProperty(node, MethodDeclaration.PARAMETERS_PROPERTY),",");
+		
+		this.buffer.append(")");//$NON-NLS-1$
+				
+		prettyPrintList(getValueOfProperty(node, MethodDeclaration.EXTRA_DIMENSIONS2_PROPERTY), "");
+		
+		Object thrownList = getValueOfProperty(node, MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY);
+		if(!isInvisibleList(thrownList)) {
+			this.buffer.append(" throws ");
+			prettyPrintList(thrownList, ", ");
+			this.buffer.append(" ");//$NON-NLS-1$				
+		}
+				
+		Object body = getValueOfProperty(node, MethodDeclaration.BODY_PROPERTY);
+		if(isNullValueInTemplate(snippet, body)) {
+			if(isInvisibleNullValue(body)) {
+				this.buffer.append(";\n");
+			} else {
+				prettyPrintNull(body);
+			}
+		} else {
+			this.buffer.append(" ");
+			prettyPrintElement(snippet, body);
+		}
+		return false;
+	}
+	
+	@Override
+	public boolean visit(ClassInstanceCreation node) {
+		Object expression = getValueOfProperty(node, ClassInstanceCreation.EXPRESSION_PROPERTY);
+		if(isNullValueInTemplate(snippet, expression)) {
+			if(!isInvisibleNullValue(expression)) {
+				prettyPrintNull(expression);
+				this.buffer.append(".");
+			}
+		} else {
+			prettyPrintElement(snippet, expression);
+			this.buffer.append(".");
+		}
+		
+		this.buffer.append("new ");
+		
+		
+		Object typeArgList = getValueOfProperty(node, ClassInstanceCreation.TYPE_ARGUMENTS_PROPERTY);
+		if(!isInvisibleList(typeArgList)) {
+				this.buffer.append("<");
+				prettyPrintList(typeArgList, ",");
+				this.buffer.append(">");
+		}
+			
+		node.getType().accept(this);
+		
+			
+		this.buffer.append("(");//$NON-NLS-1$
+		prettyPrintList(getValueOfProperty(node, ClassInstanceCreation.ARGUMENTS_PROPERTY), ", ");
+		this.buffer.append(")");//$NON-NLS-1$
+		
+		
+		if (node.getAnonymousClassDeclaration() != null) {
+			node.getAnonymousClassDeclaration().accept(this);
+		}
+		return false;
+	}
+
+
+
+	
 
 }
