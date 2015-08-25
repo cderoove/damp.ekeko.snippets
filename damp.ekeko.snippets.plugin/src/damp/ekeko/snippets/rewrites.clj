@@ -92,7 +92,9 @@
   [cu-var]
   (cond 
     (astnode/lstvalue? cu-var)
-    (.getRoot (first (astnode/value-unwrapped cu-var)))
+    (.getRoot (astnode/owner cu-var))
+;    (.getRoot (first (astnode/value-unwrapped cu-var)))
+    
     (astnode/ast? cu-var)
     (.getRoot cu-var)
     :else

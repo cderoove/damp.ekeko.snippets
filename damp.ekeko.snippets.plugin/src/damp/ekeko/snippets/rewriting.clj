@@ -21,16 +21,21 @@
 (def ^:dynamic *sgroup-rhs* nil) ; Returns the RHS snippetgroup; its value is bound dynamically by querying/snippetgroup-conditions|rewrite TODO Would be better to refactor this
 
 (defn find-equals-rhs-snippet [uservar rhs-snippets]
-  "Find the snippet in which an equals directive occurs with uservar as its operand"
+  "Find the snippet in which an equals/replace-by-variable directive occurs with uservar as its operand"
   (some 
     (fn [snippet]
       (some
         (fn [node]
           (let [bds (snippet/snippet-bounddirectives-for-node snippet node)
-                equals-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-equals)]
+                equals-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-equals)
+                metavar-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-replacedbyvariable)
+                bd-rhs (if (nil? equals-rhs) 
+                         metavar-rhs
+                         equals-rhs)
+                ]
             (if (and 
-                  (not (nil? equals-rhs))
-                  (= uservar (symbol (.getValue (second (directives/bounddirective-operandbindings equals-rhs))))))
+                  (not (nil? bd-rhs))
+                  (= uservar (symbol (.getValue (second (directives/bounddirective-operandbindings bd-rhs))))))
               snippet)))
         (snippet/snippet-nodes snippet)))
     rhs-snippets))
