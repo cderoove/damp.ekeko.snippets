@@ -207,9 +207,9 @@
   ([cu-var lst-or-elem after-node newnode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
-      (insert-after cu-var lst-or-elem before-node newnode)))
-  ([rewrite cu-var lst-or-elem before-node newnode]
-    (insert-before-or-after rewrite cu-var lst-or-elem before-node newnode true)))
+      (insert-after cu-var lst-or-elem after-node newnode)))
+  ([rewrite cu-var lst-or-elem after-node newnode]
+    (insert-before-or-after rewrite cu-var lst-or-elem after-node newnode true)))
 
 (defn
   remove-element
