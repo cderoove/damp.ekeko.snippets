@@ -1,6 +1,7 @@
 package damp.ekeko.snippets.gui;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -26,6 +27,11 @@ public class BoundDirectivesEditorDialog extends Dialog
 		this.cljTemplate = cljTemplate;
 		this.cljNode = cljNode;
 	}
+	
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
+	};
 
 
 	@Override
