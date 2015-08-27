@@ -8,6 +8,7 @@ import java.util.Stack;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.Dimension;
@@ -560,15 +561,14 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		@SuppressWarnings("rawtypes")
 		Collection lst = getActualListValueInTemplate(snippet, element);
 
-		for(Object member : lst) {
-			prettyPrintElement(snippet, member);
-			this.buffer.append(separator);
+		
+		Iterator i = lst.iterator();
+		while(i.hasNext()) {
+			prettyPrintElement(snippet, i.next());
+			if(i.hasNext())
+				this.buffer.append(separator);
 		}
-
-		if(!lst.isEmpty()) {
-			this.buffer.delete(getCurrentCharacterIndex() - separator.length(), getCurrentCharacterIndex());
-		}
-
+		
 		listWrapperForWhichToIgnoreListDecorations.pop();
 		printClosingNode(element);
 
@@ -835,6 +835,17 @@ public class TemplatePrettyPrinter extends NaiveASTFlattener {
 		if (node.getAnonymousClassDeclaration() != null) {
 			node.getAnonymousClassDeclaration().accept(this);
 		}
+		return false;
+	}
+	
+	@Override
+	public boolean visit(ArrayInitializer node) {
+
+		this.buffer.append("{");
+		
+		prettyPrintList(getValueOfProperty(node, ArrayInitializer.EXPRESSIONS_PROPERTY), ", ");
+
+		this.buffer.append("}");
 		return false;
 	}
 
