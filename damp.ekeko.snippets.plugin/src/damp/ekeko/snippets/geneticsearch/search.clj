@@ -469,7 +469,14 @@
                     (:thread-group config))))
               @new-history)))))))
 
-(defn run-example []
+(comment
+  (defn
+    slurp-from-resource
+    [pathrelativetobundle]
+    (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+  
+  
+  (defn run-example []
   (def tg (new ThreadGroup "invokedby"))
   (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
@@ -483,8 +490,7 @@
                                 :thread-group tg
                                 :population-size 10
                                 :tournament-rounds 5)))
-
-(comment
+  
   (run-example) ; To start
   (.interrupt tg) ; To stop
   
@@ -526,6 +532,15 @@
 ;    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox-move.ekx"))
   (def transfogroup
     (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/test.ekx"))
+  
+  (inspector-jay.core/inspect (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitled2.ekt"))
+  
+  (def input (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledx.ekt"))
+  (inspector-jay.core/inspect input)
+  (persistence/spit-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt" (:ast (first (:snippetlist input))))
+  
+  (read-string (slurp "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt"))
+  
   (def transfogroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/dbg.ekx"))
   (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))

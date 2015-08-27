@@ -374,15 +374,6 @@
     snippetgroup
     (snippetgroup/snippetgroup-snippetlist tobecopied)))
 
-
-(defn
-  slurp-from-resource
-  [pathrelativetobundle]
-  (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)
-                      ; TODO Rewrite to not depend on test.damp.ekeko! As this will break Ekeko when it's published to the update site
-                      ))
-
-
 (defn
   register-callbacks
   []
@@ -436,15 +427,15 @@
   
   
   ;conversion from JLS4 to JLS8 based templates
-  (doseq [file (file-seq (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications-DesignPatterns/"))]
-    (when 
-      (and 
-        (not (nil? file))
-        (.isFile file))
-      (try 
-        (let [snippet (damp.ekeko.snippets.persistence/slurp-snippetgroup file)]
-          (damp.ekeko.snippets.persistence/spit-snippetgroup  file snippet))
-        (catch Exception e (println e)))))
+;  (doseq [file (file-seq (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications-DesignPatterns/"))]
+;    (when 
+;      (and 
+;        (not (nil? file))
+;        (.isFile file))
+;      (try 
+;        (let [snippet (damp.ekeko.snippets.persistence/slurp-snippetgroup file)]
+;          (damp.ekeko.snippets.persistence/spit-snippetgroup  file snippet))
+;        (catch Exception e (println e)))))
   
 
   
