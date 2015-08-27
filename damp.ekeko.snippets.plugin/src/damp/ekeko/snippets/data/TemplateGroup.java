@@ -14,6 +14,7 @@ import clojure.lang.IFn;
 import clojure.lang.IPersistentCollection;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
+import damp.ekeko.snippets.gui.BoundDirectivesViewer;
 
 public class TemplateGroup {
 	//Java wrapper for SnippetGroup record on the Clojure side
@@ -150,7 +151,18 @@ public class TemplateGroup {
 		cljGroup = FN_APPLY_TO_SNIPPETGROUP.invoke(cljGroup, operator, operands);		
 	}
 	
+	public Object addDirective(Object template, Object node, Object boundDirective) {
+		Object[] updated = (Object[]) BoundDirectivesViewer.FN_GROUP_ADD_DIRECTIVE_TO_NODE.invoke(cljGroup, template, node, boundDirective);
+		cljGroup = updated[0];
+		return updated[1]; //snippet in group
+	}
 	
+	public Object removeBoundDirective(Object template, Object node, Object boundDirective) {
+		Object[] updated = (Object[]) BoundDirectivesViewer.FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE.invoke(cljGroup, template, node, boundDirective);
+		cljGroup = updated[0];
+		return updated[1]; //snippet in group
+	}
+
 	public Object addSnippetCode(String code) {
 		Object snippet = FN_SNIPPET_FROM_STRING.invoke(code);
 		cljGroup = FN_ADD_SNIPPET_TO_SNIPPETGROUP.invoke(cljGroup, snippet);

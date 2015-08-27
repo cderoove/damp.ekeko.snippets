@@ -36,9 +36,9 @@ public class BoundDirectivesViewer extends Composite {
 	private TableViewer directivesTableViewer;
 	//private Label directiveLabel;
 	private TableViewer operandsTableViewer;
-	
-	private Object cljGroup; 
-	private Object cljSnippet;
+
+	private TemplateGroup templateGroup;
+	private Object cljSelectedSnippet;
 	private Object cljSelectedSnippetNode;
 
 	public static IFn FN_BOUNDDIRECTIVES_FOR_NODE;
@@ -54,24 +54,6 @@ public class BoundDirectivesViewer extends Composite {
 	public static Collection getBoundDirectivesForElementOfTemplate(Object node, Object template) {
 		return (Collection) FN_BOUNDDIRECTIVES_FOR_NODE.invoke(template, node);
 	}
-	
-	
-	//bug: ipv een cljGroup wordt een TemplateGroup meegegeven
-	
-	public void removeBoundDirective(Object template, Object node, Object boundDirective) {
-		Object[] updated = (Object[]) FN_GROUP_REMOVE_BOUNDDIRECTIVE_FROM_NODE.invoke(cljGroup, template, node, boundDirective);
-		cljGroup = updated[0];
-		cljSnippet = updated[1];
-	}
-
-	public void addDirective(Object template, Object node, Object directive) {
-		Object[] updated = (Object[]) (cljGroup = FN_GROUP_ADD_DIRECTIVE_TO_NODE.invoke(cljGroup, template, node, directive));
-		cljGroup = updated[0];
-		cljSnippet = updated[1];
-	}
-	
-
-	
 	
 	public BoundDirectivesViewer(Composite parent, int style) {
 		super(parent, style);
@@ -204,9 +186,6 @@ public class BoundDirectivesViewer extends Composite {
 		operandValueColCol.setWidth(200);
 		operandValueColCol.setText("Value");
 		
-		//note that the clj* fields are still null at this point, to be updated later
-		operandValueCol.setLabelProvider(new DirectiveOperandBindingLabelProviderValue(cljGroup, cljSnippet, cljSelectedSnippetNode));
-		operandValueCol.setEditingSupport(new DirectiveOperandBindingEditingSupport(this, operandsTableViewer, cljGroup, cljSnippet, cljSelectedSnippetNode));
 				
 
 	}
@@ -219,7 +198,7 @@ public class BoundDirectivesViewer extends Composite {
 			return;
 		Object selectedDirective = dialog.getSelectedDirective();
 		if(selectedDirective != null) {
-			addDirective(cljSnippet, cljSelectedSnippetNode, selectedDirective);
+			cljSelectedSnippet = templateGroup.addDirective(cljSelectedSnippet, cljSelectedSnippetNode, selectedDirective);
 		}
 		updateWidgets();
 	}
@@ -230,7 +209,7 @@ public class BoundDirectivesViewer extends Composite {
 		BoundDirective boundDirective = getSelectedBoundDirective();
 		if(boundDirective == null)
 			return;
-		removeBoundDirective(cljSnippet, cljSelectedSnippetNode, boundDirective);
+		cljSelectedSnippet = templateGroup.removeBoundDirective(cljSelectedSnippet, cljSelectedSnippetNode, boundDirective);
 		updateWidgets();
 	}
 
@@ -239,10 +218,14 @@ public class BoundDirectivesViewer extends Composite {
 
 
 
-	public void setInput(Object group, Object selectedSnippet, Object selectedSnippetNode) {
-		this.cljGroup = group;
-		this.cljSnippet = selectedSnippet;
+	public void setInput(TemplateGroup group, Object selectedSnippet, Object selectedSnippetNode) {
+		this.templateGroup = group;
+		this.cljSelectedSnippet = selectedSnippet;
 		this.cljSelectedSnippetNode = selectedSnippetNode;
+		
+		operandValueCol.setLabelProvider(new DirectiveOperandBindingLabelProviderValue(templateGroup, cljSelectedSnippet, cljSelectedSnippetNode));
+		operandValueCol.setEditingSupport(new DirectiveOperandBindingEditingSupport(this, operandsTableViewer, templateGroup, cljSelectedSnippet, cljSelectedSnippetNode));
+		
 		updateWidgets();
 		
 	}
@@ -254,7 +237,7 @@ public class BoundDirectivesViewer extends Composite {
 
 
 	public void updateWidgets() {	
-		if(cljSelectedSnippetNode == null || cljSnippet == null || cljGroup == null) {
+		if(cljSelectedSnippetNode == null || cljSelectedSnippet == null) {
 			directivesTableViewer.setInput(null);
 			operandsTableViewer.setInput(null);
 			//directiveLabel.setText("");
@@ -265,13 +248,12 @@ public class BoundDirectivesViewer extends Composite {
 		
 		tltmAdd.setEnabled(true);
 
-		TemplateGroup tg = TemplateGroup.newFromClojureGroup(cljGroup);
-		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(tg);
-		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(cljSnippet, cljSelectedSnippetNode));
+		TemplatePrettyPrinter prettyprinter = new TemplatePrettyPrinter(templateGroup);
+		textViewerNode.getTextWidget().setText(prettyprinter.prettyPrintElement(cljSelectedSnippet, cljSelectedSnippetNode));
 		for(StyleRange range : prettyprinter.getStyleRanges())
 			textViewerNode.getTextWidget().setStyleRange(range);
 		
-		Collection boundDirectives = getBoundDirectivesForElementOfTemplate(cljSelectedSnippetNode, cljSnippet);
+		Collection boundDirectives = getBoundDirectivesForElementOfTemplate(cljSelectedSnippetNode, cljSelectedSnippet);
 		BoundDirective oldSelection = getSelectedBoundDirective();
 		directivesTableViewer.setInput(boundDirectives);
 		if(oldSelection != null)
@@ -287,16 +269,12 @@ public class BoundDirectivesViewer extends Composite {
 
 		//directiveLabel.setText(newSelection.getDescription());
 		Collection<DirectiveOperandBinding> operandBindings = newSelection.getOperandBindings();
-		operandValueCol.setEditingSupport(new DirectiveOperandBindingEditingSupport(this, operandsTableViewer, cljGroup, cljSnippet, cljSelectedSnippetNode));
-		operandValueCol.setLabelProvider(new DirectiveOperandBindingLabelProviderValue(cljGroup, cljSnippet, cljSelectedSnippetNode));
+		operandValueCol.setEditingSupport(new DirectiveOperandBindingEditingSupport(this, operandsTableViewer, templateGroup.getGroup(), cljSelectedSnippet, cljSelectedSnippetNode));
+		operandValueCol.setLabelProvider(new DirectiveOperandBindingLabelProviderValue(templateGroup.getGroup(), cljSelectedSnippet, cljSelectedSnippetNode));
 		operandsTableViewer.setInput(operandBindings.toArray());
 
 
 	}
 	
-	public Object getUpdatedGroup() {
-		return cljGroup;
-	}
-
 
 }

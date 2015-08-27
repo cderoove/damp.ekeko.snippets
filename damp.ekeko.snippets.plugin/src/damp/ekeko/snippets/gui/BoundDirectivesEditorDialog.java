@@ -8,22 +8,21 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
+import damp.ekeko.snippets.data.TemplateGroup;
+
 
 public class BoundDirectivesEditorDialog extends Dialog
 {
 
 	private BoundDirectivesViewer boundDirectivesViewer;
 
-	private Object cljGroup, cljTemplate, cljNode;
+	private Object cljTemplate, cljNode;
 	
-	public Object getUpdatedGroup() {
-		return boundDirectivesViewer.getUpdatedGroup();
-	}
+	private TemplateGroup templateGroup;
 
-
-	public BoundDirectivesEditorDialog(Shell parentShell, Object cljGroup, Object cljTemplate, Object cljNode) {
+	public BoundDirectivesEditorDialog(Shell parentShell, TemplateGroup templateGroup, Object cljTemplate, Object cljNode) {
 		super(parentShell);
-		this.cljGroup = cljGroup;
+		this.templateGroup = templateGroup;
 		this.cljTemplate = cljTemplate;
 		this.cljNode = cljNode;
 	}
@@ -42,19 +41,7 @@ public class BoundDirectivesEditorDialog extends Dialog
 
 		boundDirectivesViewer = new BoundDirectivesViewer(composite, SWT.NONE);
 		boundDirectivesViewer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-				
-		/*
-		 boundDirectivesViewer.addNodeSelectionListener(new TemplateGroupViewerNodeSelectionListener() {
-			@Override
-			public void nodeSelected(TemplateGroupViewerNodeSelectionEvent event) {
-				BoundDirectivesEditorDialog.this.cljGroup = event.getSelectedTemplateGroup();
-				BoundDirectivesEditorDialog.this.cljTemplate = event.getSelectedTemplate();
-				BoundDirectivesEditorDialog.this.cljNode = event.getSelectedTemplateNode();
-			}
-		});
-		 */
-
-		boundDirectivesViewer.setInput(cljGroup, cljTemplate, cljNode);
+		boundDirectivesViewer.setInput(templateGroup, cljTemplate, cljNode);
 
 		return composite;	
 	}

@@ -100,9 +100,12 @@ damp.ekeko.snippets.snippetgroup
     (to-array 
       [(assoc snippetgroup 
               :snippetlist 
-              (replace
-                [(.indexOf (snippetgroup-snippetlist snippetgroup) snippet)
-                 newsnippet]
+              (map 
+                (fn [s]
+                  (if 
+                    (= s snippet)
+                    newsnippet
+                    s))
                 (snippetgroup-snippetlist snippetgroup)))
        newsnippet])))
 

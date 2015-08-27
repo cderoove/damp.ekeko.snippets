@@ -133,6 +133,8 @@ public class TemplateEditor extends EditorPart {
 		tltmRemove.setEnabled(true);
 
 
+		
+		
 		tltmEditBoundDirectives = new ToolItem(toolBar, SWT.NONE);
 		tltmEditBoundDirectives.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -144,6 +146,7 @@ public class TemplateEditor extends EditorPart {
 		tltmEditBoundDirectives.setToolTipText("Edit directives of template element");
 		tltmEditBoundDirectives.setEnabled(false);
 
+		
 
 
 		tltmRevealAnchor = new ToolItem(toolBar, SWT.NONE);
@@ -373,13 +376,12 @@ public class TemplateEditor extends EditorPart {
 		}
 	}
 
-	protected void onEditBoundDirectives(TemplateGroup oldTemplateGroup, Object selectedTemplate, Object selectedNode) {
-
-		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), oldTemplateGroup.getGroup(), selectedTemplate, selectedNode);
-		int open = dialog.open();
-		if(open == BoundDirectivesEditorDialog.CANCEL)
-			return;
-		templateGroup = TemplateGroup.newFromClojureGroup(dialog.getUpdatedGroup());
+	protected void onEditBoundDirectives(TemplateGroup templateGroup, Object selectedTemplate, Object selectedNode) {
+		BoundDirectivesEditorDialog dialog = new BoundDirectivesEditorDialog(getSite().getShell(), templateGroup, selectedTemplate, selectedNode);
+		Object oldT = templateGroup.getGroup();
+		dialog.open();
+		Object newT = templateGroup.getGroup();
+		assert(!oldT.equals(newT));
 		refreshWidgets();
 		becomeDirty();
 	}
@@ -446,6 +448,7 @@ public class TemplateEditor extends EditorPart {
 	protected void refreshWidgets() {
 		templateGroupViewer.clearSelection();
 		templateGroupViewer.setInput(templateGroup, null, null);
+		templateGroupViewer.updateWidgets();
 	}
 
 
