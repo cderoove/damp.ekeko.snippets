@@ -524,26 +524,23 @@
       (doseq [define defines]
         (eval define))
       (eval query)
-      (rewrites/apply-and-reset-rewrites)
+;      (rewrites/apply-and-reset-rewrites)
       ))
   
   ; Test a nested transformation
-;  (def transfogroup
-;    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/sandbox-move.ekx"))
+  (def transfogroup 
+    (persistence/slurp-transformation "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/dbg/sandbox-move.ekx"))
+  (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   (def transfogroup
-    (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/test.ekx"))
-  
-  (inspector-jay.core/inspect (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitled2.ekt"))
+    (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/test.ekt"))
   
   (def input (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledx.ekt"))
-  (inspector-jay.core/inspect input)
   (persistence/spit-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt" (:ast (first (:snippetlist input))))
   
   (read-string (slurp "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt"))
   
   (def transfogroup
     (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/dbg.ekx"))
-  (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   
   
   
