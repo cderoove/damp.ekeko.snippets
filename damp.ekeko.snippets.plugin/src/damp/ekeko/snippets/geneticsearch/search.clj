@@ -470,48 +470,30 @@
               @new-history)))))))
 
 (comment
-  (defn
-    slurp-from-resource
-    [pathrelativetobundle]
-    (slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+  ; Don't uncomment this one, as it creates a dependency on the testing project..
+  (defn slurp-from-resource [pathrelativetobundle]
+    (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   
-  
-  (defn run-example []
-  (def tg (new ThreadGroup "invokedby"))
-  (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (def matches (into [] (fitness/templategroup-matches templategroup)))
-  (def verifiedmatches (make-verified-matches matches []))
-  (util/future-group tg (evolve verifiedmatches
-                                :selection-weight 1/4
-                                :mutation-weight 3/4
-                                :crossover-weight 0/4
-                                :max-generations 5
-                                :match-timeout 12000
-                                :thread-group tg
-                                :population-size 10
-                                :tournament-rounds 5)))
-  
+  (defn run-example 
+    "Run an example genetic search in a separate thread"
+    []
+    (def tg (new ThreadGroup "invokedby"))
+    (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+    (def matches (into [] (fitness/templategroup-matches templategroup)))
+    (def verifiedmatches (make-verified-matches matches []))
+    (util/future-group tg (evolve verifiedmatches
+                                  :selection-weight 1/4
+                                  :mutation-weight 3/4
+                                  :crossover-weight 0/4
+                                  :max-generations 5
+                                  :match-timeout 12000
+                                  :thread-group tg
+                                  :population-size 10
+                                  :tournament-rounds 5)))
   (run-example) ; To start
   (.interrupt tg) ; To stop
   
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  
-  (def matches (into [] (fitness/templategroup-matches templategroup)))
-;  (inspector-jay.core/inspect (nth (population-from-snippets matches 7) 6))
-  
-  (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/test9.ekt"))
-  (fitness/templategroup-matches templategroup)
-  
-  
-  (def templategroup
-    (persistence/slurp-snippetgroup "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
-  (time (fitness/templategroup-matches templategroup))
-  (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
-  
-  (defn
-    transform-by-snippetgroups
+  (defn transform-by-snippetgroups
     "Performs the program transformation defined by the lhs and rhs snippetgroups." 
     [snippetgroup|lhs snippetgroup|rhs]
     (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
@@ -524,8 +506,13 @@
       (doseq [define defines]
         (eval define))
       (eval query)
-;      (rewrites/apply-and-reset-rewrites)
+      ; (rewrites/apply-and-reset-rewrites)
       ))
+  
+  ; Test matching a templategroup
+  (def templategroup
+    (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (def matches (into [] (fitness/templategroup-matches templategroup)))
   
   ; Test a nested transformation
   (def transfogroup 
@@ -533,24 +520,6 @@
   (transform-by-snippetgroups (:lhs transfogroup) (:rhs transfogroup))
   (def transfogroup
     (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/test.ekt"))
-  
-  (def input (persistence/slurp-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledx.ekt"))
-  (persistence/spit-transformation "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt" (:ast (first (:snippetlist input))))
-  
-  (read-string (slurp "/Users/soft/Documents/workspace-runtime/ToyExample/Untitledz.ekt"))
-  
-  (def transfogroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/dbg.ekx"))
-  
-  
-  
-  (clojure.pprint/pprint (querying/query-by-snippetgroup templategroup 'damp.ekeko/ekeko))
-  (fitness/templategroup-matches templategroup) 
-  @damp.ekeko.snippets.geneticsearch.fitness/matched-nodes
-  (count (snippetgroup/snippetgroup-nodes templategroup))
-  
-  (damp.ekeko.snippets.geneticsearch.fitness/reset-matched-nodes)
-  (fitness/templategroup-matches (individual/individual-templategroup (first (population-from-snippets (:positives verifiedmatches) 2))))
   
   ; Test a particular mutation operator (on a random subject)
   (do
@@ -561,20 +530,19 @@
               (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-constructorinvocations")) (operatorsrep/registered-operators))
               ))
     
-    
     (persistence/snippetgroup-string (individual/individual-templategroup mutant))
     (individual/compute-fitness (individual/make-individual templategroup) (fitness/make-fitness-function
                                                                              (make-verified-matches 
                                                                                (map
                                                                                  (fn [x] (first (fitness/templategroup-matches x)))
                                                                                  [(persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt")
-                                                                                 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-907843851.ekt")
-                                                                                 (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/29895102.ekt")])
+                                                                                  (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-907843851.ekt")
+                                                                                  (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/29895102.ekt")])
                                                                                [])
                                                                              config-default))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   
-  ; Selection 
-;  (inspector-jay.core/inspect (select (population-from-snippets matches 10) 2))
+  ; Test tournament selection 
+  (select (population-from-snippets matches 10) 2)
   )

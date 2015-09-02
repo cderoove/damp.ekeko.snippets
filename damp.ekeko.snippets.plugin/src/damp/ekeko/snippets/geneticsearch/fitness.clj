@@ -250,9 +250,9 @@
             false-bias (- (count (falsep matches verifiedmatches)) (count (falsen matches verifiedmatches)))
             
             weights (:fitness-weights config)
-            ;            dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
-            ;            lengthscore (/ 1 (template-size templategroup))
-            ;            partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
+            ; dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
+            ; lengthscore (/ 1 (template-size templategroup))
+            ; partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
             ]
         [(+
            (* (nth weights 0) fscore)

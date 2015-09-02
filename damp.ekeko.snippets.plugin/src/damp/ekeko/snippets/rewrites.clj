@@ -245,7 +245,7 @@
         target-parent (astnode/owner target-list)
         target-property (astnode/ekeko-keyword-for-property-descriptor (astnode/owner-property target-list))]
     (do
-      (remove-node src-cu-var src-parent src-property source-elem)
+      (remove-node-alt src-cu-var src-parent src-property source-elem)
       (add-node tgt-cu-var target-parent target-property source-elem idx))))
 
 (defn

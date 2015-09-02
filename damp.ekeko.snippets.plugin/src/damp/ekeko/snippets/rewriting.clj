@@ -22,6 +22,7 @@
 (declare directive-insert-before)
 (declare directive-add-element)
 (declare directive-move-element)
+(declare directive-remove-element)
 
 (def ^:dynamic *sgroup-rhs* nil) ; Returns the RHS snippetgroup; its value is bound dynamically by querying/snippetgroup-conditions|rewrite TODO Would be better to refactor this..
 
@@ -32,11 +33,20 @@
       (some
         (fn [node]
           (let [bds (snippet/snippet-bounddirectives-for-node snippet node)
+                has-exception-bds (some (fn [bd]
+                                          (let [name (directives/directive-name (directives/bounddirective-directive bd))]
+                                            (or
+                                              (= name (directives/directive-name directive-move-element))
+                                              (= name (directives/directive-name directive-remove-element)))))
+                                          bds)
+                
                 equals-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-equals)
                 metavar-rhs (directives/bounddirective-for-directive bds damp.ekeko.snippets.matching/directive-replacedbyvariable)
                 bd-rhs (if (nil? equals-rhs) 
-                         metavar-rhs
-                         equals-rhs)]
+                         (if (not has-exception-bds) ; Meta-variables as the subject of a move-element or remove-element should be excluded!
+                           metavar-rhs)
+                         equals-rhs)
+                ]
             (if (and 
                   (not (nil? bd-rhs))
                   (= uservar (symbol (.getValue (second (directives/bounddirective-operandbindings bd-rhs))))))

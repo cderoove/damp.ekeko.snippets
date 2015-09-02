@@ -131,8 +131,9 @@
          jhotdraw "JHotDraw51"]
      (test/against-project-named testproject false precision-recall)
      (test/against-project-named testproject false filtered-query)
-     (test/against-project-named metamodel false scam-demo)
-     (test/against-projects-named [jhotdraw designpatterns] false singleton-experiment)))
+;     (test/against-project-named metamodel false scam-demo)
+;     (test/against-projects-named [jhotdraw designpatterns] false singleton-experiment)
+     ))
 
 (defn test-ns-hook []
   (test/with-ekeko-disabled test-suite))

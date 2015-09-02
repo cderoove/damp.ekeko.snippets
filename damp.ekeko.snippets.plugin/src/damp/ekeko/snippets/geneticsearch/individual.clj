@@ -66,6 +66,8 @@
         new-info (merge old-info info-map)]
     (assoc individual :info new-info)))
 
+(def fitness-zero [0 [0 0 0 0]])
+
 (defn compute-fitness
   "Compute the fitness of an individual (if this hasn't been done before)
    and return the individual with its fitness values filled in."
@@ -80,7 +82,7 @@
               (persistence/spit-snippetgroup 
                 (str "timeout" (util/current-time) ".ekt")
                 (individual-templategroup individual))
-              [0 [0 0]])
+              fitness-zero)
             (catch java.lang.OutOfMemoryError e
               (throw e))
             (catch clojure.lang.Compiler$CompilerException e ; This may be a wrapper to an OutOfMemoryError!
@@ -114,7 +116,7 @@
                             "\n################\n\n"))
                 (if (instance? java.lang.UnsupportedOperationException (.getCause e))
                   (throw e))
-                [0 [0 0]]
+                fitness-zero
                 )))]
       (-> individual
         (assoc :fitness-overall overall)
