@@ -18,18 +18,17 @@
 
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<tycho.version>0.20.0</tycho.version>
-		<tycho-extras.version>0.20.0</tycho-extras.version>
-		<luna-repo.url>http://download.eclipse.org/releases/luna</luna-repo.url>
+			<tycho.version>0.23.0</tycho.version>
+			<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+			<mars-repo.url>http://download.eclipse.org/releases/mars</mars-repo.url>
 	</properties>
 
 	<repositories>
-		<repository>
-			<id>luna</id>
-			<url>${luna-repo.url}</url>
-			<layout>p2</layout>
-		</repository>
+			<repository>
+					<id>mars</id>
+					<url>${mars-repo.url}</url>
+					<layout>p2</layout>
+			</repository>
 		<repository>
 			<id>Counterclockwise stable versions Site</id>
 			<url>http://updatesite.ccw-ide.org/stable</url>
@@ -135,7 +134,7 @@
 	</build>
 
 	<profiles>
-		<!-- when built with this profile, pre-built dependencies will be fetched 
+		<!-- when built with this profile, pre-built dependencies will be fetched
 			from the public update-site -->
 		<profile>
 			<id>build-individual-bundles</id>
@@ -150,4 +149,4 @@
 	</profiles>
 
 
-</project> 
+</project>
