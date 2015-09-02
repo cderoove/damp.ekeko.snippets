@@ -37,8 +37,6 @@ public class EkekoSnippetsTest {
 		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "Ekeko-JDT");
 		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "TestCase-EkekoX-Matching");
 		EkekoTestHelper.ensureProjectImported(myBundle, "/resources/", "TestCase-TypeParameters");
-
-
 	}
 
 	@Test

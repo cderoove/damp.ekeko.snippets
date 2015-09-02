@@ -506,7 +506,7 @@
   
   
   (def templategroup
-    (persistence/slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
+    (persistence/slurp-snippetgroup "/Users/soft/Documents/Github/damp.ekeko.snippets/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/inherited-test.ekt"))
   (time (fitness/templategroup-matches templategroup))
   (querying/print-snippetgroup templategroup 'damp.ekeko/ekeko)
   

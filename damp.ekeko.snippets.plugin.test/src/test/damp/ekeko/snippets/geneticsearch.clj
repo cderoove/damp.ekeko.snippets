@@ -87,7 +87,7 @@
   ^{:doc "Try to infer scam_demo1.ekx's left-hand-side template"}
   scam-demo 
   (let [templategroup (transformation/transformation-lhs (snippetgroup-from-resource "/resources/EkekoX-Specifications/scam_demo3.ekx"))
-        matches (into [] (fitness/templategroup-matches templategroup 10000))
+        matches (into [] (fitness/templategroup-matches templategroup))
         cherry-picked-matches [(nth matches 0) ; Choose some of the shorter snippets to speed up the process..
                                (nth matches 1)
                                (nth matches 3)
@@ -108,7 +108,7 @@
   (let [singleton1 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_1.ekt") 
         singleton2 (snippetgroup-from-resource "/resources/EkekoX-Specifications-DesignPatterns/Singleton_JHotDraw_1a.ekt")
         matches (concat 
-                  (into [] (fitness/templategroup-matches singleton1 10000))
+                  (into [] (fitness/templategroup-matches singleton1))
 ;                  (into [] (fitness/templategroup-matches singleton2 10000))
                   )
         verifiedmatches (search/make-verified-matches matches [])]
