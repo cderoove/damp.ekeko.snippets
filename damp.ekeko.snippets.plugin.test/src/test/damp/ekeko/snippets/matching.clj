@@ -94,7 +94,7 @@
   ^{:doc "Template for orsimple matching directive on qualfied types."}
   match-orsimple
   (let [snippet (snippetgroup-from-resource "/resources/EkekoX-Specifications/orsimple.ekt")]
-    (is (= 3 (count (snippets/query-by-snippetgroup snippet))))))
+    (is (= 3 (count (into #{} (snippets/query-by-snippetgroup snippet)))))))
 
 (deftest
   ^{:doc "Template for referredby matching directive several children of a field declaration."}
