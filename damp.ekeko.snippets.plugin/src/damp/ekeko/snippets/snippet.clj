@@ -391,6 +391,16 @@ damp.ekeko.snippets.snippet
             child))
         (snippet-node-children|conceptually snippet node)))
 
+(defn
+  snippet-node-child-id|conceptually
+  "Returns conceptual child of this snippet element 
+   (will have a wrapper if applicable)."
+  [snippet node property]
+  (some (fn [child]
+          (if (= property (.getId (:property child)))
+            child))
+        (snippet-node-children|conceptually snippet node)))
+
 (defn 
   walk-snippet-element
   "Performs a recursive descent through a particular snippet element.

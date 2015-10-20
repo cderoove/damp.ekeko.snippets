@@ -1310,10 +1310,11 @@ damp.ekeko.snippets.operators
   [snippet node]
   (let [[pulledup-snippet new-node]
         (loop [cur-node node]
-          (let [parent3 (snippet/snippet-node-ancestor|conceptually snippet cur-node 3)]
-            (if (instance? MethodDeclaration parent3)
-              (replace-node-with snippet cur-node snippet node)
-              (recur parent3))))]
+          (let [parent (snippet/snippet-node-parent|conceptually snippet cur-node)]
+            (if (instance? MethodDeclaration parent)
+              (let [stmts (astnode/value-unwrapped (snippet/snippet-node-child-id|conceptually snippet cur-node "statements"))]
+                (replace-node-with snippet (first stmts) snippet node))
+              (recur parent))))]
     (relax-scope-to-child*
       (isolate-stmt-in-block pulledup-snippet new-node) 
       new-node)))
