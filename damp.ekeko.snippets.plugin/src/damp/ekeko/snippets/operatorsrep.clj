@@ -51,11 +51,14 @@ damp.ekeko.snippets.operatorsrep
   (when-let [ownerprop (astnode/owner-property value)]
    (and (= keyword (astnode/ekeko-keyword-for-property-descriptor ownerprop)))))
 
-
 (defn
   applicability|always
   [snippetgroup snippet value] 
   true)
+
+(defn applicability|notprotected
+  [snippetgroup snippet value] 
+  (not (matching/node-protected? snippet value)))
 
 (defn 
   applicability|node
@@ -68,7 +71,6 @@ damp.ekeko.snippets.operatorsrep
   (and 
     (applicability|node snippetgroup snippet value)
     (some #{(astnode/ekeko-keyword-for-class-of value)} [:SimpleName :QualifiedName])))
-
 
 (defn
   applicability|fieldaccess
@@ -250,7 +252,8 @@ damp.ekeko.snippets.operatorsrep
     (when-let [ownerprop (astnode/owner-property value)]
       (or 
         (astnode/property-descriptor-list? ownerprop)
-        (not (.isMandatory ownerprop))))))
+        (not (.isMandatory ownerprop))))
+    (not (matching/node-protected? snippet value))))
 
 (defn
   applicability|multiplicity
@@ -267,7 +270,8 @@ damp.ekeko.snippets.operatorsrep
     (not
      (and
        (astnode/lstvalue? value)
-       (matching/snippet-list-regexp? snippet value)))))
+       (matching/snippet-list-regexp? snippet value)))
+    (not (matching/node-protected? snippet value))))
 
 (defn
   applicability|child+*
@@ -729,7 +733,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by meta-variable."
      opscope-subject
-     applicability|always
+     applicability|notprotected
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -740,7 +744,9 @@ damp.ekeko.snippets.operatorsrep
      :rewrite
      "Replace by the result of an expression."
      opscope-subject
-     applicability|simplepropertyvalue
+     (fn [snippetgroup snippet value]
+       (and (applicability|simplepropertyvalue snippetgroup snippet value)
+            (applicability|notprotected snippetgroup snippet value)))
      "Upon template instantiation, will replace selection by result of expression."
      [(make-operand "Expression (e.g., (str \"prefix\" ?string))" opscope-string validity|string)]
      false)
@@ -765,6 +771,17 @@ damp.ekeko.snippets.operatorsrep
      applicability|always
      "Requires match to be equivalent to the meta-variable's value. (i.e. they don't have to be the same node, but they should look the same)"
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+     false)
+   
+   (Operator. 
+     "add-directive-protect"
+     operators/add-directive-protect
+     :neutral
+     "Add directive protect."
+     opscope-subject
+     applicability|always
+     "Prevents this node or ancestor nodes from being removed/replaced."
+     []
      false)
   
    (Operator. 
@@ -1279,7 +1296,9 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Replace by new node."
      opscope-subject
-     applicability|node|nonroot
+     (fn [snippetgroup snippet value]
+       (and (applicability|node|nonroot snippetgroup snippet value)
+            (applicability|notprotected snippetgroup snippet value)))
      "Replaces selection by newly created node."
      [(make-operand "Node type" opscope-nodeclasskeyw validity|subjectownerpropertytype)]
      false)
@@ -1290,7 +1309,9 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Replace by value."
      opscope-subject
-     applicability|simplepropertyvalue
+     (fn [snippetgroup snippet value]
+       (and (applicability|simplepropertyvalue snippetgroup snippet value)
+            (applicability|notprotected snippetgroup snippet value)))
      "Replaces selection by given textual value."
      [(make-operand "Value text" opscope-string validity|string)]
      false)

@@ -1239,6 +1239,13 @@ damp.ekeko.snippets.matching
       `((nongrounding-equivalent ~var-match ~var)
          ))))
 
+(defn
+  constrain-identity
+  "Does nothing."
+  [snippet-ast var-string]
+  (fn [snippet]
+    `()))
+
 (declare directive-replacedbywildcard)
 (declare directive-replacedbywildcard-checked)
 
@@ -1256,8 +1263,8 @@ damp.ekeko.snippets.matching
     (snippet-node-replaced-by-wilcard? snippet node)
     (snippet-node-replaced-by-exp? snippet node)))
 
-(defn
-  reachable-nodes
+(defn reachable-nodes
+  "Retrieve all children of a given node (taking into account that the children of wildcard/metavariable nodes are hidden)"
   [snippet node]
   (let [walk
         (fn walk [val]
@@ -1273,6 +1280,30 @@ damp.ekeko.snippets.matching
             :default
             (throw (Exception. (str "Don't know how to walk this value:" val)))))]
     (walk node)))
+
+(defn node-protected?
+  [snippet val]
+  (let [protected-bd?
+        (fn [val]
+          (some
+            (fn [bd] (= (directives/directive-name (directives/bounddirective-directive bd)) "protect"))
+            (snippet/snippet-bounddirectives-for-node snippet val)))
+        
+        walk
+        (fn walk [val]
+          (cond 
+            (or (astnode/ast? val) (astnode/lstvalue? val))
+            (if (protected-bd? val)
+              true
+              (some 
+                (fn [child] (walk child))
+                (snippet/snippet-node-children|conceptually snippet val)))
+            (or (astnode/primitivevalue? val) (astnode/nilvalue? val))
+            (protected-bd? val)
+            
+            :default
+            false))]
+    (walk val)))
 
 (defn
   to-literal-string
@@ -1414,6 +1445,14 @@ damp.ekeko.snippets.matching
     "Match should be equivalent to the variable's value."
     ))
 
+(def 
+  directive-protect
+  (directives/make-directive
+    "protect"
+    []
+    constrain-identity
+    "Identity directive (does nothing)."
+    ))
 
 (def 
   directive-member
@@ -1698,7 +1737,8 @@ damp.ekeko.snippets.matching
    directive-subtype+|sname
    directive-subtype*
    directive-subtype*|qname
-   directive-subtype*|sname])
+   directive-subtype*|sname
+   directive-protect])
 
 
 (def 

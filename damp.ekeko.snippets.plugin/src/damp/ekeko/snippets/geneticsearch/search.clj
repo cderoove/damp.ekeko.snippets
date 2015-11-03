@@ -586,6 +586,8 @@
     (remove-ns tmp-ns)
     results)
   
+  (let [snip (first (snippetgroup/snippetgroup-snippetlist templategroup))]
+    (matching/node-protected? snip (rand-nth (matching/reachable-nodes snip (snippet/snippet-root snip)))))
   
   ; Spit the matches of a group
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
