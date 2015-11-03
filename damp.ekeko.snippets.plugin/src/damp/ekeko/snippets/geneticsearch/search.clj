@@ -30,6 +30,7 @@
   (:require [damp.ekeko.snippets.geneticsearch 
              [individual :as individual]
              [fitness :as fitness]])
+  (:import [damp.ekeko.snippets.geneticsearch.fitness MatchedNodes])
   (:import [ec.util MersenneTwister]
            [damp.ekeko.snippets.geneticsearch PartialJavaProjectModel]
            [damp.ekeko.jdt.astnode EkekoAbsentValueWrapper]))
@@ -62,10 +63,10 @@
 ;             "relax-size-to-atleast"
 ;             "relax-scope-to-member"
              "consider-set|lst"
-             "add-directive-type"
+;             "add-directive-type"
 ;             "add-directive-type|qname"
 ;             "add-directive-type|sname"
-             "add-directive-refersto"
+;             "add-directive-refersto"
 ;             "erase-list"
 
 ;             "replace-parent"
@@ -82,8 +83,16 @@
 ;             "generalize-types|qname"
              "generalize-invocations"
              "generalize-constructorinvocations"
+;             "isolate-stmt-in-method"
+;             "isolate-expr-in-method"
+;             "isolate-stmt-in-block"
              ]))
     (operatorsrep/registered-operators)))
+
+(defn all-operator-ids []
+  (sort (map
+          (fn [op] (operatorsrep/operator-id op))
+          (operatorsrep/registered-operators))))
 
 (def
   ^{:doc "Default configuration options in the genetic search algorithm"}
@@ -101,6 +110,9 @@
    :fitness-threshold 0.9
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
+   :output-dir nil
+   :partial-matching true
+   :quick-matching false ; If enabled, template matching only considers the classes occuring in verified matches. Matching will be much faster, but the resulting templates can produce false positives.
    :match-timeout 10000
    :thread-group (new ThreadGroup "Evolve")
    :tournament-rounds 7
@@ -151,6 +163,21 @@
   (let [id-templates (map individual/make-individual templates)]
     (for [x (range 0 population-size)]
       (nth id-templates (mod x (count templates))))))
+
+(defn spit-templategroup-matches
+  "Find all matches of a templategroup, and store each one as an .ekt file in the given directory"
+  [templategroup output-dir]
+  (let [matches (fitness/templategroup-matches templategroup)]
+    (util/make-dir output-dir)
+    (map-indexed
+      (fn [idx match]
+        (println (str "Writing " output-dir "/" idx ".ekt"))
+        (persistence/spit-snippetgroup (str output-dir "/" idx ".ekt")
+                                       (operatorsrep/preprocess-templategroup
+                                         (snippetgroup/make-snippetgroup 
+                                          "Exported matches"
+                                          (map matching/snippet-from-node match)))))
+      matches)))
 
 (defn- rand-snippet [snippetgroup]
   (-> snippetgroup
@@ -357,8 +384,22 @@
    @param conf             Configuration keyword arguments; see config-default for all default values"
   [verifiedmatches & {:as conf}]
   (let
-    [output-dir (str "evolve-" (util/current-date))
-     csv-name (str output-dir "/results.csv")
+    [config (merge config-default conf)
+     output-dir (if (nil? (:output-dir config))
+                  (str "evolve-" (util/current-date) "/")
+                  (:output-dir config))
+     ; If output-dir already contains previous generations, resume search from the last generation
+     resume-generation (let [files (.list (clojure.java.io/file output-dir))
+                             numbered-files (map (fn [file]
+                                                   (try
+                                                     (java.lang.Integer/parseInt file)
+                                                     (catch Exception e -1)))
+                                                 files)]
+                         (if (> (count numbered-files) 0)
+                           (inc (apply max numbered-files))
+                           0))
+     
+     csv-name (str output-dir "results.csv")
      csv-columns ["Generation" "Total time" "Generation time"
                   "Best fitness" "Worst fitness" "Average fitness"
                   "Best fscore" "Worst fscore" "Average fscore"
@@ -367,22 +408,28 @@
                   "Average op-bias"]
      start-time (. System (nanoTime))
      
-     config (merge config-default conf)
+     
      fitness ((:fitness-function config) verifiedmatches config)
      sort-by-fitness (fn [population]
                        (sort-by
                          (fn [x] (individual/individual-fitness x))
                          (map (fn [ind] (individual/compute-fitness ind fitness)) 
                               population)))
-     initial-pop (sort-by-fitness (if (nil? (:initial-population config))
-                                    (population-from-snippets (:positives verifiedmatches) (:population-size config))
-                                    (:initial-population config))) 
+     initial-pop (sort-by-fitness (if (> resume-generation 0)
+                                    (let [files (.list (clojure.java.io/file (str output-dir (dec resume-generation))))
+                                          templategroups (map (fn [file]
+                                                                (persistence/slurp-snippetgroup (str output-dir (dec resume-generation) "/" file)))
+                                                              files)] 
+                                      (population-from-templates templategroups (:population-size config)))
+                                    (if (nil? (:initial-population config))
+                                      (population-from-snippets (:positives verifiedmatches) (:population-size config))
+                                      (:initial-population config)))) 
      tournament-size (:tournament-rounds config)]
     (util/make-dir output-dir)
     (util/append-csv csv-name csv-columns)
     
     (loop
-      [generation 0
+      [generation resume-generation
        generation-start-time start-time
        population initial-pop
        history #{}]
@@ -416,27 +463,37 @@
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))
-                                   (nth (individual/individual-fitness-components (last population)) 2) ; Dirscore
-                                   (nth (individual/individual-fitness-components (first population)) 2)
-                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 2)) population))
-                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 3)) population)) ; Average op-bias
+;                                   (nth (individual/individual-fitness-components (last population)) 2) ; Dirscore
+;                                   (nth (individual/individual-fitness-components (first population)) 2)
+;                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 2)) population))
+;                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 3)) population)) ; Average op-bias
                                    ])
-        (util/make-dir (str output-dir "/" generation))
+        (util/make-dir (str output-dir generation))
         (doall (map-indexed
                  (fn [idx individual]
-                   (persistence/spit-snippetgroup (str output-dir "/" generation "/individual-" idx ".ekt") 
+                   (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
                                                   (individual/individual-templategroup individual))) 
                  population))
-;        (doseq [x population]
-;          (println "OP:" (individual/individual-info x :mutation-operator)))
-        (when (< generation (:max-generations config))
-          (if
-            (> best-fitness (:fitness-threshold config))
-            (do
+        
+        ;        (doseq [x population]
+        ;          (println "OP:" (individual/individual-info x :mutation-operator)))
+        (cond
+          (>= generation (:max-generations config))
+          (do 
+            (println "Maximum number of generations reached! Stopping genetic search..")
+            (spit (str output-dir "done.txt") "Done!"))
+          (> best-fitness (:fitness-threshold config))
+          (do
               (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
-              (persistence/spit-snippetgroup (str output-dir "/success.ekt") 
-                                             (individual/individual-templategroup (last population))))
-            (recur
+              (persistence/spit-snippetgroup (str output-dir "success.ekt") 
+                                             (individual/individual-templategroup (last population)))
+              (spit (str output-dir "done.txt") "Done!"))
+          
+          (util/metaspace-almost-full?)
+          (println "Java metaspace almost full! Stopping genetic search..")
+          
+          :rest 
+          (recur
               (inc generation)
               (. System (nanoTime))
               (sort-by-fitness
@@ -467,29 +524,36 @@
                     #(select population tournament-size) 
                     (fn [ind] (pos? (individual/individual-fitness ind)))
                     (:thread-group config))))
-              @new-history)))))))
+              @new-history))))))
 
 (comment
-  ; Don't uncomment this one, as it creates a dependency on the testing project..
-  (defn slurp-from-resource [pathrelativetobundle]
-    (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+  (do 
+    ; Don't uncomment this one, as it creates a dependency on the testing project..
+    (defn slurp-from-resource [pathrelativetobundle]
+      (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+    
+    (defn run-example 
+      "Run an example genetic search in a separate thread"
+      []
+      (println "Starting example run..")
+      (def tg (new ThreadGroup "invokedby"))
+      (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+      (def matches (into [] (fitness/templategroup-matches templategroup)))
+      (def verifiedmatches (make-verified-matches matches []))
+      (util/future-group tg (evolve verifiedmatches
+                                    ; :initial-population (population-from-templates [templategroup] 4) ; Directly puts the solution in the initial population
+                                    :quick-matching false
+                                    :partial-matching true
+                                    :selection-weight 1/4
+                                    :mutation-weight 3/4
+                                    :crossover-weight 0/4
+                                    :max-generations 0
+                                    :match-timeout 12000
+                                    :fitness-threshold 0.8
+                                    :thread-group tg
+                                    :population-size 4
+                                    :tournament-rounds 5))))
   
-  (defn run-example 
-    "Run an example genetic search in a separate thread"
-    []
-    (def tg (new ThreadGroup "invokedby"))
-    (def templategroup (persistence/slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-    (def matches (into [] (fitness/templategroup-matches templategroup)))
-    (def verifiedmatches (make-verified-matches matches []))
-    (util/future-group tg (evolve verifiedmatches
-                                  :selection-weight 1/4
-                                  :mutation-weight 3/4
-                                  :crossover-weight 0/4
-                                  :max-generations 5
-                                  :match-timeout 12000
-                                  :thread-group tg
-                                  :population-size 10
-                                  :tournament-rounds 5)))
   (run-example) ; To start
   (.interrupt tg) ; To stop
   
@@ -510,9 +574,22 @@
       ))
   
   ; Test matching a templategroup
-  (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
+  (inspector-jay.core/inspect templategroup)
+  
+  ; Do matching in a temporary namespace
+  (let [tmp-ns (ns-name (util/gen-ns))
+        [defs query] (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko)
+        tmp (doseq [define defs] (util/eval-in-ns define tmp-ns))
+        results (into #{} (util/eval-in-ns query tmp-ns))]
+    (remove-ns tmp-ns)
+    results)
+  
+  
+  ; Spit the matches of a group
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
+  (spit-templategroup-matches templategroup "test-output6")
   
   ; Test a nested transformation
   (def transfogroup 
@@ -524,11 +601,11 @@
   ; Test a particular mutation operator (on a random subject)
   (do
     (def templategroup
-      (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt"))
+      (slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-              (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-constructorinvocations")) (operatorsrep/registered-operators))
-              ))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "isolate-stmt-in-method")) (operatorsrep/registered-operators))
+                    ))
     
     (persistence/snippetgroup-string (individual/individual-templategroup mutant))
     (individual/compute-fitness (individual/make-individual templategroup) (fitness/make-fitness-function

@@ -101,19 +101,9 @@
   [snippetgroup]
   (mapcat snippet/snippet-nodes (snippetgroup/snippetgroup-snippetlist snippetgroup) ))
 
-;(defn directive-count-measure
-;  "Produce a score in [0,1] to reflect how complex a template looks,
-;   which is based on how many directives are used in the template"
-;  [templategroup]
-;  (/ 1 (inc (* 1/2 (count-directives templategroup)))))
-
-
-
 (defn count-directives
   "Count the number of directives used in a snippet group (excluding default directives)"
   [snippetgroup]
-  ;  (count (snippet/snippet-bounddirectives snippet node))
-  
   (reduce 
     (fn [countsofar bdlist]
       (+ countsofar (count bdlist)))
@@ -125,43 +115,7 @@
    which is based on how many directives are used in the template"
   [templategroup]
   (- 1 (/ (count-directives templategroup)   
-          (* (count (matching/registered-directives)) (count (snippetgroup-nodes templategroup)))))
-  
-;  (/ 1 (inc (* 1/2 (count-directives templategroup))))
-  )
-
-;
-;(defn simple-measure
-;  "Alternative to fmeasure, in which we simply don't care about the matches that are neither in :positives or :negatives.
-;   Produces a number in [0-1], such that higher means more correct (positive or negative) results"
-;  [matches verifiedmatches]
-;  (let [correct-positives (clojure.set/intersection matches (:positives verifiedmatches))
-;        correct-negatives (clojure.set/difference (:negatives verifiedmatches) matches)]
-;    (/ 
-;      (+ (count correct-positives) (count correct-negatives))
-;      (+ (count (:positives verifiedmatches)) (count (:negatives verifiedmatches))))))
-
-;(defn- snippetgroup|hasequals?
-;  "Count the number of directives used in a snippet group (excluding default directives)"
-;  [snippetgroup]
-;  (some (fn [snippet]
-;          (boolean (directives/bounddirective-for-directive 
-;                         (apply concat (snippet/snippet-bounddirectives snippet))
-;                         matching/directive-equals)))
-;         (snippetgroup/snippetgroup-snippetlist snippetgroup)))
-
-;(defn
-;  template-size
-;  [templategroup]
-;  (.length (persistence/snippetgroup-string templategroup)))
-
-;(defn
-;  ast-node-count
-;  [templategroup]
-;  (let [snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
-;    (apply + (for [x snippets]
-;               (count (snippet/snippet-nodes x))))))
-
+          (* (count (matching/registered-directives)) (count (snippetgroup-nodes templategroup))))))
 
 (defn register-match [match]
   (swap! matched-nodes 
@@ -186,29 +140,27 @@
   "Compute the partial matching score of the last templategroup that we tried to match
    @param node-count number of nodes in that last templategroup"
   [node-count]
-  (let [partial-matches (:done @matched-nodes)
-        
+  (let [partial-matches (first (:done @matched-nodes))
 ;        (remove 
 ;          (fn [x] (= x node-count))
 ;          (:done @matched-nodes))
         ]
     (reset-matched-nodes)
-    (if (empty? partial-matches)
-      0
-      (let [score (/ 
-                    (reduce + (map (fn [x] (/ x node-count)) partial-matches))
-                    (count partial-matches))
+    (let [score (/ partial-matches node-count)
+;            (/ 
+;              (reduce + (map (fn [x] (/ x node-count)) partial-matches))
+;              (count partial-matches))
 ;            (/ (apply max partial-matches) node-count)
             ]
         (if (> score 1)
           (println "!Partial matching score cannot > 1" @matched-nodes)
-          score)))))
+          score))))
 
 (defn create-partial-model
-  "Create a PartialJavaProjectModel such that only the ASTs of verifiedmatches are queried"
-  [verifiedmatches]
+  "Create a PartialJavaProjectModel such that only the given list of ASTs are queried"
+  [matchgroups]
   (let [partialmodel (new PartialJavaProjectModel)]
-    (doseq [matchgroup (:positives verifiedmatches)]
+    (doseq [matchgroup matchgroups]
       (doseq [match matchgroup]
         (.addExistingAST partialmodel match)))
     partialmodel))
@@ -221,42 +173,66 @@
     (try
       (templategroup-matches templategroup)
       (new-match)
-      (partialmatch-score (count (snippetgroup/snippetgroup-nodes templategroup)))
-;      (.clean partialmodel) ; Don't need this anymore..
-      ; Hmm, seems that we're going over *all* nodes when generating queries? So partialscore goes up for children of e.g. a wildcard..
-;      (partialmatch-score (reduce + (map 
-;                                      (fn [snippet] (count (matching/reachable-nodes snippet (snippet/snippet-root snippet))))
-;                                      (snippetgroup/snippetgroup-snippetlist templategroup))))
+      (partialmatch-score (reduce + (map 
+                                      (fn [snippet] (count (matching/reachable-nodes snippet (snippet/snippet-root snippet))))
+                                      (snippetgroup/snippetgroup-snippetlist templategroup))))
       (catch Exception e
         (println "Partial match failed!")
-        0)
-      )))
+        0))))
 
-(defn
-  make-fitness-function
+(defn make-fitness-function
   "Return a fitness function, used to measure how good/fit an individual is.
    A fitness function returns a pair: [overall-fitness fitness-components]
    ,where overall-fitness is a value between 0 (worst) and 1 (best)
    and fitness-components is a list of components that were used to compute the overall fitness"
   [verifiedmatches config]
-  (let [partialmodel (create-partial-model verifiedmatches)]
+  (let [partialmodels (map
+                        (fn [match] (create-partial-model [match]))
+                        (:positives verifiedmatches))
+        partialmodel-merged (create-partial-model (:positives verifiedmatches))]
     (fn [templategroup]
-      (let [matches (util/with-timeout (:match-timeout config) (templategroup-matches templategroup) (:thread-group config)) 
-            fscore (fmeasure matches verifiedmatches)
-            partialscore (util/with-timeout (:match-timeout config) (partial-matches templategroup partialmodel) (:thread-group config))
-            directive-count-score (directive-count-measure templategroup)
-            
-            ; If > 0, we have more false positives ; if < 0, we have more false negatives
-            false-bias (- (count (falsep matches verifiedmatches)) (count (falsen matches verifiedmatches)))
-            
-            weights (:fitness-weights config)
-            ; dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
-            ; lengthscore (/ 1 (template-size templategroup))
-            ; partialscore (- 1 (/ 1 (inc (partial-matches templategroup partialmodel))))
-            ]
-        [(+
-           (* (nth weights 0) fscore)
-           (* (nth weights 1) partialscore)
-           (* (nth weights 2) directive-count-score)
-           )
-         [fscore partialscore directive-count-score false-bias]]))))
+      (util/with-timeout (:match-timeout config)
+        (let [tmp-ns (util/gen-ns) ; Temporary namespace in which we'll do the query matching
+              [defines query] (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko `((damp.ekeko.logic/perform (new-match))) '() true)
+              defs! (doseq [define defines] (util/eval-in-ns define tmp-ns))
+              matches (if (:quick-matching config)
+                        (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel-merged])]
+                          (into #{} (util/eval-in-ns query tmp-ns)))
+                        (into #{} (util/eval-in-ns query tmp-ns)))
+              fscore (double (fmeasure matches verifiedmatches))
+              
+              node-count
+              (reduce + (map 
+                          (fn [snippet] (count (matching/reachable-nodes snippet (snippet/snippet-root snippet))))
+                          (snippetgroup/snippetgroup-snippetlist templategroup)))
+              
+              partialscore
+              (double 
+                (if (:partial-matching config)
+                  (/
+                    (reduce + (pmap (fn [partialmodel]
+                                      (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
+                                                matched-nodes (atom (MatchedNodes. #{} []))]
+                                        (do
+                                          (into #{} (util/eval-in-ns query tmp-ns))
+                                          (new-match)
+                                          (util/dbg (partialmatch-score node-count))))
+                                      )
+                                    partialmodels))
+                    (count partialmodels))
+                  0))
+              
+              weights (:fitness-weights config)
+              clean! (remove-ns (ns-name tmp-ns))
+              
+              ; directive-count-score (directive-count-measure templategroup)
+              ; If > 0, we have more false positives ; if < 0, we have more false negatives
+              ; false-bias (- (count (falsep matches verifiedmatches)) (count (falsen matches verifiedmatches)))
+              ; dirscore (/ 1 (inc (* 1/2 (count-directives templategroup))))
+              ; lengthscore (/ 1 (template-size templategroup))
+              ]
+          [(+
+             (* (nth weights 0) fscore)
+             (* (nth weights 1) partialscore))
+           [fscore partialscore 0 0]])
+        (:thread-group config)))))

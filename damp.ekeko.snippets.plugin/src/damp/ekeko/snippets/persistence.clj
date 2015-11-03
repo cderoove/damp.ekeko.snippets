@@ -308,8 +308,9 @@
   (let [;bypassing astnode/*ast-for-newlycreatednodes* for performance reasons
        associnfo (remove-implicit-opbindings (snippet-associativeinfo snippet)) ;do not want implicit subject operand of directive bindings
        root (snippet/snippet-root snippet)
-       newast (AST/newAST damp.ekeko.JavaProjectModel/JLS) 
+       newast (AST/newAST damp.ekeko.JavaProjectModel/JLS)
        newroot (ASTNode/copySubtree ^AST newast root)
+       ;newroot (ASTNode/copySubtree ^AST astnode/*ast-for-newlycreatednodes* root)
        anchor (snippet/snippet-anchor snippet)]
     (snippet-from-node-and-persisted-associativeinfo newroot associnfo anchor))) 
   

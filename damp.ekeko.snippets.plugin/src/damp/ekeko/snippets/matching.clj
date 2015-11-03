@@ -2044,7 +2044,10 @@ damp.ekeko.snippets.matching
   jdt-node-as-snippet)
 
 
-(def ^:dynamic *partial-matching* false)
+(def ^:dynamic *partial-matching* true)
+
+(def ^:dynamic node-count (atom 0))
+@node-count
 
 (defn 
   snippet-node-conditions|withoutfresh
@@ -2053,6 +2056,7 @@ damp.ekeko.snippets.matching
   ([snippet ast-or-list]
     (snippet-node-conditions|withoutfresh snippet ast-or-list identity))
   ([snippet ast-or-list bounddirectivesfilterf]
+    (swap! node-count inc)
     (let [matchvar
           (str (snippet/snippet-var-for-node snippet ast-or-list))
           bounddirectives
@@ -2105,6 +2109,7 @@ damp.ekeko.snippets.matching
       (snippet-node-matchvars snippet value))))   
   
     
+
 (defn
   snippet-node-conditions
   "Returns a list of logic conditions that will retrieve matches for the node and its children."
@@ -2163,7 +2168,8 @@ damp.ekeko.snippets.matching
                                              (astnode/methoddeclaration? val)
                                              (-> children
                                                (move-child-to-back "body")
-                                               (remove-children ["extraDimensions2" "javadoc"]))
+                                               ; (remove-children ["extraDimensions2" "javadoc"]) ; Hm maybe not.. it messes up partial matching since now nodes are missing..
+                                               )
                                              :else
                                              children)
                                        ]

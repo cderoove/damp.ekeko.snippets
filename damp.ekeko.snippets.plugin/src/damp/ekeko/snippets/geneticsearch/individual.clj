@@ -96,6 +96,7 @@
 ;                (inspector-jay.core/inspect [id individual e])
 ;                (-> errors (.add [id individual e]))
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
+                
                 (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 

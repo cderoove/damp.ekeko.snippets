@@ -184,6 +184,12 @@ damp.ekeko.snippets.operatorsrep
     (applicability|node snippetgroup snippet value)
     (astnode/statement? value)))
 
+(defn applicability|non-block-stmt
+  [snippetgroup snippet value]
+  (and 
+    (applicability|stmt snippetgroup snippet value)
+    (not (astnode/block? value))))
+
 (defn applicability|replace-parent-stmt
   "The replace-parent-stmt operator can only be applied to Statements, whose grandparent isn't a MethodDeclaration."
   [snippetgroup snippet value]
@@ -565,7 +571,7 @@ damp.ekeko.snippets.operatorsrep
 
 (defn 
   operator-description 
-  "Returns descroption of given operator."
+  "Returns description of given operator."
   [operator]
   (:description operator))
 
@@ -1181,7 +1187,7 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Isolate statement in block."
      opscope-subject
-     applicability|stmt 
+     applicability|non-block-stmt ; TODO Parent should be a block.. not the case in a single-stmt if/else-branch..
      "Removes all other statements in this block and adds set matching to the block."
      []
      false)
@@ -1192,7 +1198,7 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Isolate statement in method."
      opscope-subject
-     applicability|stmt 
+     applicability|non-block-stmt 
      "Replaces the entire method body by just this statement, adds set matching to the body, and child* to the selected statement."
      []
      false)
@@ -1668,6 +1674,33 @@ damp.ekeko.snippets.operatorsrep
                                                         snippetgroup)))))
 
 
+(defn apply-operator-to-root
+  [templategroup snippet id]
+  (let [operator (some 
+                   (fn [op] (if (= (operator-id op) id) op))
+                   (registered-operators))
+        subject (snippet/snippet-root snippet)
+        bindings (make-implicit-operandbinding-for-operator-subject templategroup snippet subject operator)]
+    (apply-operator-to-snippetgroup templategroup snippet subject operator [bindings])))
+
+
+(defn apply-operator-to-all-roots
+  [templategroup operator-id]
+  (loop [tg templategroup
+         snippets (snippetgroup/snippetgroup-snippetlist templategroup)]
+    (if (empty? snippets)
+      tg
+      (let [snippet (first snippets)]
+        (recur 
+          (apply-operator-to-root tg snippet operator-id)
+          (rest snippets))))))
+
+(defn preprocess-templategroup
+  [templategroup]
+  (-> templategroup
+    (apply-operator-to-all-roots "erase-comments")
+    (apply-operator-to-all-roots "ignore-comments")
+    (apply-operator-to-all-roots "ignore-absentvalues")))
 
 
 

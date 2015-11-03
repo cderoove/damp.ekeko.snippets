@@ -2,7 +2,8 @@
   ^{:doc "Auxiliary functions for snippet-driven querying."
     :author "Coen De Roover, Siltvani, Tim Molderez."}
   damp.ekeko.snippets.util
-  (:require [damp.ekeko.jdt [astnode :as astnode]])
+  (:require [damp.ekeko.jdt [astnode :as astnode]]
+            [damp.ekeko.workspace [workspace :as ws]])
   (:import 
     (java.util.concurrent TimeoutException TimeUnit FutureTask)
     (clojure.lang LispReader$ReaderException)
@@ -11,7 +12,8 @@
            [org.eclipse.ui PlatformUI IWorkingSet IWorkingSetManager]
            [org.eclipse.core.runtime.jobs Job]
            [org.eclipse.core.runtime Status Path]
-           [damp.ekeko EkekoModel JavaProjectModel ProjectModel])
+           ;[damp.ekeko EkekoModel JavaProjectModel ProjectModel]
+           )
   )
 
 (defn
@@ -193,7 +195,7 @@
    @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
    @return a list of cnt viable results"
   [cnt func test-func thread-group]
-  (pmap-group
+  (pmap
     (fn [idx]
       (loop []
        (let [result (func)]
@@ -201,8 +203,18 @@
          (if (test-func result)
            result 
            (recur)))))
-    (range 0 cnt)
-    thread-group))
+    (range 0 cnt))
+;  (pmap-group
+;    (fn [idx]
+;      (loop []
+;       (let [result (func)]
+;         (print ".")
+;         (if (test-func result)
+;           result 
+;           (recur)))))
+;    (range 0 cnt)
+;    thread-group)
+  )
 
 (defn average
   "Calculate the average in a collection of numbers"
@@ -335,3 +347,91 @@
     (throw (new Exception))
     (catch Exception e
       (.printStackTrace e))))
+
+(defn metaspace-usage []
+  (let [mx-beans (java.lang.management.ManagementFactory/getMemoryPoolMXBeans)]
+    (some (fn [mx-bean]
+            (if (= "Metaspace" (.getName mx-bean))
+              (.getUsage mx-bean)))
+          mx-beans)))
+
+(defn metaspace-almost-full? []
+  "Does the allocated Java metaspace size come close to its maximum size?"
+  (let [usage (metaspace-usage)
+        filled (/ (.getCommitted usage) (.getMax usage))] 
+    (> filled 0.8)))
+
+(defn eval-in-ns 
+  "Performs an eval in another namespace."
+  [expr namespace]
+  (binding [*ns* namespace] 
+    (eval '(+ 1 1))))
+
+(defn eval-in-ns [expr namespace]
+  (binding [*ns* namespace]
+    (eval expr))
+  
+;         (let [cur *ns*]
+;           (try ; needed to prevent failures in the eval code from skipping ns rollback
+;             (ns namespace)   
+;             (eval expr)
+;             (finally 
+;               (in-ns (ns-name cur)))))
+         )
+
+(defn gen-ns
+  "Generate a new namespace (with a random name)"
+  []
+  (let [namespace (create-ns (gensym "gen-ns-"))]
+    (eval-in-ns '(clojure.core/use 'clojure.core) namespace)
+    namespace))
+
+;(defn reset-protocol-cache []
+;  (doseq [protocol
+;          [clojure.core.logic.protocols/IUninitialized
+;           damp.ekeko.logic/ISupportContains
+;           damp.ekeko.jdt.astbindings/IResolveToFieldBinding
+;           damp.ekeko.jdt.astbindings/IResolveToMethodBinding
+;           astnode/IHasProperties
+;           astnode/IHasOwner
+;           astnode/IAST
+;           astnode/IIdentifiesProjectValue
+;           ]]
+;    (-reset-methods protocol)))
+
+;(defn protocol? [x]
+;  (and (instance? clojure.lang.PersistentArrayMap x)
+;       (boolean (:on-interface x))))
+
+;(defn protocols
+;  "Get a seq of protocols in the given namespace."
+;  ([namespace]
+;    (binding [*ns* (if (symbol? namespace)
+;                     (find-ns namespace)
+;                     namespace)]
+;      (doall (filter protocol?
+;                     (map var-get
+;                          (filter var?
+;                                  (map second
+;                                       (ns-map *ns*))))))))
+;  ([]
+;    (protocols *ns*)))
+
+;(defonce simple-protocol-cache-cleaner
+;  ;; Starts a simple daemon thread that purges the caches for all protocols in the current namespace.
+;  (let [interval 1000 ;; ms
+;        ps (protocols *ns*)]
+;    (doto (new Thread (fn []
+;                        (loop [i 0]
+;                          (doseq [p ps] (-reset-methods p))
+;                          (Thread/sleep interval)
+;                          (recur (inc i)))))
+;      (.setDaemon true)
+;      (.start))))
+
+;(defn clean-protocol-cache [ps]
+;  (doseq [p ps] (-reset-methods p)))
+
+;(comment
+;  (doseq [ns (all-ns)]
+;            (clean-protocol-cache (protocols ns))))

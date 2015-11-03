@@ -281,7 +281,14 @@
            ~@additionalconditions)))))
 
 
-
+(defn query-by-snippetgroup-noeval
+  ([snippetgroup launchersymbol]
+    (query-by-snippetgroup-noeval snippetgroup launchersymbol '() '() false))
+  ([snippetgroup launchersymbol additionalconditions additionalrootvars hideuservars]
+    (let [qinfo (snippetgroup-snippetgroupqueryinfo snippetgroup)
+          defines (:preddefs qinfo)
+          query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
+      [defines query])))
 
 (defn
   query-by-snippetgroup
