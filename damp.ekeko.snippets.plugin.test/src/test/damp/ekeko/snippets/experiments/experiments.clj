@@ -108,7 +108,7 @@
                                     ["add-directive-equals"
                                      "add-directive-invokes"
                                      "add-directive-overrides"
-                                     "remove-node"
+                                     ;"remove-node"
                                      ;"consider-set|lst"
                                      ;"isolate-stmt-in-method"
                                      "replace-by-variable"

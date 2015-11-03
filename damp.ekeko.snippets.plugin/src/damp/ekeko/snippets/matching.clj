@@ -1242,9 +1242,8 @@ damp.ekeko.snippets.matching
 (defn
   constrain-identity
   "Does nothing."
-  [snippet-ast var-string]
-  (fn [snippet]
-    `()))
+  [snippet-ast]
+  (fn [snippet] `()))
 
 (declare directive-replacedbywildcard)
 (declare directive-replacedbywildcard-checked)
