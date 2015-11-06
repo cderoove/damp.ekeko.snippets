@@ -14,12 +14,15 @@
          "-Declipse.pde.launch=true"
          "-Declipse.p2.data.area=@config.dir/p2"
          "-Dfile.encoding=UTF-8"
+         
+         ; Eclipse Mars params .. doesn't work! (on OS X) Once Eclipse starts, it quits on SWT invalid thread access .. used to be fixed with -XstartOnFirstThread VM param, but that doesn't seem to work
          ;"-Xbootclasspath/p:/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.jdt.debug_3.9.0.v20150528-1838/jdi.jar"
          ;"-classpath" "/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.equinox.launcher_1.3.100.v20150511-1540.jar" "org.eclipse.equinox.launcher.Main"
+         
          "-Xbootclasspath/p:/Applications/eclipse/plugins/org.eclipse.jdt.debug_3.8.102.v20150115-1323/jdi.jar"
          "-classpath" "/Applications/eclipse/plugins/org.eclipse.equinox.launcher_1.3.0.v20140415-2008.jar" "org.eclipse.equinox.launcher.Main"
          "-os" "macosx" "-ws" "cocoa" "-arch" "x86_64" "-nl" "en_US"
-         "-consoleLog" "-version" "3" 
+         "-consoleLog" "-version" "3"
          "-port" (str port)
          "-testLoaderClass" "org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader"
          "-loaderpluginname" "org.eclipse.jdt.junit4.runtime"
@@ -86,8 +89,8 @@
    @param experiment-name    Experiment results will be written to a folder with this name
    @param resume             If false, we're starting an experiment from scratch. If true, we're resuming the experiment based on the output files that were already written.
 
-  !! Make sure in advance there is an Ekeko/X editor opened in the runtime Eclipse.. 
-  (This will trigger the Ekeko/X namespaces to be loaded. If this is postponed to when the experiment starts, you run into 'method code too large' errors for some reason...)"
+  !! Make sure in advance an Ekeko/X editor is opened in the runtime Eclipse. 
+  (This will trigger the Ekeko/X namespaces to be loaded. If this is postponed until the experiment, you run into 'method code too large' errors for some reason...)"
   [experiment-name resume]
   (let [workspace-folder "/Users/soft/Documents/workspace-runtime2/"
         config-path (str workspace-folder "experiment-config.txt")
@@ -114,4 +117,4 @@
     ))
 
 (comment
-  (launch-experiment "JHotDraw-TemplateMethod-Experiment" false))
+  (launch-experiment "JHotDraw-TemplateMethod-Experiment" true))

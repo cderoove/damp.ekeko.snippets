@@ -216,7 +216,7 @@
                                         (do
                                           (into #{} (util/eval-in-ns query tmp-ns))
                                           (new-match)
-                                          (util/dbg (partialmatch-score node-count))))
+                                          (partialmatch-score node-count)))
                                       )
                                     partialmodels))
                     (count partialmodels))

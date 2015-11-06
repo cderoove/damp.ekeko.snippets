@@ -24,6 +24,7 @@ damp.ekeko.snippets.matching
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
     [org.eclipse.jdt.core.dom ASTNode MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
+(declare directive-equals)
 
 ;;These expose flaws in the query generation process
 (defn
@@ -1068,6 +1069,13 @@ damp.ekeko.snippets.matching
                directive-replacedbyvariable)]
       (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1))))))
 
+(defn 
+  snippet-equals-var-for-node 
+  "If this node has an @equals directive, return its operand value"
+  [snippet node]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
+    (if-let [replaced-bd (directives/bounddirective-for-directive bds directive-equals)]
+      (symbol (directives/directiveoperandbinding-value (nth (directives/bounddirective-operandbindings replaced-bd) 1))))))
 
 (declare directive-replacedbyexp)
 
@@ -1279,6 +1287,15 @@ damp.ekeko.snippets.matching
             :default
             (throw (Exception. (str "Don't know how to walk this value:" val)))))]
     (walk node)))
+
+
+(defn reachable-nodes-of-type
+  "Among all reachable nodes, find those of a particular type"
+  [snippet node types]
+  (filter 
+    (fn [node] (if (some #{(astnode/ekeko-keyword-for-class-of node)} types)
+                 node))
+    (reachable-nodes snippet node)))
 
 (defn node-protected?
   [snippet val]

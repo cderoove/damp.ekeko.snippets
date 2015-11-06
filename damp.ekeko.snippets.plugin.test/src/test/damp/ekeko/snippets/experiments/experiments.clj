@@ -89,70 +89,41 @@
 (deftest
   ^{:doc "Template method in JHotdraw"}
   jh-template-method
-  (let [tg (new ThreadGroup "invokedby")]
+  (let [tg (new ThreadGroup "invokedby")
+        config {:max-generations 1200
+                :match-timeout 4800000
+                :fitness-weights [18/20 2/20 0/20]
+                :fitness-threshold 0.95
+                :population-size 50
+                :quick-matching true
+                :partial-matching true
+                :selection-weight 1/4
+                :mutation-weight 3/4
+                :crossover-weight 0/4
+                :tournament-rounds 7
+                :mutation-operators (filter 
+                                      (fn [op]
+                                        (some #{(operatorsrep/operator-id op)} 
+                                              [; "add-directive-equals"
+                                               "add-directive-invokes"
+                                               "add-directive-overrides"
+                                               ;"remove-node"
+                                               ;"consider-set|lst"
+                                               ;"isolate-stmt-in-method"
+                                               ;"replace-by-variable"
+                                               "replace-by-wildcard"]))
+                                      (operatorsrep/registered-operators))
+                :thread-group tg
+                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--Custom-fast-partial/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
-      {:max-generations 1200
-      :match-timeout 480000
-      :fitness-weights [18/20 2/20 0/20]
-      :fitness-threshold 0.95
-      :population-size 50
-      :quick-matching false
-      :selection-weight 1/4
-      :mutation-weight 3/4
-      :crossover-weight 0/4
-      :tournament-rounds 7
-      :mutation-operators (filter 
-                            (fn [op]
-                              (some #{(operatorsrep/operator-id op)} 
-                                    ["add-directive-equals"
-                                     "add-directive-invokes"
-                                     "add-directive-overrides"
-                                     ;"remove-node"
-                                     ;"consider-set|lst"
-                                     ;"isolate-stmt-in-method"
-                                     "replace-by-variable"
-                                     "replace-by-wildcard"]))
-                            (operatorsrep/registered-operators))
-      :thread-group tg
-      :output-dir (slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")}
-     ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/10.ekt"
-      "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"
-      "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"]
-     ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"])
-;    (run-experiment-with-initial-pop
-;     (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw")
-;     [["-1685183065-AbstractFigure.ekt" "-2090076616-PolygonFigure.ekt"]
-;      ["-1685183065-AbstractFigure.ekt" "1655477502-ImageFigure.ekt"]
-;      ["2098468581-AttributeFigure.ekt" "-2090076616-PolygonFigure.ekt"]
-;      ["2098468581-AttributeFigure.ekt" "1655477502-ImageFigure.ekt"]]
-;     "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"
-;     [(pmart/projects :jhotdraw)]
-;     {:max-generations 400
-;      :match-timeout 240000
-;      :fitness-weights [18/20 2/20 0/20]
-;      :fitness-threshold 0.95
-;      :population-size 50
-;      :selection-weight 1/4
-;      :mutation-weight 3/4
-;      :crossover-weight 0/4
-;      :tournament-rounds 7
-;      :mutation-operators (filter 
-;                            (fn [op]
-;                              (some #{(operatorsrep/operator-id op)} 
-;                                    ["add-directive-equals"
-;                                     "add-directive-invokes"
-;                                     "add-directive-overrides"
-;                                     ;"consider-set|lst"
-;                                     "isolate-stmt-in-method"
-;                                     "replace-by-variable"
-;                                     "replace-by-wildcard"]))
-;                            (operatorsrep/registered-operators))
-;      :thread-group tg
-;      :output-dir (slurp "/Users/soft/Documents/workspace-runtime/experiment-config.txt")
-;      })
+      config
+      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/10.ekt"
+       "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"]
+      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"])
     
-    ))                    
+    ))
 
 (deftest test-suite 
   (jh-template-method) 
@@ -165,4 +136,18 @@
 
 (comment  
   ; Example repl session 
-  (run-tests))
+  (run-tests)
+  
+  ; Compute the fitness of one file
+  (do
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"))
+    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
+    (def matches (into [] (fitness/templategroup-matches solution)))
+    (def verifiedmatches (search/make-verified-matches matches []))
+    (search/templategroup-fitness 
+      templategroup
+      verifiedmatches
+      :match-timeout 480000
+      :fitness-weights [18/20 2/20 0/20]
+      :quick-matching true
+      :partial-matching false)))

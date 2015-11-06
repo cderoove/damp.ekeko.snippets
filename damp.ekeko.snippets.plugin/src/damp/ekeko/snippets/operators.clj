@@ -945,7 +945,7 @@ damp.ekeko.snippets.operators
                       (fn [nodebinding]
                         (or (.isEqualTo bindingtoresolveto nodebinding)
                             (and (astnode/binding-method? nodebinding)
-                                 (.overrides nodebinding bindingtoresolveto)))))
+                                (.overrides nodebinding bindingtoresolveto)))))
                     lowestlevelresolvingnodes
                     (withoutimmediateparents template resolvingnodes)]
                 [;new template

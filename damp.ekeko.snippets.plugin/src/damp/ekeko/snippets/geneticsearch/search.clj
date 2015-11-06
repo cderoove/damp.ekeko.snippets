@@ -207,6 +207,36 @@
         (eval (read-string (str "matching/" directive-func-name))))
       (catch Exception e nil))))
 
+(defn- gen-operand-values
+  "Generates valid operand values for a given template group
+   Returns a pair with the operand values, and an updated template group
+   (In some cases we will add an equals directive to match an operand value, which is why the template group may be modified.)"
+  [tgroup operator types]
+  (let [opnodes-per-snippet ; Possible operand nodes found in each snippet 
+        (remove
+          (fn [[snip nodes]] (empty? nodes))
+          (for [snip (snippetgroup/snippetgroup-snippetlist tgroup)]
+            [snip (matching/reachable-nodes-of-type snip (snippet/snippet-root snip) types)]))]
+    (if (empty? opnodes-per-snippet)
+      [[] tgroup]
+      (let [[snip opnodes] (rand-nth opnodes-per-snippet)
+            opnode (rand-nth opnodes)
+            
+            ; Now check whether opnode is replaced by a metavar, or has an equals directive
+            replacement-var (matching/snippet-replacement-var-for-node snip opnode)
+            eq-var (matching/snippet-equals-var-for-node snip opnode)
+            
+            node-var (cond
+                       (not (nil? replacement-var)) replacement-var
+                       (not (nil? eq-var)) eq-var
+                       :else (str (util/gen-lvar)))
+            
+            new-tgroup (if (and (nil? replacement-var) (nil? eq-var))
+                         (let [new-snip (operators/add-directive-equals snip opnode (str node-var))]
+                           (snippetgroup/replace-snippet tgroup snip new-snip))
+                         tgroup)]
+        [[[node-var]] new-tgroup]))))
+
 (defn
   mutate
   "Perform a mutation operation on a template group. A random node is chosen among the snippets,
@@ -215,8 +245,9 @@
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
         operator-bias (nth (individual/individual-fitness-components individual) 3)
-        snippet (rand-snippet group-copy)
         
+        snippetno (rand-nth (range 0 (count (snippetgroup/snippetgroup-snippetlist group-copy))))
+        snippet (nth (snippetgroup/snippetgroup-snippetlist group-copy) snippetno)
         pick-operator
         (fn []
           (let [
@@ -247,49 +278,43 @@
                                       (not (boolean
                                              (directives/bounddirective-for-directive
                                                (snippet/snippet-bounddirectives-for-node snippet node)
-                                               (operator-directive (operatorsrep/operator-id operator)))))))
-                                  (matching/reachable-nodes snippet (snippet/snippet-root snippet)))
-;                all-valid-nodes (case (operatorsrep/operator-id operator)
-;                                  "generalize-types" (filter (fn [x] (or 
-;                                                                       (= "Debug" (.toString x))
-;                                                                       (= "CodeGenerator" (.toString x))
-;                                                                       (= "HTMLComponentFactory" (.toString x))
-;                                                                       )) all-valid-nodes1)
-;                                  "generalize-references" (filter (fn [x] (or 
-;                                                                            (= "factory" (.toString x))
-;                                                                            (= "singleton" (.toString x))
-;                                                                            (= "singleton=null" (.toString x)))) all-valid-nodes1)
-;                                  "replace-by-wildcard" (filter (fn [x]
-;                                                                  (and
-;                                                                    (or
-;                                                                      true
-;                                                                      (= "private" (.toString x)))
-;                                                                    (not= EkekoAbsentValueWrapper (class x)))) all-valid-nodes1)
-;                                  all-valid-nodes1 
-;                                  )
-                ]
+                                               (operator-directive (operatorsrep/operator-id operator)))))
+                                      ))
+                                  (matching/reachable-nodes snippet (snippet/snippet-root snippet)))]
             (if (empty? all-valid-nodes)
               (recur) ; Try again if there are no valid subjects..
               (let [subject (rand-nth all-valid-nodes)
                     operands (operatorsrep/operator-operands operator)
-                    possiblevalues (for [operand operands]
-                                     (operatorsrep/possible-operand-values|valid snippetgroup snippet subject operator operand))]
+                    op-id (operatorsrep/operator-id operator)
+                    [possiblevalues updated-group]
+                    (cond 
+                      (= op-id "add-directive-invokedby")
+                      (gen-operand-values group-copy operator [:MethodInvocation :SuperMethodInvocation])
+                      (= op-id "add-directive-invokes")
+                      (gen-operand-values group-copy operator [:MethodDeclaration])
+                      (= op-id "add-directive-overrides")
+                      (gen-operand-values group-copy operator [:MethodDeclaration])
+                      :else
+                      [(for [operand operands] (operatorsrep/possible-operand-values|valid group-copy snippet subject operator operand))
+                       group-copy])
+                    ]
                 (if (every? (fn [x] (not (empty? x))) possiblevalues)
-                [operator subject operands (for [vals possiblevalues] (rand-nth vals))]
+                [operator subject operands (for [vals possiblevalues] (rand-nth vals)) updated-group]
                 (recur)))))) ; Try again if there are operands with no possible values..
         
-        [operator value operands operandvalues]
-        (pick-operator)
+        [operator value operands operandvalues updated-group] (pick-operator)
+        
+        new-snippet (nth (snippetgroup/snippetgroup-snippetlist updated-group) snippetno) ; Cannot reuse snippet because it might've been replaced!!
         
         bindings
         (cons
-          (operatorsrep/make-implicit-operandbinding-for-operator-subject group-copy snippet value operator)
+          (operatorsrep/make-implicit-operandbinding-for-operator-subject updated-group new-snippet value operator)
           (map (fn [operand operandval]
-                 (operatorsrep/make-binding operand group-copy snippet operandval))
+                 (operatorsrep/make-binding operand updated-group new-snippet operandval))
                operands
                operandvalues))]
     (individual/make-individual
-      (operatorsrep/apply-operator-to-snippetgroup group-copy snippet value operator bindings)
+      (operatorsrep/apply-operator-to-snippetgroup updated-group new-snippet value operator bindings)
       {:mutation-operator (conj (individual/individual-info individual :mutation-operator) (operatorsrep/operator-id operator))
        :mutation-node (conj (individual/individual-info individual :mutation-node) value)
        :mutation-opvals (conj (individual/individual-info individual :mutation-opvals) operandvalues)}
@@ -526,6 +551,15 @@
                     (:thread-group config))))
               @new-history))))))
 
+(defn templategroup-fitness
+  "Compute the fitness of a single template group"
+  [templategroup verifiedmatches & {:as conf}]
+  (let [config (merge config-default conf)
+        fitness ((:fitness-function config) verifiedmatches config)
+        ind (individual/make-individual templategroup)
+        new-ind (individual/compute-fitness ind fitness)]
+    {:fitness (individual/individual-fitness new-ind) :components (individual/individual-fitness-components new-ind)}))
+
 (comment
   (do 
     ; Don't uncomment this one, as it creates a dependency on the testing project..
@@ -602,26 +636,31 @@
   
   ; Test a particular mutation operator (on a random subject)
   (do
-    (def templategroup
-      (slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt"))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-                    (filter (fn [op] (= (operatorsrep/operator-id op) "isolate-stmt-in-method")) (operatorsrep/registered-operators))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-invokedby")) (operatorsrep/registered-operators))
                     ))
     
-    (persistence/snippetgroup-string (individual/individual-templategroup mutant))
-    (individual/compute-fitness (individual/make-individual templategroup) (fitness/make-fitness-function
-                                                                             (make-verified-matches 
-                                                                               (map
-                                                                                 (fn [x] (first (fitness/templategroup-matches x)))
-                                                                                 [(persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-1228449125.ekt")
-                                                                                  (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/-907843851.ekt")
-                                                                                  (persistence/slurp-from-resource "/resources/EkekoX-Specifications/singleton-mapperxml/29895102.ekt")])
-                                                                               [])
-                                                                             config-default))
+    (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
     nil)
   
   ; Test tournament selection 
   (select (population-from-snippets matches 10) 2)
+  
+  
+  
+  (do
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
+    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
+    (def matches (into [] (fitness/templategroup-matches templategroup)))
+    (def verifiedmatches (make-verified-matches matches []))
+    (templategroup-fitness 
+      templategroup
+      verifiedmatches
+      :match-timeout 480000
+      :fitness-weights [18/20 2/20 0/20]
+      :quick-matching true
+      :partial-matching true))
   )

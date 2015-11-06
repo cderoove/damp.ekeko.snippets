@@ -790,7 +790,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive invokes."
      opscope-subject
-     applicability|methodinvocationorname
+     applicability|methodinvocation ;applicability|methodinvocationorname
      "Requires matches to invoke the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -801,7 +801,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive invoked-by."
      opscope-subject
-     applicability|methoddeclarationorname
+     applicability|methoddeclaration ;applicability|methoddeclarationorname
      "Requires matches to be invoked by the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
