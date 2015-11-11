@@ -359,7 +359,7 @@ damp.ekeko.snippets.operatorsrep
   applicability|type
   [snippetgroup snippet node]
   (let [typeclasskeywords 
-        [:ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type]]
+        [:SimpleName :ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type]]
     (and
       (applicability|node snippetgroup snippet node)
       (or 
@@ -1750,17 +1750,22 @@ damp.ekeko.snippets.operatorsrep
   possible-operand-values
   opscope-variable
   [snippetgroup snippet node operator operand]
-  (if
-    (= (operator-id operator) "add-directive-equals")
-    [(util/gen-lvar)]
-    (let [uservars
-          (apply concat (map 
-                          matching/snippet-vars-among-directivebindings
-                          (snippetgroup/snippetgroup-snippetlist snippetgroup)))]
-      (if (empty? uservars)
-        [(util/gen-readable-lvar-for-value node)]
-        uservars))
-    ))
+  ; Pick among the existing uservars, or generate a new one
+  (conj (apply concat (map 
+                       matching/snippet-vars-among-directivebindings
+                       (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+        (util/gen-readable-lvar-for-value node))
+;  (if
+;    (= (operator-id operator) "add-directive-equals")
+;    [(util/gen-lvar)]
+;    (let [uservars
+;          (apply concat (map 
+;                          matching/snippet-vars-among-directivebindings
+;                          (snippetgroup/snippetgroup-snippetlist snippetgroup)))]
+;      (if (empty? uservars)
+;        [(util/gen-readable-lvar-for-value node)]
+;        uservars)))
+  )
 
 (defmethod
   possible-operand-values
