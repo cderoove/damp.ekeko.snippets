@@ -86,12 +86,116 @@
 ;      initial-pop)
 ;    [(slurp-from-resource verifiedmatches-ekt)]))
 
+
+(deftest
+  ^{:doc "Prototype in JHotdraw"}
+  jh-prototype
+  (let [tg (new ThreadGroup "Template-group")
+        config {:max-generations 1200
+                :match-timeout 240000
+                :fitness-weights [18/20 2/20 0/20]
+                :fitness-threshold 0.95
+                :population-size 30
+                :quick-matching false
+                :partial-matching true
+                :selection-weight 1/4
+                :mutation-weight 3/4
+                :crossover-weight 0/4
+                :tournament-rounds 7
+                :mutation-operators
+                (filter 
+                  (fn [op] 
+                    (some #{(operatorsrep/operator-id op)} 
+                          ["replace-by-variable"
+                           ;"replace-by-exp"
+                           "add-directive-equals"
+                           ;"add-directive-equivalent"
+                           ;"add-directive-protect" 
+                           "add-directive-invokes" 
+                           ;"add-directive-invokedby" 
+                           "add-directive-constructs" 
+                           ;"add-directive-constructedby" 
+                           ;"add-directive-overrides" 
+                           "add-directive-refersto" 
+                           ;"add-directive-referredby" 
+                           "add-directive-type" 
+                           ;"add-directive-type|qname" 
+                           ;"add-directive-type|sname" 
+                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+|qname" 
+                           ;"add-directive-subtype+|sname" 
+                           "add-directive-subtype*" 
+                           ;"add-directive-subtype*|qname" 
+                           ;"add-directive-subtype*|sname" 
+                           ;"restrict-scope-to-child" 
+                           ;"relax-scope-to-child+" 
+                           ;"relax-scope-to-child*" 
+                           ;"generalize-directive" 
+                           ;"remove-directive" 
+                           ;"relax-size-to-atleast" 
+                           ;"empty-body" 
+                           ;"or-block" 
+                           ;"relax-scope-to-member" 
+                           ;"add-directive-replace" 
+                           ;"add-directive-replace-value" 
+                           ;"add-directive-add-element" 
+                           ;"add-directive-insert-before" 
+                           ;"add-directive-insert-after" 
+                           ;"add-directive-remove-element" 
+                           ;"add-directive-remove-element-alt" 
+                           ;"add-directive-copy-node" 
+                           ;"add-directive-move-element" 
+                           "remove-node" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
+                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
+                           ;"isolate-stmt-in-method" 
+                           ;"isolate-expr-in-method" 
+                           ;"insert-node-before" 
+                           ;"insert-node-after" 
+                           ;"insert-node-at" 
+                           ;"replace-node" 
+                           ;"replace-value" 
+                           ;"erase-list" 
+                           ;"erase-comments" 
+                           ;"ignore-comments" 
+                           ;"ignore-absentvalues" 
+                           "replace-by-wildcard" 
+                           ;"replace-by-checked-wildcard" 
+                           ;"consider-regexp|list" 
+                           ;"consider-regexp|cfglist" 
+                           ;"update-multiplicity" 
+                           "consider-set|lst" 
+                           ;"include-inherited" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
+                           "generalize-references" 
+                           "generalize-types" 
+                           ;"generalize-types|qname" 
+                           ;"extract-template" 
+                           "generalize-invocations" 
+                           ;"generalize-constructorinvocations"
+                           ]))
+                  (operatorsrep/registered-operators))
+ 
+                :thread-group tg
+                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Prototype-Experiment--1/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                }]
+    (run-experiment-from-files
+      [(pmart/projects :jhotdraw)]
+      config
+      ["/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"]
+      ["/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/solution-final.ekt"])))
+
+
 (deftest
   ^{:doc "Template method in JHotdraw"}
   jh-template-method
-  (let [tg (new ThreadGroup "invokedby")
+  (let [tg (new ThreadGroup "Template-group")
         config {:max-generations 1200
-                :match-timeout 960000
+                :match-timeout 240000
                 :fitness-weights [18/20 2/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
@@ -107,7 +211,7 @@
                   (fn [op] 
                     (some #{(operatorsrep/operator-id op)} 
                           ["replace-by-variable"
-                           "replace-by-exp"
+                           ;"replace-by-exp"
                            "add-directive-equals"
                            ;"add-directive-equivalent"
                            ;"add-directive-protect" 
@@ -121,7 +225,7 @@
                            "add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+" 
                            ;"add-directive-subtype+|qname" 
                            ;"add-directive-subtype+|sname" 
                            "add-directive-subtype*" 
@@ -133,8 +237,8 @@
                            "generalize-directive" 
                            "remove-directive" 
                            ;"relax-size-to-atleast" 
-                           "empty-body" 
-                           "or-block" 
+                           ;"empty-body" 
+                           ;"or-block" 
                            ;"relax-scope-to-member" 
                            ;"add-directive-replace" 
                            ;"add-directive-replace-value" 
@@ -146,8 +250,8 @@
                            ;"add-directive-copy-node" 
                            ;"add-directive-move-element" 
                            "remove-node" 
-                           "replace-parent" 
-                           "replace-parent-stmt" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
                            ;"isolate-stmt-in-block" ; Bug in isolate-*? 
                            ;"isolate-stmt-in-method" 
                            ;"isolate-expr-in-method" 
@@ -156,7 +260,7 @@
                            ;"insert-node-at" 
                            ;"replace-node" 
                            ;"replace-value" 
-                           "erase-list" 
+                           ;"erase-list" 
                            ;"erase-comments" 
                            ;"ignore-comments" 
                            ;"ignore-absentvalues" 
@@ -167,16 +271,16 @@
                            ;"update-multiplicity" 
                            "consider-set|lst" 
                            "include-inherited" 
-                           "add-directive-orimplicit" 
-                           "add-directive-notnil" 
-                           "add-directive-orsimple" 
-                           "add-directive-orexpression" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
                            "generalize-references" 
                            "generalize-types" 
                            ;"generalize-types|qname" 
                            ;"extract-template" 
                            "generalize-invocations" 
-                           "generalize-constructorinvocations"
+                           ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
                 
@@ -214,7 +318,7 @@
 ;                           "replace-by-wildcard"]))
 ;                  (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--allops/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--allops5/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
@@ -230,7 +334,7 @@
   jh-observer
   (let [tg (new ThreadGroup "observer")
         config {:max-generations 1200
-                :match-timeout 960000
+                :match-timeout 360000
                 :fitness-weights [18/20 2/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
@@ -245,7 +349,7 @@
                   (fn [op] 
                     (some #{(operatorsrep/operator-id op)} 
                           ["replace-by-variable"
-                           "replace-by-exp"
+                           ;"replace-by-exp"
                            "add-directive-equals"
                            ;"add-directive-equivalent"
                            ;"add-directive-protect" 
@@ -259,7 +363,7 @@
                            "add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+" 
                            ;"add-directive-subtype+|qname" 
                            ;"add-directive-subtype+|sname" 
                            "add-directive-subtype*" 
@@ -271,8 +375,8 @@
                            "generalize-directive" 
                            "remove-directive" 
                            ;"relax-size-to-atleast" 
-                           "empty-body" 
-                           "or-block" 
+                           ;"empty-body" 
+                           ;"or-block" 
                            ;"relax-scope-to-member" 
                            ;"add-directive-replace" 
                            ;"add-directive-replace-value" 
@@ -284,8 +388,8 @@
                            ;"add-directive-copy-node" 
                            ;"add-directive-move-element" 
                            "remove-node" 
-                           "replace-parent" 
-                           "replace-parent-stmt" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
                            ;"isolate-stmt-in-block" ; Bug in isolate-*? 
                            ;"isolate-stmt-in-method" 
                            ;"isolate-expr-in-method" 
@@ -294,7 +398,7 @@
                            ;"insert-node-at" 
                            ;"replace-node" 
                            ;"replace-value" 
-                           "erase-list" 
+                           ;"erase-list" 
                            ;"erase-comments" 
                            ;"ignore-comments" 
                            ;"ignore-absentvalues" 
@@ -305,18 +409,95 @@
                            ;"update-multiplicity" 
                            "consider-set|lst" 
                            "include-inherited" 
-                           "add-directive-orimplicit" 
-                           "add-directive-notnil" 
-                           "add-directive-orsimple" 
-                           "add-directive-orexpression" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
                            "generalize-references" 
                            "generalize-types" 
                            ;"generalize-types|qname" 
                            ;"extract-template" 
                            "generalize-invocations" 
-                           "generalize-constructorinvocations"
+                           ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
+                
+;                (filter 
+;                  (fn [op] 
+;                    (some #{(operatorsrep/operator-id op)} 
+;                          ["replace-by-variable"
+;                           "replace-by-exp"
+;                           "add-directive-equals"
+;                           ;"add-directive-equivalent"
+;                           ;"add-directive-protect" 
+;                           "add-directive-invokes" 
+;                           ;"add-directive-invokedby" 
+;                           "add-directive-constructs" 
+;                           ;"add-directive-constructedby" 
+;                           "add-directive-overrides" 
+;                           "add-directive-refersto" 
+;                           ;"add-directive-referredby" 
+;                           "add-directive-type" 
+;                           ;"add-directive-type|qname" 
+;                           ;"add-directive-type|sname" 
+;                           "add-directive-subtype+" 
+;                           ;"add-directive-subtype+|qname" 
+;                           ;"add-directive-subtype+|sname" 
+;                           "add-directive-subtype*" 
+;                           ;"add-directive-subtype*|qname" 
+;                           ;"add-directive-subtype*|sname" 
+;                           ;"restrict-scope-to-child" 
+;                           ;"relax-scope-to-child+" 
+;                           ;"relax-scope-to-child*" 
+;                           "generalize-directive" 
+;                           "remove-directive" 
+;                           ;"relax-size-to-atleast" 
+;                           "empty-body" 
+;                           "or-block" 
+;                           ;"relax-scope-to-member" 
+;                           ;"add-directive-replace" 
+;                           ;"add-directive-replace-value" 
+;                           ;"add-directive-add-element" 
+;                           ;"add-directive-insert-before" 
+;                           ;"add-directive-insert-after" 
+;                           ;"add-directive-remove-element" 
+;                           ;"add-directive-remove-element-alt" 
+;                           ;"add-directive-copy-node" 
+;                           ;"add-directive-move-element" 
+;                           "remove-node" 
+;                           "replace-parent" 
+;                           "replace-parent-stmt" 
+;                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
+;                           ;"isolate-stmt-in-method" 
+;                           ;"isolate-expr-in-method" 
+;                           ;"insert-node-before" 
+;                           ;"insert-node-after" 
+;                           ;"insert-node-at" 
+;                           ;"replace-node" 
+;                           ;"replace-value" 
+;                           "erase-list" 
+;                           ;"erase-comments" 
+;                           ;"ignore-comments" 
+;                           ;"ignore-absentvalues" 
+;                           "replace-by-wildcard" 
+;                           ;"replace-by-checked-wildcard" 
+;                           ;"consider-regexp|list" 
+;                           ;"consider-regexp|cfglist" 
+;                           ;"update-multiplicity" 
+;                           "consider-set|lst" 
+;                           "include-inherited" 
+;                           "add-directive-orimplicit" 
+;                           "add-directive-notnil" 
+;                           "add-directive-orsimple" 
+;                           "add-directive-orexpression" 
+;                           "generalize-references" 
+;                           "generalize-types" 
+;                           ;"generalize-types|qname" 
+;                           ;"extract-template" 
+;                           "generalize-invocations" 
+;                           "generalize-constructorinvocations"
+;                           ]))
+;                  (operatorsrep/registered-operators))
                 
 ;                (filter 
 ;                  (fn [op] 
@@ -329,13 +510,13 @@
 ;                           ]))
 ;                  (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Observer-Experiment4/"
+                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Observer-Experiment5/"
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer3-light.ekt"]
-      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer-solution-light.ekt"])))
+      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer3.ekt"]
+      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer-solution.ekt"])))
 
 (deftest test-suite 
   (jh-template-method) 
