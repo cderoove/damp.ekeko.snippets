@@ -19,7 +19,7 @@
 
 (def experiment-config-default
   {:max-generations 50
-   :fitness-weights [19/20 1/20]
+   :fitness-weights [18/20 2/20]
    :match-timeout 30000
    :selection-weight 1/4
    :mutation-weight 2/4
@@ -28,19 +28,18 @@
    :tournament-rounds 7})
 
 (defn slurp-from-resource
-  "Retrieve a resource file"
+  "Retrieve a resource file, relative to the root of the damp.ekeko.snippets.plugin.test project"
   [pathrelativetobundle]
   (persistence/slurp-snippet (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
 
 (defn run-experiment
   "Given a set of verified matches, use the genetic search algorithm to find a template to match them all.
-   An initial population may also be specified. If not, the verified matches are used to fill the initial population.
+   An initial population may also be specified. If not, (part of) the verified matches are used to fill the initial population.
    @param projects             List of projects to be Ekeko-enabled. Each project is identified by its project name in Eclipse.
    @param config               Genetic search options map. This can be used to override the settings in experiment-config-default.
-   @param initial-population   Optional: List of template 
+   @param initial-population   Optional: 
    @param verified             List of template groups; their matches serve as the verified matches."
   ([projects config verified]
-    ; In this case, the verified matches are also used as initial population..
     (run-experiment projects config verified verified))
   ([projects config initial-population verified]
     (test/with-ekeko-disabled
@@ -67,25 +66,6 @@
     (run-experiment projects config
                     (map slurp-from-resource initial-population-ekt)
                     (map slurp-from-resource verifiedmatches-ekt))))
-
-;(defn run-experiment-with-initial-pop
-;  "Given an initial population, as a set of ekt files ; and a solution ekt (whose matches are the verified matches),
-;   perform genetic search to find a template that has the same matches as the solution ekt
-;   @param folder-name       Folder where to find the ekt files of the initial population
-;   @param intial-pop        List of ekt file names of the initial population
-;   @param verifiedmatch-ekt File path to the solution ekt
-;   @param projects          P-mart project names that should be Ekeko-enabled
-;   @param config            Genetic search config"
-;  [folder-name initial-pop verifiedmatches-ekt projects config]
-;  (run-experiment
-;    projects
-;    config
-;    (pmart/slurp-templategroups
-;      "Initial pop"
-;      folder-name
-;      initial-pop)
-;    [(slurp-from-resource verifiedmatches-ekt)]))
-
 
 (deftest
   ^{:doc "Prototype in JHotdraw"}
@@ -179,7 +159,6 @@
                            ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
- 
                 :thread-group tg
                 :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Prototype-Experiment--7/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
@@ -199,7 +178,7 @@
                 :fitness-weights [18/20 2/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
-                :quick-matching true
+                :quick-matching false
                 :partial-matching true
                 :selection-weight 1/4
                 :mutation-weight 3/4
@@ -283,40 +262,6 @@
                            ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
-                
-;                (filter 
-;                  (fn [op] 
-;                    (some #{(operatorsrep/operator-id op)} 
-;                          [
-;                           "replace-by-variable"
-;                           "replace-by-wildcard"
-;                           "add-directive-equals"
-;                           "add-directive-invokes"
-;                           ;"relax-scope-to-child*"
-;                           "consider-set|lst"
-;                           "add-directive-type"
-;                           "add-directive-refersto"
-;                           "add-directive-constructs"
-;                           "add-directive-overrides"
-;                           ;"generalize-references"
-;                           ;"generalize-types"
-;                           ;"generalize-invocations"
-;                           ;"generalize-constructorinvocations"
-;                           ]))
-;                  (operatorsrep/registered-operators))
-                
-;                (filter 
-;                  (fn [op]
-;                    (some #{(operatorsrep/operator-id op)} 
-;                          [; "add-directive-equals"
-;                           "add-directive-invokes"
-;                           "add-directive-overrides"
-;                           ;"remove-node"
-;                           ;"consider-set|lst"
-;                           ;"isolate-stmt-in-method"
-;                           ;"replace-by-variable"
-;                           "replace-by-wildcard"]))
-;                  (operatorsrep/registered-operators))
                 :thread-group tg
                 :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--allops5/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
@@ -325,9 +270,7 @@
       config
       ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/10.ekt"
        "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"]
-      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"])
-    
-    ))
+      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"])))
 
 (deftest
   ^{:doc "Observer in JHotdraw"}
@@ -421,94 +364,6 @@
                            ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
-                
-;                (filter 
-;                  (fn [op] 
-;                    (some #{(operatorsrep/operator-id op)} 
-;                          ["replace-by-variable"
-;                           "replace-by-exp"
-;                           "add-directive-equals"
-;                           ;"add-directive-equivalent"
-;                           ;"add-directive-protect" 
-;                           "add-directive-invokes" 
-;                           ;"add-directive-invokedby" 
-;                           "add-directive-constructs" 
-;                           ;"add-directive-constructedby" 
-;                           "add-directive-overrides" 
-;                           "add-directive-refersto" 
-;                           ;"add-directive-referredby" 
-;                           "add-directive-type" 
-;                           ;"add-directive-type|qname" 
-;                           ;"add-directive-type|sname" 
-;                           "add-directive-subtype+" 
-;                           ;"add-directive-subtype+|qname" 
-;                           ;"add-directive-subtype+|sname" 
-;                           "add-directive-subtype*" 
-;                           ;"add-directive-subtype*|qname" 
-;                           ;"add-directive-subtype*|sname" 
-;                           ;"restrict-scope-to-child" 
-;                           ;"relax-scope-to-child+" 
-;                           ;"relax-scope-to-child*" 
-;                           "generalize-directive" 
-;                           "remove-directive" 
-;                           ;"relax-size-to-atleast" 
-;                           "empty-body" 
-;                           "or-block" 
-;                           ;"relax-scope-to-member" 
-;                           ;"add-directive-replace" 
-;                           ;"add-directive-replace-value" 
-;                           ;"add-directive-add-element" 
-;                           ;"add-directive-insert-before" 
-;                           ;"add-directive-insert-after" 
-;                           ;"add-directive-remove-element" 
-;                           ;"add-directive-remove-element-alt" 
-;                           ;"add-directive-copy-node" 
-;                           ;"add-directive-move-element" 
-;                           "remove-node" 
-;                           "replace-parent" 
-;                           "replace-parent-stmt" 
-;                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
-;                           ;"isolate-stmt-in-method" 
-;                           ;"isolate-expr-in-method" 
-;                           ;"insert-node-before" 
-;                           ;"insert-node-after" 
-;                           ;"insert-node-at" 
-;                           ;"replace-node" 
-;                           ;"replace-value" 
-;                           "erase-list" 
-;                           ;"erase-comments" 
-;                           ;"ignore-comments" 
-;                           ;"ignore-absentvalues" 
-;                           "replace-by-wildcard" 
-;                           ;"replace-by-checked-wildcard" 
-;                           ;"consider-regexp|list" 
-;                           ;"consider-regexp|cfglist" 
-;                           ;"update-multiplicity" 
-;                           "consider-set|lst" 
-;                           "include-inherited" 
-;                           "add-directive-orimplicit" 
-;                           "add-directive-notnil" 
-;                           "add-directive-orsimple" 
-;                           "add-directive-orexpression" 
-;                           "generalize-references" 
-;                           "generalize-types" 
-;                           ;"generalize-types|qname" 
-;                           ;"extract-template" 
-;                           "generalize-invocations" 
-;                           "generalize-constructorinvocations"
-;                           ]))
-;                  (operatorsrep/registered-operators))
-                
-;                (filter 
-;                  (fn [op] 
-;                    (some #{(operatorsrep/operator-id op)} 
-;                          [
-;                           "replace-by-wildcard"
-;                           "add-directive-type"
-;                           "add-directive-subtype*"
-;                           "remove-node"
-;                           ]))
-;                  (operatorsrep/registered-operators))
                 :thread-group tg
                 :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Observer-Experiment5/"
                 }]
@@ -519,28 +374,13 @@
       ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer-solution.ekt"])))
 
 (deftest test-suite 
-  (jh-template-method) 
-;   (let [proj "TestCase-TypeParameters"]
-;     (test/against-project-named proj false jh-template-method))
-)
+  (jh-template-method)
+  (jh-observer)
+  (jh-prototype))
 
 (defn test-ns-hook []
   (test/with-ekeko-disabled test-suite))
 
 (comment  
-  ; Example repl session 
-  (run-tests)
-  
-  ; Compute the fitness of one file
-  (do
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"))
-    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
-    (def matches (into [] (fitness/templategroup-matches solution)))
-    (def verifiedmatches (search/make-verified-matches matches []))
-    (search/templategroup-fitness 
-      templategroup
-      verifiedmatches
-      :match-timeout 480000
-      :fitness-weights [18/20 2/20 0/20]
-      :quick-matching true
-      :partial-matching false)))
+  ; Run *all* experiments (This will take several hours!)
+  (run-tests))
