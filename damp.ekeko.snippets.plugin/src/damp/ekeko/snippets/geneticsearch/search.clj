@@ -237,6 +237,47 @@
                          tgroup)]
         [[[node-var]] new-tgroup]))))
 
+(defn- gen-operand-values2
+  "Variant for subtype!! TODO Clean this duplicated mess up later..
+   Generates valid operand values for a given template group
+   Returns a pair with the operand values, and an updated template group
+   (In some cases we will add an equals directive to match an operand value, which is why the template group may be modified.)"
+  [tgroup operator types]
+  (let [opnodes-per-snippet ; Possible operand nodes found in each snippet 
+        (remove
+          (fn [[snip nodes]] (empty? nodes))
+          (for [snip (snippetgroup/snippetgroup-snippetlist tgroup)]
+            [snip (filter 
+                    (fn [node]
+                      (if (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
+                        (let [parent (snippet/snippet-node-parent|conceptually snip node)]
+                          (if (not (nil? parent))
+                            (= :TypeDeclaration (astnode/ekeko-keyword-for-class-of parent))
+                            false
+                            ))
+                        true)
+                      )
+                    (matching/reachable-nodes-of-type snip (snippet/snippet-root snip) types))]))]
+    (if (empty? opnodes-per-snippet)
+      [[] tgroup]
+      (let [[snip opnodes] (rand-nth opnodes-per-snippet)
+            opnode (rand-nth opnodes)
+            
+            ; Now check whether opnode is replaced by a metavar, or has an equals directive
+            replacement-var (matching/snippet-replacement-var-for-node snip opnode)
+            eq-var (matching/snippet-equals-var-for-node snip opnode)
+            
+            node-var (cond
+                       (not (nil? replacement-var)) replacement-var
+                       (not (nil? eq-var)) eq-var
+                       :else (str (util/gen-lvar)))
+            
+            new-tgroup (if (and (nil? replacement-var) (nil? eq-var))
+                         (let [new-snip (operators/add-directive-type snip opnode (str node-var))]
+                           (snippetgroup/replace-snippet tgroup snip new-snip))
+                         tgroup)]
+        [[[node-var]] new-tgroup]))))
+
 (defn
   mutate
   "Perform a mutation operation on a template group. A random node is chosen among the snippets,
@@ -294,6 +335,10 @@
                       (gen-operand-values group-copy operator [:MethodDeclaration])
                       (= op-id "add-directive-overrides")
                       (gen-operand-values group-copy operator [:MethodDeclaration])
+                      (= op-id "add-directive-subtype*")
+                      (gen-operand-values2 group-copy operator [:SimpleName :ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type])
+                      (= op-id "add-directive-subtype+")
+                      (gen-operand-values2 group-copy operator [:SimpleName :ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type])
                       :else
                       [(for [operand operands] (operatorsrep/possible-operand-values|valid group-copy snippet subject operator operand))
                        group-copy])
@@ -413,6 +458,7 @@
      output-dir (if (nil? (:output-dir config))
                   (str "evolve-" (util/current-date) "/")
                   (:output-dir config))
+
      ; If output-dir already contains previous generations, resume search from the last generation
      resume-generation (let [files (.list (clojure.java.io/file output-dir))
                              numbered-files (map (fn [file]
@@ -452,6 +498,7 @@
      tournament-size (:tournament-rounds config)]
     (util/make-dir output-dir)
     (util/append-csv csv-name csv-columns)
+;    (spit (str output-dir "config.txt") (pr-str config))
     
     (loop
       [generation resume-generation
@@ -636,10 +683,11 @@
   
   ; Test a particular mutation operator (on a random subject)
   (do
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
+    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--Custom-fast-partial5-moreops/34/individual-31.ekt"))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-invokedby")) (operatorsrep/registered-operators))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-subtype+")) (operatorsrep/registered-operators))
                     ))
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
@@ -649,8 +697,12 @@
   ; Test tournament selection 
   (select (population-from-snippets matches 10) 2)
   
+  ; Fetch all operator names
+  (inspector-jay.core/inspect
+    (map (fn [op] (operatorsrep/operator-id op))
+          (operatorsrep/registered-operators)))
   
-  
+  ; Calculate the fitness of one templategroup
   (do
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
     (def solution (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))

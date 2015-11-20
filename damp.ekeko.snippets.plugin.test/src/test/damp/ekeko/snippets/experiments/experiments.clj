@@ -92,16 +92,16 @@
   jh-prototype
   (let [tg (new ThreadGroup "Template-group")
         config {:max-generations 1200
-                :match-timeout 240000
+                :match-timeout 360000
                 :fitness-weights [18/20 2/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
-                :quick-matching false
+                :quick-matching true
                 :partial-matching true
                 :selection-weight 1/4
                 :mutation-weight 3/4
                 :crossover-weight 0/4
-                :tournament-rounds 7
+                :tournament-rounds 5
                 :mutation-operators
                 (filter 
                   (fn [op] 
@@ -116,7 +116,7 @@
                            "add-directive-constructs" 
                            ;"add-directive-constructedby" 
                            ;"add-directive-overrides" 
-                           "add-directive-refersto" 
+                           ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
                            "add-directive-type" 
                            ;"add-directive-type|qname" 
@@ -145,7 +145,7 @@
                            ;"add-directive-remove-element-alt" 
                            ;"add-directive-copy-node" 
                            ;"add-directive-move-element" 
-                           "remove-node" 
+                           ;"remove-node" 
                            ;"replace-parent" 
                            ;"replace-parent-stmt" 
                            ;"isolate-stmt-in-block" ; Bug in isolate-*? 
@@ -165,23 +165,23 @@
                            ;"consider-regexp|list" 
                            ;"consider-regexp|cfglist" 
                            ;"update-multiplicity" 
-                           "consider-set|lst" 
+                           ;"consider-set|lst" 
                            ;"include-inherited" 
                            ;"add-directive-orimplicit" 
                            ;"add-directive-notnil" 
                            ;"add-directive-orsimple" 
                            ;"add-directive-orexpression" 
-                           "generalize-references" 
-                           "generalize-types" 
+                           ;"generalize-references" 
+                           ;"generalize-types" 
                            ;"generalize-types|qname" 
                            ;"extract-template" 
-                           "generalize-invocations" 
+                           ;"generalize-invocations" 
                            ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
  
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Prototype-Experiment--1/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Prototype-Experiment--7/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]

@@ -362,6 +362,13 @@ damp.ekeko.snippets.operatorsrep
         [:SimpleName :ArrayType :ParameterizedType :PrimitiveType :QualifiedType :SimpleType :UnionType :WildcardType :TypeParameter :Type]]
     (and
       (applicability|node snippetgroup snippet node)
+      (if (= :SimpleName (astnode/ekeko-keyword-for-class-of node))
+        (let [parent (snippet/snippet-node-parent|conceptually snippet node)]
+          (if (not (nil? parent))
+            (= :TypeDeclaration (astnode/ekeko-keyword-for-class-of parent))
+            false
+            ))
+        true)
       (or 
        (applicability|node-classkeywords snippetgroup snippet node typeclasskeywords)
        (applicability|absentvalue-classkeywords snippetgroup snippet node  typeclasskeywords)))))
