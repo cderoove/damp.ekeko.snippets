@@ -659,17 +659,6 @@
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   (inspector-jay.core/inspect templategroup)
   
-  ; Do matching in a temporary namespace
-  (let [tmp-ns (ns-name (util/gen-ns))
-        [defs query] (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko)
-        tmp (doseq [define defs] (util/eval-in-ns define tmp-ns))
-        results (into #{} (util/eval-in-ns query tmp-ns))]
-    (remove-ns tmp-ns)
-    results)
-  
-  (let [snip (first (snippetgroup/snippetgroup-snippetlist templategroup))]
-    (matching/node-protected? snip (rand-nth (matching/reachable-nodes snip (snippet/snippet-root snip)))))
-  
   ; Spit the matches of a group
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
   (spit-templategroup-matches templategroup "test-output6")

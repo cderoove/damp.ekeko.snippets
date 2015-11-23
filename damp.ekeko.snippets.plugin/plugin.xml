@@ -38,6 +38,11 @@
             id="damp.ekeko.snippets.commands.intended"
             name="Intended Results Editor">
       </command>
+      <command
+            category="damp.ekeko.snippets.commands"
+            id="damp.ekeko.snippets.commands.recommender"
+            name="Recommendation Editor">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -52,6 +57,10 @@
       <handler
             class="damp.ekeko.snippets.gui.IntendedResultsEditorCommandHandler"
             commandId="damp.ekeko.snippets.commands.intended">
+      </handler>
+      <handler
+            class="damp.ekeko.snippets.gui.RecommendationEditorCommandHandler"
+            commandId="damp.ekeko.snippets.commands.recommender">
       </handler>
    </extension>
    <extension
@@ -75,6 +84,11 @@
                   commandId="damp.ekeko.snippets.commands.intended"
                   icon="icons/spectacle.png"
                   label="Intended Results Editor">
+            </command>
+            <command
+                  commandId="damp.ekeko.snippets.commands.recommender"
+                  icon="icons/dna.png"
+                  label="Template Recommendation Editor">
             </command>
          </menu>
       </menuContribution>
@@ -121,7 +135,13 @@
             id="damp.ekeko.snippets.gui.IntendedResultsEditor"
             name="Intended Results Editor">
       </editor>
-      
+      <editor
+            class="damp.ekeko.snippets.gui.RecommendationEditor"
+            extensions="ekg"
+            icon="icons/dna.png"
+            id="damp.ekeko.snippets.gui.RecommendationEditor"
+            name="Template Recommendation Editor">
+      </editor>
    </extension>
    <extension
          point="org.eclipse.ui.elementFactories">

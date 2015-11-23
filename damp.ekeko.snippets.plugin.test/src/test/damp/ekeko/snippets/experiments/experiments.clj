@@ -70,7 +70,7 @@
 (deftest
   ^{:doc "Prototype in JHotdraw"}
   jh-prototype
-  (let [tg (new ThreadGroup "Template-group")
+  (let [tg (new ThreadGroup "Prototype")
         config {:max-generations 1200
                 :match-timeout 360000
                 :fitness-weights [18/20 2/20 0/20]

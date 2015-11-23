@@ -96,7 +96,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static Image IMG_OPERATOR_APPLY; 
 	
 	public static Image IMG_INTENDED_RESULTS;
-
+	public static Image IMG_RECOMMENDATION;
 
 	public static Image IMG_NEGATIVE_EXAMPLE;
 	public static Image IMG_POSITIVE_EXAMPLE;
@@ -135,6 +135,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_OPERATOR_APPLY = getImageDescriptor("icons/tick.png").createImage();
 		
 		IMG_INTENDED_RESULTS = getImageDescriptor("icons/spectacle.png").createImage();
+		IMG_RECOMMENDATION = getImageDescriptor("icons/dna.png").createImage();
 
 		IMG_POSITIVE_EXAMPLE = getImageDescriptor("icons/plus-white.png").createImage();
 		IMG_NEGATIVE_EXAMPLE = getImageDescriptor("icons/minus-white.png").createImage();

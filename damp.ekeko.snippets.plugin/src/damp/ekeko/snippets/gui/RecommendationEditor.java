@@ -8,6 +8,23 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.eclipse.birt.chart.model.Chart;
+import org.eclipse.birt.chart.model.ChartWithAxes;
+import org.eclipse.birt.chart.model.attribute.ChartDimension;
+import org.eclipse.birt.chart.model.attribute.LegendItemType;
+import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
+import org.eclipse.birt.chart.model.component.Axis;
+import org.eclipse.birt.chart.model.component.Series;
+import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
+import org.eclipse.birt.chart.model.data.NumberDataSet;
+import org.eclipse.birt.chart.model.data.SeriesDefinition;
+import org.eclipse.birt.chart.model.data.TextDataSet;
+import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
+import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
+import org.eclipse.birt.chart.model.data.impl.TextDataSetImpl;
+import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
+import org.eclipse.birt.chart.model.type.BarSeries;
+import org.eclipse.birt.chart.model.type.impl.BarSeriesImpl;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.Action;
@@ -67,11 +84,11 @@ import baristaui.util.MarkerUtility;
 import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
-public class IntendedResultsEditor extends EditorPart {
-	public IntendedResultsEditor() {
+public class RecommendationEditor extends EditorPart {
+	public RecommendationEditor() {
 	}
 
-	public static final String ID = "damp.ekeko.snippets.gui.IntendedResultsEditor"; //$NON-NLS-1$
+	public static final String ID = "damp.ekeko.snippets.gui.RecommendationEditor"; //$NON-NLS-1$
 
 	public static IFn FN_PROJECT_VALUE_IDENTIFIER;
 	public static IFn FN_PROJECT_TUPLE_IDENTIFIER;
@@ -92,13 +109,12 @@ public class IntendedResultsEditor extends EditorPart {
 
 	private Button linkButton;
 
-	private ToolItem toolitemCompareResults;
+	private ToolItem toolitemAddFromTemplate;
 
 	private EkekoLabelProvider ekekoLabelProvider;
 
 	private ToolItem toolitemAddPositive;
 
-	private ToolItem toolitemAddNegative;
 
 	private Set<Collection<Object>> results = new HashSet<>();
 	
@@ -156,15 +172,15 @@ public class IntendedResultsEditor extends EditorPart {
 		toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
 
-		toolitemCompareResults = new ToolItem(toolBar, SWT.NONE);
-		toolitemCompareResults.addSelectionListener(new SelectionAdapter() {
+		toolitemAddFromTemplate = new ToolItem(toolBar, SWT.NONE);
+		toolitemAddFromTemplate.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onCompareResults();
+				onAddMatchesFromTemplate();
 			}
 		});
-		toolitemCompareResults.setImage(EkekoSnippetsPlugin.IMG_RESULTS_REFRESH);
-		toolitemCompareResults.setToolTipText("Compare results");
+		toolitemAddFromTemplate.setImage(EkekoSnippetsPlugin.IMG_ADD);
+		toolitemAddFromTemplate.setToolTipText("Add the matches of a template as desired matches");
 
 
 		toolitemAddPositive = new ToolItem(toolBar, SWT.NONE);
@@ -177,15 +193,6 @@ public class IntendedResultsEditor extends EditorPart {
 		toolitemAddPositive.setImage(EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE);
 		toolitemAddPositive.setToolTipText("Mark as positive example");
 
-		toolitemAddNegative = new ToolItem(toolBar, SWT.NONE);
-		toolitemAddNegative.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				onAddNegativeExample();
-			}
-		});
-		toolitemAddNegative.setImage(EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE);
-		toolitemAddNegative.setToolTipText("Mark as negative example");
 
 		final ToolItem tltmSearchModifications = new ToolItem(toolBar, SWT.NONE);
 		tltmSearchModifications.addSelectionListener(new SelectionAdapter() {
@@ -226,7 +233,7 @@ public class IntendedResultsEditor extends EditorPart {
 		SashForm sash = new SashForm(parent, SWT.VERTICAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
-
+		// Top component of the SashForm
 		matchesViewer = new TableViewer(sash, SWT.BORDER | SWT.FULL_SELECTION);
 		matchesViewerTable = matchesViewer.getTable();
 		matchesViewerTable.setLinesVisible(true);
@@ -239,115 +246,150 @@ public class IntendedResultsEditor extends EditorPart {
 		matchesViewer.setContentProvider(matchesContentProvider);		
 		matchesViewer.setInput(results);
 
-
-
 		matchesViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
 				ISelection selection = event.getSelection();
-				toolitemAddNegative.setEnabled(!selection.isEmpty());
 				toolitemAddPositive.setEnabled(!selection.isEmpty());
 
 			}
 		});
+		
+		// Bottom component of the sash form
+//		SwtLiveChartViewer view = new SwtLiveChartViewer(sash, SWT.NO_BACKGROUND);
+//        Chart chart = view.createLiveChart();
+		
+		ChartWithAxes chart = ChartWithAxesImpl.create();
+		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
+		chart.getPlot().setBackground(ColorDefinitionImpl.ORANGE());
+		chart.getLegend().setItemType(LegendItemType.CATEGORIES_LITERAL);
+		chart.getLegend().setVisible(true);
+		chart.getTitle().getLabel().getCaption().setValue("Hello world");
+		
+		Axis xAxis = ((ChartWithAxes) chart).getPrimaryBaseAxes()[0];
+        xAxis.getTitle().setVisible(true);
+        xAxis.getTitle().getCaption().setValue("Some x axis");
+        
+        Axis yAxis = ((ChartWithAxes) chart).getPrimaryOrthogonalAxis(xAxis);
+        yAxis.getTitle().setVisible(true);
+        yAxis.getTitle().getCaption().setValue("Some y axis");
+        yAxis.getScale().setStep(1.0);
+
+        TextDataSet xValues = TextDataSetImpl.create(new String[]{"hello", "world"});
+        Series seCategory = SeriesImpl.create();
+        seCategory.setDataSet(xValues);
+        SeriesDefinition sdX = SeriesDefinitionImpl.create();
+        sdX.getSeriesPalette().update(1);
+        xAxis.getSeriesDefinitions().add(sdX);
+        sdX.getSeries().add(seCategory);
+        
+        NumberDataSet yDataSet = NumberDataSetImpl.create(new double[]{1.4, 3.5});
+        BarSeries bs1 = (BarSeries) BarSeriesImpl.create();
+        bs1.setDataSet(yDataSet);
+        SeriesDefinition sdY = SeriesDefinitionImpl.create();
+        yAxis.getSeriesDefinitions().add(sdY);
+        sdY.getSeries().add(bs1);
+
+        ChartCanvas view = new ChartCanvas(sash, SWT.NO_BACKGROUND);
+		view.setChart(chart);
 
 		//**** Bottom ****
-		Composite bottomComposite = new Composite(sash, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.marginWidth = 0;
-		gridLayout.marginHeight = 0;
-		bottomComposite.setLayout(gridLayout);
-
-
-		ToolBar bottomToolBar = new ToolBar(bottomComposite, SWT.FLAT | SWT.RIGHT);
-		bottomToolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-
-		ToolItem toolitemInitialize = new ToolItem(bottomToolBar, SWT.NONE);
-		toolitemInitialize.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				//initialize from file, clone instances, recorded changes, diff ...
-				//probably want drop down menu
-			}
-
-		});
-		toolitemInitialize.setImage(EkekoSnippetsPlugin.IMG_RESULTS_IMPORT);
-		toolitemInitialize.setToolTipText("Initialize intended results");
-
-		ToolItem toolitemAddColumn = new ToolItem(bottomToolBar, SWT.NONE);
-		toolitemAddColumn.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				addColumnToVerifiedViewer(verifiedViewerTable.getColumnCount());
-				verifiedViewer.refresh();
-			}
-		});
-		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
-		toolitemAddColumn.setToolTipText("Add Column");
+//		Composite bottomComposite = new Composite(sash, SWT.NONE);
+//		GridLayout gridLayout = new GridLayout();
+//		gridLayout.marginWidth = 0;
+//		gridLayout.marginHeight = 0;
+//		bottomComposite.setLayout(gridLayout);
+//
+//
+//		ToolBar bottomToolBar = new ToolBar(bottomComposite, SWT.FLAT | SWT.RIGHT);
+//		bottomToolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
+//
+//		ToolItem toolitemInitialize = new ToolItem(bottomToolBar, SWT.NONE);
+//		toolitemInitialize.addSelectionListener(new SelectionAdapter() {
+//			@Override
+//			public void widgetSelected(SelectionEvent e) {
+//				//initialize from file, clone instances, recorded changes, diff ...
+//				//probably want drop down menu
+//			}
+//
+//		});
+//		toolitemInitialize.setImage(EkekoSnippetsPlugin.IMG_RESULTS_IMPORT);
+//		toolitemInitialize.setToolTipText("Initialize intended results");
+//
+//		ToolItem toolitemAddColumn = new ToolItem(bottomToolBar, SWT.NONE);
+//		toolitemAddColumn.addSelectionListener(new SelectionAdapter() {
+//			@Override
+//			public void widgetSelected(SelectionEvent e) {
+//				addColumnToVerifiedViewer(verifiedViewerTable.getColumnCount());
+//				verifiedViewer.refresh();
+//			}
+//		});
+//		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
+//		toolitemAddColumn.setToolTipText("Add Column");
+//		
+//		
+//		toolitemDeleteVerifiedResult = new ToolItem(bottomToolBar, SWT.NONE);
+//		toolitemDeleteVerifiedResult.addSelectionListener(new SelectionAdapter() {
+//			@Override
+//			public void widgetSelected(SelectionEvent e) {
+//				onDeleteVerifiedResult();
+//			}
+//		});
+//		toolitemDeleteVerifiedResult.setImage(EkekoSnippetsPlugin.IMG_DELETE);
+//		toolitemDeleteVerifiedResult.setToolTipText("Delete example");
+//
+//		verifiedViewer = new TableViewer(bottomComposite, SWT.BORDER | SWT.FULL_SELECTION);
+//		verifiedViewerTable = verifiedViewer.getTable();
+//		verifiedViewerTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+//
+//		verifiedViewerTable.setLinesVisible(true);
+//		verifiedViewerTable.setHeaderVisible(true);
 		
-		
-		toolitemDeleteVerifiedResult = new ToolItem(bottomToolBar, SWT.NONE);
-		toolitemDeleteVerifiedResult.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				onDeleteVerifiedResult();
-			}
-		});
-		toolitemDeleteVerifiedResult.setImage(EkekoSnippetsPlugin.IMG_DELETE);
-		toolitemDeleteVerifiedResult.setToolTipText("Delete example");
-
-		verifiedViewer = new TableViewer(bottomComposite, SWT.BORDER | SWT.FULL_SELECTION);
-		verifiedViewerTable = verifiedViewer.getTable();
-		verifiedViewerTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-
-		verifiedViewerTable.setLinesVisible(true);
-		verifiedViewerTable.setHeaderVisible(true);
-		
-		TableViewerColumn imgColumn = new TableViewerColumn(verifiedViewer, SWT.NONE, 0);
-		imgColumn.getColumn().setWidth(24);
-		imgColumn.getColumn().setResizable(false);
-		imgColumn.getColumn().setText("");
-		imgColumn.getColumn().setMoveable(false);
-		imgColumn.setLabelProvider(new ColumnLabelProvider() {
-			@SuppressWarnings("rawtypes")
-			@Override
-			public String getText(Object element) {
-				return "";
-			}
-			
-			@Override
-			public org.eclipse.swt.graphics.Image getImage(Object tupleIdentifier) {
-				if(isPositiveIdentifier(tupleIdentifier)) 
-					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
-				if(isNegativeIdentifier(tupleIdentifier))
-					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
-				return null;
-			}
-			
-		});
-
-
-		verifiedContentProvider = new ArrayContentProvider();
-		verifiedViewer.setContentProvider(verifiedContentProvider);		
-		verifiedViewer.setInput(Sets.union(positiveIDs,negativeIDs));
-		
-		verifiedViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				ISelection selection = event.getSelection();
-				toolitemDeleteVerifiedResult.setEnabled(!selection.isEmpty());
-
-			}
-		});
+//		TableViewerColumn imgColumn = new TableViewerColumn(verifiedViewer, SWT.NONE, 0);
+//		imgColumn.getColumn().setWidth(24);
+//		imgColumn.getColumn().setResizable(false);
+//		imgColumn.getColumn().setText("");
+//		imgColumn.getColumn().setMoveable(false);
+//		imgColumn.setLabelProvider(new ColumnLabelProvider() {
+//			@SuppressWarnings("rawtypes")
+//			@Override
+//			public String getText(Object element) {
+//				return "";
+//			}
+//			
+//			@Override
+//			public org.eclipse.swt.graphics.Image getImage(Object tupleIdentifier) {
+//				if(isPositiveIdentifier(tupleIdentifier)) 
+//					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
+//				if(isNegativeIdentifier(tupleIdentifier))
+//					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
+//				return null;
+//			}
+//			
+//		});
+//
+//
+//		verifiedContentProvider = new ArrayContentProvider();
+//		verifiedViewer.setContentProvider(verifiedContentProvider);		
+//		verifiedViewer.setInput(Sets.union(positiveIDs,negativeIDs));
+//		
+//		verifiedViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+//			@Override
+//			public void selectionChanged(SelectionChangedEvent event) {
+//				ISelection selection = event.getSelection();
+//				toolitemDeleteVerifiedResult.setEnabled(!selection.isEmpty());
+//
+//			}
+//		});
 
 		
 		
 
 		addActiveColumnListener(matchesViewerTable);
-		addActiveColumnListener(verifiedViewerTable);
+//		addActiveColumnListener(verifiedViewerTable);
 
 		addMenu(matchesViewer);
-		addMenu(verifiedViewer);
+//		addMenu(verifiedViewer);
 
 
 		ekekoLabelProvider = new EkekoLabelProvider();
@@ -407,13 +449,37 @@ public class IntendedResultsEditor extends EditorPart {
 
 	protected void onAddNegativeExample() {
 		addVerifiedExample(false);
-
-
 	}
 
-
-
-	protected void onCompareResults() {
+	protected void onAddMatchesFromTemplate() {
+		ListDialog listSelectionDialog = new ListDialog(getSite().getShell());
+		listSelectionDialog.setContentProvider(new ArrayContentProvider());
+		listSelectionDialog.setLabelProvider(new WorkbenchPartLabelProvider());
+		listSelectionDialog.setInput(getTemplateEditors().toArray());
+		listSelectionDialog.setTitle("Retrieve desired matches from template");
+		listSelectionDialog.setMessage("Select a Ekeko/X template or transformation editor.");
+		int open = listSelectionDialog.open();
+		if(open == listSelectionDialog.OK) {
+			Object[] result = listSelectionDialog.getResult();
+			if(result.length == 1) {
+				IEditorPart ed = ((IEditorPart) result[0]);
+				
+				if(ed instanceof TransformationEditor) {
+					TransformationEditor transformationEditor = (TransformationEditor) ed;
+					linkedTemplateEditor = transformationEditor.getSubjectsEditor();
+					linkedTransformationOrTemplateEditor = ed;
+				}
+				if(ed instanceof TemplateEditor) {
+					linkedTemplateEditor = (TemplateEditor) ed;
+					linkedTransformationOrTemplateEditor = ed;
+				}
+				
+				
+				
+			}
+		}
+		
+		
 		for (TableColumn tableColumn : matchesViewerTable.getColumns()) {
 			tableColumn.dispose();
 		}
@@ -421,74 +487,16 @@ public class IntendedResultsEditor extends EditorPart {
 			String varname = (String) object;
 			final int columnIndex = matchesViewerTable.getColumnCount();
 			TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname);
-			/*
-			column.setEditingSupport(new EditingSupport(matchesViewer) {
-
-				private Object getCellValue(final Object element) {
-					Collection row = (Collection) element;
-					Object cellValue = nth(row, columnIndex);
-					return cellValue;
-				}
-
-				@Override
-				protected void setValue(Object element, Object value) {
-
-				}
-
-				@Override
-				protected Object getValue(Object element) {
-					return getCellValue(element);
-				}
-
-				@Override
-				protected CellEditor getCellEditor(final Object element) {
-					return new DialogCellEditor(matchesViewerTable) {
-
-						@Override
-						protected Object openDialogBox(Control cellEditorWindow) {
-							OpenASTNodeInEditorAction action = new OpenASTNodeInEditorAction(null);
-							try {
-								action.showNodeInEditor((ASTNode) getCellValue(element));
-							} catch (PartInitException | JavaModelException e) {
-								e.printStackTrace();
-							}
-							return null;
-						}
-					};
-				}
-
-				@Override
-				protected boolean canEdit(Object element) {
-					return getCellValue(element) instanceof ASTNode;
-				}
-			});
-			 */
 
 			column.setLabelProvider(new ColumnLabelProvider() {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
 				public String getText(Object element) {
 					return ekekoLabelProvider.getText(nth((Collection) element, columnIndex));
 				}
-				
-				@Override
-				public Color getBackground(Object element) {
-					Collection tuple = (Collection) element;
-					if(isPositive(tuple))
-						return Display.getCurrent().getSystemColor(SWT.COLOR_GREEN);
-					if(isNegative(tuple))
-						return Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-					return super.getBackground(element);
-				}
-				
 			});
 		}
 
 		matchesViewerTable.layout(true);
 		results = new HashSet(getResults());
-		//arraycontentprovider's implementation does nothing
-		//matchesContentProvider.inputChanged(matchesViewer, matchesViewer.getInput(), results);
 		matchesViewer.setInput(results);
 		
 	}
@@ -548,18 +556,17 @@ public class IntendedResultsEditor extends EditorPart {
 
 	private void updateWidgets() {
 		updateLinkWidget();
-		toolitemCompareResults.setEnabled(linkedTransformationOrTemplateEditor != null);
+
 		if(linkedTemplateEditor == null) {
-			toolitemAddNegative.setEnabled(false);
+
 			toolitemAddPositive.setEnabled(false);
-			toolitemCompareResults.setEnabled(false);
+			toolitemAddFromTemplate.setEnabled(false);
 		} else {	
-			toolitemCompareResults.setEnabled(true);
+			toolitemAddFromTemplate.setEnabled(true);
 			ISelection selection = matchesViewer.getSelection();
-			toolitemAddNegative.setEnabled(!selection.isEmpty());
 			toolitemAddPositive.setEnabled(!selection.isEmpty());
 		}
-		toolitemDeleteVerifiedResult.setEnabled(!verifiedViewer.getSelection().isEmpty());
+//		toolitemDeleteVerifiedResult.setEnabled(!verifiedViewer.getSelection().isEmpty());
 	}
 
 
@@ -594,21 +601,21 @@ public class IntendedResultsEditor extends EditorPart {
 	private void addMenu(final TableViewer tableViewer) {
 		final Table table = tableViewer.getTable();
 		final MenuManager mgr = new MenuManager();
-		final Action insertColumnAfter = new Action("Insert New Column After") {
-			public void run() {
-				addColumnToVerifiedViewer(activeColumn + 1);
-				verifiedViewer.refresh();
-			}
-		};
-		insertColumnAfter.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD));
-
-
-		final Action removeColumn = new Action("Remove Column") {
-			public void run() {
-				removeColumn(activeColumn);
-			}
-		};
-		removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
+//		final Action insertColumnAfter = new Action("Insert New Column After") {
+//			public void run() {
+//				addColumnToVerifiedViewer(activeColumn + 1);
+//				verifiedViewer.refresh();
+//			}
+//		};
+//		insertColumnAfter.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD));
+//
+//
+//		final Action removeColumn = new Action("Remove Column") {
+//			public void run() {
+//				removeColumn(activeColumn);
+//			}
+//		};
+//		removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
 
 
 		final Action revealNode = new Action("Reveal In Editor") {
@@ -624,14 +631,14 @@ public class IntendedResultsEditor extends EditorPart {
 		mgr.addMenuListener(new IMenuListener() {
 			@Override
 			public void menuAboutToShow(IMenuManager manager) {
-				if(tableViewer.equals(verifiedViewer)) {
-					if (table.getColumnCount() == 1) {
-						manager.add(insertColumnAfter);
-					} else {
-						manager.add(insertColumnAfter);
-						manager.add(removeColumn);
-					}
-				}
+//				if(tableViewer.equals(verifiedViewer)) {
+//					if (table.getColumnCount() == 1) {
+//						manager.add(insertColumnAfter);
+//					} else {
+//						manager.add(insertColumnAfter);
+//						manager.add(removeColumn);
+//					}
+//				}
 				manager.add(revealNode);
 			}
 
