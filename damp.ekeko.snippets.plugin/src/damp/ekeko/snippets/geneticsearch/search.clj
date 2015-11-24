@@ -608,12 +608,14 @@
         new-ind (individual/compute-fitness ind fitness)]
     {:fitness (individual/individual-fitness new-ind) :components (individual/individual-fitness-components new-ind)}))
 
-(defn evolve-gui [templategroup matches gui]
+(defn evolve-gui [templategroup matches gui config-string]
   (inspector-jay.core/inspect matches)
   (let [verifiedmatches (make-verified-matches (into [] matches) [])
-        config {:initial-population 
-                (population-from-templates [templategroup] 5)
-                :gui-editor gui}]
+        config (merge
+                 (read-string config-string)
+                 {:initial-population 
+                  (population-from-templates [templategroup] 5)
+                  :gui-editor gui})]
     (future 
       (apply evolve verifiedmatches (mapcat identity (vec config))))))
 

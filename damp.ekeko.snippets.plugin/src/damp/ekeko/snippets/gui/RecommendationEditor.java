@@ -48,6 +48,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Link;
@@ -70,7 +71,6 @@ import org.eclipse.ui.part.EditorPart;
 
 import baristaui.util.MarkerUtility;
 import clojure.lang.IFn;
-
 import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
@@ -110,7 +110,19 @@ public class RecommendationEditor extends EditorPart {
 	private ArrayContentProvider matchesContentProvider;
 
 	private ToolItem toolitemDeleteDesiredMatch;
-
+	
+	private String evolveConfig = ":max-generations 5\n"
+			+ ":population-size 10\n"
+			+ ":selection-weight 1/4\n"
+			+ ":mutation-weight 3/4\n"
+			+ ":crossover-weight 0/4\n"
+			+ ":fitness-weights [18/20 2/20 0/20]\n"
+			+ ":fitness-threshold 0.95\n"
+			+ ":output-dir nil\n"
+			+ ":partial-matching true\n"
+			+ ":quick-matching false\n"
+			+ ":match-timeout 10000\n"
+			+ ":tournament-rounds 7";
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -132,8 +144,8 @@ public class RecommendationEditor extends EditorPart {
 		return FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE.invoke(identifier);
 	}
 	
-	public static Object evolve(Object inputTemplate, Object desiredMatches, RecommendationEditor gui) {
-		return FN_EVOLVE.invoke(inputTemplate, desiredMatches, gui);
+	public static Object evolve(Object inputTemplate, Object desiredMatches, RecommendationEditor gui, String config) {
+		return FN_EVOLVE.invoke(inputTemplate, desiredMatches, gui, "{" + config + "}");
 	}
 
 	
@@ -192,6 +204,16 @@ public class RecommendationEditor extends EditorPart {
 		toolitemDeleteDesiredMatch.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_DELETE);
 		toolitemDeleteDesiredMatch.setToolTipText("Delete from desired matches");
 
+		ToolItem toolitemConfig = new ToolItem(toolBar, SWT.NONE);
+		toolitemConfig.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onEditConfig();
+			}
+		});
+		toolitemConfig.setImage(EkekoSnippetsPlugin.IMG_TRANSFORMATION);
+		toolitemConfig.setToolTipText("Edit configuration");
+		
 		final ToolItem toolitemEvolve = new ToolItem(toolBar, SWT.NONE);
 		toolitemEvolve.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -359,7 +381,25 @@ public class RecommendationEditor extends EditorPart {
 	}
 
 	protected void onEvolve() {
-		evolve(inputTemplateEditor.getGroup().getGroup(), results, this);
+		evolve(inputTemplateEditor.getGroup().getGroup(), results, this, evolveConfig);
+	}
+	
+	protected void onEditConfig() {
+		InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(), "Edit configuration", "Recommendation configuration: (See the documentation in search.clj)", evolveConfig, null) {
+			protected int getInputTextStyle() {
+				return SWT.MULTI | SWT.BORDER | SWT.V_SCROLL;
+			}
+
+			protected Control createDialogArea(Composite parent) {
+				Control res = super.createDialogArea(parent);
+				((GridData) this.getText().getLayoutData()).heightHint = 160;
+				return res;
+			}
+		};
+		int open = dlg.open();
+		if(open == dlg.OK) {
+			evolveConfig = dlg.getValue();
+		}
 	}
 
 	protected void onAddMatchesFromTemplate() {
