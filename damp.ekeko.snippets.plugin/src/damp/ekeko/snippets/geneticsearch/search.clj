@@ -71,17 +71,17 @@
 ;             "replace-parent"
 ;             "erase-comments"
 
-             "add-directive-constructs"
+;             "add-directive-constructs"
 ;             "add-directive-constructedby"
 ;             "add-directive-overrides"
 ;             "generalize-directive"
-             "remove-directive"
+;             "remove-directive"
 ;             "extract-template" ; ! Don't use this for genetic search, as it expects a certain number of templates in a templategroup/individual
-             "generalize-references"
-             "generalize-types"
+;             "generalize-references"
+;             "generalize-types"
 ;             "generalize-types|qname"
-             "generalize-invocations"
-             "generalize-constructorinvocations"
+;             "generalize-invocations"
+;             "generalize-constructorinvocations"
 ;             "isolate-stmt-in-method"
 ;             "isolate-expr-in-method"
 ;             "isolate-stmt-in-block"
@@ -528,10 +528,12 @@
         (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         (if (not (nil? (:gui-editor config)))
           (let [editor (:gui-editor config)]
-            (.growChart editor 
-              (int generation) 
+            (.onNewGeneration editor 
+              (int generation)
+              best-fitness
               (double (first (individual/individual-fitness-components (last population))))
-              (double (second (individual/individual-fitness-components (last population)))))))
+              (double (second (individual/individual-fitness-components (last population))))
+              (persistence/snippetgroup-string (individual/individual-templategroup (last population))))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))

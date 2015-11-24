@@ -12,12 +12,14 @@ import java.util.Set;
 import org.eclipse.birt.chart.model.Chart;
 import org.eclipse.birt.chart.model.ChartWithAxes;
 import org.eclipse.birt.chart.model.attribute.ChartDimension;
+import org.eclipse.birt.chart.model.attribute.LegendItemType;
 import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
 import org.eclipse.birt.chart.model.component.Axis;
 import org.eclipse.birt.chart.model.component.Series;
 import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
 import org.eclipse.birt.chart.model.data.NumberDataSet;
 import org.eclipse.birt.chart.model.data.SeriesDefinition;
+import org.eclipse.birt.chart.model.data.impl.NumberDataElementImpl;
 import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
 import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
 import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
@@ -87,7 +89,6 @@ public class RecommendationEditor extends EditorPart {
 	public static IFn FN_EVOLVE;
 	
 	private TemplateEditor inputTemplateEditor;
-	private IEditorPart linkedTransformationOrTemplateEditor;
 	private TemplateEditor linkedTemplateEditor;
 	private ToolBar toolBar;
 
@@ -104,11 +105,9 @@ public class RecommendationEditor extends EditorPart {
 
 	private EkekoLabelProvider ekekoLabelProvider;
 
-	private Set<Collection<Object>> results = new HashSet<>();
+	private Set<Collection<Object>> desiredMatches = new HashSet<>();
+	private List<List<Object>> evolveResults = new ArrayList<List<Object>>();
 	
-	private Set<Object> positiveIDs = new HashSet<>();
-
-	private ArrayContentProvider matchesContentProvider;
 
 	private ToolItem toolitemDeleteDesiredMatch;
 	
@@ -129,6 +128,10 @@ public class RecommendationEditor extends EditorPart {
 	private LineSeries f1Data;
 	private LineSeries partialData;
 	private ChartCanvas canvasView;
+
+	private org.eclipse.swt.widgets.Text bestTemplateTextArea;
+
+	private TableViewer resultsTableViewer;
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -251,11 +254,8 @@ public class RecommendationEditor extends EditorPart {
 		matchesViewerTable.setHeaderVisible(true);
 
 
-		matchesViewer.setContentProvider(new ArrayContentProvider());		
-		
-		matchesContentProvider = new ArrayContentProvider();
-		matchesViewer.setContentProvider(matchesContentProvider);		
-		matchesViewer.setInput(results);
+		matchesViewer.setContentProvider(new ArrayContentProvider());	
+		matchesViewer.setInput(desiredMatches);
 
 		matchesViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
@@ -265,21 +265,60 @@ public class RecommendationEditor extends EditorPart {
 		});
 		
 		// **** Bottom component of the sash form: Results of genetic algorithm
+		
+		TabFolder tabs = new TabFolder(sash, SWT.BOTTOM);
+		
+		// *** Sash: Results table + best template
+		TabItem resultsTab = new TabItem(tabs, SWT.NULL);
+		resultsTab.setText("Results");
+		SashForm resultSash = new SashForm(tabs, SWT.HORIZONTAL);
+		resultSash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 2));
+		resultsTab.setControl(resultSash);
+
+		resultsTableViewer = new TableViewer(resultSash, SWT.BORDER | SWT.FULL_SELECTION);
+		Table resultsTable = resultsTableViewer.getTable();
+		resultsTable.setLinesVisible(true);
+		resultsTable.setHeaderVisible(true);
+
+		resultsTableViewer.setContentProvider(new ArrayContentProvider());
+		resultsTableViewer.setInput(evolveResults);
+
+		TableViewerColumn[] cols = new TableViewerColumn[4];
+		cols[0] = addColumn(resultsTableViewer, 0, "Gen", 40);
+		cols[1] = addColumn(resultsTableViewer, 1, "Best Fitness", 80);
+		cols[2] = addColumn(resultsTableViewer, 2, "Best F1", 80);
+		cols[3] = addColumn(resultsTableViewer, 3, "Best Partial", 80);
+		for (int i=0; i< cols.length; i++) {
+			final int idx = i;
+			cols[i].setLabelProvider(new ColumnLabelProvider() {
+				public String getText(Object element) {
+					return ekekoLabelProvider.getText(nth((Collection) element, idx));
+				}
+			});
+		}
+		
+		// ** Best template
+		bestTemplateTextArea = new org.eclipse.swt.widgets.Text(resultSash, SWT.BORDER);
+		bestTemplateTextArea.setText("");
+		bestTemplateTextArea.setEditable(false);
+		
+		// *** Fitness chart
 		ChartWithAxes chart = ChartWithAxesImpl.create();
 		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
 		chart.getPlot().setBackground(ColorDefinitionImpl.WHITE());
-//		chart.getLegend().setItemType(LegendItemType.CATEGORIES_LITERAL);
-		chart.getLegend().setVisible(false);
-//		chart.getTitle().getLabel().getCaption().setValue("Hello world");
-		
+		chart.getLegend().setItemType(LegendItemType.SERIES_LITERAL);
+		chart.getLegend().setVisible(true);
+		chart.getTitle().setVisible(false);
+
 		Axis xAxis = ((ChartWithAxes) chart).getPrimaryBaseAxes()[0];
         xAxis.getTitle().setVisible(true);
-        xAxis.getTitle().getCaption().setValue("Some x axis");
+        xAxis.getTitle().getCaption().setValue("Generation");
         
         Axis yAxis = ((ChartWithAxes) chart).getPrimaryOrthogonalAxis(xAxis);
-        yAxis.getTitle().setVisible(true);
-        yAxis.getTitle().getCaption().setValue("Some y axis");
-        yAxis.getScale().setStep(1.0);
+        yAxis.getTitle().setVisible(false);
+        yAxis.getScale().setStep(0.2);
+        yAxis.getScale().setMin(NumberDataElementImpl.create(0.0));
+        yAxis.getScale().setMax(NumberDataElementImpl.create(1.0));
 
         NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{-1});
         generationAxis = SeriesImpl.create();
@@ -299,29 +338,54 @@ public class RecommendationEditor extends EditorPart {
         
         SeriesDefinition sdY = SeriesDefinitionImpl.create();
         yAxis.getSeriesDefinitions().add(sdY);
+        f1Data.setSeriesIdentifier("F1 score");
+        partialData.setSeriesIdentifier("Partial score");
         sdY.getSeries().add(f1Data);
         sdY.getSeries().add(partialData);
         
-
-        TabFolder tabs = new TabFolder(sash, SWT.BOTTOM);
         TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
-        fitnessTab.setText("Charts");
+        fitnessTab.setText("Fitness chart");
         
         canvasView = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
 		canvasView.setChart(chart);		
 		fitnessTab.setControl(canvasView);	
-
+		
 		addActiveColumnListener(matchesViewerTable);
 		addMenu(matchesViewer);
-
 		ekekoLabelProvider = new EkekoLabelProvider();
-
 		linkToEditor(null);
 		updateLinkWidget();
-
 	}
 	
-	public void growChart(Integer generation, Double bestFitness, Double bestPartial) {
+	/**
+	 * To be called by the evolve function (in search.clj) on each generation
+	 */
+	public void onNewGeneration(Integer generation, Double bestFitness, Double bestF1, Double bestPartial, 
+			String bestTemplate) {
+		// This method will be called from a separate thread.
+		// We need to make sure all GUI changes happen on the SWT event thread using asyncExec.
+		Display.getDefault().asyncExec(new Runnable() {
+		    public void run() {
+		    	addToChart(generation, bestF1, bestPartial);
+		    	addToTable(generation, bestFitness, bestF1, bestPartial);
+		    	bestTemplateTextArea.setText(bestTemplate);
+		    }
+		});
+	}
+	
+	private void addToTable(Integer generation, Double bestFitness, Double bestF1, Double bestPartial) {
+		ArrayList<Object> newRow = new ArrayList<>();
+		newRow.add(generation);
+		newRow.add(bestFitness);
+		newRow.add(bestF1);
+		newRow.add(bestPartial);
+		
+		evolveResults.add(newRow);
+		resultsTableViewer.setInput(evolveResults);
+//		resultsTableViewer.redraw();
+	}
+	
+	private void addToChart(Integer generation, Double bestFitness, Double bestPartial) {
 		Chart chart = canvasView.getChart();
 		
 		NumberDataSetImpl xData = (NumberDataSetImpl)generationAxis.getDataSet();
@@ -342,11 +406,7 @@ public class RecommendationEditor extends EditorPart {
 		y2vals.add(bestPartial);
 		partialData.setDataSet(NumberDataSetImpl.create(y2vals.toArray(new Double[0])));
 
-		Display.getDefault().asyncExec(new Runnable() {
-		    public void run() {
-		        canvasView.redraw();
-		    }
-		});
+		canvasView.redraw();
 	}
 
 	protected void onDeleteFromDesiredMatches() {
@@ -354,18 +414,14 @@ public class RecommendationEditor extends EditorPart {
 		IStructuredSelection sel = (IStructuredSelection) selection;
 		
 		for (Object elem:sel.toArray()) {
-			results.remove(elem);
+			desiredMatches.remove(elem);
 		}
 		
 		matchesViewer.refresh();
 	}
 
-	protected boolean isPositiveIdentifier(Object tupleIdentifier) {
-		return positiveIDs.contains(tupleIdentifier);
-	}
-
 	protected void onEvolve() {
-		evolve(inputTemplateEditor.getGroup().getGroup(), results, this, evolveConfig);
+		evolve(inputTemplateEditor.getGroup().getGroup(), desiredMatches, this, evolveConfig);
 	}
 	
 	protected void onEditConfig() {
@@ -398,16 +454,13 @@ public class RecommendationEditor extends EditorPart {
 		if(open == listSelectionDialog.OK) {
 			Object[] result = listSelectionDialog.getResult();
 			if(result.length == 1) {
-				IEditorPart ed = ((IEditorPart) result[0]);
-				
+				IEditorPart ed = ((IEditorPart) result[0]);				
 				if(ed instanceof TransformationEditor) {
 					TransformationEditor transformationEditor = (TransformationEditor) ed;
 					linkedTemplateEditor = transformationEditor.getSubjectsEditor();
-					linkedTransformationOrTemplateEditor = ed;
 				}
 				if(ed instanceof TemplateEditor) {
 					linkedTemplateEditor = (TemplateEditor) ed;
-					linkedTransformationOrTemplateEditor = ed;
 				}
 			}
 		}
@@ -419,7 +472,7 @@ public class RecommendationEditor extends EditorPart {
 		for (Object object : getResultVariables()) {
 			String varname = (String) object;
 			final int columnIndex = matchesViewerTable.getColumnCount();
-			TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname);
+			TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname, 200);
 
 			column.setLabelProvider(new ColumnLabelProvider() {
 				public String getText(Object element) {
@@ -430,16 +483,15 @@ public class RecommendationEditor extends EditorPart {
 		
 		// Add the matches to the table
 		matchesViewerTable.layout(true);
-		results = new HashSet(getResults());
-		matchesViewer.setInput(results);
+		desiredMatches = new HashSet(getResults());
+		matchesViewer.setInput(desiredMatches);
 		
 	}
 
 	protected void onRevealLinkedEditor() {
-		if(linkedTemplateEditor != null) {
-			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().activate(linkedTransformationOrTemplateEditor);
+		if(inputTemplateEditor != null) {
+			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().activate(inputTemplateEditor);
 		}
-
 	}
 
 	private List<IEditorPart> getTemplateEditors(boolean includeTransformations) {
@@ -498,15 +550,12 @@ public class RecommendationEditor extends EditorPart {
 		if(editor instanceof TransformationEditor) {
 			TransformationEditor transformationEditor = (TransformationEditor) editor;
 			linkedTemplateEditor = transformationEditor.getSubjectsEditor();
-			linkedTransformationOrTemplateEditor = editor;
 		}
 		if(editor instanceof TemplateEditor) {
 			linkedTemplateEditor = (TemplateEditor) editor;
-			linkedTransformationOrTemplateEditor = editor;
 		}
 		if(editor == null) {
 			linkedTemplateEditor = null;
-			linkedTransformationOrTemplateEditor = null;
 		}
 		updateLinkWidget();
 	}
@@ -591,9 +640,9 @@ public class RecommendationEditor extends EditorPart {
 		return iterator.next();
 	}
 
-	protected TableViewerColumn addColumn(TableViewer viewer, final int columnIndex, String attributeName) {
+	protected TableViewerColumn addColumn(TableViewer viewer, final int columnIndex, String attributeName, int width) {
 		TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE, columnIndex);
-		column.getColumn().setWidth(200);
+		column.getColumn().setWidth(width);
 		column.getColumn().setText(attributeName);
 		column.getColumn().setMoveable(true);
 		return column;
