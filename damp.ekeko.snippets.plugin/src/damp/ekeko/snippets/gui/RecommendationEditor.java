@@ -1,5 +1,8 @@
 package damp.ekeko.snippets.gui;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7,12 +10,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.birt.chart.model.Chart;
 import org.eclipse.birt.chart.model.ChartWithAxes;
 import org.eclipse.birt.chart.model.attribute.ChartDimension;
 import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
 import org.eclipse.birt.chart.model.component.Axis;
 import org.eclipse.birt.chart.model.component.Series;
 import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
+import org.eclipse.birt.chart.model.data.DataSet;
 import org.eclipse.birt.chart.model.data.NumberDataSet;
 import org.eclipse.birt.chart.model.data.SeriesDefinition;
 import org.eclipse.birt.chart.model.data.TextDataSet;
@@ -47,6 +52,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -123,6 +129,22 @@ public class RecommendationEditor extends EditorPart {
 			+ ":quick-matching false\n"
 			+ ":match-timeout 10000\n"
 			+ ":tournament-rounds 7";
+	
+	private ArrayList<Integer> generationsData;
+	private Series generationAxis;
+
+	private ArrayList<Integer> f1Da;
+	private LineSeries f1Data;
+
+	private LineSeries partialData;
+
+	private ChartCanvas canvasView;
+
+	private SashForm sash;
+
+	private TabItem fitnessTab;
+
+	private TabFolder tabs;
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -225,6 +247,16 @@ public class RecommendationEditor extends EditorPart {
 		toolitemEvolve.setToolTipText("Suggest suitable modifications to the input template");
 
 
+		final ToolItem toolitemEvolve2 = new ToolItem(toolBar, SWT.NONE);
+		toolitemEvolve2.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				canvasView.redraw();
+			}
+		});
+		toolitemEvolve2.setImage(EkekoSnippetsPlugin.IMG_RECOMMENDATION);
+		toolitemEvolve2.setToolTipText("Suggest suitable modifications to the input template");
+
 
 		linkStatus = new Link(parent, SWT.NONE);
 		linkStatus.addListener(SWT.Selection, new Listener() {
@@ -237,7 +269,7 @@ public class RecommendationEditor extends EditorPart {
 				}
 			}});
 
-		SashForm sash = new SashForm(parent, SWT.VERTICAL);
+		sash = new SashForm(parent, SWT.VERTICAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
 		// **** Top component of the SashForm: List of desired matches
@@ -277,29 +309,35 @@ public class RecommendationEditor extends EditorPart {
         yAxis.getTitle().getCaption().setValue("Some y axis");
         yAxis.getScale().setStep(1.0);
 
-        TextDataSet xValues = TextDataSetImpl.create(new String[]{"hello", "world"});
-        Series seCategory = SeriesImpl.create();
-        seCategory.setDataSet(xValues);
+        NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{-1});
+        generationAxis = SeriesImpl.create();
+        generationAxis.setDataSet(xValues);
         SeriesDefinition sdX = SeriesDefinitionImpl.create();
         sdX.getSeriesPalette().update(1);
         xAxis.getSeriesDefinitions().add(sdX);
-        sdX.getSeries().add(seCategory);
+        sdX.getSeries().add(generationAxis);
         
-        NumberDataSet yDataSet = NumberDataSetImpl.create(new double[]{1.4, 3.5});
-        LineSeries bs1 = (LineSeries) LineSeriesImpl.create();
-        bs1.setDataSet(yDataSet);
+        NumberDataSet y1DataSet = NumberDataSetImpl.create(new Double[]{0.0});
+        f1Data = (LineSeries) LineSeriesImpl.create();
+        f1Data.setDataSet(y1DataSet);
+        
+        NumberDataSet y2DataSet = NumberDataSetImpl.create(new Double[]{0.0});
+        partialData = (LineSeries) LineSeriesImpl.create();
+        partialData.setDataSet(y2DataSet);
+        
         SeriesDefinition sdY = SeriesDefinitionImpl.create();
         yAxis.getSeriesDefinitions().add(sdY);
-        sdY.getSeries().add(bs1);
+        sdY.getSeries().add(f1Data);
+        sdY.getSeries().add(partialData);
+        
 
-        TabFolder tabs = new TabFolder(sash, SWT.BOTTOM);
-        TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
+        tabs = new TabFolder(sash, SWT.BOTTOM);
+        fitnessTab = new TabItem(tabs, SWT.NULL);
         fitnessTab.setText("Charts");
         
-        ChartCanvas view = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
-		view.setChart(chart);
-		
-		fitnessTab.setControl(view);
+        canvasView = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
+		canvasView.setChart(chart);		
+		fitnessTab.setControl(canvasView);
 
 		//**** Bottom ****
 //		Composite bottomComposite = new Composite(sash, SWT.NONE);
@@ -363,6 +401,57 @@ public class RecommendationEditor extends EditorPart {
 		linkToEditor(null);
 		updateLinkWidget();
 
+	}
+	
+	public void growChart(Integer generation, Double bestFitness, Double bestPartial) {
+		Chart chart = canvasView.getChart();
+		
+		NumberDataSetImpl xData = (NumberDataSetImpl)generationAxis.getDataSet();
+		Integer[] rawVals = (Integer[])(xData.getValues());
+		List<Integer> vals = new ArrayList<Integer>(Arrays.asList(rawVals));
+		vals.add(generation);
+		generationAxis.setDataSet(NumberDataSetImpl.create(vals.toArray(new Integer[0])));
+		
+		NumberDataSetImpl y1Data = (NumberDataSetImpl)f1Data.getDataSet();
+		Double[] rawY1Vals = (Double[])(y1Data.getValues());
+		List<Double> y1vals = new ArrayList<Double>(Arrays.asList(rawY1Vals));
+		y1vals.add(bestFitness);
+		f1Data.setDataSet(NumberDataSetImpl.create(y1vals.toArray(new Double[0])));
+
+		NumberDataSetImpl y2Data = (NumberDataSetImpl)partialData.getDataSet();
+		Double[] rawY2Vals = (Double[])(y2Data.getValues());
+		List<Double> y2vals = new ArrayList<Double>(Arrays.asList(rawY2Vals));
+		y2vals.add(bestPartial);
+		partialData.setDataSet(NumberDataSetImpl.create(y2vals.toArray(new Double[0])));
+
+		Display.getDefault().asyncExec(new Runnable() {
+		    public void run() {
+		        canvasView.redraw();
+		    }
+		});
+		
+//		
+//		sash.setVisible(false);
+//		try {
+//			Thread.sleep(500);
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		
+//		sash.layout(true, true);
+//		sash.redraw();
+//		sash.update();
+//		
+//		sash.setVisible(true);
+//		
+//		canvasView.refreshChart();
+//		
+//		canvasView.getParent().getParent().layout(true, true);
+//		canvasView.getParent().redraw(); 
+//		canvasView.getParent().update(); 
+		
+		
 	}
 
 	protected void onDeleteFromDesiredMatches() {

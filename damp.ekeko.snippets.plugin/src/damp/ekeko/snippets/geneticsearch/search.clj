@@ -526,6 +526,12 @@
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
         (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+        (if (not (nil? (:gui-editor config)))
+          (let [editor (:gui-editor config)]
+            (.growChart editor 
+              (int generation) 
+              (double (first (individual/individual-fitness-components (last population))))
+              (double (second (individual/individual-fitness-components (last population)))))))
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -609,13 +615,13 @@
     {:fitness (individual/individual-fitness new-ind) :components (individual/individual-fitness-components new-ind)}))
 
 (defn evolve-gui [templategroup matches gui config-string]
-  (inspector-jay.core/inspect matches)
   (let [verifiedmatches (make-verified-matches (into [] matches) [])
         config (merge
                  (read-string config-string)
                  {:initial-population 
                   (population-from-templates [templategroup] 5)
                   :gui-editor gui})]
+    (println "wtf")
     (future 
       (apply evolve verifiedmatches (mapcat identity (vec config))))))
 
