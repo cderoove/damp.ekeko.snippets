@@ -621,7 +621,6 @@
                  {:initial-population 
                   (population-from-templates [templategroup] 5)
                   :gui-editor gui})]
-    (println "wtf")
     (future 
       (apply evolve verifiedmatches (mapcat identity (vec config))))))
 

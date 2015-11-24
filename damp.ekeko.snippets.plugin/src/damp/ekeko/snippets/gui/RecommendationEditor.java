@@ -1,6 +1,5 @@
 package damp.ekeko.snippets.gui;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,13 +16,10 @@ import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
 import org.eclipse.birt.chart.model.component.Axis;
 import org.eclipse.birt.chart.model.component.Series;
 import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
-import org.eclipse.birt.chart.model.data.DataSet;
 import org.eclipse.birt.chart.model.data.NumberDataSet;
 import org.eclipse.birt.chart.model.data.SeriesDefinition;
-import org.eclipse.birt.chart.model.data.TextDataSet;
 import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
 import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
-import org.eclipse.birt.chart.model.data.impl.TextDataSetImpl;
 import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
 import org.eclipse.birt.chart.model.type.LineSeries;
 import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
@@ -52,7 +48,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -130,21 +125,10 @@ public class RecommendationEditor extends EditorPart {
 			+ ":match-timeout 10000\n"
 			+ ":tournament-rounds 7";
 	
-	private ArrayList<Integer> generationsData;
 	private Series generationAxis;
-
-	private ArrayList<Integer> f1Da;
 	private LineSeries f1Data;
-
 	private LineSeries partialData;
-
 	private ChartCanvas canvasView;
-
-	private SashForm sash;
-
-	private TabItem fitnessTab;
-
-	private TabFolder tabs;
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -246,18 +230,6 @@ public class RecommendationEditor extends EditorPart {
 		toolitemEvolve.setImage(EkekoSnippetsPlugin.IMG_RECOMMENDATION);
 		toolitemEvolve.setToolTipText("Suggest suitable modifications to the input template");
 
-
-		final ToolItem toolitemEvolve2 = new ToolItem(toolBar, SWT.NONE);
-		toolitemEvolve2.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				canvasView.redraw();
-			}
-		});
-		toolitemEvolve2.setImage(EkekoSnippetsPlugin.IMG_RECOMMENDATION);
-		toolitemEvolve2.setToolTipText("Suggest suitable modifications to the input template");
-
-
 		linkStatus = new Link(parent, SWT.NONE);
 		linkStatus.addListener(SWT.Selection, new Listener() {
 			@Override
@@ -269,7 +241,7 @@ public class RecommendationEditor extends EditorPart {
 				}
 			}});
 
-		sash = new SashForm(parent, SWT.VERTICAL);
+		SashForm sash = new SashForm(parent, SWT.VERTICAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
 		// **** Top component of the SashForm: List of desired matches
@@ -331,67 +303,13 @@ public class RecommendationEditor extends EditorPart {
         sdY.getSeries().add(partialData);
         
 
-        tabs = new TabFolder(sash, SWT.BOTTOM);
-        fitnessTab = new TabItem(tabs, SWT.NULL);
+        TabFolder tabs = new TabFolder(sash, SWT.BOTTOM);
+        TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
         fitnessTab.setText("Charts");
         
         canvasView = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
 		canvasView.setChart(chart);		
-		fitnessTab.setControl(canvasView);
-
-		//**** Bottom ****
-//		Composite bottomComposite = new Composite(sash, SWT.NONE);
-//		GridLayout gridLayout = new GridLayout();
-//		gridLayout.marginWidth = 0;
-//		gridLayout.marginHeight = 0;
-//		bottomComposite.setLayout(gridLayout);
-//
-//
-//		ToolBar bottomToolBar = new ToolBar(bottomComposite, SWT.FLAT | SWT.RIGHT);
-//		bottomToolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-//
-//		ToolItem toolitemInitialize = new ToolItem(bottomToolBar, SWT.NONE);
-//		toolitemInitialize.addSelectionListener(new SelectionAdapter() {
-//			@Override
-//			public void widgetSelected(SelectionEvent e) {
-//				//initialize from file, clone instances, recorded changes, diff ...
-//				//probably want drop down menu
-//			}
-//
-//		});
-//		toolitemInitialize.setImage(EkekoSnippetsPlugin.IMG_RESULTS_IMPORT);
-//		toolitemInitialize.setToolTipText("Initialize intended results");
-//
-//		ToolItem toolitemAddColumn = new ToolItem(bottomToolBar, SWT.NONE);
-//		toolitemAddColumn.addSelectionListener(new SelectionAdapter() {
-//			@Override
-//			public void widgetSelected(SelectionEvent e) {
-//				addColumnToVerifiedViewer(verifiedViewerTable.getColumnCount());
-//				verifiedViewer.refresh();
-//			}
-//		});
-//		toolitemAddColumn.setImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD);
-//		toolitemAddColumn.setToolTipText("Add Column");
-//		
-//		
-//		toolitemDeleteVerifiedResult = new ToolItem(bottomToolBar, SWT.NONE);
-//		toolitemDeleteVerifiedResult.addSelectionListener(new SelectionAdapter() {
-//			@Override
-//			public void widgetSelected(SelectionEvent e) {
-//				onDeleteVerifiedResult();
-//			}
-//		});
-//		toolitemDeleteVerifiedResult.setImage(EkekoSnippetsPlugin.IMG_DELETE);
-//		toolitemDeleteVerifiedResult.setToolTipText("Delete example");
-//
-//		verifiedViewer = new TableViewer(bottomComposite, SWT.BORDER | SWT.FULL_SELECTION);
-//		verifiedViewerTable = verifiedViewer.getTable();
-//		verifiedViewerTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-//
-//		verifiedViewerTable.setLinesVisible(true);
-//		verifiedViewerTable.setHeaderVisible(true);
-	
-	
+		fitnessTab.setControl(canvasView);	
 
 		addActiveColumnListener(matchesViewerTable);
 		addMenu(matchesViewer);
@@ -429,29 +347,6 @@ public class RecommendationEditor extends EditorPart {
 		        canvasView.redraw();
 		    }
 		});
-		
-//		
-//		sash.setVisible(false);
-//		try {
-//			Thread.sleep(500);
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//		sash.layout(true, true);
-//		sash.redraw();
-//		sash.update();
-//		
-//		sash.setVisible(true);
-//		
-//		canvasView.refreshChart();
-//		
-//		canvasView.getParent().getParent().layout(true, true);
-//		canvasView.getParent().redraw(); 
-//		canvasView.getParent().update(); 
-		
-		
 	}
 
 	protected void onDeleteFromDesiredMatches() {
