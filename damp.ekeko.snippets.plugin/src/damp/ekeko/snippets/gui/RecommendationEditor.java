@@ -5,13 +5,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
-import org.eclipse.birt.chart.model.Chart;
 import org.eclipse.birt.chart.model.ChartWithAxes;
 import org.eclipse.birt.chart.model.attribute.ChartDimension;
-import org.eclipse.birt.chart.model.attribute.LegendItemType;
 import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
 import org.eclipse.birt.chart.model.component.Axis;
 import org.eclipse.birt.chart.model.component.Series;
@@ -23,8 +20,8 @@ import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
 import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
 import org.eclipse.birt.chart.model.data.impl.TextDataSetImpl;
 import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
-import org.eclipse.birt.chart.model.type.BarSeries;
-import org.eclipse.birt.chart.model.type.impl.BarSeriesImpl;
+import org.eclipse.birt.chart.model.type.LineSeries;
+import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.Action;
@@ -33,17 +30,14 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -51,16 +45,15 @@ import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
@@ -75,12 +68,9 @@ import org.eclipse.ui.dialogs.ListDialog;
 import org.eclipse.ui.model.WorkbenchPartLabelProvider;
 import org.eclipse.ui.part.EditorPart;
 
+import baristaui.util.MarkerUtility;
 import clojure.lang.IFn;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-
-import baristaui.util.MarkerUtility;
 import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 
@@ -93,7 +83,9 @@ public class RecommendationEditor extends EditorPart {
 	public static IFn FN_PROJECT_VALUE_IDENTIFIER;
 	public static IFn FN_PROJECT_TUPLE_IDENTIFIER;
 	public static IFn FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE;
+	public static IFn FN_EVOLVE;
 	
+	private TemplateEditor inputTemplateEditor;
 	private IEditorPart linkedTransformationOrTemplateEditor;
 	private TemplateEditor linkedTemplateEditor;
 	private ToolBar toolBar;
@@ -102,30 +94,22 @@ public class RecommendationEditor extends EditorPart {
 	private Table matchesViewerTable;
 	private int activeColumn = -1;
 
-	private TableViewer verifiedViewer;
 	private Table verifiedViewerTable;
 
 	private Link linkStatus;
 
-	private Button linkButton;
-
 	private ToolItem toolitemAddFromTemplate;
+	private ToolItem toolitemSetInputTemplate;
 
 	private EkekoLabelProvider ekekoLabelProvider;
-
-	private ToolItem toolitemAddPositive;
-
 
 	private Set<Collection<Object>> results = new HashSet<>();
 	
 	private Set<Object> positiveIDs = new HashSet<>();
-	private Set<Object> negativeIDs = new HashSet<>();
-
-	private IStructuredContentProvider verifiedContentProvider;
 
 	private ArrayContentProvider matchesContentProvider;
 
-	private ToolItem toolitemDeleteVerifiedResult;
+	private ToolItem toolitemDeleteDesiredMatch;
 
 
 	@Override
@@ -147,12 +131,16 @@ public class RecommendationEditor extends EditorPart {
 	public static Object projectvalueForIdentifier(Object identifier) {
 		return FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE.invoke(identifier);
 	}
+	
+	public static Object evolve(Object inputTemplate, Object desiredMatches, RecommendationEditor gui) {
+		return FN_EVOLVE.invoke(inputTemplate, desiredMatches, gui);
+	}
 
 	
 	@Override
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 		setSite(site);
-		setInput(input);
+	 	setInput(input);
 		setPartName(input.getName());
 	}
 
@@ -169,9 +157,21 @@ public class RecommendationEditor extends EditorPart {
 	@Override
 	public void createPartControl(Composite parent) {
 		parent.setLayout(new GridLayout(2,true));
+		
+		// **** Toolbar at the top of the editor
 		toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
 		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
-
+		
+		toolitemSetInputTemplate = new ToolItem(toolBar, SWT.NONE);
+		toolitemSetInputTemplate.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				onEditLink();
+			}
+		});
+		toolitemSetInputTemplate.setImage(EkekoSnippetsPlugin.IMG_ADD);
+		toolitemSetInputTemplate.setToolTipText("Set the input template that needs recommendations");
+		
 		toolitemAddFromTemplate = new ToolItem(toolBar, SWT.NONE);
 		toolitemAddFromTemplate.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -179,62 +179,47 @@ public class RecommendationEditor extends EditorPart {
 				onAddMatchesFromTemplate();
 			}
 		});
-		toolitemAddFromTemplate.setImage(EkekoSnippetsPlugin.IMG_ADD);
+		toolitemAddFromTemplate.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_ADD);
 		toolitemAddFromTemplate.setToolTipText("Add the matches of a template as desired matches");
 
-
-		toolitemAddPositive = new ToolItem(toolBar, SWT.NONE);
-		toolitemAddPositive.addSelectionListener(new SelectionAdapter() {
+		toolitemDeleteDesiredMatch = new ToolItem(toolBar, SWT.NONE);
+		toolitemDeleteDesiredMatch.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onAddPositiveExample();
+				onDeleteFromDesiredMatches();
 			}
 		});
-		toolitemAddPositive.setImage(EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE);
-		toolitemAddPositive.setToolTipText("Mark as positive example");
+		toolitemDeleteDesiredMatch.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_DELETE);
+		toolitemDeleteDesiredMatch.setToolTipText("Delete from desired matches");
 
-
-		final ToolItem tltmSearchModifications = new ToolItem(toolBar, SWT.NONE);
-		tltmSearchModifications.addSelectionListener(new SelectionAdapter() {
+		final ToolItem toolitemEvolve = new ToolItem(toolBar, SWT.NONE);
+		toolitemEvolve.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onSearchModifications();
+				onEvolve();
 			}
 		});
-		tltmSearchModifications.setImage(EkekoSnippetsPlugin.IMG_SEARCH);
-		tltmSearchModifications.setToolTipText("Suggest suitable modifications to template");
-		tltmSearchModifications.setEnabled(false);
+		toolitemEvolve.setImage(EkekoSnippetsPlugin.IMG_RECOMMENDATION);
+		toolitemEvolve.setToolTipText("Suggest suitable modifications to the input template");
 
 
 
 		linkStatus = new Link(parent, SWT.NONE);
-		linkStatus.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-
 		linkStatus.addListener(SWT.Selection, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
-				if(event.text.equals("linked")) {
+				if(event.text.equals("input template")) {
 					onEditLink();
 				} else {
 					onRevealLinkedEditor();
 				}
 			}});
 
-		linkButton = new Button(parent, SWT.NONE);
-		linkButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
-		linkButton.setText("Link to editor...");
-		linkButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				onEditLink();
-			}
-		});
-
 		SashForm sash = new SashForm(parent, SWT.VERTICAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
-		// Top component of the SashForm
-		matchesViewer = new TableViewer(sash, SWT.BORDER | SWT.FULL_SELECTION);
+		// **** Top component of the SashForm: List of desired matches
+		matchesViewer = new TableViewer(sash, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI);
 		matchesViewerTable = matchesViewer.getTable();
 		matchesViewerTable.setLinesVisible(true);
 		matchesViewerTable.setHeaderVisible(true);
@@ -250,21 +235,16 @@ public class RecommendationEditor extends EditorPart {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
 				ISelection selection = event.getSelection();
-				toolitemAddPositive.setEnabled(!selection.isEmpty());
-
 			}
 		});
 		
-		// Bottom component of the sash form
-//		SwtLiveChartViewer view = new SwtLiveChartViewer(sash, SWT.NO_BACKGROUND);
-//        Chart chart = view.createLiveChart();
-		
+		// **** Bottom component of the sash form: Results of genetic algorithm
 		ChartWithAxes chart = ChartWithAxesImpl.create();
 		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
-		chart.getPlot().setBackground(ColorDefinitionImpl.ORANGE());
-		chart.getLegend().setItemType(LegendItemType.CATEGORIES_LITERAL);
-		chart.getLegend().setVisible(true);
-		chart.getTitle().getLabel().getCaption().setValue("Hello world");
+		chart.getPlot().setBackground(ColorDefinitionImpl.WHITE());
+//		chart.getLegend().setItemType(LegendItemType.CATEGORIES_LITERAL);
+		chart.getLegend().setVisible(false);
+//		chart.getTitle().getLabel().getCaption().setValue("Hello world");
 		
 		Axis xAxis = ((ChartWithAxes) chart).getPrimaryBaseAxes()[0];
         xAxis.getTitle().setVisible(true);
@@ -284,14 +264,20 @@ public class RecommendationEditor extends EditorPart {
         sdX.getSeries().add(seCategory);
         
         NumberDataSet yDataSet = NumberDataSetImpl.create(new double[]{1.4, 3.5});
-        BarSeries bs1 = (BarSeries) BarSeriesImpl.create();
+        LineSeries bs1 = (LineSeries) LineSeriesImpl.create();
         bs1.setDataSet(yDataSet);
         SeriesDefinition sdY = SeriesDefinitionImpl.create();
         yAxis.getSeriesDefinitions().add(sdY);
         sdY.getSeries().add(bs1);
 
-        ChartCanvas view = new ChartCanvas(sash, SWT.NO_BACKGROUND);
+        TabFolder tabs = new TabFolder(sash, SWT.BOTTOM);
+        TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
+        fitnessTab.setText("Charts");
+        
+        ChartCanvas view = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
 		view.setChart(chart);
+		
+		fitnessTab.setControl(view);
 
 		//**** Bottom ****
 //		Composite bottomComposite = new Composite(sash, SWT.NONE);
@@ -344,118 +330,44 @@ public class RecommendationEditor extends EditorPart {
 //
 //		verifiedViewerTable.setLinesVisible(true);
 //		verifiedViewerTable.setHeaderVisible(true);
-		
-//		TableViewerColumn imgColumn = new TableViewerColumn(verifiedViewer, SWT.NONE, 0);
-//		imgColumn.getColumn().setWidth(24);
-//		imgColumn.getColumn().setResizable(false);
-//		imgColumn.getColumn().setText("");
-//		imgColumn.getColumn().setMoveable(false);
-//		imgColumn.setLabelProvider(new ColumnLabelProvider() {
-//			@SuppressWarnings("rawtypes")
-//			@Override
-//			public String getText(Object element) {
-//				return "";
-//			}
-//			
-//			@Override
-//			public org.eclipse.swt.graphics.Image getImage(Object tupleIdentifier) {
-//				if(isPositiveIdentifier(tupleIdentifier)) 
-//					return EkekoSnippetsPlugin.IMG_POSITIVE_EXAMPLE;
-//				if(isNegativeIdentifier(tupleIdentifier))
-//					return EkekoSnippetsPlugin.IMG_NEGATIVE_EXAMPLE;
-//				return null;
-//			}
-//			
-//		});
-//
-//
-//		verifiedContentProvider = new ArrayContentProvider();
-//		verifiedViewer.setContentProvider(verifiedContentProvider);		
-//		verifiedViewer.setInput(Sets.union(positiveIDs,negativeIDs));
-//		
-//		verifiedViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-//			@Override
-//			public void selectionChanged(SelectionChangedEvent event) {
-//				ISelection selection = event.getSelection();
-//				toolitemDeleteVerifiedResult.setEnabled(!selection.isEmpty());
-//
-//			}
-//		});
-
-		
-		
+	
+	
 
 		addActiveColumnListener(matchesViewerTable);
-//		addActiveColumnListener(verifiedViewerTable);
-
 		addMenu(matchesViewer);
-//		addMenu(verifiedViewer);
-
 
 		ekekoLabelProvider = new EkekoLabelProvider();
 
 		linkToEditor(null);
-		updateWidgets();
+		updateLinkWidget();
 
 	}
 
-	protected void onDeleteVerifiedResult() {
-		ISelection selection = verifiedViewer.getSelection();
+	protected void onDeleteFromDesiredMatches() {
+		ISelection selection = matchesViewer.getSelection();
 		IStructuredSelection sel = (IStructuredSelection) selection;
-		if(sel.isEmpty()) {
-			return;
+		
+		for (Object elem:sel.toArray()) {
+			results.remove(elem);
 		}
-		Object exampleID = sel.getFirstElement();
-		positiveIDs.remove(exampleID);
-		negativeIDs.remove(exampleID);
-		verifiedViewer.refresh();
+		
+		matchesViewer.refresh();
 	}
 
 	protected boolean isPositiveIdentifier(Object tupleIdentifier) {
 		return positiveIDs.contains(tupleIdentifier);
 	}
 
-	protected void onSearchModifications() {
-
-	}
-
-	protected void addVerifiedExample(boolean isPositive) {
-		ISelection selection = matchesViewer.getSelection();
-		IStructuredSelection sel = (IStructuredSelection) selection;
-		if(sel.isEmpty()) {
-			return;
-		}
-		Collection selectedTuple = (Collection) sel.getFirstElement();
-		Object tupleIdentifier = projectTupleIdentifier(selectedTuple);
-		if(isPositive) {
-			positiveIDs.add(tupleIdentifier);
-			negativeIDs.remove(tupleIdentifier);
-		} else {
-			negativeIDs.add(tupleIdentifier);
-			positiveIDs.remove(tupleIdentifier);
-
-		}
-		//arraycontentprovider's implementation does nothing
-		//verifiedContentProvider.inputChanged(verifiedViewer, verifiedViewer.getInput(), Sets.union(positives, negatives));
-		
-		//would be better to update only for the added example...
-		verifiedViewer.setInput(Sets.union(positiveIDs, negativeIDs));
-		matchesViewer.refresh();
-	}
-
-	protected void onAddPositiveExample() {
-		addVerifiedExample(true);
-	}
-
-	protected void onAddNegativeExample() {
-		addVerifiedExample(false);
+	protected void onEvolve() {
+		evolve(inputTemplateEditor.getGroup().getGroup(), results, this);
 	}
 
 	protected void onAddMatchesFromTemplate() {
+		// First pick a template or transformation
 		ListDialog listSelectionDialog = new ListDialog(getSite().getShell());
 		listSelectionDialog.setContentProvider(new ArrayContentProvider());
 		listSelectionDialog.setLabelProvider(new WorkbenchPartLabelProvider());
-		listSelectionDialog.setInput(getTemplateEditors().toArray());
+		listSelectionDialog.setInput(getTemplateEditors(true).toArray());
 		listSelectionDialog.setTitle("Retrieve desired matches from template");
 		listSelectionDialog.setMessage("Select a Ekeko/X template or transformation editor.");
 		int open = listSelectionDialog.open();
@@ -473,13 +385,10 @@ public class RecommendationEditor extends EditorPart {
 					linkedTemplateEditor = (TemplateEditor) ed;
 					linkedTransformationOrTemplateEditor = ed;
 				}
-				
-				
-				
 			}
 		}
 		
-		
+		// Create the columns for the table
 		for (TableColumn tableColumn : matchesViewerTable.getColumns()) {
 			tableColumn.dispose();
 		}
@@ -494,7 +403,8 @@ public class RecommendationEditor extends EditorPart {
 				}
 			});
 		}
-
+		
+		// Add the matches to the table
 		matchesViewerTable.layout(true);
 		results = new HashSet(getResults());
 		matchesViewer.setInput(results);
@@ -508,7 +418,7 @@ public class RecommendationEditor extends EditorPart {
 
 	}
 
-	private List<IEditorPart> getTemplateEditors() {
+	private List<IEditorPart> getTemplateEditors(boolean includeTransformations) {
 		IEditorReference[] editorReferences = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getEditorReferences();
 		LinkedList<IEditorPart> editors = new LinkedList<>();
 		for(IEditorReference ref : editorReferences) {
@@ -516,7 +426,7 @@ public class RecommendationEditor extends EditorPart {
 			if(editor instanceof TemplateEditor) {
 				editors.add(editor);
 			}
-			if(editor instanceof TransformationEditor) {
+			if(includeTransformations && editor instanceof TransformationEditor) {
 				editors.add(editor);
 			}
 		}
@@ -527,48 +437,27 @@ public class RecommendationEditor extends EditorPart {
 		ListDialog listSelectionDialog = new ListDialog(getSite().getShell());
 		listSelectionDialog.setContentProvider(new ArrayContentProvider());
 		listSelectionDialog.setLabelProvider(new WorkbenchPartLabelProvider());
-		listSelectionDialog.setInput(getTemplateEditors().toArray());
-		listSelectionDialog.setTitle("Select Ekeko/X editor");
-		listSelectionDialog.setMessage("Select the Ekeko/X template or transformation editor to link to.");
+		listSelectionDialog.setInput(getTemplateEditors(false).toArray());
+		listSelectionDialog.setTitle("Select Input Template");
+		listSelectionDialog.setMessage("Select the Ekeko/X template for which recommendations are needed.");
 		int open = listSelectionDialog.open();
 		if(open == listSelectionDialog.OK) {
 			Object[] result = listSelectionDialog.getResult();
 			if(result.length == 1) {
-				linkToEditor((IEditorPart) result[0]);
+				inputTemplateEditor = (TemplateEditor) result[0];
+				updateLinkWidget();
 			}
 		}
-
 	}
 
 	private void updateLinkWidget() {
-		if(linkedTransformationOrTemplateEditor instanceof TransformationEditor) {
-			linkStatus.setText("Linked to LHS of transformation editor on <a>" + linkedTransformationOrTemplateEditor.getEditorInput().getName() + "</a>");
-		}
-		if(linkedTransformationOrTemplateEditor instanceof TemplateEditor) {
-			linkStatus.setText("Linked to template editor on <a>" + linkedTransformationOrTemplateEditor.getEditorInput().getName() + "</a>");
-		}
-		if(linkedTransformationOrTemplateEditor == null) {
-			linkStatus.setText("Not <a>linked</a> to template editor.");
+		if(inputTemplateEditor == null) {
+			linkStatus.setText("No <a>input template</a> selected.");
+		} else {
+			linkStatus.setText("Input template: <a>" + inputTemplateEditor.getEditorInput().getName() + "</a>");
 		}
 		linkStatus.pack();
-
 	}
-
-	private void updateWidgets() {
-		updateLinkWidget();
-
-		if(linkedTemplateEditor == null) {
-
-			toolitemAddPositive.setEnabled(false);
-			toolitemAddFromTemplate.setEnabled(false);
-		} else {	
-			toolitemAddFromTemplate.setEnabled(true);
-			ISelection selection = matchesViewer.getSelection();
-			toolitemAddPositive.setEnabled(!selection.isEmpty());
-		}
-//		toolitemDeleteVerifiedResult.setEnabled(!verifiedViewer.getSelection().isEmpty());
-	}
-
 
 	@SuppressWarnings("rawtypes")
 	private Collection getResults() {
@@ -595,35 +484,18 @@ public class RecommendationEditor extends EditorPart {
 			linkedTemplateEditor = null;
 			linkedTransformationOrTemplateEditor = null;
 		}
-		updateWidgets();
+		updateLinkWidget();
 	}
 
 	private void addMenu(final TableViewer tableViewer) {
 		final Table table = tableViewer.getTable();
 		final MenuManager mgr = new MenuManager();
-//		final Action insertColumnAfter = new Action("Insert New Column After") {
-//			public void run() {
-//				addColumnToVerifiedViewer(activeColumn + 1);
-//				verifiedViewer.refresh();
-//			}
-//		};
-//		insertColumnAfter.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_ADD));
-//
-//
-//		final Action removeColumn = new Action("Remove Column") {
-//			public void run() {
-//				removeColumn(activeColumn);
-//			}
-//		};
-//		removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
-
 
 		final Action revealNode = new Action("Reveal In Editor") {
 			public void run() {
 				revealNode(tableViewer, activeColumn);
 			}
 		};
-		//removeColumn.setImageDescriptor(ImageDescriptor.createFromImage(EkekoSnippetsPlugin.IMG_COLUMN_DELETE));
 
 
 
@@ -704,44 +576,12 @@ public class RecommendationEditor extends EditorPart {
 	}
 
 
-	protected TableViewerColumn addColumnToVerifiedViewer(final int columnIndex) {
-		String attributeName = getAttributeName();
-		if(attributeName == null)
-			return null;
-		TableViewerColumn col = addColumn(verifiedViewer, columnIndex, attributeName);
-		col.setLabelProvider(new ColumnLabelProvider() {
-			@SuppressWarnings("rawtypes")
-			@Override
-			public String getText(Object element) {
-				Collection tuple = (Collection) element;
-				Object identifier = nth(tuple, columnIndex - 1); //0th col is the +/- img
-				Object value = projectvalueForIdentifier(identifier);
-				return ekekoLabelProvider.getText(value);
-			}			
-		});
-		return col;
-	}
 
-
-	public boolean isPositive(Collection<Object> tuple) {
-		Object tupleIdentifier = projectTupleIdentifier(tuple);
-		return isPositiveIdentifier(tupleIdentifier);
-	}
-
-	public boolean isNegative(Collection<Object> tuple) {
-		Object tupleIdentifier = projectTupleIdentifier(tuple);
-		return isNegativeIdentifier(tupleIdentifier);
-	}
-
-	private boolean isNegativeIdentifier(Object tupleIdentifier) {
-		return negativeIDs.contains(tupleIdentifier);
-	}
 
 	@Override
 	public void setFocus() {
 		//Object cljTransformation = transformationEditor.getTransformation();
 		//textViewerSnippet.getControl().setFocus();
-
 	}
 
 	public void setTemplateEditor(TemplateEditor templateEditor) {
@@ -771,8 +611,6 @@ public class RecommendationEditor extends EditorPart {
 
 	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
 	}
-
-
 
 
 }

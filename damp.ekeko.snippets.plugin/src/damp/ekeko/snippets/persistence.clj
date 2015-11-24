@@ -397,9 +397,6 @@
   (set! (damp.ekeko.snippets.gui.RecommendationEditor/FN_PROJECT_VALUE_IDENTIFIER) astnode/project-value-identifier)
   (set! (damp.ekeko.snippets.gui.RecommendationEditor/FN_PROJECT_TUPLE_IDENTIFIER) astnode/project-tuple-identifier)
   (set! (damp.ekeko.snippets.gui.RecommendationEditor/FN_IDENTIFIER_CORRESPONDING_PROJECT_VALUE) astnode/corresponding-project-value)
-  
-
-  
   )
 
 

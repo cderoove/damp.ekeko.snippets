@@ -161,7 +161,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	
 	public void startClojureCode(BundleContext bundleContext) throws Exception {
 		Bundle b = bundleContext.getBundle();
-		String[] filenames= { "damp.ekeko", "damp.ekeko.snippets" };	
+		String[] filenames= { "damp.ekeko", "damp.ekeko.snippets", "damp.ekeko.snippets.geneticsearch.search" };	
 		for(String filename : filenames) {
 			try {
 				ClojureOSGi.require(b, filename);

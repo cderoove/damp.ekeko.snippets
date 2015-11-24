@@ -12,7 +12,6 @@
     [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
   (:require [clojure.core.logic :as cl])
   (:require [damp.ekeko]
-;            [damp.ekeko.snippets :as snippets]
             [damp.ekeko.jdt
              [astnode :as astnode]])
   (:require [damp.ekeko.snippets 
@@ -116,7 +115,9 @@
    :match-timeout 10000
    :thread-group (new ThreadGroup "Evolve")
    :tournament-rounds 7
-   :mutation-operators registered-operators|search})
+   :mutation-operators registered-operators|search
+   :gui-editor nil ; If set to a RecommendationEditor instance, the results of each generation are pushed to this GUI component
+   })
 
 (defrecord
   ^{:doc "Specifies the 'oracle' for testing the fitness of templates produced by our genetic search algorithm
@@ -606,6 +607,19 @@
         ind (individual/make-individual templategroup)
         new-ind (individual/compute-fitness ind fitness)]
     {:fitness (individual/individual-fitness new-ind) :components (individual/individual-fitness-components new-ind)}))
+
+(defn evolve-gui [templategroup matches gui]
+  (inspector-jay.core/inspect matches)
+  (let [verifiedmatches (make-verified-matches (into [] matches) [])
+        config {:initial-population 
+                (population-from-templates [templategroup] 5)
+                :gui-editor gui}]
+    (future 
+      (apply evolve verifiedmatches (mapcat identity (vec config))))))
+
+(defn register-callbacks []
+  (set! (damp.ekeko.snippets.gui.RecommendationEditor/FN_EVOLVE) evolve-gui))
+(register-callbacks)
 
 (comment
   (do 

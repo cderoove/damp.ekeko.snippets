@@ -60,7 +60,7 @@
 (defn
   query-by-snippetgroup|java
   [snippetgroup]
-  (let [solutions (query-by-snippetgroup snippetgroup)]
+  (let [solutions (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko '() '() true)]
     ;(java.util.ArrayList. solutions)
     (into #{} solutions)))
 
