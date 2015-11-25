@@ -35,6 +35,8 @@ import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -60,6 +62,7 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
@@ -107,7 +110,7 @@ public class RecommendationEditor extends EditorPart {
 
 	private Set<Collection<Object>> desiredMatches = new HashSet<>();
 	private List<List<Object>> evolveResults = new ArrayList<List<Object>>();
-	
+	private List<String> bestTemplatePerGen = new ArrayList<String>();
 
 	private ToolItem toolitemDeleteDesiredMatch;
 	
@@ -123,6 +126,7 @@ public class RecommendationEditor extends EditorPart {
 			+ ":quick-matching false\n"
 			+ ":match-timeout 10000\n"
 			+ ":tournament-rounds 7";
+	private String outputDir = "";
 	
 	private Series generationAxis;
 	private LineSeries f1Data;
@@ -284,10 +288,10 @@ public class RecommendationEditor extends EditorPart {
 		resultsTableViewer.setInput(evolveResults);
 
 		TableViewerColumn[] cols = new TableViewerColumn[4];
-		cols[0] = addColumn(resultsTableViewer, 0, "Gen", 40);
-		cols[1] = addColumn(resultsTableViewer, 1, "Best Fitness", 80);
-		cols[2] = addColumn(resultsTableViewer, 2, "Best F1", 80);
-		cols[3] = addColumn(resultsTableViewer, 3, "Best Partial", 80);
+		cols[0] = addColumn(resultsTableViewer, 0, "Gen", 35);
+		cols[1] = addColumn(resultsTableViewer, 1, "Best Fitness", 100);
+		cols[2] = addColumn(resultsTableViewer, 2, "Best F1", 100);
+		cols[3] = addColumn(resultsTableViewer, 3, "Best Partial", 100);
 		for (int i=0; i< cols.length; i++) {
 			final int idx = i;
 			cols[i].setLabelProvider(new ColumnLabelProvider() {
@@ -296,6 +300,31 @@ public class RecommendationEditor extends EditorPart {
 				}
 			});
 		}
+		
+		resultsTableViewer.addDoubleClickListener(new IDoubleClickListener() {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
+				try {
+					IStructuredSelection selection = (IStructuredSelection)event.getSelection();
+					int i = evolveResults.indexOf(selection.getFirstElement());
+					
+					PopulationInspectorDialog pi = new PopulationInspectorDialog(
+							getSite().getShell(), outputDir + i + "/");
+					pi.open();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		resultsTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				IStructuredSelection selection = (IStructuredSelection)event.getSelection();
+				int i = evolveResults.indexOf(selection.getFirstElement());
+				bestTemplateTextArea.setText(bestTemplatePerGen.get(i));
+			}
+		});
 		
 		// ** Best template
 		bestTemplateTextArea = new org.eclipse.swt.widgets.Text(resultSash, SWT.BORDER);
@@ -361,13 +390,15 @@ public class RecommendationEditor extends EditorPart {
 	 * To be called by the evolve function (in search.clj) on each generation
 	 */
 	public void onNewGeneration(Integer generation, Double bestFitness, Double bestF1, Double bestPartial, 
-			String bestTemplate) {
+			String bestTemplate, String outputDir) {
 		// This method will be called from a separate thread.
 		// We need to make sure all GUI changes happen on the SWT event thread using asyncExec.
 		Display.getDefault().asyncExec(new Runnable() {
 		    public void run() {
+		    	RecommendationEditor.this.outputDir = outputDir;
 		    	addToChart(generation, bestF1, bestPartial);
 		    	addToTable(generation, bestFitness, bestF1, bestPartial);
+		    	bestTemplatePerGen.add(bestTemplate);
 		    	bestTemplateTextArea.setText(bestTemplate);
 		    }
 		});

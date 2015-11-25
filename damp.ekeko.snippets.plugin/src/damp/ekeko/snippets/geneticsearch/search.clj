@@ -361,9 +361,11 @@
                operandvalues))]
     (individual/make-individual
       (operatorsrep/apply-operator-to-snippetgroup updated-group new-snippet value operator bindings)
-      {:mutation-operator (conj (individual/individual-info individual :mutation-operator) (operatorsrep/operator-id operator))
-       :mutation-node (conj (individual/individual-info individual :mutation-node) value)
-       :mutation-opvals (conj (individual/individual-info individual :mutation-opvals) operandvalues)}
+      {:mutation-operator (operatorsrep/operator-id operator)
+       :mutation-node value
+       :mutation-opvals operandvalues
+       :id (str (gensym "0"))
+       :original (individual/individual-info individual :id)}
       )))
 
 (defn- node-expected-class
@@ -444,9 +446,14 @@
    of random entries in the population, then return the best one from those entries.
    @param tournament-size  The number of random entries to pick"
   [population tournament-size]
-  (let [size (count population)]
-    (nth population 
-         (apply max (repeatedly tournament-size #(rand-int size))))))
+  (let [size (count population)
+        selected (nth population 
+                      (apply max (repeatedly tournament-size #(rand-int size))))]
+    (individual/individual-set-info 
+      selected
+      {:selected true
+       :id (str (gensym "0"))
+       :original (individual/individual-info selected :id)})))
 
 (defn
   evolve
@@ -475,9 +482,9 @@
      csv-columns ["Generation" "Total time" "Generation time"
                   "Best fitness" "Worst fitness" "Average fitness"
                   "Best fscore" "Worst fscore" "Average fscore"
-                  "Best partial" "Worst partial" "Average partial"
-                  "Best dirscore" "Worst dirscore" "Average dirscore"
-                  "Average op-bias"]
+                  "Best partial" "Worst partial" "Average partial"]
+     gen-csv-name "population.csv"
+     gen-csv-columns ["Id" "Original" "Fitness" "F1" "Partial" "Operator" "Subject" "Operands"]
      start-time (. System (nanoTime))
      
      
@@ -499,7 +506,6 @@
      tournament-size (:tournament-rounds config)]
     (util/make-dir output-dir)
     (util/append-csv csv-name csv-columns)
-;    (spit (str output-dir "config.txt") (pr-str config))
     
     (loop
       [generation resume-generation
@@ -522,18 +528,13 @@
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
                              (if (pos? filter-score) ind))))
             best-fitness (individual/individual-fitness (last population))]
+        
+        ; First print and store as much info as possible on the current generation
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
         (println "Fitnesses:" (map individual/individual-fitness-components population))
         (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
-        (if (not (nil? (:gui-editor config)))
-          (let [editor (:gui-editor config)]
-            (.onNewGeneration editor 
-              (int generation)
-              best-fitness
-              (double (first (individual/individual-fitness-components (last population))))
-              (double (second (individual/individual-fitness-components (last population))))
-              (persistence/snippetgroup-string (individual/individual-templategroup (last population))))))
+        
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -544,20 +545,36 @@
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))
-;                                   (nth (individual/individual-fitness-components (last population)) 2) ; Dirscore
-;                                   (nth (individual/individual-fitness-components (first population)) 2)
-;                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 2)) population))
-;                                   (util/average (map (fn [ind] (nth (individual/individual-fitness-components ind) 3)) population)) ; Average op-bias
                                    ])
         (util/make-dir (str output-dir generation))
+        (util/append-csv (str output-dir generation "/" gen-csv-name) gen-csv-columns)
         (doall (map-indexed
                  (fn [idx individual]
+                   (util/append-csv (str output-dir generation "/" gen-csv-name)
+                                    [(individual/individual-info (nth population idx) :id) 
+                                     (individual/individual-info (nth population idx) :original)
+                                     (individual/individual-fitness (nth population idx))
+                                     (first (individual/individual-fitness-components (nth population idx)))
+                                     (second (individual/individual-fitness-components (nth population idx)))
+                                     (individual/individual-info (nth population idx) :mutation-operator)
+                                     (pr-str (individual/individual-info (nth population idx) :mutation-node))
+                                     (pr-str (individual/individual-info (nth population idx) :mutation-opvals))])
                    (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
                                                   (individual/individual-templategroup individual))) 
                  population))
         
-        ;        (doseq [x population]
-        ;          (println "OP:" (individual/individual-info x :mutation-operator)))
+        (if (not (nil? (:gui-editor config)))
+          (let [editor (:gui-editor config)]
+            (.onNewGeneration editor 
+              (int generation)
+              best-fitness
+              (double (first (individual/individual-fitness-components (last population))))
+              (double (second (individual/individual-fitness-components (last population))))
+              (persistence/snippetgroup-string (individual/individual-templategroup (last population)))
+              output-dir)))
+        
+        
+        ; Core of the genetic search algorithm
         (cond
           (>= generation (:max-generations config))
           (do 

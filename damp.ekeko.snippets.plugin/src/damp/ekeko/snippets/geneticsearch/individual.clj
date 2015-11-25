@@ -60,6 +60,10 @@
   [individual key]
   (key (:info individual)))
 
+(defn individual-set-info
+  [individual info-map]
+  (assoc individual :info info-map))
+
 (defn individual-add-info
   [individual info-map]
   (let [old-info (:info individual)
