@@ -557,7 +557,7 @@
                                      (first (individual/individual-fitness-components (nth population idx)))
                                      (second (individual/individual-fitness-components (nth population idx)))
                                      (individual/individual-info (nth population idx) :mutation-operator)
-                                     (pr-str (individual/individual-info (nth population idx) :mutation-node))
+                                     (pr-str (type (individual/individual-info (nth population idx) :mutation-node)))
                                      (pr-str (individual/individual-info (nth population idx) :mutation-opvals))])
                    (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
                                                   (individual/individual-templategroup individual))) 
@@ -570,7 +570,7 @@
               best-fitness
               (double (first (individual/individual-fitness-components (last population))))
               (double (second (individual/individual-fitness-components (last population))))
-              (persistence/snippetgroup-string (individual/individual-templategroup (last population)))
+              (individual/individual-templategroup (last population))
               output-dir)))
         
         

@@ -110,6 +110,8 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static Image IMG_RESULTS_REFRESH;
 
 	public static Image IMG_ANCHOR;
+	public static Image IMG_BACK;
+	public static Image IMG_HISTORY;
 
 
 	static {
@@ -118,6 +120,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
 		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
 		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
+		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
 		
 		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
 		IMG_TEMPLATE_ADD = getImageDescriptor("icons/notebook--plus.png").createImage();
@@ -136,6 +139,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		
 		IMG_INTENDED_RESULTS = getImageDescriptor("icons/spectacle.png").createImage();
 		IMG_RECOMMENDATION = getImageDescriptor("icons/dna.png").createImage();
+		IMG_HISTORY = getImageDescriptor("icons/history.png").createImage();
 
 		IMG_POSITIVE_EXAMPLE = getImageDescriptor("icons/plus-white.png").createImage();
 		IMG_NEGATIVE_EXAMPLE = getImageDescriptor("icons/minus-white.png").createImage();

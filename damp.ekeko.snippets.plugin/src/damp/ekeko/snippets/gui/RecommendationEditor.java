@@ -33,6 +33,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -46,6 +47,7 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -62,7 +64,6 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
@@ -79,6 +80,7 @@ import baristaui.util.MarkerUtility;
 import clojure.lang.IFn;
 import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
+import damp.ekeko.snippets.data.TemplateGroup;
 
 public class RecommendationEditor extends EditorPart {
 	public RecommendationEditor() {
@@ -110,7 +112,7 @@ public class RecommendationEditor extends EditorPart {
 
 	private Set<Collection<Object>> desiredMatches = new HashSet<>();
 	private List<List<Object>> evolveResults = new ArrayList<List<Object>>();
-	private List<String> bestTemplatePerGen = new ArrayList<String>();
+	private List<Object> bestTemplatePerGen = new ArrayList<Object>();
 
 	private ToolItem toolitemDeleteDesiredMatch;
 	
@@ -133,7 +135,7 @@ public class RecommendationEditor extends EditorPart {
 	private LineSeries partialData;
 	private ChartCanvas canvasView;
 
-	private org.eclipse.swt.widgets.Text bestTemplateTextArea;
+	private TextViewer bestTemplateTextArea;
 
 	private TableViewer resultsTableViewer;
 
@@ -309,7 +311,7 @@ public class RecommendationEditor extends EditorPart {
 					int i = evolveResults.indexOf(selection.getFirstElement());
 					
 					PopulationInspectorDialog pi = new PopulationInspectorDialog(
-							getSite().getShell(), outputDir + i + "/");
+							getSite().getShell(), outputDir + i + "/", i);
 					pi.open();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -322,16 +324,73 @@ public class RecommendationEditor extends EditorPart {
 			public void selectionChanged(SelectionChangedEvent event) {
 				IStructuredSelection selection = (IStructuredSelection)event.getSelection();
 				int i = evolveResults.indexOf(selection.getFirstElement());
-				bestTemplateTextArea.setText(bestTemplatePerGen.get(i));
+				updateBestTemplate(bestTemplatePerGen.get(i));
 			}
 		});
 		
 		// ** Best template
-		bestTemplateTextArea = new org.eclipse.swt.widgets.Text(resultSash, SWT.BORDER);
-		bestTemplateTextArea.setText("");
+		bestTemplateTextArea = new TextViewer(resultSash, SWT.BORDER);
 		bestTemplateTextArea.setEditable(false);
+		bestTemplateTextArea.getTextWidget().setFont(EkekoSnippetsPlugin.getEditorFont());
 		
 		// *** Fitness chart
+		        
+        TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
+        fitnessTab.setText("Fitness chart");
+        
+        canvasView = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
+		//canvasView.setChart(chart);		
+		fitnessTab.setControl(canvasView);	
+		
+		addActiveColumnListener(matchesViewerTable);
+		addMenu(matchesViewer);
+		ekekoLabelProvider = new EkekoLabelProvider();
+		linkToEditor(null);
+		updateLinkWidget();
+	}
+	
+	/**
+	 * To be called by the evolve function (in search.clj) on each generation
+	 */
+	public void onNewGeneration(Integer generation, Double bestFitness, Double bestF1, Double bestPartial, 
+			Object bestTemplate, String outputDir) {
+		// This method will be called from a separate thread.
+		// We need to make sure all GUI changes happen on the SWT event thread using asyncExec.
+		Display.getDefault().asyncExec(new Runnable() {
+		    public void run() {
+		    	RecommendationEditor.this.outputDir = outputDir;
+		    	addToChart(generation, bestF1, bestPartial);
+		    	addToTable(generation, bestFitness, bestF1, bestPartial);
+		    	
+		    	bestTemplatePerGen.add(bestTemplate);
+		    	updateBestTemplate(bestTemplate);
+		    }
+		});
+	}
+	
+	private void updateBestTemplate(Object clojureTemplateGroup) {
+		TemplateGroup templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
+		
+		TemplatePrettyPrinter pp = new TemplatePrettyPrinter(templateGroup);
+		String printed = pp.prettyPrint();
+		
+		bestTemplateTextArea.getTextWidget().setText(printed);
+		for(StyleRange range : pp.getStyleRanges())
+			bestTemplateTextArea.getTextWidget().setStyleRange(range);
+	}
+	
+	private void addToTable(Integer generation, Double bestFitness, Double bestF1, Double bestPartial) {
+		ArrayList<Object> newRow = new ArrayList<>();
+		newRow.add(generation);
+		newRow.add(bestFitness);
+		newRow.add(bestF1);
+		newRow.add(bestPartial);
+		
+		evolveResults.add(newRow);
+		resultsTableViewer.setInput(evolveResults);
+	}
+	
+	private Chart createChart() {
 		ChartWithAxes chart = ChartWithAxesImpl.create();
 		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
 		chart.getPlot().setBackground(ColorDefinitionImpl.WHITE());
@@ -349,7 +408,7 @@ public class RecommendationEditor extends EditorPart {
         yAxis.getScale().setMin(NumberDataElementImpl.create(0.0));
         yAxis.getScale().setMax(NumberDataElementImpl.create(1.0));
 
-        NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{-1});
+        NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{});
         generationAxis = SeriesImpl.create();
         generationAxis.setDataSet(xValues);
         SeriesDefinition sdX = SeriesDefinitionImpl.create();
@@ -357,11 +416,11 @@ public class RecommendationEditor extends EditorPart {
         xAxis.getSeriesDefinitions().add(sdX);
         sdX.getSeries().add(generationAxis);
         
-        NumberDataSet y1DataSet = NumberDataSetImpl.create(new Double[]{0.0});
+        NumberDataSet y1DataSet = NumberDataSetImpl.create(new Double[]{});
         f1Data = (LineSeries) LineSeriesImpl.create();
         f1Data.setDataSet(y1DataSet);
         
-        NumberDataSet y2DataSet = NumberDataSetImpl.create(new Double[]{0.0});
+        NumberDataSet y2DataSet = NumberDataSetImpl.create(new Double[]{});
         partialData = (LineSeries) LineSeriesImpl.create();
         partialData.setDataSet(y2DataSet);
         
@@ -372,52 +431,16 @@ public class RecommendationEditor extends EditorPart {
         sdY.getSeries().add(f1Data);
         sdY.getSeries().add(partialData);
         
-        TabItem fitnessTab = new TabItem(tabs, SWT.NULL);
-        fitnessTab.setText("Fitness chart");
-        
-        canvasView = new ChartCanvas(tabs, SWT.NO_BACKGROUND);
-		canvasView.setChart(chart);		
-		fitnessTab.setControl(canvasView);	
+        return chart;
 		
-		addActiveColumnListener(matchesViewerTable);
-		addMenu(matchesViewer);
-		ekekoLabelProvider = new EkekoLabelProvider();
-		linkToEditor(null);
-		updateLinkWidget();
-	}
-	
-	/**
-	 * To be called by the evolve function (in search.clj) on each generation
-	 */
-	public void onNewGeneration(Integer generation, Double bestFitness, Double bestF1, Double bestPartial, 
-			String bestTemplate, String outputDir) {
-		// This method will be called from a separate thread.
-		// We need to make sure all GUI changes happen on the SWT event thread using asyncExec.
-		Display.getDefault().asyncExec(new Runnable() {
-		    public void run() {
-		    	RecommendationEditor.this.outputDir = outputDir;
-		    	addToChart(generation, bestF1, bestPartial);
-		    	addToTable(generation, bestFitness, bestF1, bestPartial);
-		    	bestTemplatePerGen.add(bestTemplate);
-		    	bestTemplateTextArea.setText(bestTemplate);
-		    }
-		});
-	}
-	
-	private void addToTable(Integer generation, Double bestFitness, Double bestF1, Double bestPartial) {
-		ArrayList<Object> newRow = new ArrayList<>();
-		newRow.add(generation);
-		newRow.add(bestFitness);
-		newRow.add(bestF1);
-		newRow.add(bestPartial);
-		
-		evolveResults.add(newRow);
-		resultsTableViewer.setInput(evolveResults);
-//		resultsTableViewer.redraw();
 	}
 	
 	private void addToChart(Integer generation, Double bestFitness, Double bestPartial) {
 		Chart chart = canvasView.getChart();
+		if (chart==null) {
+			chart=createChart();
+			canvasView.setChart(chart);
+		}
 		
 		NumberDataSetImpl xData = (NumberDataSetImpl)generationAxis.getDataSet();
 		Integer[] rawVals = (Integer[])(xData.getValues());

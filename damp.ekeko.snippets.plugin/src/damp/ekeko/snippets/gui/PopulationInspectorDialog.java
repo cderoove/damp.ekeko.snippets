@@ -12,15 +12,18 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Point;
@@ -32,29 +35,59 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.HandlerUtil;
 
 import damp.ekeko.gui.EkekoLabelProvider;
+import damp.ekeko.snippets.EkekoSnippetsPlugin;
+import damp.ekeko.snippets.data.TemplateGroup;
 
+/**
+ * Dialog to browse the individuals of a particular population
+ * @author Tim
+ */
 public class PopulationInspectorDialog extends Dialog {
 
-	private Text templateTextArea;
+	private String generationPath;
+	private TextViewer templateTextArea;
 	private TableViewer populationViewer;
 	private EkekoLabelProvider ekekoLabelProvider;
-	private List<List<String>> data = new ArrayList<List<String>>();;
+	private List<List<String>> rawData = new ArrayList<List<String>>();
+	private List<List<String>> data = new ArrayList<List<String>>();
+	private int generation;
 	
-	public PopulationInspectorDialog(Shell parentShell, String generationPath) {
+	public PopulationInspectorDialog(Shell parentShell, String generationPath, int gen) {
 		super(parentShell);
+		generation = gen;
+		this.generationPath = generationPath;
 		
 		// Parse the population.csv file		
+		// Columns: ["Id" "Original" "Fitness" "F1" "Partial" "Operator" "Subject" "Operands"]
 		try {
 		FileInputStream fis = new FileInputStream(new File(generationPath + "population.csv"));
 		BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 	 
 		String line = br.readLine(); // Skip the header line
+		int i = 0;
 		while ((line = br.readLine()) != null) {
-			data.add(Arrays.asList(line.split(";")));
+			List<String> split = Arrays.asList(line.split(";"));
+			rawData.add(split);
+			
+			List<String> filtered = new ArrayList<String>(split);
+			filtered.remove(0); // Remove Id and Original columns
+			filtered.remove(0);
+			filtered.add(0, new Integer(i).toString());
+			data.add(filtered);
+			
+			i++;
 		}
-	 
+		
 		br.close();
 		} catch (IOException e) {
 			e.printStackTrace();;
@@ -66,10 +99,48 @@ public class PopulationInspectorDialog extends Dialog {
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(new GridLayout(1,false));
 
+		// **** Toolbar
+		ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
+		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
+		
+		ToolItem toolitemOpenInEditor = new ToolItem(toolBar, SWT.NONE);
+		toolitemOpenInEditor.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				IStructuredSelection selection = (IStructuredSelection)populationViewer.getSelection();
+				int i = data.indexOf(selection.getFirstElement());
+				
+				IWorkbench wb = PlatformUI.getWorkbench();
+				IWorkbenchWindow window = wb.getActiveWorkbenchWindow();
+				try {
+					IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+					TemplateEditorInput templateEditorInput = new TemplateEditorInput();
+					templateEditorInput.setPathToPersistentFile(generationPath + "individual-" + i + ".ekt");
+					IEditorPart openedEditor = window.getActivePage().openEditor(templateEditorInput, TemplateEditor.ID);
+					TemplateEditor templateEditor = (TemplateEditor) openedEditor;
+					templateEditor.setPreviouslyActiveEditor(activeEditor);
+				} catch (PartInitException ex) {
+					ex.printStackTrace();
+				}
+			}
+			
+		});
+		toolitemOpenInEditor.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE);
+		toolitemOpenInEditor.setToolTipText("Open the selected individual in a template editor");
+		
+		ToolItem toolitemOpenHistory = new ToolItem(toolBar, SWT.NONE);
+		toolitemOpenHistory.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				
+			}
+		});
+		toolitemOpenHistory.setImage(EkekoSnippetsPlugin.IMG_HISTORY);
+		toolitemOpenHistory.setToolTipText("Open the mutation history of the selected individual");
+		
+		// **** Sash with population table + template view
 		SashForm sash = new SashForm(parent, SWT.HORIZONTAL);
 		sash.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 2));
 		
-		// **** Population table
+		// *** Population table
 		ekekoLabelProvider = new EkekoLabelProvider();
 		populationViewer = new TableViewer(sash, SWT.BORDER | SWT.FULL_SELECTION);
 		Table populationTable = populationViewer.getTable();
@@ -78,12 +149,12 @@ public class PopulationInspectorDialog extends Dialog {
 		
 		TableViewerColumn[] cols = new TableViewerColumn[7];
 		cols[0] = addColumn(populationViewer, 0, "Idx", 35);
-		cols[1] = addColumn(populationViewer, 1, "Fitness", 100);
-		cols[2] = addColumn(populationViewer, 2, "F1", 100);
+		cols[1] = addColumn(populationViewer, 1, "Fitness", 80);
+		cols[2] = addColumn(populationViewer, 2, "F1", 80);
 		cols[3] = addColumn(populationViewer, 3, "Partial", 100);
-		cols[4] = addColumn(populationViewer, 4, "Operator", 100);
-		cols[5] = addColumn(populationViewer, 5, "Subject", 100);
-		cols[6] = addColumn(populationViewer, 6, "Operands", 100);
+		cols[4] = addColumn(populationViewer, 4, "Operator", 160);
+		cols[5] = addColumn(populationViewer, 5, "Subject", 160);
+		cols[6] = addColumn(populationViewer, 6, "Operands", 160);
 		for (int i=0; i< cols.length; i++) {
 			final int idx = i;
 			cols[i].setLabelProvider(new ColumnLabelProvider() {
@@ -96,42 +167,43 @@ public class PopulationInspectorDialog extends Dialog {
 		populationViewer.setContentProvider(new ArrayContentProvider());
 		populationViewer.setInput(data);
 		
+		// *** Template text area
+		templateTextArea = new TextViewer(sash, SWT.BORDER);
+		templateTextArea.setEditable(false);
+		templateTextArea.getTextWidget().setFont(EkekoSnippetsPlugin.getEditorFont());
+		
 		populationViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
-//				IStructuredSelection selection = (IStructuredSelection)event.getSelection();
-//				int i = evolveResults.indexOf(selection.getFirstElement());
-//				templateTextArea.setText(bestTemplatePerGen.get(i));
+				IStructuredSelection selection = (IStructuredSelection)event.getSelection();
+				int i = data.indexOf(selection.getFirstElement());
+				onSelectIndividual(i);
 			}
 		});
+		populationViewer.setSelection(new StructuredSelection(populationViewer.getElementAt(0)),true);
 		
-		// **** Template text area
-		templateTextArea = new org.eclipse.swt.widgets.Text(sash, SWT.BORDER);
-		templateTextArea.setText("...");
-		templateTextArea.setEditable(false);
-		
-
+		sash.setWeights(new int[]{3,2});
+		sash.forceFocus();
 		return container;
 	}
 	
-	public static void main(String[] args) {
+	protected void onSelectIndividual(int i) {
+		Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(generationPath + "individual-" + i + ".ekt");
+		TemplateGroup templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
 		
+		TemplatePrettyPrinter pp = new TemplatePrettyPrinter(templateGroup);
 		
-		String bla = "hello;;world";
-		System.out.println(bla.split(";")[0]);
+		templateTextArea.getTextWidget().setText(pp.prettyPrint());
+		for(StyleRange range : pp.getStyleRanges())
+			templateTextArea.getTextWidget().setStyleRange(range);
 	}
 
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		newShell.setText("Population inspector");
+		newShell.setText("Population inspector (generation " + generation + ")");
 	}
 
-//	@Override
-//	protected Point getInitialSize() {
-//		return new Point(640, 480);
-//	}
-	
 	protected TableViewerColumn addColumn(TableViewer viewer, final int columnIndex, String attributeName, int width) {
 		TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE, columnIndex);
 		column.getColumn().setWidth(width);
