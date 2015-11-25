@@ -112,6 +112,7 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	public static Image IMG_ANCHOR;
 	public static Image IMG_BACK;
 	public static Image IMG_HISTORY;
+	public static Image IMG_PROPERTIES;
 
 
 	static {
@@ -152,7 +153,9 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		IMG_RESULTS_REFRESH = getImageDescriptor("icons/arrow_refresh.png").createImage();
 		
 		
-		IMG_ANCHOR =  getImageDescriptor("icons/anchor.png").createImage();
+		IMG_ANCHOR = getImageDescriptor("icons/anchor.png").createImage();
+		IMG_PROPERTIES = getImageDescriptor("icons/property.png").createImage();
+		
 				
 	}
 	

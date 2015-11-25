@@ -138,7 +138,8 @@
   ([snippet name]
     (individual/make-individual
       (snippetgroup/make-snippetgroup 
-       name (map matching/snippet-from-node snippet)))))
+       name (map matching/snippet-from-node snippet))
+      {:id (str (gensym "0"))})))
 
 (defn
   population-from-snippets
@@ -161,7 +162,10 @@
    (In case population-size is larger than the number of matches,
     we cycle through the matches again until the population is filled..)"
   [templates population-size]
-  (let [id-templates (map individual/make-individual templates)]
+  (let [id-templates (map
+                       (fn [template]
+                         (individual/make-individual template {:id (str (gensym "0"))}))
+                       templates)]
     (for [x (range 0 population-size)]
       (nth id-templates (mod x (count templates))))))
 
@@ -446,14 +450,21 @@
    of random entries in the population, then return the best one from those entries.
    @param tournament-size  The number of random entries to pick"
   [population tournament-size]
-  (let [size (count population)
-        selected (nth population 
-                      (apply max (repeatedly tournament-size #(rand-int size))))]
+  (let [size (count population)]
+    (nth population 
+         (apply max (repeatedly tournament-size #(rand-int size))))))
+
+(defn select-with-new-id
+  "See select
+   Also attaches new info attributes, including a new :id"
+  [population tournament-size]
+  (let [selected (select population tournament-size)]
     (individual/individual-set-info 
       selected
-      {:selected true
-       :id (str (gensym "0"))
-       :original (individual/individual-info selected :id)})))
+      {:id (str (gensym "0"))
+       :original (individual/individual-info selected :id)
+       :selected true})))
+
 
 (defn
   evolve
@@ -502,7 +513,7 @@
                                       (population-from-templates templategroups (:population-size config)))
                                     (if (nil? (:initial-population config))
                                       (population-from-snippets (:positives verifiedmatches) (:population-size config))
-                                      (:initial-population config)))) 
+                                      (:initial-population config))))
      tournament-size (:tournament-rounds config)]
     (util/make-dir output-dir)
     (util/append-csv csv-name csv-columns)
@@ -619,7 +630,7 @@
                   ; Selection
                   (util/parallel-viable-repeat 
                     (* (:selection-weight config) (count population)) 
-                    #(select population tournament-size) 
+                    #(select-with-new-id population tournament-size) 
                     (fn [ind] (pos? (individual/individual-fitness ind)))
                     (:thread-group config))))
               @new-history))))))
@@ -635,10 +646,11 @@
 
 (defn evolve-gui [templategroup matches gui config-string]
   (let [verifiedmatches (make-verified-matches (into [] matches) [])
+        config-parsed (read-string config-string)
         config (merge
-                 (read-string config-string)
+                 config-parsed
                  {:initial-population 
-                  (population-from-templates [templategroup] 5)
+                  (population-from-templates [templategroup] (:population-size config-parsed))
                   :gui-editor gui})]
     (future 
       (apply evolve verifiedmatches (mapcat identity (vec config))))))

@@ -311,7 +311,7 @@ public class RecommendationEditor extends EditorPart {
 					int i = evolveResults.indexOf(selection.getFirstElement());
 					
 					PopulationInspectorDialog pi = new PopulationInspectorDialog(
-							getSite().getShell(), outputDir + i + "/", i);
+							getSite().getShell(), outputDir, i);
 					pi.open();
 				} catch (Exception e) {
 					e.printStackTrace();

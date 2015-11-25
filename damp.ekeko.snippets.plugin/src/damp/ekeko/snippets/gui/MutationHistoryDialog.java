@@ -49,42 +49,69 @@ import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
 /**
- * Dialog to browse the individuals of a particular population
+ * Dialog to inspect the history of a particular individual; lists all individuals it is based on
  * @author Tim
  */
-public class PopulationInspectorDialog extends Dialog {
+public class MutationHistoryDialog extends Dialog {
 
 	private String dataPath;
 	private TextViewer templateTextArea;
 	private TableViewer populationViewer;
 	private EkekoLabelProvider ekekoLabelProvider;
-	private List<List<String>> rawData = new ArrayList<List<String>>();
+//	private List<List<String>> rawData = new ArrayList<List<String>>();
 	private List<List<String>> data = new ArrayList<List<String>>();
-	private int generation;
 
-	public PopulationInspectorDialog(Shell parentShell, String dataPath, int gen) {
+	private int generation; // The individual belongs to this generation
+	private int index; // Index of the individual in the generation
+
+	public MutationHistoryDialog(Shell parentShell, String dataPath, int gen, int index, String id) {
 		super(parentShell);
-		generation = gen;
+		this.generation = gen;
 		this.dataPath = dataPath;
-
-		// Parse the population.csv file		
+		this.index = index;
+		
+		// Gather info on the selected individual and all of its prior individuals
 		// Columns: ["Id" "Original" "Fitness" "F1" "Partial" "Operator" "Subject" "Operands"]
+		List<String> indiv = fetchIndividualFromCsv(dataPath + generation + "/population.csv", id);
+		
+		String original = indiv.get(1);
+		indiv.remove(0);
+		indiv.remove(0);
+		indiv.add(0, new Integer(generation).toString());
+		data.add(indiv);
+		int curGen = generation - 1;
+		System.out.println("" + curGen);
+		while (curGen >= 0) {
+			indiv = fetchIndividualFromCsv(dataPath + curGen + "/population.csv", original);
+			original = indiv.get(1);
+			indiv.remove(0);
+			indiv.remove(0);
+			indiv.add(0, new Integer(curGen).toString());
+			data.add(0,indiv);
+			
+			curGen = curGen - 1;
+		}
+	}
+
+	public List<String> fetchIndividualFromCsv(String csvPath, String id) {		
 		try {
-			FileInputStream fis = new FileInputStream(new File(dataPath + generation + "/population.csv"));
+			FileInputStream fis = new FileInputStream(new File(csvPath));
 			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 
 			String line = br.readLine(); // Skip the header line
-			int i = 0;
+			int i=0;
+			
 			while ((line = br.readLine()) != null) {
 				List<String> split = Arrays.asList(line.split(";"));
-				rawData.add(split);
-
-				List<String> filtered = new ArrayList<String>(split);
-				filtered.remove(0); // Remove Id and Original columns
-				filtered.remove(0);
-				filtered.add(0, new Integer(i).toString());
-				data.add(filtered);
-
+				System.out.println(id);
+				System.out.println("$$" + split.get(0));
+				if (split.get(0).equals(id)) {
+					System.out.println("!!");
+					br.close();
+					List<String> copy = new ArrayList<String>(split); // Need to make a copy because split is immutable..
+					copy.add(new Integer(i).toString()); // Attach the index at the end..
+					return copy;
+				}
 				i++;
 			}
 
@@ -92,54 +119,13 @@ public class PopulationInspectorDialog extends Dialog {
 		} catch (IOException e) {
 			e.printStackTrace();;
 		}
-	}
+		return null;
+	}	
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(new GridLayout(1,false));
-
-		// **** Toolbar
-		ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.RIGHT);
-		toolBar.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 2, 1));
-
-		ToolItem toolitemOpenInEditor = new ToolItem(toolBar, SWT.NONE);
-		toolitemOpenInEditor.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				IStructuredSelection selection = (IStructuredSelection)populationViewer.getSelection();
-				int i = data.indexOf(selection.getFirstElement());
-
-				IWorkbench wb = PlatformUI.getWorkbench();
-				IWorkbenchWindow window = wb.getActiveWorkbenchWindow();
-				try {
-					IEditorPart activeEditor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-					TemplateEditorInput templateEditorInput = new TemplateEditorInput();
-					templateEditorInput.setPathToPersistentFile(dataPath + generation + "/individual-" + i + ".ekt");
-					IEditorPart openedEditor = window.getActivePage().openEditor(templateEditorInput, TemplateEditor.ID);
-					TemplateEditor templateEditor = (TemplateEditor) openedEditor;
-					templateEditor.setPreviouslyActiveEditor(activeEditor);
-				} catch (PartInitException ex) {
-					ex.printStackTrace();
-				}
-			}
-
-		});
-		toolitemOpenInEditor.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE);
-		toolitemOpenInEditor.setToolTipText("Open the selected individual in a template editor");
-
-		ToolItem toolitemOpenHistory = new ToolItem(toolBar, SWT.NONE);
-		toolitemOpenHistory.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				IStructuredSelection selection = (IStructuredSelection)populationViewer.getSelection();
-				int i = data.indexOf(selection.getFirstElement());
-				
-				MutationHistoryDialog mh = new MutationHistoryDialog(
-						PopulationInspectorDialog.this.getShell(), dataPath, generation,i, rawData.get(i).get(0));
-				mh.open();
-			}
-		});
-		toolitemOpenHistory.setImage(EkekoSnippetsPlugin.IMG_HISTORY);
-		toolitemOpenHistory.setToolTipText("Open the mutation history of the selected individual");
 
 		// **** Sash with population table + template view
 		SashForm sash = new SashForm(parent, SWT.HORIZONTAL);
@@ -153,7 +139,7 @@ public class PopulationInspectorDialog extends Dialog {
 		populationTable.setHeaderVisible(true);
 
 		TableViewerColumn[] cols = new TableViewerColumn[7];
-		cols[0] = addColumn(populationViewer, 0, "Idx", 35);
+		cols[0] = addColumn(populationViewer, 0, "Gen", 35);
 		cols[1] = addColumn(populationViewer, 1, "Fitness", 80);
 		cols[2] = addColumn(populationViewer, 2, "F1", 80);
 		cols[3] = addColumn(populationViewer, 3, "Partial", 100);
@@ -182,7 +168,7 @@ public class PopulationInspectorDialog extends Dialog {
 			public void selectionChanged(SelectionChangedEvent event) {
 				IStructuredSelection selection = (IStructuredSelection)event.getSelection();
 				int i = data.indexOf(selection.getFirstElement());
-				onSelectIndividual(i);
+				onSelectIndividual(i, Integer.parseInt(data.get(i).get(7)));
 			}
 		});
 		populationViewer.setSelection(new StructuredSelection(populationViewer.getElementAt(0)),true);
@@ -192,8 +178,8 @@ public class PopulationInspectorDialog extends Dialog {
 		return container;
 	}
 
-	protected void onSelectIndividual(int i) {
-		Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(dataPath + generation + "/individual-" + i + ".ekt");
+	protected void onSelectIndividual(int gen, int i) {
+		Object clojureTemplateGroup = TemplateEditorInput.deserializeClojureTemplateGroup(dataPath + gen + "/individual-" + i + ".ekt");
 		TemplateGroup templateGroup = TemplateGroup.newFromClojureGroup(clojureTemplateGroup);
 
 		TemplatePrettyPrinter pp = new TemplatePrettyPrinter(templateGroup);
@@ -206,7 +192,7 @@ public class PopulationInspectorDialog extends Dialog {
 	@Override
 	protected void configureShell(Shell newShell) {
 		super.configureShell(newShell);
-		newShell.setText("Population inspector (generation " + generation + ")");
+		newShell.setText("Mutation history (generation " + generation + ", index " + index + ")");
 	}
 
 	protected TableViewerColumn addColumn(TableViewer viewer, final int columnIndex, String attributeName, int width) {
