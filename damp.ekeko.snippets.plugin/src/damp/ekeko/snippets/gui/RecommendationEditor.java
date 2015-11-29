@@ -26,11 +26,16 @@ import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
 import org.eclipse.birt.chart.model.type.LineSeries;
 import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.MultiStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.text.TextViewer;
@@ -82,6 +87,10 @@ import damp.ekeko.gui.EkekoLabelProvider;
 import damp.ekeko.snippets.EkekoSnippetsPlugin;
 import damp.ekeko.snippets.data.TemplateGroup;
 
+/**
+ * The recommendation editor provides the GUI to automatically generalize or refine a template group, given a set of desired matches
+ * @author Tim
+ */
 public class RecommendationEditor extends EditorPart {
 	public RecommendationEditor() {
 	}
@@ -116,8 +125,9 @@ public class RecommendationEditor extends EditorPart {
 
 	private ToolItem toolitemDeleteDesiredMatch;
 	
-	private String evolveConfig = ":max-generations 5\n"
-			+ ":population-size 10\n"
+	// Default options of the underlying genetic search algorithm; see search.clj/config-default for more information
+	private String evolveConfig = ":max-generations 100\n"
+			+ ":population-size 20\n"
 			+ ":selection-weight 1/4\n"
 			+ ":mutation-weight 3/4\n"
 			+ ":crossover-weight 0/4\n"
@@ -129,7 +139,8 @@ public class RecommendationEditor extends EditorPart {
 			+ ":match-timeout 10000\n"
 			+ ":tournament-rounds 7";
 	private String outputDir = "";
-	
+
+	// Components of the fitness chart
 	private Series generationAxis;
 	private LineSeries f1Data;
 	private LineSeries partialData;
@@ -219,6 +230,16 @@ public class RecommendationEditor extends EditorPart {
 		toolitemDeleteDesiredMatch.setImage(EkekoSnippetsPlugin.IMG_TEMPLATE_DELETE);
 		toolitemDeleteDesiredMatch.setToolTipText("Delete from desired matches");
 
+		ToolItem toolitemPopInspector = new ToolItem(toolBar, SWT.NONE);
+		toolitemPopInspector.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				openPopulationInspector((IStructuredSelection) resultsTableViewer.getSelection());
+			}
+		});
+		toolitemPopInspector.setImage(EkekoSnippetsPlugin.IMG_PROPERTIES);
+		toolitemPopInspector.setToolTipText("Open inspector for the selected generation");
+		
 		ToolItem toolitemConfig = new ToolItem(toolBar, SWT.NONE);
 		toolitemConfig.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -233,7 +254,20 @@ public class RecommendationEditor extends EditorPart {
 		toolitemEvolve.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				onEvolve();
+				if (inputTemplateEditor == null) {
+					ErrorDialog.openError(Display.getCurrent().getActiveShell(), 
+							"No input template", null, 
+							new Status(IStatus.INFO, EkekoSnippetsPlugin.PLUGIN_ID, 
+									"Please choose an input template. The recommendation system will try to automatically improve this template.", null));
+				} else if (desiredMatches.isEmpty()) {
+					ErrorDialog.openError(Display.getCurrent().getActiveShell(), 
+							"No desired matches", null, 
+							new Status(IStatus.INFO, EkekoSnippetsPlugin.PLUGIN_ID, 
+									"Please add one or more desired matches. These are required as the recommmendation system aims to find a template that produces these desired matches.", null));
+				} else {
+					onEvolve();
+					toolitemEvolve.setEnabled(false); // TODO For now, cannot restart the genetic algorithm yet
+				}
 			}
 		});
 		toolitemEvolve.setImage(EkekoSnippetsPlugin.IMG_RECOMMENDATION);
@@ -306,16 +340,7 @@ public class RecommendationEditor extends EditorPart {
 		resultsTableViewer.addDoubleClickListener(new IDoubleClickListener() {
 			@Override
 			public void doubleClick(DoubleClickEvent event) {
-				try {
-					IStructuredSelection selection = (IStructuredSelection)event.getSelection();
-					int i = evolveResults.indexOf(selection.getFirstElement());
-					
-					PopulationInspectorDialog pi = new PopulationInspectorDialog(
-							getSite().getShell(), outputDir, i);
-					pi.open();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				openPopulationInspector((IStructuredSelection)event.getSelection());
 			}
 		});
 		
@@ -479,7 +504,7 @@ public class RecommendationEditor extends EditorPart {
 	}
 	
 	protected void onEditConfig() {
-		InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(), "Edit configuration", "Recommendation configuration: (See the documentation in search.clj)", evolveConfig, null) {
+		InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(), "Edit configuration", "Recommendation configuration (See the documentation in search.clj)", evolveConfig, null) {
 			protected int getInputTextStyle() {
 				return SWT.MULTI | SWT.BORDER | SWT.V_SCROLL;
 			}
@@ -519,25 +544,35 @@ public class RecommendationEditor extends EditorPart {
 			}
 		}
 		
-		// Create the columns for the table
-		for (TableColumn tableColumn : matchesViewerTable.getColumns()) {
-			tableColumn.dispose();
-		}
-		for (Object object : getResultVariables()) {
-			String varname = (String) object;
-			final int columnIndex = matchesViewerTable.getColumnCount();
-			TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname, 200);
+		// Create the columns for the table, if needed
+//		for (TableColumn tableColumn : matchesViewerTable.getColumns()) {
+//			tableColumn.dispose();
+//		}
+		
+		if (desiredMatches.isEmpty()) { 
+			for (Object object : getResultVariables()) {
+				String varname = (String) object;
+				final int columnIndex = matchesViewerTable.getColumnCount();
+				TableViewerColumn column = addColumn(matchesViewer, columnIndex, varname, 200);
 
-			column.setLabelProvider(new ColumnLabelProvider() {
-				public String getText(Object element) {
-					return ekekoLabelProvider.getText(nth((Collection) element, columnIndex));
-				}
-			});
+				column.setLabelProvider(new ColumnLabelProvider() {
+					public String getText(Object element) {
+						return ekekoLabelProvider.getText(nth((Collection) element, columnIndex));
+					}
+				});
+			}
+		} else if (matchesViewerTable.getColumns().length != getResultVariables().size()) {
+			ErrorDialog.openError(Display.getCurrent().getActiveShell(), 
+					"Incompatible template group", null, 
+					new Status(IStatus.WARNING, EkekoSnippetsPlugin.PLUGIN_ID, 
+							"Cannot use the matches from this template group, as its number of templates does not correspond.", null));
+			return;
 		}
 		
 		// Add the matches to the table
 		matchesViewerTable.layout(true);
-		desiredMatches = new HashSet(getResults());
+		desiredMatches.addAll(getResults());
+//		desiredMatches = new HashSet(getResults());
 		matchesViewer.setInput(desiredMatches);
 		
 	}
@@ -737,6 +772,18 @@ public class RecommendationEditor extends EditorPart {
 
 
 	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
+	}
+
+	private void openPopulationInspector(IStructuredSelection selection) {
+		try {
+			int i = evolveResults.indexOf(selection.getFirstElement());
+			
+			PopulationInspectorDialog pi = new PopulationInspectorDialog(
+					getSite().getShell(), outputDir, i);
+			pi.open();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 

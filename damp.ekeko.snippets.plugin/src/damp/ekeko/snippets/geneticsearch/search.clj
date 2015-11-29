@@ -61,19 +61,19 @@
 ;             "relax-scope-to-child*"
 ;             "relax-size-to-atleast"
 ;             "relax-scope-to-member"
-             "consider-set|lst"
-;             "add-directive-type"
+;             "consider-set|lst"
+             "add-directive-type"
 ;             "add-directive-type|qname"
 ;             "add-directive-type|sname"
-;             "add-directive-refersto"
+             "add-directive-refersto"
 ;             "erase-list"
 
 ;             "replace-parent"
 ;             "erase-comments"
 
-;             "add-directive-constructs"
+             "add-directive-constructs"
 ;             "add-directive-constructedby"
-;             "add-directive-overrides"
+             "add-directive-overrides"
 ;             "generalize-directive"
 ;             "remove-directive"
 ;             "extract-template" ; ! Don't use this for genetic search, as it expects a certain number of templates in a templategroup/individual
@@ -96,8 +96,8 @@
 (def
   ^{:doc "Default configuration options in the genetic search algorithm"}
   config-default
-  {:max-generations 5
-   :population-size 10
+  {:max-generations 1200
+   :population-size 30
    :initial-population nil ; If nil, the initial population is generated from the verified matches
    
    :selection-weight 1/4
@@ -105,14 +105,14 @@
    :crossover-weight 0/4
    
    :fitness-function fitness/make-fitness-function
-   :fitness-weights [17/20 2/20 1/20]
-   :fitness-threshold 0.9
+   :fitness-weights [18/20 2/20 0/20]
+   :fitness-threshold 0.95
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
    :output-dir nil
    :partial-matching true
-   :quick-matching false ; If enabled, template matching only considers the classes occuring in verified matches. Matching will be much faster, but the resulting templates can produce false positives.
-   :match-timeout 10000
+   :quick-matching true ; If enabled, template matching only considers the classes occuring in verified matches. Matching will be much faster, but the resulting templates can produce false positives.
+   :match-timeout 960000
    :thread-group (new ThreadGroup "Evolve")
    :tournament-rounds 7
    :mutation-operators registered-operators|search

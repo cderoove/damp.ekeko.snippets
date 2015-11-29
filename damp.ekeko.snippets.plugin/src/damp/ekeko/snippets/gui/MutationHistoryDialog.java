@@ -80,7 +80,7 @@ public class MutationHistoryDialog extends Dialog {
 		indiv.add(0, new Integer(generation).toString());
 		data.add(indiv);
 		int curGen = generation - 1;
-		System.out.println("" + curGen);
+		
 		while (curGen >= 0) {
 			indiv = fetchIndividualFromCsv(dataPath + curGen + "/population.csv", original);
 			original = indiv.get(1);
@@ -103,10 +103,7 @@ public class MutationHistoryDialog extends Dialog {
 			
 			while ((line = br.readLine()) != null) {
 				List<String> split = Arrays.asList(line.split(";"));
-				System.out.println(id);
-				System.out.println("$$" + split.get(0));
 				if (split.get(0).equals(id)) {
-					System.out.println("!!");
 					br.close();
 					List<String> copy = new ArrayList<String>(split); // Need to make a copy because split is immutable..
 					copy.add(new Integer(i).toString()); // Attach the index at the end..

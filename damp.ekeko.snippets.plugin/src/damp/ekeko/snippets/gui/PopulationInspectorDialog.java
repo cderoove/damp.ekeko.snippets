@@ -15,6 +15,8 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -130,12 +132,7 @@ public class PopulationInspectorDialog extends Dialog {
 		ToolItem toolitemOpenHistory = new ToolItem(toolBar, SWT.NONE);
 		toolitemOpenHistory.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				IStructuredSelection selection = (IStructuredSelection)populationViewer.getSelection();
-				int i = data.indexOf(selection.getFirstElement());
-				
-				MutationHistoryDialog mh = new MutationHistoryDialog(
-						PopulationInspectorDialog.this.getShell(), dataPath, generation,i, rawData.get(i).get(0));
-				mh.open();
+				openMutationHistory((IStructuredSelection)populationViewer.getSelection());
 			}
 		});
 		toolitemOpenHistory.setImage(EkekoSnippetsPlugin.IMG_HISTORY);
@@ -171,6 +168,13 @@ public class PopulationInspectorDialog extends Dialog {
 
 		populationViewer.setContentProvider(new ArrayContentProvider());
 		populationViewer.setInput(data);
+		
+		populationViewer.addDoubleClickListener(new IDoubleClickListener() {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
+				openMutationHistory((IStructuredSelection)event.getSelection());
+			}
+		});
 
 		// *** Template text area
 		templateTextArea = new TextViewer(sash, SWT.BORDER);
@@ -215,5 +219,13 @@ public class PopulationInspectorDialog extends Dialog {
 		column.getColumn().setText(attributeName);
 		column.getColumn().setMoveable(true);
 		return column;
+	}
+
+	private void openMutationHistory(IStructuredSelection selection) {
+		int i = data.indexOf(selection.getFirstElement());
+		
+		MutationHistoryDialog mh = new MutationHistoryDialog(
+				PopulationInspectorDialog.this.getShell(), dataPath, generation,i, rawData.get(i).get(0));
+		mh.open();
 	}
 } 

@@ -121,7 +121,7 @@ public class TemplateGroupViewer extends Composite {
 		 */
 
 		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
-		snippetTreeViewer.setAutoExpandLevel(3);
+		snippetTreeViewer.setAutoExpandLevel(1);
 		Tree treeSnippet = snippetTreeViewer.getTree();
 		treeSnippet.setHeaderVisible(true);
 		treeSnippet.setLinesVisible(true);
