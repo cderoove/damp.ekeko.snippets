@@ -374,7 +374,7 @@ public class TemplateGroupViewer extends Composite {
 	public void clearSelection() {
 		cljTemplate = null;
 		cljNode = null;
-		snippetTreeViewer.setSelection(null);
+//		snippetTreeViewer.setSelection(null); 
 	}
 
 	public void updateWidgets() {

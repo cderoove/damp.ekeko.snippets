@@ -81,11 +81,6 @@
                   label="Transformation Editor">
             </command>
             <command
-                  commandId="damp.ekeko.snippets.commands.intended"
-                  icon="icons/spectacle.png"
-                  label="Intended Results Editor">
-            </command>
-            <command
                   commandId="damp.ekeko.snippets.commands.recommender"
                   icon="icons/dna.png"
                   label="Template Recommendation Editor">

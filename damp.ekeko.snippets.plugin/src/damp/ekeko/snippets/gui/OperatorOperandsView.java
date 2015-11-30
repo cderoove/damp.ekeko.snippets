@@ -130,7 +130,8 @@ public class OperatorOperandsView extends ViewPart {
 			public IStatus execute(IProgressMonitor monitor, IAdaptable info) throws ExecutionException {
 				try {
 					templateGroup.applyOperator(selectedOperator, operands);
-					associatedTemplateEditor.refreshWidgets();
+					associatedTemplateEditor.getTemplateGroupViewer().updateWidgets();
+//					associatedTemplateEditor.refreshWidgets();
 					associatedTemplateEditor.becomeDirty();
 					return Status.OK_STATUS;
 				} catch(IllegalArgumentException e) {
