@@ -27,7 +27,7 @@ import org.eclipse.birt.chart.model.type.LineSeries;
 import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.MultiStatus;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.action.Action;
@@ -35,8 +35,6 @@ import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.ErrorDialog;
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -49,7 +47,6 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
@@ -68,7 +65,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.IEditorInput;
@@ -149,6 +145,8 @@ public class RecommendationEditor extends EditorPart {
 	private TextViewer bestTemplateTextArea;
 
 	private TableViewer resultsTableViewer;
+	
+	private boolean birtInstalled = false;
 
 	@Override
 	public void doSave(IProgressMonitor monitor) {
@@ -194,6 +192,10 @@ public class RecommendationEditor extends EditorPart {
 
 	@Override
 	public void createPartControl(Composite parent) {
+		if (Platform.getBundle("org.eclipse.birt") != null) {
+			birtInstalled = true;
+		}
+		
 		parent.setLayout(new GridLayout(2,true));
 		
 		// **** Toolbar at the top of the editor
@@ -461,6 +463,10 @@ public class RecommendationEditor extends EditorPart {
 	}
 	
 	private void addToChart(Integer generation, Double bestFitness, Double bestPartial) {
+		if (!birtInstalled) {
+			return;
+		}
+		
 		Chart chart = canvasView.getChart();
 		if (chart==null) {
 			chart=createChart();
@@ -659,24 +665,12 @@ public class RecommendationEditor extends EditorPart {
 			}
 		};
 
-
-
 		mgr.setRemoveAllWhenShown(true);
 		mgr.addMenuListener(new IMenuListener() {
 			@Override
 			public void menuAboutToShow(IMenuManager manager) {
-//				if(tableViewer.equals(verifiedViewer)) {
-//					if (table.getColumnCount() == 1) {
-//						manager.add(insertColumnAfter);
-//					} else {
-//						manager.add(insertColumnAfter);
-//						manager.add(removeColumn);
-//					}
-//				}
 				manager.add(revealNode);
 			}
-
-
 		});
 
 		table.setMenu(mgr.createContextMenu(table));
@@ -710,17 +704,6 @@ public class RecommendationEditor extends EditorPart {
 		});
 	}
 
-	protected void removeColumn(int columnIndex) {
-		matchesViewerTable.getColumn(columnIndex).dispose();
-		matchesViewerTable.layout(true);
-
-		verifiedViewerTable.getColumn(columnIndex).dispose();
-		verifiedViewerTable.layout(true);
-	}
-
-	protected void addRow() {
-	}
-
 	private Object nth(Collection coll, int n) {
 		Iterator iterator = coll.iterator();
 		for(int i=0; i<n; i++){
@@ -737,43 +720,9 @@ public class RecommendationEditor extends EditorPart {
 		return column;
 	}
 
-
-
-
 	@Override
-	public void setFocus() {
-		//Object cljTransformation = transformationEditor.getTransformation();
-		//textViewerSnippet.getControl().setFocus();
-	}
-
-	public void setTemplateEditor(TemplateEditor templateEditor) {
-		this.linkedTemplateEditor = templateEditor;
-	}
-
-
-	protected String getAttributeName() {
-		InputDialog dlg = new InputDialog(Display.getCurrent().getActiveShell(),"Attribute Name", "Please enter a name for the new attribute", "?attribute", new IInputValidator() {
-			@Override
-			public String isValid(String newText) {
-				if(newText.length() < 1 || 
-						newText.charAt(0) != '?') {
-					return "Attribute name should start with '?'";
-				}
-				return null;
-			}
-		});
-		if (dlg.open() == Window.OK) {
-			return dlg.getValue();
-		}
-		else 
-			return null;
-	}
-
-
-
-	public void setPreviouslyActiveEditor(IEditorPart activeEditor) {
-	}
-
+	public void setFocus() {}
+	
 	private void openPopulationInspector(IStructuredSelection selection) {
 		try {
 			int i = evolveResults.indexOf(selection.getFirstElement());
@@ -785,6 +734,4 @@ public class RecommendationEditor extends EditorPart {
 			e.printStackTrace();
 		}
 	}
-
-
 }
