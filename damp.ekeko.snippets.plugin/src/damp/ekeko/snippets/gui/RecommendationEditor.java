@@ -379,8 +379,8 @@ public class RecommendationEditor extends EditorPart {
 	/**
 	 * To be called by the evolve function (in search.clj) on each generation
 	 */
-	public void onNewGeneration(Integer generation, Double bestFitness, Double bestF1, Double bestPartial, 
-			Object bestTemplate, String outputDir) {
+	public void onNewGeneration(final Integer generation, final Double bestFitness, final Double bestF1, final Double bestPartial, 
+			final Object bestTemplate, final String outputDir) {
 		// This method will be called from a separate thread.
 		// We need to make sure all GUI changes happen on the SWT event thread using asyncExec.
 		Display.getDefault().asyncExec(new Runnable() {
