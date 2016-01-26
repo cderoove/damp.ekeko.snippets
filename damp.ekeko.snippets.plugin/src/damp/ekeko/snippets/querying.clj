@@ -163,13 +163,17 @@
 
 (defn
   snippetgroup-snippetgroupqueryinfo
-  [snippetgroup]
-  (letfn [(snippetingroup-queryinfo ;similar to snippet-queryinfo, except that snippets in same group need to share user variables
-            [publicvars snippet]
-            (let [potentialbodies
-                  (partition-by 
-                    (fn [condition] (= (first condition) `cl/fresh))
-                    (snippet-conditions snippet))
+  [snippetgroup-rev]
+  (let [; Reverse the list of templates in the template group.. not sure why, but otherwise the templates get resolved in the reversed order
+        ; .. which can be very bad for performance if you assume that a variable gets bound in a template before it's used in a succeeding template..
+        snippetgroup (snippetgroup/make-snippetgroup (snippetgroup/snippetgroup-name snippetgroup-rev)
+                       (reverse (snippetgroup/snippetgroup-snippetlist snippetgroup-rev)))]
+    (letfn [(snippetingroup-queryinfo ;similar to snippet-queryinfo, except that snippets in same group need to share user variables
+             [publicvars snippet]
+             (let [potentialbodies
+                   (partition-by 
+                     (fn [condition] (= (first condition) `cl/fresh))
+                     (snippet-conditions snippet))
                   
 ;                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
                   
@@ -249,7 +253,7 @@
      :matchvars matchvars
      :uservars uservars
      }
-    queryinfos))))
+    queryinfos)))))
 
       
 (defn
