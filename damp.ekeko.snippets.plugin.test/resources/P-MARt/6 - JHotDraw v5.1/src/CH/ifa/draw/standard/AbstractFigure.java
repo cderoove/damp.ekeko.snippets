@@ -96,7 +96,7 @@ public abstract class AbstractFigure implements Figure {
 	 * @return a Vector of handles
 	 * @see Handle
 	 */
-	public abstract Vector handles();
+	public abstract Vector<Handle> handles();
 
 	/**
 	 * Returns an Enumeration of the figures contained in this figure.

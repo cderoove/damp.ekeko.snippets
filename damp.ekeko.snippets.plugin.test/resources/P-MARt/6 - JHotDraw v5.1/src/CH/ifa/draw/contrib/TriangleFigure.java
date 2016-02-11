@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Vector;
 
 import CH.ifa.draw.figures.RectangleFigure;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.util.StorableInput;
 import CH.ifa.draw.util.StorableOutput;
 
@@ -41,7 +42,7 @@ public  class TriangleFigure extends RectangleFigure {
 	super(origin, corner);
   }  
 
-  public Vector handles() {
+  public Vector<Handle> handles() {
 	Vector h = super.handles();
 	h.addElement(new TriangleRotationHandle(this));
 	return h;

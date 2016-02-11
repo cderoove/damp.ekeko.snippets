@@ -24,7 +24,7 @@ public class BoxHandleKit {
 	 * Fills the given Vector with handles at each corner of a
 	 * figure.
 	 */
-	static public void addCornerHandles(Figure f, Vector handles) {
+	static public void addCornerHandles(Figure f, Vector<Handle> handles) {
 		handles.addElement(southEast(f));
 		handles.addElement(southWest(f));
 		handles.addElement(northEast(f));
@@ -35,7 +35,7 @@ public class BoxHandleKit {
 	 * Fills the given Vector with handles at each corner
 	 * and the north, south, east, and west of the figure.
 	 */
-	static public void addHandles(Figure f, Vector handles) {
+	static public void addHandles(Figure f, Vector<Handle> handles) {
 		addCornerHandles(f, handles);
 		handles.addElement(south(f));
 		handles.addElement(north(f));

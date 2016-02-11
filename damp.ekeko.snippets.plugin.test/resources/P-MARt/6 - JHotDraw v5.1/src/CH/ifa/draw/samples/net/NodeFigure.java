@@ -16,6 +16,7 @@ import CH.ifa.draw.figures.LineConnection;
 import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.framework.ConnectionFigure;
 import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.ConnectionHandle;
 import CH.ifa.draw.standard.LocatorConnector;
 import CH.ifa.draw.standard.NullHandle;
@@ -63,9 +64,9 @@ public class NodeFigure extends TextFigure {
 		drawConnectors(g);
 	}
 
-	public Vector handles() {
+	public Vector<Handle> handles() {
 		ConnectionFigure prototype = new LineConnection();
-		Vector handles = new Vector();
+		Vector<Handle> handles = new Vector<Handle>();
 		handles.addElement(new ConnectionHandle(this, RelativeLocator.east(), prototype));
 		handles.addElement(new ConnectionHandle(this, RelativeLocator.west(), prototype));
 		handles.addElement(new ConnectionHandle(this, RelativeLocator.south(), prototype));

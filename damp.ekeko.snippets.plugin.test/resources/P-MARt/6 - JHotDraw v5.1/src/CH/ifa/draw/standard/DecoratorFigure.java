@@ -18,6 +18,7 @@ import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
 import CH.ifa.draw.framework.FigureChangeListener;
 import CH.ifa.draw.framework.FigureEnumeration;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.framework.Locator;
 import CH.ifa.draw.util.StorableInput;
 import CH.ifa.draw.util.StorableOutput;
@@ -128,7 +129,7 @@ public abstract class DecoratorFigure
 	/**
 	 * Forwards handles to its contained figure.
 	 */
-	public Vector handles() {
+	public Vector<Handle> handles() {
 		return fComponent.handles();
 	}
 

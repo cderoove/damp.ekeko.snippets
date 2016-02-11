@@ -12,6 +12,7 @@ import CH.ifa.draw.figures.ArrowTip;
 import CH.ifa.draw.figures.LineConnection;
 import CH.ifa.draw.figures.PolyLineFigure;
 import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.NullHandle;
 
 
@@ -54,7 +55,7 @@ public class PertDependency extends LineConnection {
 		return (start instanceof PertFigure && end instanceof PertFigure);
 	}
 
-	public Vector handles() {
+	public Vector<Handle> handles() {
 		Vector handles = super.handles();
 		// don't allow to reconnect the starting figure
 		handles.setElementAt(

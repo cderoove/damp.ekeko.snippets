@@ -14,6 +14,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.framework.Locator;
 import CH.ifa.draw.standard.AbstractFigure;
 import CH.ifa.draw.util.Geom;
@@ -71,8 +72,8 @@ public  class PolyLineFigure extends AbstractFigure {
 		return (size().width < 3) && (size().height < 3);
 	}
 
-	public Vector handles() {
-		Vector handles = new Vector(fPoints.size());
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>(fPoints.size());
 		for (int i = 0; i < fPoints.size(); i++)
 			handles.addElement(new PolyLineHandle(this, locator(i), i));
 		return handles;

@@ -21,6 +21,7 @@ import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
 import CH.ifa.draw.framework.FigureEnumeration;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.CompositeFigure;
 import CH.ifa.draw.standard.ConnectionHandle;
 import CH.ifa.draw.standard.NullHandle;
@@ -147,8 +148,8 @@ public class PertFigure extends CompositeFigure {
 		super.draw(g);
 	}
 
-	public Vector handles() {
-		Vector handles = new Vector();
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>();
 		handles.addElement(new NullHandle(this, RelativeLocator.northWest()));
 		handles.addElement(new NullHandle(this, RelativeLocator.northEast()));
 		handles.addElement(new NullHandle(this, RelativeLocator.southWest()));

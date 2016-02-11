@@ -14,6 +14,7 @@ import CH.ifa.draw.framework.ConnectionFigure;
 import CH.ifa.draw.framework.Connector;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.ChangeConnectionEndHandle;
 import CH.ifa.draw.standard.ChangeConnectionStartHandle;
 import CH.ifa.draw.util.StorableInput;
@@ -203,8 +204,8 @@ public  class LineConnection extends PolyLineFigure implements ConnectionFigure 
 	 * PolyLineHandles but adds ChangeConnectionHandles at the
 	 * start and end.
 	 */
-	public Vector handles() {
-		Vector handles = new Vector(fPoints.size());
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>(fPoints.size());
 		handles.addElement(new ChangeConnectionStartHandle(this));
 		for (int i = 1; i < fPoints.size()-1; i++)
 			handles.addElement(new PolyLineHandle(this, locator(i), i));

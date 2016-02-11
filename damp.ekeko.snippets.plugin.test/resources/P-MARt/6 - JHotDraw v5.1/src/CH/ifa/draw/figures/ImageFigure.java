@@ -16,6 +16,7 @@ import java.io.ObjectInputStream;
 import java.util.Vector;
 
 import CH.ifa.draw.framework.FigureChangeEvent;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.BoxHandleKit;
 import CH.ifa.draw.util.Iconkit;
 import CH.ifa.draw.util.StorableInput;
@@ -57,8 +58,8 @@ public  class ImageFigure
 		fDisplayBox.add(corner);
 	}
 
-	public Vector handles() {
-		Vector handles = new Vector();
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>();
 		BoxHandleKit.addHandles(this, handles);
 		return handles;
 	}

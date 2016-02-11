@@ -20,6 +20,7 @@ import java.util.Vector;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
 import CH.ifa.draw.framework.FigureChangeListener;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.NullHandle;
 import CH.ifa.draw.standard.OffsetLocator;
 import CH.ifa.draw.standard.RelativeLocator;
@@ -242,8 +243,8 @@ public  class TextFigure
 		return columns;
 	}
 
-	public Vector handles() {
-		Vector handles = new Vector();
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>();
 		handles.addElement(new NullHandle(this, RelativeLocator.northWest()));
 		handles.addElement(new NullHandle(this, RelativeLocator.northEast()));
 		handles.addElement(new NullHandle(this, RelativeLocator.southEast()));

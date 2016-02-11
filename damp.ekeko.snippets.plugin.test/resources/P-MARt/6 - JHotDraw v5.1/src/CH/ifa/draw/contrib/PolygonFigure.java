@@ -16,6 +16,7 @@ import java.util.Vector;
 import CH.ifa.draw.figures.AttributeFigure;
 import CH.ifa.draw.framework.Connector;
 import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.framework.Locator;
 import CH.ifa.draw.standard.AbstractLocator;
 import CH.ifa.draw.util.Geom;
@@ -62,7 +63,7 @@ public  class PolygonFigure extends AttributeFigure {
 			(size().width < TOO_CLOSE) && (size().height < TOO_CLOSE));
   }  
 
-  public Vector handles() {
+  public Vector<Handle> handles() {
 	Vector handles = new Vector(fPoly.npoints);
 	for (int i = 0; i < fPoly.npoints; i++)
 	  handles.addElement(new PolygonHandle(this, locator(i), i));

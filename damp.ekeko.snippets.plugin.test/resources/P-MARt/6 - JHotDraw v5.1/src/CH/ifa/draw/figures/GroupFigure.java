@@ -10,6 +10,7 @@ import java.awt.Rectangle;
 import java.util.Vector;
 
 import CH.ifa.draw.framework.FigureEnumeration;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.CompositeFigure;
 import CH.ifa.draw.standard.FigureEnumerator;
 import CH.ifa.draw.standard.RelativeLocator;
@@ -57,8 +58,8 @@ public  class GroupFigure extends CompositeFigure {
    /**
 	* Gets the handles for the GroupFigure.
 	*/
-	public Vector handles() {
-		Vector handles = new Vector();
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>();
 		handles.addElement(new GroupHandle(this, RelativeLocator.northWest()));
 		handles.addElement(new GroupHandle(this, RelativeLocator.northEast()));
 		handles.addElement(new GroupHandle(this, RelativeLocator.southWest()));

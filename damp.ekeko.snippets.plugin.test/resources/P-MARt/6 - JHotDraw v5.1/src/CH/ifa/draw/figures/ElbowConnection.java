@@ -10,6 +10,7 @@ import java.awt.Rectangle;
 import java.util.Vector;
 
 import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.framework.Locator;
 import CH.ifa.draw.standard.ChangeConnectionEndHandle;
 import CH.ifa.draw.standard.ChangeConnectionStartHandle;
@@ -43,8 +44,8 @@ public  class ElbowConnection extends LineConnection {
 	/**
 	 * Gets the handles of the figure.
 	 */
-	public Vector handles() {
-		Vector handles = new Vector(fPoints.size()*2);
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>(fPoints.size()*2);
 		handles.addElement(new ChangeConnectionStartHandle(this));
 		for (int i = 1; i < fPoints.size()-1; i++)
 			handles.addElement(new NullHandle(this, locator(i)));

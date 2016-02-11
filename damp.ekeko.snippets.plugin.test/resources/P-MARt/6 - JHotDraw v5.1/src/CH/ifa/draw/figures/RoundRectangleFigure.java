@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Vector;
 
 import CH.ifa.draw.framework.Connector;
+import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.BoxHandleKit;
 import CH.ifa.draw.util.StorableInput;
 import CH.ifa.draw.util.StorableOutput;
@@ -67,8 +68,8 @@ public  class RoundRectangleFigure extends AttributeFigure {
 		return new Point(fArcWidth, fArcHeight);
 	}
 
-	public Vector handles() {
-		Vector handles = new Vector();
+	public Vector<Handle> handles() {
+		Vector<Handle> handles = new Vector<Handle>();
 		BoxHandleKit.addHandles(this, handles);
 
 		handles.addElement(new RadiusHandle(this));

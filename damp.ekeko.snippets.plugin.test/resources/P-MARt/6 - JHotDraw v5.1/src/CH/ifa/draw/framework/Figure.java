@@ -81,7 +81,7 @@ public interface Figure
 	 * @return a Vector of handles
 	 * @see Handle
 	 */
-	public Vector handles();
+	public Vector<Handle> handles();
 
 	/**
 	 * Gets the size of the figure
