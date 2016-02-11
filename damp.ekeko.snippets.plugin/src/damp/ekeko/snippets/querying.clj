@@ -175,6 +175,7 @@
                      (fn [condition] (= (first condition) `cl/fresh))
                      (snippet-conditions snippet))
                   
+                   ; Uncomment to inspect your query
 ;                  tmp (inspector-jay.core/inspect (snippet-conditions snippet))
                   
                   bodies

@@ -337,6 +337,10 @@ damp.ekeko.snippets.snippet
             [:var2uservar (snippet-var-for-node snippet node)]
             (symbol uservar)))
 
+; !! DUPLICATED from directives.clj
+(defn directive-name [directive] (:name directive))
+(defn bounddirective-directive [bounddirective] (.directive bounddirective))
+
 (defn
   snippet-node-parent|conceptually
   "Returns conceptual parent of this snippet element 
@@ -353,6 +357,16 @@ damp.ekeko.snippets.snippet
         (not (astnode/lstvalue? c)))
       (snippet-list-containing snippet c)
       (snippet-node-owner snippet c))))
+
+(defn
+  has-ignore-parent
+  "Returns true if the parent node has an @ignore directive"
+  [snippet c]
+  (let [parent (snippet-node-parent|conceptually snippet c)
+        bds (snippet-bounddirectives-for-node snippet parent)]
+    (some
+      (fn [bd] (= (directive-name (bounddirective-directive bd)) "ignore"))
+      bds)))
 
 (defn
   snippet-node-ancestor|conceptually
@@ -380,6 +394,30 @@ damp.ekeko.snippets.snippet
     (snippet-node-children snippet node)
     :default
     []))
+
+(defn
+  snippet-node-children|conceptually-refs
+  "Extension of snippet-node-children|conceptually that also considers special directives
+   that alter the template tree structure, but only during matching.
+
+   For example, a child node with an @ignore directive is ignored, and will be replaced by its first child.
+   This makes it possible circumvent the fact that templates are stored as Java ASTs, but in some cases
+   we'd like to have a template that's not a valid AST.
+
+  For example, a template that produces any method that contains a certain expression. As we can't directly attach
+  an expression to a method body, special directives are needed to indicate that certain nodes should be ignored."
+  [snippet node]
+  (let [children (snippet-node-children|conceptually snippet node)
+        processed (for [child children]
+                    (let [bds (snippet-bounddirectives-for-node snippet child)
+                          has-ignore (some
+                                       (fn [bd] (= (directive-name (bounddirective-directive bd)) "ignore"))
+                                       bds)]
+                      (if has-ignore
+                        (first (snippet-node-children|conceptually-refs snippet child)) ; Substitute the 
+                        child)
+                      ))]
+    processed))
 
 (defn
   snippet-node-child|conceptually

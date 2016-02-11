@@ -134,7 +134,9 @@ damp.ekeko.snippets.matching
 
 
 (declare directive-child)
+(declare snippet-list-containing)
 (declare snippet-parent-match|set?)
+(declare valuelistmember?)
 
 (defn 
   ground-relativetoparent
@@ -149,39 +151,42 @@ damp.ekeko.snippets.matching
               (astnode/ekeko-keyword-for-class-of snippet-val)]
           `((~ast ~snippet-ast-keyw ~var-match)))
         ;member of list (no set matching on list)
-        (and (astnode/valuelistmember? snippet-val) (not (snippet-parent-match|set? snippet snippet-val)))
+        (and (valuelistmember? snippet snippet-val) (not (snippet-parent-match|set? snippet snippet-val)))
         (let [bounddirectives
               (snippet/snippet-bounddirectives-for-node snippet snippet-val)
-              list-owner      
-              (snippet/snippet-list-containing snippet snippet-val)
+              list-owner  
+              (snippet-list-containing snippet snippet-val)
               list-owner-directives 
               (snippet/snippet-bounddirectives-for-node snippet list-owner)
               list-match       
               (snippet/snippet-var-for-node snippet list-owner)
               list-raw  
-              (astnode/value-unwrapped list-owner) 
+              (snippet/snippet-node-children|conceptually-refs snippet list-owner)
               index-match     
               (.indexOf ^List list-raw snippet-val)]
           ;could check for parent list directives that might already have ground the element
           ;but for now rely on operators to switch correctly between directives (and e.g., remove ground-relative-to-parent from all list elements)
           `((runtime/list-nth-element ~list-match ~index-match ~var-match)))
         ;member of list (set matching on list)
-        (and (astnode/valuelistmember? snippet-val) (snippet-parent-match|set? snippet snippet-val))
+        (and (valuelistmember? snippet snippet-val) (snippet-parent-match|set? snippet snippet-val))
         `() ; The list node has already done the grounding work for us..
         (or 
           (astnode/ast? snippet-val)
           (astnode/lstvalue? snippet-val)
           (astnode/nilvalue? snippet-val))
         (let [owner 
-              (astnode/owner snippet-val)
+              (if (snippet/has-ignore-parent snippet snippet-val)
+                (astnode/owner (astnode/owner snippet-val))
+                (astnode/owner snippet-val))
               owner-match
               (snippet/snippet-var-for-node snippet owner)
               owner-property
-              (astnode/owner-property snippet-val)
+              (if (snippet/has-ignore-parent snippet snippet-val)
+                (astnode/owner-property (astnode/owner snippet-val))
+                (astnode/owner-property snippet-val))
               owner-property-keyword
               (astnode/ekeko-keyword-for-property-descriptor owner-property)]
-          `((~has ~owner-property-keyword ~owner-match ~var-match) 
-             ))
+          `((~has ~owner-property-keyword ~owner-match ~var-match)))
         (astnode/primitivevalue? snippet-val)
         `() ;constraining the parent has already ground primitive values
         :default
@@ -196,9 +201,9 @@ damp.ekeko.snippets.matching
     (let [var-match (snippet/snippet-var-for-node snippet val)
           conditions-regular ((ground-relativetoparent val) snippet)
           var-match-regular (util/gen-lvar "nonTranMatch")
-          in-match|set (and (astnode/valuelistmember? val) (snippet-parent-match|set? snippet val))]
+          in-match|set (and (valuelistmember? snippet val) (snippet-parent-match|set? snippet val))]
       (if in-match|set
-        (let [list-owner (snippet/snippet-list-containing snippet val)
+        (let [list-owner (snippet-list-containing snippet val)
               lstvar (:lstvar (meta snippet))
               remaining (:remaininglstvar (meta snippet))] 
           `((cl/fresh [~var-match-regular]
@@ -222,10 +227,10 @@ damp.ekeko.snippets.matching
   (fn [snippet]
     (let [var-match-regular (util/gen-lvar "nonTranMatch")
           var-match (snippet/snippet-var-for-node snippet val)
-          conditions-regular ((ground-relativetoparent val) (with-meta snippet {:var2 [val var-match-regular]}))
-          in-match|set (and (astnode/valuelistmember? val) (snippet-parent-match|set? snippet val))]
+          conditions-regular ((ground-relativetoparent val) snippet)
+          in-match|set (and (valuelistmember? snippet val) (snippet-parent-match|set? snippet val))]
       (if in-match|set
-        (let [list-owner (snippet/snippet-list-containing snippet val)
+        (let [list-owner (snippet-list-containing snippet val)
               lstvar (:lstvar (meta snippet))
               remaining (:remaininglstvar (meta snippet))] 
           `((cl/fresh [~var-match-regular]
@@ -253,7 +258,7 @@ damp.ekeko.snippets.matching
     (let [match
           (snippet/snippet-var-for-node template val)
           lst 
-          (snippet/snippet-list-containing template val)
+          (snippet-list-containing template val)
           list-match
           (snippet/snippet-var-for-node template lst)
           list-match-raw
@@ -324,8 +329,8 @@ damp.ekeko.snippets.matching
              ~@child-conditions))
         ;constrain lists
         (astnode/lstvalue? snippet-val)
-        (let [lst 
-              (astnode/value-unwrapped snippet-val)
+        (let [lst
+              (snippet/snippet-node-children|conceptually-refs snippet snippet-val)
               snippet-list-size 
               (.size ^List lst)]
           `((~nongrounding-value|list ~var-match)
@@ -394,29 +399,6 @@ damp.ekeko.snippets.matching
          ~@allconditions))))
 
 (defn
-  constrain-orexpression
-  "Matches either directly with an ExpressionStatement, or the Expression contained within"
-  [snippet-val]
-  (fn [snippet]
-    (let [
-          
-          stmtconditions (snippet-node-conditions snippet snippet-val)
-          expr (.getExpression (snippet/snippet-value-node-unwrapped snippet snippet-val))
-          exprconditions (snippet-node-conditions snippet expr)
-          
-          var-stmt (snippet/snippet-var-for-node snippet snippet-val)
-          var-expr (snippet/snippet-var-for-node snippet expr)
-          ]
-      exprconditions
-;      `((
-;          (cl/fresh [~var-expr]
-;            (cl/== ~var-stmt ~var-expr)
-;            ~@exprconditions)))
-;      `((cl/conde [~@stmtconditions]
-;                  [~@exprconditions]))
-      )))
-
-(defn
   constrain-orsimple
   "Allows simple types and names to match their fully qualified equivalent in the template."
   [snippet-val]
@@ -469,7 +451,7 @@ damp.ekeko.snippets.matching
           (util/gen-lvar "qgraphend")
           
           elements 
-          (astnode/value-unwrapped val)
+          (snippet/snippet-node-children|conceptually-refs template val)
           
           idx-last 
           (dec (.size ^List elements))
@@ -566,7 +548,7 @@ damp.ekeko.snippets.matching
           (util/gen-lvar "qgraphend")
           
           elements 
-          (astnode/value-unwrapped val)
+          (snippet/snippet-node-children|conceptually-refs template val)
           
           cfgnode
           (gensym 'cfgnode)
@@ -652,7 +634,7 @@ damp.ekeko.snippets.matching
     (let [typedecl (snippet/snippet-node-parent|conceptually template val)
           typedeclvar (snippet/snippet-var-for-node template typedecl)
           lstvar (snippet/snippet-var-for-node template val)
-          elements (astnode/value-unwrapped val)
+          elements (snippet/snippet-node-children|conceptually-refs template val)
           listrawvar (util/gen-lvar "lstraw")
           
           element-conditions 
@@ -683,13 +665,10 @@ damp.ekeko.snippets.matching
   (fn [template]
     (let [lstvar
           (snippet/snippet-var-for-node template val)
-          elements 
-          (astnode/value-unwrapped val)
+          elements
+          (snippet/snippet-node-children|conceptually-refs template val)
           listrawvar
-          (util/gen-lvar "lstraw")
-          ;elementsvars
-          ;(map (partial snippet/snippet-var-for-node template) elements)
-          ]
+          (util/gen-lvar "lstraw")]
       (letfn [(generate [lstvar elements]
                 (if 
                   (empty? elements)
@@ -729,7 +708,7 @@ damp.ekeko.snippets.matching
     (let [var-match
           (snippet/snippet-var-for-node template val)
           lst
-          (astnode/value-unwrapped val)
+          (snippet/snippet-node-children|conceptually-refs template val)
           template-list-size 
           (.size ^List lst)
           var-match-raw (util/gen-lvar "lstraw")]
@@ -1279,7 +1258,7 @@ damp.ekeko.snippets.matching
             (or (astnode/ast? val) (astnode/lstvalue? val))
             (if (snippet-node-replaced? snippet val)
               [val]
-              (cons val (mapcat walk (snippet/snippet-node-children|conceptually snippet val))))
+              (cons val (mapcat walk (snippet/snippet-node-children|conceptually-refs snippet val))))
             
             (or (astnode/primitivevalue? val) (astnode/nilvalue? val))
             [val]
@@ -1313,7 +1292,7 @@ damp.ekeko.snippets.matching
               true
               (some 
                 (fn [child] (walk child))
-                (snippet/snippet-node-children|conceptually snippet val)))
+                (snippet/snippet-node-children|conceptually-refs snippet val)))
             (or (astnode/primitivevalue? val) (astnode/nilvalue? val))
             (protected-bd? val)
             
@@ -1697,12 +1676,12 @@ damp.ekeko.snippets.matching
     "Simple types resolving to name of qualified type in template will match as well."))
 
 (def
-  directive-orexpression
+  directive-ignore
   (directives/make-directive
-    "orexpr"
+    "ignore"
     []
-    constrain-orexpression
-    "Matches either with an expression statement, or directly with the expression it contains"))
+    constrain-identity
+    "During matching, this node is substituted by its child."))
 
 (def
   directives-replacedby
@@ -1769,7 +1748,7 @@ damp.ekeko.snippets.matching
    directive-child*
    directive-member
    directive-orblock
-   directive-orexpression
+   directive-ignore
    ])
 
 (def
@@ -1868,19 +1847,33 @@ damp.ekeko.snippets.matching
       (directives/bounddirective-for-directive bds directive-child*)
       (directives/bounddirective-for-directive bds directive-child+))))
 
+; These three functions consider the @ignore directive .. TODO there should be a cleaner way to implement this..
 (defn
   snippet-parent-match|set?
   "Returns true if this node's parent has a match|set directive."
   [snippet value]
-  (let [list-owner (snippet/snippet-list-containing snippet value)
+  (let [list-owner (snippet-list-containing snippet value)
         bds (snippet/snippet-bounddirectives-for-node snippet list-owner)]
     (directives/bounddirective-for-directive bds directive-consider-as-set|lst)))
+(defn valuelistmember?
+  "Returns true if this node is a list element"
+  [snippet value]
+  (let [val (if (snippet/has-ignore-parent snippet value)
+              (snippet/snippet-node-parent|conceptually snippet value)
+              value)]
+    (astnode/valuelistmember? val)))
+(defn snippet-list-containing
+  [snippet value]
+  (let [val (if (snippet/has-ignore-parent snippet value)
+              (snippet/snippet-node-parent|conceptually snippet value)
+              value)]
+    (snippet/snippet-list-containing snippet val)))
 
 (defn
   snippet-value-element-of-list-satisfying 
   [snippet value satisfyingf]
   (and (snippet/snippet-value-node? snippet value)
-       (if-let [owninglst (snippet/snippet-list-containing snippet value)]
+       (if-let [owninglst (snippet-list-containing snippet value)]
          (when 
            (satisfyingf snippet owninglst)
            owninglst))))
@@ -2149,7 +2142,7 @@ damp.ekeko.snippets.matching
   snippet-node-matchvarsforproperties
   [snippet val]
   (map (partial snippet/snippet-var-for-node snippet)
-       (snippet/snippet-node-children|conceptually snippet val)))
+       (snippet/snippet-node-children|conceptually-refs snippet val)))
 
 (def
   snippet-node-matchvars
@@ -2199,7 +2192,7 @@ damp.ekeko.snippets.matching
                                  ; such that the children with cheap constraints are handled first, 
                                  ; which reduces the search space before we need to handle more expensive children.
                                  ; For example, in a TypeDeclaration, it's better to handle its name before its members.
-                                 (let [children (snippet/snippet-node-children|conceptually snippet val)
+                                 (let [children (snippet/snippet-node-children|conceptually-refs snippet val)
                                        
                                        remove-children
                                        (fn [lst property-names]
@@ -2245,7 +2238,7 @@ damp.ekeko.snippets.matching
   [snippet node]
   (mapcat
     (partial snippet-node-conditions snippet)
-    (snippet/snippet-node-children|conceptually snippet node)))
+    (snippet/snippet-node-children|conceptually-refs snippet node)))
     
     
    

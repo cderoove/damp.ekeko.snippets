@@ -106,7 +106,6 @@ damp.ekeko.snippets.operatorsrep
        (some #{(astnode/ekeko-keyword-for-class-of value)}
              [:MethodInvocation :SuperMethodInvocation])))
 
-
 (defn 
   applicability|methodinvocationorname
   [snippetgroup snippet value]
@@ -1206,8 +1205,19 @@ damp.ekeko.snippets.operatorsrep
      false)
    
    (Operator.
+     "isolate-list-element"
+     operators/isolate-list-element
+     :generalization
+     "Isolate list element."
+     opscope-subject
+     applicability|lstelement
+     "Removes all other elements from the list, and adds set matching to the list."
+     []
+     false)
+   
+   (Operator.
      "isolate-stmt-in-block"
-     operators/isolate-stmt-in-block
+     operators/isolate-list-element
      :destructive
      "Isolate statement in block."
      opscope-subject
@@ -1346,16 +1356,17 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
-   (Operator. 
-     "ignore-comments"
-     operators/ignore-comments
-     :generalization
-     "Ignore comments."
-     opscope-subject
-     applicability|node
-     "Replaces all comments within the node (and the node itself) by a wildcard."
-     []
-     false)
+; Hiding because it's never used
+;   (Operator. 
+;     "ignore-comments"
+;     operators/ignore-comments
+;     :generalization
+;     "Ignore comments."
+;     opscope-subject
+;     applicability|node
+;     "Replaces all comments within the node (and the node itself) by a wildcard."
+;     []
+;     false)
      
    (Operator. 
      "ignore-absentvalues"
@@ -1380,16 +1391,40 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
-   (Operator. 
-     "replace-by-checked-wildcard"
-     operators/replace-by-checked-wildcard
-     :generalization
-     "Replace by checked wildcard."
-     opscope-subject
-     applicability|wildcard
-     "Replaces selection by wildcard, but still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
-     []
-     false)
+; TODO Not fully implemented yet..
+;   (Operator. 
+;     "subs-src"
+;     operators/add-directive-subs-src
+;     :neutral
+;     "Substitute - source."
+;     opscope-subject
+;     applicability|always
+;     "This node will substitute for the parent node with @subs-tgt."
+;     []
+;     false)
+;   
+;   (Operator. 
+;     "subs-tgt"
+;     operators/add-directive-subs-tgt
+;     :neutral
+;     "Substitute - target."
+;     opscope-subject
+;     applicability|always
+;     "This node will be substituted by the child node with @subs-src."
+;     []
+;     false)
+   
+; Hiding this one because it's rarely used up to now..
+;   (Operator. 
+;     "replace-by-checked-wildcard"
+;     operators/replace-by-checked-wildcard
+;     :generalization
+;     "Replace by checked wildcard."
+;     opscope-subject
+;     applicability|wildcard
+;     "Replaces selection by wildcard, but still checks for the AST node's type. (e.g. if applied to a MethodDeclaration, we still check that it's a MethodDeclaration)"
+;     []
+;     false)
    
    (Operator. 
      "consider-regexp|list"
@@ -1445,6 +1480,18 @@ damp.ekeko.snippets.operatorsrep
      "Inherited class members are also included in list matching."
      []
      false)
+
+; TODO Not implemented yet
+;   (Operator. 
+;     "add-directive-or"
+;     operators/add-directive-or
+;     :generalization
+;     "Add directive or."
+;     opscope-subject
+;     applicability|any
+;     "The subject matches, or the template referred to by the operand."
+;     []
+;     true)
    
    (Operator. 
      "add-directive-orimplicit"
@@ -1479,14 +1526,15 @@ damp.ekeko.snippets.operatorsrep
      []
      false)
    
+   ; TODO Finish up the subs-src and subs-tgt directives, which allow any descendant to substitute for a node..
    (Operator. 
-     "add-directive-orexpression"
-     operators/add-directive-orexpression
+     "add-directive-ignore"
+     operators/add-directive-ignore
      :generalization
-     "Add directive orexpression."
+     "Add directive ignore."
      opscope-subject
      applicability|expressionstmt
-     "Matches either with this ExpressionStatement, or the Expression contained within"
+     "During matching, this node is substituted by its child."
      []
      false)
    
@@ -1500,7 +1548,6 @@ damp.ekeko.snippets.operatorsrep
      "Generalizes all references to given variable declaration node in the template group."
      []
      true)
-   
    
    (Operator. 
      "generalize-types"
@@ -1727,7 +1774,6 @@ damp.ekeko.snippets.operatorsrep
   [templategroup]
   (-> templategroup
     (apply-operator-to-all-roots "erase-comments")
-    (apply-operator-to-all-roots "ignore-comments")
     (apply-operator-to-all-roots "ignore-absentvalues")))
 
 

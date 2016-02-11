@@ -64,7 +64,6 @@
   [templategroup]
   (-> templategroup
     (apply-operator-to-all-roots "erase-comments")
-    (apply-operator-to-all-roots "ignore-comments")
     (apply-operator-to-all-roots "ignore-absentvalues")))
 
 (defn program [pmart-xml name]

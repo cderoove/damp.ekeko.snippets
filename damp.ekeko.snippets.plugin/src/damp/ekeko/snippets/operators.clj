@@ -146,6 +146,20 @@ damp.ekeko.snippets.operators
   (add-unary-directive-opname-opvalue snippet node matching/directive-equals "Meta-variable" uservar))
 
 (defn 
+  add-directive-subs-src 
+  "Adds directive subs-src to node."
+  [snippet node uservar]
+  (snippet/add-bounddirective snippet node
+    (directives/make-bounddirective matching/directive-notnil [(make-directiveoperandbinding-for-match node)])))
+
+(defn 
+  add-directive-subs-tgt
+  "Adds directive subs-tgt to node."
+  [snippet node uservar]
+  (snippet/add-bounddirective snippet node
+    (directives/make-bounddirective matching/directive-notnil [(make-directiveoperandbinding-for-match node)])))
+
+(defn 
   add-directive-equivalent
   "Adds directive-equivalent to node."
   [snippet node uservar]
@@ -292,13 +306,12 @@ damp.ekeko.snippets.operators
                                     [(make-directiveoperandbinding-for-match node)])))
 
 (defn
-  add-directive-orexpression
-  "Adds directive-orexpression to node."
+  add-directive-ignore
+  "Adds directive-ignore to node."
   [snippet node]
-  (snippet/add-bounddirective 
-    (matching/remove-directives snippet node (conj matching/directives-match (matching/registered-grounding-directives)))
-    node
-    (directives/make-bounddirective matching/directive-orexpression
+  (snippet/add-bounddirective
+    snippet node
+    (directives/make-bounddirective matching/directive-ignore
                                     [(make-directiveoperandbinding-for-match node)])))
 
 (defn
@@ -1297,8 +1310,8 @@ damp.ekeko.snippets.operators
       [(make-directiveoperandbinding-for-match value)])))
 
 (defn
-  isolate-stmt-in-block
-  "Removes all other statements in a block and adds set matching to the block."
+  isolate-list-element
+  "Removes all other list elements adds set matching to the list."
   [snippet node]
   (let [parent-list (snippet/snippet-node-parent|conceptually snippet node)]
     (consider-set|list
@@ -1323,7 +1336,7 @@ damp.ekeko.snippets.operators
                 (replace-node-with snippet (first stmts) snippet node))
               (recur parent))))]
     (relax-scope-to-child*
-      (isolate-stmt-in-block pulledup-snippet new-node) 
+      (isolate-list-element pulledup-snippet new-node) 
       new-node)))
 
 (defn
@@ -1334,6 +1347,7 @@ damp.ekeko.snippets.operators
         expr-stmt (newnode|classkeyword a :ExpressionStatement)
         dummy (newnode|classkeyword a :NullLiteral)
         side-eff (.setExpression expr-stmt dummy)
+        
         [pulledup-snippet replaced-node]
         (loop [cur-node node]
           (let [parent (snippet/snippet-node-ancestor|conceptually snippet cur-node 1)
@@ -1345,21 +1359,17 @@ damp.ekeko.snippets.operators
                 (insert-at 
                  (erase-list snippet cur-node)
                  expr-stmt (astnode/value-unwrapped cur-node) 0)
-                dummy snippet node
-                )
-              (recur parent))))]
-    
-    pulledup-snippet
-;    (relax-scope-to-child*
-;      (isolate-stmt-in-block pulledup-snippet new-node) 
-;      new-node)
-    ))
+                dummy snippet node)
+              (recur parent))))
+        
+        expr-stmt (snippet/snippet-node-ancestor|conceptually pulledup-snippet replaced-node 1)
+        stmt-list (snippet/snippet-node-ancestor|conceptually pulledup-snippet expr-stmt 1)]
+    (-> (add-directive-ignore pulledup-snippet expr-stmt)
+      (relax-scope-to-child* replaced-node)
+      (consider-set|list stmt-list))))
 
 (defn
   register-callbacks 
-  []
-  
-  
-  )
+  [])
 
 (register-callbacks)
