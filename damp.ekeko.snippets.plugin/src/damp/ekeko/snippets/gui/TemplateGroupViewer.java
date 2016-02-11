@@ -1,5 +1,6 @@
 package damp.ekeko.snippets.gui;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -120,7 +121,7 @@ public class TemplateGroupViewer extends Composite {
 		textViewerNodeText.setCaret(null);
 		 */
 
-		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
+		snippetTreeViewer = new TreeViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		snippetTreeViewer.setAutoExpandLevel(1);
 		Tree treeSnippet = snippetTreeViewer.getTree();
 		treeSnippet.setHeaderVisible(true);
@@ -172,10 +173,13 @@ public class TemplateGroupViewer extends Composite {
 	    deleteItem.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				jGroup.applyOperator(SnippetOperator.operatorFromId("remove-node"), 
-						SnippetOperator.getOperands(
-								jGroup, getSelectedSnippet(), getSelectedSnippetNode(), 
-								SnippetOperator.operatorFromId("remove-node")));
+				List<Object> nodes = getSelectedSnippetNodes();
+				cljTemplate = jGroup.getSnippet(nodes.get(0));
+				for (Object node : nodes) {
+					Object snippet = jGroup.getSnippet(node);
+					jGroup.applyOperator(SnippetOperator.operatorFromId("remove-node"), 
+							SnippetOperator.getOperands(jGroup, snippet, node, SnippetOperator.operatorFromId("remove-node")));
+				}
 				updateWidgets();
 				parentTemplateEditor.becomeDirty();
 			}
@@ -186,10 +190,13 @@ public class TemplateGroupViewer extends Composite {
 	    replaceByWildCardItem.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				jGroup.applyOperator(SnippetOperator.operatorFromId("replace-by-wildcard"), 
-						SnippetOperator.getOperands(
-								jGroup, getSelectedSnippet(), getSelectedSnippetNode(), 
-								SnippetOperator.operatorFromId("replace-by-wildcard")));
+				List<Object> nodes = getSelectedSnippetNodes();
+				cljTemplate = jGroup.getSnippet(nodes.get(0));
+				for (Object node : nodes) {
+					Object snippet = jGroup.getSnippet(node);
+					jGroup.applyOperator(SnippetOperator.operatorFromId("replace-by-wildcard"), 
+							SnippetOperator.getOperands(jGroup, snippet, node, SnippetOperator.operatorFromId("replace-by-wildcard")));
+				}
 				updateWidgets();
 				parentTemplateEditor.becomeDirty();
 			}
@@ -342,6 +349,12 @@ public class TemplateGroupViewer extends Composite {
 		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();
 		cljNode = selection.getFirstElement();
 		return cljNode;
+	}
+	
+	public List<Object> getSelectedSnippetNodes() {
+		IStructuredSelection selection = (IStructuredSelection) snippetTreeViewer.getSelection();
+		cljNode = selection.getFirstElement();
+		return selection.toList();
 	}
 
 	public Object getSelectedSnippet() {
