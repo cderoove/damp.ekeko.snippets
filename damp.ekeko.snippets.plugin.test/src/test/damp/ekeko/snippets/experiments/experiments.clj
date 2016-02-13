@@ -487,6 +487,101 @@
       [(str experiments-root "strategy-jhotdraw/initial-protected.ekt")]
       [(str experiments-root "strategy-jhotdraw/solution3.ekt")])))
 
+(deftest
+  ^{:doc "Factory method in JHotdraw"}
+  jh-strategy
+  (let [tg (new ThreadGroup "Factory method")
+        config {:max-generations 1200
+                :match-timeout 360000
+                :fitness-weights [12/20 8/20 0/20]
+                :fitness-threshold 0.95
+                :population-size 30
+                :quick-matching false
+                :partial-matching true
+                :selection-weight 1/4
+                :mutation-weight 3/4
+                :crossover-weight 0/4
+                :tournament-rounds 5
+                :mutation-operators
+                (filter 
+                  (fn [op] 
+                    (some #{(operatorsrep/operator-id op)} 
+                          ["replace-by-variable"
+                           ;"replace-by-exp"
+                           "add-directive-equals"
+                           ;"add-directive-equivalent"
+                           ;"add-directive-protect" 
+                           "add-directive-invokes" 
+                           ;"add-directive-invokedby" 
+                           "add-directive-constructs" 
+                           ;"add-directive-constructedby" 
+                           "add-directive-overrides" 
+                           ;"add-directive-refersto" 
+                           ;"add-directive-referredby" 
+                           "add-directive-type" 
+                           ;"add-directive-type|qname" 
+                           ;"add-directive-type|sname" 
+                           ;"add-directive-subtype+" 
+                           ;"add-directive-subtype+|qname" 
+                           ;"add-directive-subtype+|sname" 
+                           ;"add-directive-subtype*"
+                           ;"isolate-expr-in-method"
+                           ;"add-directive-subtype*|qname" 
+                           ;"add-directive-subtype*|sname" 
+                           ;"restrict-scope-to-child" 
+                           ;"relax-scope-to-child+" 
+                           "relax-scope-to-child*" 
+                           ;"generalize-directive" 
+                           ;"remove-directive" 
+                           ;"relax-size-to-atleast" 
+                           ;"empty-body" 
+                           ;"or-block" 
+                           ;"relax-scope-to-member" 
+                           ;"add-directive-replace" 
+                           ;"add-directive-replace-value" 
+                           ;"add-directive-add-element" 
+                           ;"add-directive-insert-before" 
+                           ;"add-directive-insert-after" 
+                           ;"add-directive-remove-element" 
+                           ;"add-directive-remove-element-alt" 
+                           ;"add-directive-copy-node" 
+                           ;"add-directive-move-element" 
+                           ;"remove-node" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
+                           ;"isolate-stmt-in-block"
+                           ;"isolate-stmt-in-method" 
+                           "isolate-expr-in-method" 
+                           ;"insert-node-before" 
+                           ;"insert-node-after" 
+                           ;"insert-node-at" 
+                           ;"replace-node" 
+                           ;"replace-value" 
+                           ;"erase-list"   
+                           "replace-by-wildcard" 
+                           ;"consider-set|lst" 
+                           ;"include-inherited" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
+                           ;"generalize-references" 
+                           ;"generalize-types" 
+                           ;"generalize-types|qname" 
+                           ;"extract-template" 
+                           ;"generalize-invocations" 
+                           ;"generalize-constructorinvocations"
+                           ]))
+                  (operatorsrep/registered-operators))
+                :thread-group tg
+                :output-dir (find-new-experiment-folder "factorymethod")
+                }]
+    (run-experiment-from-files
+      [(pmart/projects :jhotdraw)]
+      config
+      [(str experiments-root "factorymethod-jhotdraw/initial-protected.ekt")]
+      [(str experiments-root "factorymethod-jhotdraw/solution_take4.ekt")])))
+
 (deftest test-suite 
   (jh-template-method)
   (jh-observer)
