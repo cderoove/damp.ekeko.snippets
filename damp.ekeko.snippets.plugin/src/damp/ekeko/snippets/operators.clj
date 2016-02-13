@@ -93,7 +93,8 @@ damp.ekeko.snippets.operators
         (matching/remove-directives
           purged-of-children
           node
-           matching/directives-constraining|mutuallyexclusive)]
+           (concat matching/directives-constraining|mutuallyexclusive 
+                   [matching/directive-consider-as-set|lst]))]
     (snippet/add-bounddirective
       purged
       node 

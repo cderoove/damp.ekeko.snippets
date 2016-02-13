@@ -301,7 +301,7 @@ damp.ekeko.snippets.operatorsrep
     (not (and
            (astnode/lstvalue? value)
            (matching/snippet-list-regexp? snippet value)))
-    (not (has-directives? snippet value ["match|set"])) ; No point in adding match|set .. plus it causes timeouts
+;    (not (has-directives? snippet value ["match|set"])) ; No point in adding match|set .. plus it causes timeouts
     (not (matching/node-protected? snippet value))))
 
 (defn
