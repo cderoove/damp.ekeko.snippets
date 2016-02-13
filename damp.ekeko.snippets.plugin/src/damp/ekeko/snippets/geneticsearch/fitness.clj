@@ -41,12 +41,13 @@
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
   [templategroup]
   (into #{}
-        (querying/query-by-snippetgroup
+        (querying/query-by-snippetgroup-fast-roots
           templategroup 
-          'damp.ekeko/ekeko 
-          `((damp.ekeko.logic/perform (new-match)))
-          '() 
-          true)))
+;          'damp.ekeko/ekeko 
+;          `((damp.ekeko.logic/perform (new-match)))
+;          '() 
+;          true
+          )))
 
 (defn 
   truep
@@ -165,21 +166,6 @@
         (.addExistingAST partialmodel match)))
     partialmodel))
 
-(defn partial-matches
-  [templategroup partialmodel]
-  (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])
-            matched-nodes (atom (MatchedNodes. #{} []))
-            matching/*partial-matching* true]
-    (try
-      (templategroup-matches templategroup)
-      (new-match)
-      (partialmatch-score (reduce + (map 
-                                      (fn [snippet] (count (matching/reachable-nodes snippet (snippet/snippet-root snippet))))
-                                      (snippetgroup/snippetgroup-snippetlist templategroup))))
-      (catch Exception e
-        (println "Partial match failed!")
-        0))))
-
 (defn make-fitness-function
   "Return a fitness function, used to measure how good/fit an individual is.
    A fitness function returns a pair: [overall-fitness fitness-components]
@@ -192,13 +178,18 @@
         partialmodel-merged (create-partial-model (:positives verifiedmatches))]
     (fn [templategroup]
       (util/with-timeout (:match-timeout config)
-        (let [tmp-ns (util/gen-ns) ; Temporary namespace in which we'll do the query matching
+        (let [
+              tmp-ns (util/gen-ns) ; Temporary namespace in which we'll do the query matching
               [defines query] (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko `((damp.ekeko.logic/perform (new-match))) '() true)
               defs! (doseq [define defines] (util/eval-in-ns define tmp-ns))
               matches (if (:quick-matching config)
                         (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel-merged])]
-                          (into #{} (util/eval-in-ns query tmp-ns)))
-                        (into #{} (util/eval-in-ns query tmp-ns)))
+                          (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
+;                          (into #{} (util/eval-in-ns query tmp-ns))
+                          )
+                        (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
+;                        (into #{} (util/eval-in-ns query tmp-ns))
+                        )
               fscore (double (fmeasure matches verifiedmatches))
               
               node-count

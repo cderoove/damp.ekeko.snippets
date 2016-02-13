@@ -51,6 +51,16 @@ damp.ekeko.snippets.operatorsrep
   (when-let [ownerprop (astnode/owner-property value)]
    (and (= keyword (astnode/ekeko-keyword-for-property-descriptor ownerprop)))))
 
+(defn has-directives?
+  "Returns true if the given node has one of the given directives
+   @param directives list of directive names to look for"
+  [snippet node directives]
+  (let [bds (snippet/snippet-bounddirectives-for-node snippet node)]
+    (some (fn [bd]
+            (.contains directives 
+              (damp.ekeko.snippets.directives/directive-name (snippet/bounddirective-directive bd))))
+          bds)))
+
 (defn
   applicability|always
   [snippetgroup snippet value] 
@@ -206,6 +216,13 @@ damp.ekeko.snippets.operatorsrep
   (astnode/lstvalue? value))
 
 (defn 
+  applicability|lst-nowildcard
+  [snippetgroup snippet value]
+  (and
+    (applicability|lst snippetgroup snippet value)
+    (not (has-directives? snippet value ["replaced-by-wildcard"]))))
+
+(defn 
   applicability|block-or-nil
   [snippetgroup snippet value]
   (or 
@@ -266,10 +283,10 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value]
   (and
     (applicability|nonroot snippetgroup snippet value)
-    (not
-     (and
-       (astnode/lstvalue? value)
-       (matching/snippet-list-regexp? snippet value)))
+    (not (and
+           (astnode/lstvalue? value)
+           (matching/snippet-list-regexp? snippet value)))
+    (not (has-directives? snippet value ["match|set"])) ; No point in adding match|set .. plus it causes timeouts
     (not (matching/node-protected? snippet value))))
 
 (defn
@@ -436,6 +453,7 @@ damp.ekeko.snippets.operatorsrep
     (symbol operandvalue)
     (= (first (str operandvalue)) \?)))
 
+; TODO unfinished; tries to infer the type of a metavariable..
 ;(defn
 ;  validity|variable-typed
 ;  [snippetgroup snippet value operandvalue expected-type]
@@ -1022,16 +1040,17 @@ damp.ekeko.snippets.operatorsrep
      [(make-operand "Directive name" opscope-directive validity|directivename)]
      false)
    
-   (Operator. 
-     "relax-size-to-atleast"
-     operators/relax-size-to-atleast
-     :generalization
-     "Add directive orlarger."
-     opscope-subject
-     applicability|lst
-     "Matches are lists with at least as many elements as the selection."
-     []
-     false)
+; Disabled because hardly ever used 
+;   (Operator. 
+;     "relax-size-to-atleast"
+;     operators/relax-size-to-atleast
+;     :generalization
+;     "Add directive orlarger."
+;     opscope-subject
+;     applicability|lst-nowildcard
+;     "Matches are lists with at least as many elements as the selection."
+;     []
+;     false)
    
    (Operator. 
      "empty-body"
@@ -1465,7 +1484,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Use set matching for elements."
      opscope-subject
-     applicability|lst
+     applicability|lst-nowildcard
      "Set matching will be used for elements of list."
      []
      false)

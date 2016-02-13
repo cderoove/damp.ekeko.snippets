@@ -290,7 +290,7 @@
   [individual operators]
   (let [snippetgroup (individual/individual-templategroup individual)
         group-copy (persistence/copy-snippetgroup snippetgroup)
-        operator-bias (nth (individual/individual-fitness-components individual) 3)
+;        operator-bias (nth (individual/individual-fitness-components individual) 3)
         
         snippetno (rand-nth (range 0 (count (snippetgroup/snippetgroup-snippetlist group-copy))))
         snippet (nth (snippetgroup/snippetgroup-snippetlist group-copy) snippetno)
@@ -680,7 +680,7 @@
                                     :selection-weight 1/4
                                     :mutation-weight 3/4
                                     :crossover-weight 0/4
-                                    :max-generations 0
+                                    :max-generations 50
                                     :match-timeout 12000
                                     :fitness-threshold 0.8
                                     :thread-group tg
@@ -706,10 +706,26 @@
       ; (rewrites/apply-and-reset-rewrites)
       ))
   
-  ; Test matching a templategroup
+  ; Test matching a templategroup  
+  
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
-  (inspector-jay.core/inspect templategroup)
+  
+  (inspector-jay.core/inspect (query-by-snippetgroup-fast-roots templategroup))
+  
+  (time
+    (def bla (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko)))
+  (inspector-jay.core/inspect bla)
+  
+  ; Reorder templates in a template group (for increased performance)
+  (let [path "/resources/EkekoX-Specifications/experiments/test3.ekt"
+        tgroup (slurp-from-resource path)
+        templates (snippetgroup/snippetgroup-snippetlist tgroup)
+        reordered (replace templates [0 1 2])
+        reordered-tgroup (snippetgroup/snippetgroup-update-snippetlist tgroup reordered)]
+    (persistence/spit-snippetgroup 
+      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile path)))
   
   ; Spit the matches of a group
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
@@ -728,8 +744,7 @@
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-subtype+")) (operatorsrep/registered-operators))
-                    ))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-subtype+")) (operatorsrep/registered-operators))))
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
@@ -746,7 +761,7 @@
   ; Calculate the fitness of one templategroup
   (do
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
-    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
     (def matches (into [] (fitness/templategroup-matches templategroup)))
     (def verifiedmatches (make-verified-matches matches []))
     (templategroup-fitness 

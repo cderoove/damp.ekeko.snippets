@@ -150,15 +150,25 @@
       (eval define))
     (eval query)))
 
+(defn query-by-snippetgroup-fast-noeval [snippetgroup launchersymbol]
+  (map
+    (fn [snippet]
+      (let [qinfo (snippet-queryinfo snippet)
+            defines (:preddefs qinfo)
+            query (snippetqueryinfo-query qinfo launchersymbol)]
+        [defines query]
+        ))
+    (snippetgroup/snippetgroup-snippetlist snippetgroup)))
+
 (defn
   query-by-snippetgroup-fast
-  "Query each snippet in a snippetgroup separately/concurrently
-   and combine the results afterwards"
+  "Query each snippet in a snippetgroup separately/concurrently and combine the results afterwards
+   by intersecting over the common variables of the snippets"
   [snippetgroup launchersymbol]
   (let [snippets (snippetgroup/snippetgroup-snippetlist snippetgroup)
         
-        results ; List of matching results for each snippet
-        (map ; Could be p-mapped for better performance?
+        results ; List of match results for each snippet
+        (pmap
           (fn [snippet]
             (let [qinfo (snippet-queryinfo snippet)
                   defines (:preddefs qinfo)
@@ -166,7 +176,7 @@
               (doseq [define defines]
                 (eval define))
               (eval query)))
-          (snippetgroup/snippetgroup-snippetlist snippetgroup))
+          snippets)
         
         results-with-vars ; Returns [variable-names results] pairs
         (map-indexed
@@ -175,82 +185,76 @@
                (snippet/snippet-var-for-root (nth snippets idx))
                (snippet-uservars (nth snippets idx)))
              result])
-          results)
-;        ok (inspector-jay.core/inspect results-with-vars)
-        ]
+          results)]
     
     (if (= 1 (count results))
       results
       
       ; Combine the results of each snippet by intersecting over the common variables
       (reduce
-       (fn [[vars1 results1] [vars2 results2]]
+       (fn [[vars1 results1] [vars2 res2]]
          (let [common-vars (clojure.set/intersection (set vars1) (set vars2))
-
-               common-vars-indices
-               (fn [vars]
-                 (for [common-var common-vars]
-                   (.indexOf vars common-var)))
-               
+               common-vars-indices (fn [vars] (vec (for [common-var common-vars] (.indexOf vars common-var))))
                indices1 (common-vars-indices vars1)
                indices2 (common-vars-indices vars2)
-               
-;               ok (inspector-jay.core/inspect [indices1 indices2])
-               
-               vars1-without-commons
-               (remove
-                 (fn [var] (.contains common-vars var))
-                 vars1)
+               vars1-without-commons (vec (remove (fn [var] (.contains common-vars var)) vars1))
                
                vars1-without-commons-indices ; Indices of non-common variables within vars1
-               (for [var vars1-without-commons]
-                   (.indexOf vars1 var))
+               (for [var vars1-without-commons] (.indexOf vars1 var))
                
-               combined-vars (concat vars1-without-commons vars2) ; Always non-common vars first, then commons
-               
-;               ok (inspector-jay.core/inspect [vars1-without-commons vars1-without-commons-indices combined-vars])
-               ; TODO special case if there are no common vars! Then you just 'for' over both to combine all results
-               ]
+               combined-vars (concat vars1-without-commons vars2)] ;
            ; Iterate over results1
            (loop [res1 results1
-                  res2 results2
                   output []]
              (if (or (empty? res1) (empty? res2))
                [combined-vars output]
                (let [result1 (first res1)
                      
                      ; Iterate over results2
-                     [combined-results res2rest]
-                     (loop [worklist res2 ; The thing we're iterating through
-                        combined-results output 
-                        res2remainder []] ; The items of res2 that we haven't matched (yet)
+                     combined-results
+                     (loop [worklist res2
+                        combined-results output]
                        (if (empty? worklist) 
-                         [combined-results res2remainder]
+                         combined-results
                          
                          (let [result2 (first worklist)
-                             
-                              is-matching ; Do the common vars in result1 and 2 match?
-                              (every?
-                                (fn [idx]
-                                  (= (nth result1 (nth indices1 idx))
-                                     (nth result2 (nth indices2 idx))))
-                                (range 0 (count common-vars)))]
+                               is-matching ; Do the common vars in result1 and 2 match? (also works if there are 0 common vars)
+                               (every?
+                                 (fn [idx]
+                                   (= (nth result1 (nth indices1 idx))
+                                      (nth result2 (nth indices2 idx))))
+                                 (range 0 (count common-vars)))]
                            (if is-matching
                              (recur (rest worklist)
                                     (conj combined-results
                                           (concat
-                                            (replace (into [] result1) vars1-without-commons-indices)
-                                            result2))
-                                    res2remainder)
+                                            (replace (vec result1) vars1-without-commons-indices)
+                                            result2)))
                              (recur (rest worklist)
-                                    combined-results
-                                    (conj res2remainder result2))))))]
+                                    combined-results)))))]
                  (recur 
                    (rest res1)
-                   res2 ; Non-matched results of results2
                    combined-results))))))
        results-with-vars))))
 
+(defn- strip-uservars 
+  "Removes the user variables from the results of a query-by-snippetgroup-fast call"
+  [snippetgroup query-by-snippetgroup-fast-return-val]
+  (let [[all-vars results] query-by-snippetgroup-fast-return-val
+        snippets (snippetgroup/snippetgroup-snippetlist snippetgroup)
+        rootvars (reduce
+                   (fn [vars snippet]
+                     (conj vars (snippet/snippet-var-for-root snippet)))
+                   [] snippets)
+        rootvar-indices (vec (for [var rootvars] (.indexOf all-vars var)))]
+    (for [result results]
+      (replace (vec result) rootvar-indices))))
+
+(defn query-by-snippetgroup-fast-roots
+  "@see query-by-snippetgroup-fast , but also hides user variables from results"
+  [snippetgroup]
+  (let [result (query-by-snippetgroup-fast snippetgroup 'damp.ekeko/ekeko)]
+    (strip-uservars snippetgroup result)))
 
 ; Converting snippet group to query
 ;------------------------------------
@@ -396,8 +400,7 @@
           query (snippetgroupqueryinfo-query qinfo launchersymbol additionalconditions additionalrootvars hideuservars)]
       [defines query])))
 
-(defn
-  query-by-snippetgroup
+(defn query-by-snippetgroup
   ([snippetgroup launchersymbol]
     (query-by-snippetgroup snippetgroup launchersymbol '() '() false))
   ([snippetgroup launchersymbol additionalconditions additionalrootvars hideuservars]
@@ -409,8 +412,7 @@
         (eval define))
       (eval query))))
 
-(defn
-  print-snippetgroup
+(defn print-snippetgroup
   ([snippetgroup launchersymbol]
     (print-snippetgroup snippetgroup launchersymbol '() '() false))
   ([snippetgroup launchersymbol additionalconditions additionalrootvars hideuservars]

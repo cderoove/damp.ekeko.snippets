@@ -27,10 +27,22 @@
    :population-size 20
    :tournament-rounds 7})
 
+(def experiments-root "/resources/EkekoX-Specifications/experiments/")
+(def output-root "/Users/soft/Documents/experiments/")
+
 (defn slurp-from-resource
   "Retrieve a resource file, relative to the root of the damp.ekeko.snippets.plugin.test project"
   [pathrelativetobundle]
   (persistence/slurp-snippet (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+
+(defn find-new-experiment-folder [experiment-name]
+  "Return a unique folder name to write experiment results to"
+  (loop [i 1]
+    (let [folder-path (str output-root experiment-name "-" i)] 
+      (if (.exists (clojure.java.io/as-file folder-path))
+        (recur (inc i))
+        folder-path
+       ))))
 
 (defn run-experiment
   "Given a set of verified matches, use the genetic search algorithm to find a template to match them all.
@@ -160,13 +172,13 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Prototype-Experiment--7/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                :output-dir (find-new-experiment-folder "prototype") ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      ["/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"]
-      ["/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/solution-final.ekt"])))
+      [(str experiments-root "prototype-jhotdraw/initial.ekt")]
+      [(str experiments-root "prototype-jhotdraw/solution.ekt")])))
 
 
 (deftest
@@ -263,14 +275,13 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--allops5/" ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+                :output-dir (find-new-experiment-folder "template-method")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/10.ekt"
-       "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/9.ekt"]
-      ["/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"])))
+      [(str experiments-root "templatemethod-jhotdraw/initial.ekt")]
+      [(str experiments-root "templatemethod-jhotdraw/solution.ekt")])))
 
 (deftest
   ^{:doc "Observer in JHotdraw"}
@@ -365,13 +376,115 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir "/Users/soft/Documents/workspace-runtime2/JHotDraw-Observer-Experiment5/"
+                :output-dir (find-new-experiment-folder "observer")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer3.ekt"]
-      ["/resources/EkekoX-Specifications/dbg/observer-jhotdraw/JHotDraw-Observer-solution.ekt"])))
+      [(str experiments-root "observer-jhotdraw/initial.ekt")]
+      [(str experiments-root "observer-jhotdraw/solution.ekt")])))
+
+
+(deftest
+  ^{:doc "Strategy in JHotdraw"}
+  jh-strategy
+  (let [tg (new ThreadGroup "Strategy")
+        config {:max-generations 1200
+                :match-timeout 360000
+                :fitness-weights [12/20 8/20 0/20]
+                :fitness-threshold 0.95
+                :population-size 30
+                :quick-matching false
+                :partial-matching true
+                :selection-weight 1/4
+                :mutation-weight 3/4
+                :crossover-weight 0/4
+                :tournament-rounds 5
+                :mutation-operators
+                (filter 
+                  (fn [op] 
+                    (some #{(operatorsrep/operator-id op)} 
+                          ["replace-by-variable"
+                           ;"replace-by-exp"
+                           "add-directive-equals"
+                           ;"add-directive-equivalent"
+                           ;"add-directive-protect" 
+                           "add-directive-invokes" 
+                           ;"add-directive-invokedby" 
+                           "add-directive-constructs" 
+                           ;"add-directive-constructedby" 
+                           ;"add-directive-overrides" 
+                           ;"add-directive-refersto" 
+                           ;"add-directive-referredby" 
+                           "add-directive-type" 
+                           ;"add-directive-type|qname" 
+                           ;"add-directive-type|sname" 
+                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+|qname" 
+                           ;"add-directive-subtype+|sname" 
+                           "add-directive-subtype*" 
+                           ;"add-directive-subtype*|qname" 
+                           ;"add-directive-subtype*|sname" 
+                           ;"restrict-scope-to-child" 
+                           ;"relax-scope-to-child+" 
+                           ;"relax-scope-to-child*" 
+                           ;"generalize-directive" 
+                           ;"remove-directive" 
+                           ;"relax-size-to-atleast" 
+                           ;"empty-body" 
+                           ;"or-block" 
+                           ;"relax-scope-to-member" 
+                           ;"add-directive-replace" 
+                           ;"add-directive-replace-value" 
+                           ;"add-directive-add-element" 
+                           ;"add-directive-insert-before" 
+                           ;"add-directive-insert-after" 
+                           ;"add-directive-remove-element" 
+                           ;"add-directive-remove-element-alt" 
+                           ;"add-directive-copy-node" 
+                           ;"add-directive-move-element" 
+                           ;"remove-node" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
+                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
+                           ;"isolate-stmt-in-method" 
+                           ;"isolate-expr-in-method" 
+                           ;"insert-node-before" 
+                           ;"insert-node-after" 
+                           ;"insert-node-at" 
+                           ;"replace-node" 
+                           ;"replace-value" 
+                           ;"erase-list" 
+                           ;"erase-comments" 
+                           ;"ignore-comments" 
+                           ;"ignore-absentvalues" 
+                           "replace-by-wildcard" 
+                           ;"replace-by-checked-wildcard" 
+                           ;"consider-regexp|list" 
+                           ;"consider-regexp|cfglist" 
+                           ;"update-multiplicity" 
+                           ;"consider-set|lst" 
+                           ;"include-inherited" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
+                           ;"generalize-references" 
+                           ;"generalize-types" 
+                           ;"generalize-types|qname" 
+                           ;"extract-template" 
+                           ;"generalize-invocations" 
+                           ;"generalize-constructorinvocations"
+                           ]))
+                  (operatorsrep/registered-operators))
+                :thread-group tg
+                :output-dir (find-new-experiment-folder "strategy")
+                }]
+    (run-experiment-from-files
+      [(pmart/projects :jhotdraw)]
+      config
+      [(str experiments-root "strategy-jhotdraw/initial.ekt")]
+      [(str experiments-root "strategy-jhotdraw/solution.ekt")])))
 
 (deftest test-suite 
   (jh-template-method)
