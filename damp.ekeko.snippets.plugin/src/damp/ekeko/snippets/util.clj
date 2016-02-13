@@ -364,10 +364,6 @@
 (defn eval-in-ns 
   "Performs an eval in another namespace."
   [expr namespace]
-  (binding [*ns* namespace] 
-    (eval '(+ 1 1))))
-
-(defn eval-in-ns [expr namespace]
   (binding [*ns* namespace]
     (eval expr))
   

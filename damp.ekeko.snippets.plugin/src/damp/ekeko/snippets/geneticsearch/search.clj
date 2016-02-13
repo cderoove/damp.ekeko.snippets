@@ -83,7 +83,7 @@
 ;             "generalize-invocations"
 ;             "generalize-constructorinvocations"
 ;             "isolate-stmt-in-method"
-;             "isolate-expr-in-method"
+             "isolate-expr-in-method"
 ;             "isolate-stmt-in-block"
              ]))
     (operatorsrep/registered-operators)))
@@ -105,7 +105,7 @@
    :crossover-weight 0/4
    
    :fitness-function fitness/make-fitness-function
-   :fitness-weights [18/20 2/20 0/20]
+   :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
@@ -709,13 +709,23 @@
   ; Test matching a templategroup  
   
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial.ekt"))
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
   
-  (inspector-jay.core/inspect (query-by-snippetgroup-fast-roots templategroup))
+  (def snippet (first (snippetgroup/snippetgroup-snippetlist templategroup)))
+  (snippet/snippet-node-parent|conceptually snippet (snippet/snippet-root snippet))
+  
+  (inspector-jay.core/inspect (time (querying/query-by-snippetgroup-fast templategroup 'damp.ekeko/ekeko)))
+  
+  (let [tmp-ns2 (util/gen-ns)
+        tvar (gensym)] 
+    (set (util/eval-in-ns
+           `(let [~tvar ~templategroup]
+              (damp.ekeko.snippets.querying/query-by-snippetgroup-fast-roots ~tvar))
+           tmp-ns2)))
   
   (time
-    (def bla (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko)))
+    (def bla (querying/query-by-snippetgroup-fast-roots templategroup)))
   (inspector-jay.core/inspect bla)
   
   ; Reorder templates in a template group (for increased performance)
@@ -760,15 +770,15 @@
   
   ; Calculate the fitness of one templategroup
   (do
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/initial-population/7.ekt"))
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
-    (def matches (into [] (fitness/templategroup-matches templategroup)))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected.ekt"))
+    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt"))
+    (def matches (into [] (fitness/templategroup-matches solution)))
     (def verifiedmatches (make-verified-matches matches []))
-    (templategroup-fitness 
-      templategroup
-      verifiedmatches
-      :match-timeout 480000
-      :fitness-weights [18/20 2/20 0/20]
-      :quick-matching true
-      :partial-matching true))
+    (time (templategroup-fitness 
+           templategroup
+           verifiedmatches
+           :match-timeout 480000
+           :fitness-weights [18/20 2/20 0/20]
+           :quick-matching false
+           :partial-matching true)))
   )

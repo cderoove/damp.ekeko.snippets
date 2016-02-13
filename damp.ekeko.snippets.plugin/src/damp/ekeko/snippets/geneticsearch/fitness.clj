@@ -41,13 +41,14 @@
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
   [templategroup]
   (into #{}
-        (querying/query-by-snippetgroup-fast-roots
+        (querying/query-by-snippetgroup
           templategroup 
-;          'damp.ekeko/ekeko 
-;          `((damp.ekeko.logic/perform (new-match)))
-;          '() 
-;          true
-          )))
+          'damp.ekeko/ekeko 
+          `((damp.ekeko.logic/perform (new-match)))
+          '() 
+          true))
+;  (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
+  )
 
 (defn 
   truep
@@ -180,15 +181,24 @@
       (util/with-timeout (:match-timeout config)
         (let [
               tmp-ns (util/gen-ns) ; Temporary namespace in which we'll do the query matching
+;              tmp-ns2 (util/gen-ns)
               [defines query] (querying/query-by-snippetgroup-noeval templategroup 'damp.ekeko/ekeko `((damp.ekeko.logic/perform (new-match))) '() true)
+;              all-code (querying/query-by-snippetgroup-fast-noeval templategroup 'damp.ekeko/ekeko)
               defs! (doseq [define defines] (util/eval-in-ns define tmp-ns))
+;              defs2! (doseq [[defines query] all-code] (doseq [define defines] (util/eval-in-ns define tmp-ns2)))
+;              eval-query-in-ns (fn []
+;                                 (let [results
+;                                       (pmap (fn [[defines query]]
+;                                                       (into #{} (util/eval-in-ns query tmp-ns2)))
+;                                                 all-code)
+;                                       combined-results (querying/combine-noeval-results templategroup results 'damp.ekeko/ekeko)]
+;                                   (set (querying/strip-uservars templategroup combined-results))))
+              
               matches (if (:quick-matching config)
                         (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel-merged])]
-                          (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
-;                          (into #{} (util/eval-in-ns query tmp-ns))
+                          (into #{} (util/eval-in-ns query tmp-ns)) ;(eval-query-in-ns)
                           )
-                        (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
-;                        (into #{} (util/eval-in-ns query tmp-ns))
+                        (into #{} (util/eval-in-ns query tmp-ns)) ;(eval-query-in-ns)
                         )
               fscore (double (fmeasure matches verifiedmatches))
               
@@ -215,6 +225,7 @@
               
               weights (:fitness-weights config)
               clean! (remove-ns (ns-name tmp-ns))
+;              clean2! (remove-ns (ns-name tmp-ns2))
               
               ; directive-count-score (directive-count-measure templategroup)
               ; If > 0, we have more false positives ; if < 0, we have more false negatives

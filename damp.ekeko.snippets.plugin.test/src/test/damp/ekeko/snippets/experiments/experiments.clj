@@ -38,7 +38,7 @@
 (defn find-new-experiment-folder [experiment-name]
   "Return a unique folder name to write experiment results to"
   (loop [i 1]
-    (let [folder-path (str output-root experiment-name "-" i)] 
+    (let [folder-path (str output-root experiment-name "-" i "/")] 
       (if (.exists (clojure.java.io/as-file folder-path))
         (recur (inc i))
         folder-path
@@ -395,7 +395,7 @@
                 :fitness-threshold 0.95
                 :population-size 30
                 :quick-matching false
-                :partial-matching true
+                :partial-matching false
                 :selection-weight 1/4
                 :mutation-weight 3/4
                 :crossover-weight 0/4
@@ -413,16 +413,17 @@
                            ;"add-directive-invokedby" 
                            "add-directive-constructs" 
                            ;"add-directive-constructedby" 
-                           ;"add-directive-overrides" 
+                           "add-directive-overrides" 
                            ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
-                           "add-directive-type" 
+                           ;"add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+" 
                            ;"add-directive-subtype+|qname" 
                            ;"add-directive-subtype+|sname" 
-                           "add-directive-subtype*" 
+                           ;"add-directive-subtype*"
+                           ;"isolate-expr-in-method"
                            ;"add-directive-subtype*|qname" 
                            ;"add-directive-subtype*|sname" 
                            ;"restrict-scope-to-child" 
@@ -446,7 +447,7 @@
                            ;"remove-node" 
                            ;"replace-parent" 
                            ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
+                           ;"isolate-stmt-in-block"
                            ;"isolate-stmt-in-method" 
                            ;"isolate-expr-in-method" 
                            ;"insert-node-before" 
@@ -483,8 +484,8 @@
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      [(str experiments-root "strategy-jhotdraw/initial.ekt")]
-      [(str experiments-root "strategy-jhotdraw/solution.ekt")])))
+      [(str experiments-root "strategy-jhotdraw/initial-protected.ekt")]
+      [(str experiments-root "strategy-jhotdraw/solution3.ekt")])))
 
 (deftest test-suite 
   (jh-template-method)

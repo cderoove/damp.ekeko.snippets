@@ -161,6 +161,72 @@
     (snippetgroup/snippetgroup-snippetlist snippetgroup)))
 
 (defn
+  combine-noeval-results
+  "Take the individual snippet query results of query-by-snippetgroup-fast-noeval
+   and combine them into matching results for the entire snippetgroup"
+  [snippetgroup results launchersymbol]
+  (let [snippets (snippetgroup/snippetgroup-snippetlist snippetgroup)
+        
+        results-with-vars ; Returns [variable-names results] pairs
+        (map-indexed
+          (fn [idx result]
+            [(cons
+               (snippet/snippet-var-for-root (nth snippets idx))
+               (snippet-uservars (nth snippets idx)))
+             result])
+          results)]
+    
+    (if (= 1 (count results))
+      results
+      
+      ; Combine the results of each snippet by intersecting over the common variables
+      (reduce
+       (fn [[vars1 results1] [vars2 res2]]
+         (let [common-vars (clojure.set/intersection (set vars1) (set vars2))
+               common-vars-indices (fn [vars] (vec (for [common-var common-vars] (.indexOf vars common-var))))
+               indices1 (common-vars-indices vars1)
+               indices2 (common-vars-indices vars2)
+               vars1-without-commons (vec (remove (fn [var] (.contains common-vars var)) vars1))
+               
+               vars1-without-commons-indices ; Indices of non-common variables within vars1
+               (for [var vars1-without-commons] (.indexOf vars1 var))
+               
+               combined-vars (concat vars1-without-commons vars2)] ;
+           ; Iterate over results1
+           (loop [res1 results1
+                  output []]
+             (if (or (empty? res1) (empty? res2))
+               [combined-vars output]
+               (let [result1 (first res1)
+                     
+                     ; Iterate over results2
+                     combined-results
+                     (loop [worklist res2
+                        combined-results output]
+                       (if (empty? worklist) 
+                         combined-results
+                         
+                         (let [result2 (first worklist)
+                               is-matching ; Do the common vars in result1 and 2 match? (also works if there are 0 common vars)
+                               (every?
+                                 (fn [idx]
+                                   (= (nth result1 (nth indices1 idx))
+                                      (nth result2 (nth indices2 idx))))
+                                 (range 0 (count common-vars)))]
+                           (if is-matching
+                             (recur (rest worklist)
+                                    (conj combined-results
+                                          (concat
+                                            (replace (vec result1) vars1-without-commons-indices)
+                                            result2)))
+                             (recur (rest worklist)
+                                    combined-results)))))]
+                 (recur 
+                   (rest res1)
+                   combined-results))))))
+       results-with-vars))))
+
+(defn
   query-by-snippetgroup-fast
   "Query each snippet in a snippetgroup separately/concurrently and combine the results afterwards
    by intersecting over the common variables of the snippets"
@@ -237,7 +303,7 @@
                    combined-results))))))
        results-with-vars))))
 
-(defn- strip-uservars 
+(defn strip-uservars 
   "Removes the user variables from the results of a query-by-snippetgroup-fast call"
   [snippetgroup query-by-snippetgroup-fast-return-val]
   (let [[all-vars results] query-by-snippetgroup-fast-return-val

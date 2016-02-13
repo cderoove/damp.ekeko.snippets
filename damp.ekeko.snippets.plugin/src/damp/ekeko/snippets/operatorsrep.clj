@@ -173,6 +173,21 @@ damp.ekeko.snippets.operatorsrep
     (astnode/expression? value)))
 
 (defn
+  applicability|expr-in-body
+  [snippetgroup snippet value]
+  (and 
+    (applicability|expr snippetgroup snippet value)
+    ; One of the ancestors must be a block (which is part of a method body)
+    (loop [node value]
+      (let [parent (snippet/snippet-node-parent|conceptually snippet node)]
+        (cond
+          (nil? parent) false
+          (astnode/block? parent) true
+          :else (recur parent))
+        )
+      )))
+
+(defn
   applicability|expressionstmt
   [snippetgroup snippet value]
   (and 
@@ -1262,7 +1277,7 @@ damp.ekeko.snippets.operatorsrep
      :destructive
      "Isolate expression in method."
      opscope-subject
-     applicability|expr 
+     applicability|expr-in-body 
      "Replaces the entire method body such that it matches any method body containing the selected expression."
      []
      false)
