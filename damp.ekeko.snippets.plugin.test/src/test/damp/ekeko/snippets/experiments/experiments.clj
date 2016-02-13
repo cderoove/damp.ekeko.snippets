@@ -44,6 +44,17 @@
         folder-path
        ))))
 
+(defn find-last-experiment-folder [experiment-name]
+  "Returns the folder of the last run of an experiment
+   (If there are no runs, it returns a new folder)"
+  (loop [i 1]
+    (let [folder-path (str output-root experiment-name "-" i "/")
+          next-folder-path (str output-root experiment-name "-" (inc i) "/")] 
+      (if (.exists (clojure.java.io/as-file next-folder-path))
+        (recur (inc i))
+        folder-path
+       ))))
+
 (defn run-experiment
   "Given a set of verified matches, use the genetic search algorithm to find a template to match them all.
    An initial population may also be specified. If not, (part of) the verified matches are used to fill the initial population.
@@ -489,7 +500,7 @@
 
 (deftest
   ^{:doc "Factory method in JHotdraw"}
-  jh-strategy
+  jh-factorymethod
   (let [tg (new ThreadGroup "Factory method")
         config {:max-generations 1200
                 :match-timeout 360000
@@ -574,7 +585,7 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir (find-new-experiment-folder "factorymethod")
+                :output-dir (find-last-experiment-folder "factorymethod")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]

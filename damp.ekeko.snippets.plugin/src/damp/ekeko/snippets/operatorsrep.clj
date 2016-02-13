@@ -309,6 +309,7 @@ damp.ekeko.snippets.operatorsrep
   [snippetgroup snippet value]
   (and
     (applicability|nonroot snippetgroup snippet value)
+    (not (snippet/snippet-value-primitive? snippet value)) ; Causes stack overflows for some reason?
     (complement applicability|lst)))
 
 
