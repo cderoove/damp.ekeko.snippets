@@ -715,6 +715,8 @@
   (def snippet (first (snippetgroup/snippetgroup-snippetlist templategroup)))
   (snippet/snippet-node-parent|conceptually snippet (snippet/snippet-root snippet))
   
+  (inspector-jay.core/inspect (matching/reachable-nodes snippet (snippet/snippet-root snippet)))
+  
   (inspector-jay.core/inspect (time (querying/query-by-snippetgroup-fast templategroup 'damp.ekeko/ekeko)))
   
   (let [tmp-ns2 (util/gen-ns)

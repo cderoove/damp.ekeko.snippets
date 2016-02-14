@@ -301,7 +301,7 @@ damp.ekeko.snippets.operatorsrep
     (not (and
            (astnode/lstvalue? value)
            (matching/snippet-list-regexp? snippet value)))
-;    (not (has-directives? snippet value ["match|set"])) ; No point in adding match|set .. plus it causes timeouts
+    (not (has-directives? snippet value ["replaced-by-wildcard"])) ; Don't add it twice..
     (not (matching/node-protected? snippet value))))
 
 (defn
@@ -773,7 +773,9 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Replace by meta-variable."
      opscope-subject
-     applicability|notprotected
+     (fn [snippetgroup snippet value]
+       (and (applicability|node|nonroot snippetgroup snippet value) ; TODO Should allow this for RHS snippets!!
+            (applicability|notprotected snippetgroup snippet value)))
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
