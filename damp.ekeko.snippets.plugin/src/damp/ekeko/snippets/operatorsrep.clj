@@ -183,9 +183,15 @@ damp.ekeko.snippets.operatorsrep
         (cond
           (nil? parent) false
           (astnode/block? parent) true
-          :else (recur parent))
-        )
-      )))
+          :else (recur parent))))
+    ; None of the ancestors may have a protect directive
+    (loop [node value]
+      (let [parent (snippet/snippet-node-parent|conceptually snippet node)]
+        (cond
+          (nil? parent) true
+          (has-directives? snippet parent ["protect"]) false
+          :else (recur parent))))    
+    ))
 
 (defn
   applicability|expressionstmt

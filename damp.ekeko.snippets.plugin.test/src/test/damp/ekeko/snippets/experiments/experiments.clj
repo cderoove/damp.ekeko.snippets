@@ -406,7 +406,7 @@
                 :fitness-threshold 0.95
                 :population-size 30
                 :quick-matching false
-                :partial-matching false
+                :partial-matching true
                 :selection-weight 1/4
                 :mutation-weight 3/4
                 :crossover-weight 0/4
@@ -417,12 +417,12 @@
                     (some #{(operatorsrep/operator-id op)} 
                           ["replace-by-variable"
                            ;"replace-by-exp"
-                           "add-directive-equals"
+                           ;"add-directive-equals"
                            ;"add-directive-equivalent"
                            ;"add-directive-protect" 
                            "add-directive-invokes" 
                            ;"add-directive-invokedby" 
-                           "add-directive-constructs" 
+                           ;"add-directive-constructs" 
                            ;"add-directive-constructedby" 
                            "add-directive-overrides" 
                            ;"add-directive-refersto" 
@@ -439,7 +439,7 @@
                            ;"add-directive-subtype*|sname" 
                            ;"restrict-scope-to-child" 
                            ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
+                           "relax-scope-to-child*" 
                            ;"generalize-directive" 
                            ;"remove-directive" 
                            ;"relax-size-to-atleast" 
@@ -460,7 +460,7 @@
                            ;"replace-parent-stmt" 
                            ;"isolate-stmt-in-block"
                            ;"isolate-stmt-in-method" 
-                           ;"isolate-expr-in-method" 
+                           "isolate-expr-in-method" 
                            ;"insert-node-before" 
                            ;"insert-node-after" 
                            ;"insert-node-at" 
@@ -471,10 +471,6 @@
                            ;"ignore-comments" 
                            ;"ignore-absentvalues" 
                            "replace-by-wildcard" 
-                           ;"replace-by-checked-wildcard" 
-                           ;"consider-regexp|list" 
-                           ;"consider-regexp|cfglist" 
-                           ;"update-multiplicity" 
                            ;"consider-set|lst" 
                            ;"include-inherited" 
                            ;"add-directive-orimplicit" 
@@ -490,12 +486,12 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir (find-new-experiment-folder "strategy")
+                :output-dir (find-last-experiment-folder "strategy")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      [(str experiments-root "strategy-jhotdraw/initial-protected.ekt")]
+      [(str experiments-root "strategy-jhotdraw/initial-protected2.ekt")]
       [(str experiments-root "strategy-jhotdraw/solution3.ekt")])))
 
 (deftest

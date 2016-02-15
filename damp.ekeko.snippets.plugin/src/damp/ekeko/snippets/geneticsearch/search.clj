@@ -752,11 +752,11 @@
   
   ; Test a particular mutation operator (on a random subject)
   (do
-    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/JHotDraw-TemplateMethod-Experiment--Custom-fast-partial5-moreops/34/individual-31.ekt"))
+    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/experiments/strategy-4/22/individual-31.ekt"))
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-subtype+")) (operatorsrep/registered-operators))))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-overrides")) (operatorsrep/registered-operators))))
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))

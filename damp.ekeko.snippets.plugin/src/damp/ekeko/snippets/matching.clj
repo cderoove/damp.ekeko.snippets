@@ -1277,6 +1277,7 @@ damp.ekeko.snippets.matching
     (reachable-nodes snippet node)))
 
 (defn node-protected?
+  "Is this node protected from being removed/abstracted away? This is the case if one of its children has a @protected directive."
   [snippet val]
   (let [protected-bd?
         (fn [val]

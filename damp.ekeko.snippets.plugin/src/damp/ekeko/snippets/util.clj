@@ -359,7 +359,7 @@
   "Does the allocated Java metaspace size come close to its maximum size?"
   (let [usage (metaspace-usage)
         filled (/ (.getCommitted usage) (.getMax usage))] 
-    (> filled 0.8)))
+    (> filled 0.7)))
 
 (defn eval-in-ns 
   "Performs an eval in another namespace."
