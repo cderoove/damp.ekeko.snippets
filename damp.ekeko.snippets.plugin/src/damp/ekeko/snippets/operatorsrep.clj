@@ -311,11 +311,17 @@ damp.ekeko.snippets.operatorsrep
     (not (matching/node-protected? snippet value))))
 
 (defn
+  applicability|nullvalue
+  [snippetgroup snippet node]
+  (snippet/snippet-value-null? snippet node))
+
+(defn
   applicability|child+*
   [snippetgroup snippet value]
   (and
     (applicability|nonroot snippetgroup snippet value)
     (not (snippet/snippet-value-primitive? snippet value)) ; Causes stack overflows for some reason?
+    (not (applicability|nullvalue snippetgroup snippet value))
     (complement applicability|lst)))
 
 
@@ -356,12 +362,6 @@ damp.ekeko.snippets.operatorsrep
         (applicability|vardeclaration snippetgroup snippet (snippet/snippet-node-parent|conceptually snippet value))
         (ekekokeyword-owningproperty? value :name)
         ))))
-
-  
-(defn
-  applicability|nullvalue
-  [snippetgroup snippet node]
-  (snippet/snippet-value-null? snippet node))
     
 (defn
   applicability|absentvalue-classkeywords

@@ -635,6 +635,77 @@
                     (:thread-group config))))
               @new-history))))))
 
+
+(defn
+  hillclimb
+  "Look for a template that is able to match with a number of snippets, using a simple hill climbing algorithm
+   @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
+   @param conf             Configuration keyword arguments; see config-default for all default values"
+  [initial-template verifiedmatches & {:as conf}]
+  (let
+    [config (merge config-default conf)
+     output-dir (if (nil? (:output-dir config))
+                  (str "evolve-" (util/current-date) "/")
+                  (:output-dir config))
+     
+     csv-name (str output-dir "results.csv")
+     csv-columns ["Generation" "Total time" "Generation time"
+                  "Fitness" "Fscore" "Partial"]
+
+     start-time (. System (nanoTime))
+          
+     fitness ((:fitness-function config) verifiedmatches config)
+
+    ]
+    (util/make-dir output-dir)
+    (util/append-csv csv-name csv-columns)
+    
+    (loop
+      [generation 0
+       generation-start-time start-time
+       best-template (individual/compute-fitness (individual/make-individual initial-template) fitness)]
+      (let [best-fitness (individual/individual-fitness best-template)]
+        
+        (println "Iteration:" generation)
+        (println "Current best fitness:" best-fitness)
+        
+        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
+                                   best-fitness ; Fitness 
+                                   (first (individual/individual-fitness-components best-template)) ; F-score
+                                   (second (individual/individual-fitness-components best-template)) ; Partial score
+                                   ])
+        
+        (persistence/spit-snippetgroup (str output-dir "/iteration-" generation ".ekt") 
+                                       (individual/individual-templategroup best-template))
+        
+        
+        (cond
+          (>= generation (:max-generations config))
+          (println "Maximum number of generations reached! Stopping search..")
+          
+          (> best-fitness (:fitness-threshold config))
+          (do
+              (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup best-template)))
+              (persistence/spit-snippetgroup (str output-dir "success.ekt") 
+                                             (individual/individual-templategroup best-template)))
+          
+          (util/metaspace-almost-full?)
+          (println "Java metaspace almost full! Stopping genetic search..")
+          
+          :rest 
+          (recur
+              (inc generation)
+              (. System (nanoTime))
+              
+              (let [mutant (mutate best-template (:mutation-operators config))
+                    mutant-plus-fitness (individual/compute-fitness mutant fitness)
+                    tmp (println (individual/individual-fitness mutant-plus-fitness))]
+                (if (>= 
+                      (individual/individual-fitness mutant-plus-fitness)
+                      (individual/individual-fitness best-template))
+                  mutant-plus-fitness
+                  best-template))))))))
+
 (defn templategroup-fitness
   "Compute the fitness of a single template group"
   [templategroup verifiedmatches & {:as conf}]
@@ -728,16 +799,40 @@
   
   (time
     (def bla (querying/query-by-snippetgroup-fast-roots templategroup)))
-  (inspector-jay.core/inspect bla)
+  
+  ; Hillclimbing test
+  (def initial (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected2.ekt"))
+  (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt"))
+  (def matches (into [] (fitness/templategroup-matches solution)))
+  (def verifiedmatches (make-verified-matches matches []))
+  (hillclimb initial verifiedmatches
+             :output-dir "hillclimb-test/"           
+             :quick-matching false
+             :partial-matching true
+             :max-generations 400
+             :match-timeout 120000
+             :fitness-threshold 0.95
+             :mutation-operators
+             (filter 
+               (fn [op] 
+                 (some #{(operatorsrep/operator-id op)} 
+                       ["replace-by-variable"
+                        "add-directive-invokes" 
+                        "add-directive-overrides" 
+                        "isolate-expr-in-method" 
+                        "replace-by-wildcard" 
+                        ]))
+               (operatorsrep/registered-operators)))
+  
   
   ; Reorder templates in a template group (for increased performance)
-  (let [path "/resources/EkekoX-Specifications/experiments/test3.ekt"
+  (let [path "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt"
         tgroup (slurp-from-resource path)
         templates (snippetgroup/snippetgroup-snippetlist tgroup)
-        reordered (replace templates [0 1 2])
+        reordered (replace templates [1 2 0])
         reordered-tgroup (snippetgroup/snippetgroup-update-snippetlist tgroup reordered)]
     (persistence/spit-snippetgroup 
-      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile path)))
+      (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile path) reordered-tgroup))
   
   ; Spit the matches of a group
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/templatemethod-jhotdraw/solution3.ekt"))
@@ -752,7 +847,8 @@
   
   ; Test a particular mutation operator (on a random subject)
   (do
-    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/experiments/strategy-4/22/individual-31.ekt"))
+    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/experiments/factorymethod-8/37/individual-31.ekt"))
+    (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/timeout1455546559910.ekt"))
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)

@@ -320,10 +320,10 @@
                            ;"add-directive-protect" 
                            "add-directive-invokes" 
                            ;"add-directive-invokedby" 
-                           "add-directive-constructs" 
+                           ;"add-directive-constructs" 
                            ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           "add-directive-refersto" 
+                           ;"add-directive-overrides" 
+                           ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
                            "add-directive-type" 
                            ;"add-directive-type|qname" 
@@ -337,8 +337,8 @@
                            ;"restrict-scope-to-child" 
                            ;"relax-scope-to-child+" 
                            ;"relax-scope-to-child*" 
-                           "generalize-directive" 
-                           "remove-directive" 
+                           ;"generalize-directive" 
+                           ;"remove-directive" 
                            ;"relax-size-to-atleast" 
                            ;"empty-body" 
                            ;"or-block" 
@@ -352,7 +352,7 @@
                            ;"add-directive-remove-element-alt" 
                            ;"add-directive-copy-node" 
                            ;"add-directive-move-element" 
-                           "remove-node" 
+                           ;"remove-node" 
                            ;"replace-parent" 
                            ;"replace-parent-stmt" 
                            ;"isolate-stmt-in-block" ; Bug in isolate-*? 
@@ -373,7 +373,7 @@
                            ;"consider-regexp|cfglist" 
                            ;"update-multiplicity" 
                            "consider-set|lst" 
-                           "include-inherited" 
+                           ;"include-inherited" 
                            ;"add-directive-orimplicit" 
                            ;"add-directive-notnil" 
                            ;"add-directive-orsimple" 
@@ -382,12 +382,12 @@
                            "generalize-types" 
                            ;"generalize-types|qname" 
                            ;"extract-template" 
-                           "generalize-invocations" 
+                           ;"generalize-invocations" 
                            ;"generalize-constructorinvocations"
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir (find-new-experiment-folder "observer")
+                :output-dir (find-last-experiment-folder "observer")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
@@ -427,7 +427,7 @@
                            "add-directive-overrides" 
                            ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
-                           ;"add-directive-type" 
+                           "add-directive-type"
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
                            ;"add-directive-subtype+" 
@@ -439,7 +439,7 @@
                            ;"add-directive-subtype*|sname" 
                            ;"restrict-scope-to-child" 
                            ;"relax-scope-to-child+" 
-                           "relax-scope-to-child*" 
+                           ;"relax-scope-to-child*" 
                            ;"generalize-directive" 
                            ;"remove-directive" 
                            ;"relax-size-to-atleast" 
@@ -499,7 +499,7 @@
   jh-factorymethod
   (let [tg (new ThreadGroup "Factory method")
         config {:max-generations 1200
-                :match-timeout 360000
+                :match-timeout 240000
                 :fitness-weights [12/20 8/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
@@ -525,10 +525,10 @@
                            "add-directive-overrides" 
                            ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
-                           ;"add-directive-type" 
+                           "add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
+                           ;"add-directive-subtype+" 
                            ;"add-directive-subtype+|qname" 
                            ;"add-directive-subtype+|sname" 
                            ;"add-directive-subtype*"
@@ -585,8 +585,8 @@
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
-      [(str experiments-root "factorymethod-jhotdraw/initial-protected.ekt")]
-      [(str experiments-root "factorymethod-jhotdraw/solution_take4.ekt")])))
+      [(str experiments-root "factorymethod-jhotdraw/initial-protected-reorder.ekt")]
+      [(str experiments-root "factorymethod-jhotdraw/solution_take4-reorder.ekt")])))
 
 (deftest test-suite 
   (jh-template-method)
