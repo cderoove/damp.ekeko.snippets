@@ -792,7 +792,7 @@ damp.ekeko.snippets.operators
   (let [nodesset (set nodes)]
     (reduce 
       (fn [sofar node]
-        (let [childrenset (set (snippet/snippet-node-children|conceptually snippet node))]
+        (let [childrenset (set (snippet/snippet-node-children|conceptually-wcard snippet node))]
           (if 
             (empty? (clojure.set/intersection nodesset childrenset))
             (conj sofar node)
@@ -881,7 +881,6 @@ damp.ekeko.snippets.operators
               (map (fn [[t cnt]] cnt) newtemplatesandcounts)]
           (when (> (apply + counts) 1)
             (snippetgroup/snippetgroup-update-snippetlist snippetgroup (map first newtemplatesandcounts))))))))
-
           
 (defn 
   generalize-types 
@@ -890,10 +889,22 @@ damp.ekeko.snippets.operators
   (let [typevar (util/gen-lvar "type")]
     (generic-generalize-types snippetgroup snippet node
                               (fn [snippetsofar resolvingnode]
-                                (add-directive-type
-                                  (replace-by-wildcard snippetsofar resolvingnode)  
-                                  resolvingnode 
-                                  typevar)))))
+                                (if (snippet/has-directives? snippetsofar resolvingnode ["replaced-by-wildcard" "replaced-by-variable"])
+                                  snippetsofar
+                                  (add-directive-type
+                                    (replace-by-wildcard snippetsofar resolvingnode)
+                                    resolvingnode 
+                                    typevar)
+                                  )
+                                
+                                
+;                                (add-directive-type
+;                                  (if (has-directives? snippetsofar resolvingnode ["replaced-by-wildcard" "replaced-by-variable"])
+;                                    snippetsofar
+;                                    (replace-by-wildcard snippetsofar resolvingnode))
+;                                  resolvingnode 
+;                                  typevar)
+                                ))))
 
 (defn 
   generalize-types|qname 

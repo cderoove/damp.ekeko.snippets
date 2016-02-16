@@ -395,6 +395,24 @@ damp.ekeko.snippets.snippet
     :default
     []))
 
+(defn has-directives?
+  "Returns true if the given node has one of the given directives
+   @param directives list of directive names to look for"
+  [snippet node directives]
+  (let [bds (snippet-bounddirectives-for-node snippet node)]
+    (some (fn [bd]
+            (.contains directives
+              (:name (bounddirective-directive bd))))
+          bds)))
+
+(defn
+  snippet-node-children|conceptually-wcard
+  "Variant that takes into account wildcards & variables"
+  [snippet node]
+  (if (has-directives? snippet node ["replaced-by-wildcard" "replaced-by-variable"])
+    []
+    (snippet-node-children|conceptually snippet node)))
+
 (defn
   snippet-node-children|conceptually-refs
   "Extension of snippet-node-children|conceptually that also considers special directives
@@ -466,6 +484,46 @@ damp.ekeko.snippets.snippet
               (list-f val)
               (recur (concat 
                        (snippet-node-children|conceptually snippet val)
+                       others)))
+            (astnode/primitivevalue? val)
+            (do
+              (primitive-f val)
+              (recur others))
+            (astnode/nilvalue? val)
+            (do
+              (null-f val)
+              (recur others))
+            :default
+            (throw (Exception. (str "Don't know how to walk this value:" val)))
+            ))))))
+
+(defn 
+  walk-snippet-element-wcard
+  "Performs a recursive descent through a particular snippet element.
+   Takes snippet changes into account that might not be reflected 
+   in the snippets' root ASTNode. Parent and children of AST nodes are
+   looked up in snippet, rather than taken from node itself."
+  ([snippet element f]
+    (walk-snippet-element-wcard snippet element f f f f))
+  ([snippet element node-f list-f primitive-f null-f]
+    (loop
+      [nodes (list element)]
+      (when-not (empty? nodes)
+        (let [val (first nodes)
+              others (rest nodes)]
+          (cond 
+            (astnode/ast? val)
+            (do
+              (node-f val)
+              (recur 
+                (concat 
+                  (snippet-node-children|conceptually-wcard snippet val)
+                  others)))
+            (astnode/lstvalue? val)
+            (do 
+              (list-f val)
+              (recur (concat 
+                       (snippet-node-children|conceptually-wcard snippet val)
                        others)))
             (astnode/primitivevalue? val)
             (do
@@ -674,7 +732,7 @@ damp.ekeko.snippets.snippet
     (snippet-children-resolvingto snippet root bindingpredicate snippet-node-resolvedbinding))
   ([snippet root bindingpredicate snippetnodebindingfn]
     (let [children (atom '())] 
-      (walk-snippet-element 
+      (walk-snippet-element-wcard
         snippet
         root 
         (fn [node] 

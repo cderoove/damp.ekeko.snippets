@@ -307,7 +307,7 @@ damp.ekeko.snippets.operatorsrep
     (not (and
            (astnode/lstvalue? value)
            (matching/snippet-list-regexp? snippet value)))
-    (not (has-directives? snippet value ["replaced-by-wildcard"])) ; Don't add it twice..
+;    (not (has-directives? snippet value ["replaced-by-wildcard"])) ; Don't add it twice..
     (not (matching/node-protected? snippet value))))
 
 (defn
