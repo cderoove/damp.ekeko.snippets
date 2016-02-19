@@ -801,12 +801,14 @@
     (def bla (querying/query-by-snippetgroup-fast-roots templategroup)))
   
   ; Hillclimbing test
+  (defn slurp-from-resource [pathrelativetobundle]
+      (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def initial (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected2.ekt"))
   (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt"))
   (def matches (into [] (fitness/templategroup-matches solution)))
   (def verifiedmatches (make-verified-matches matches []))
   (hillclimb initial verifiedmatches
-             :output-dir "hillclimb-test/"           
+             :output-dir "strategy-test2/"           
              :quick-matching false
              :partial-matching true
              :max-generations 400
@@ -814,15 +816,78 @@
              :fitness-threshold 0.95
              :mutation-operators
              (filter 
-               (fn [op] 
-                 (some #{(operatorsrep/operator-id op)} 
-                       ["replace-by-variable"
-                        "add-directive-invokes" 
-                        "add-directive-overrides" 
-                        "isolate-expr-in-method" 
-                        "replace-by-wildcard" 
-                        ]))
-               (operatorsrep/registered-operators)))
+                  (fn [op] 
+                    (some #{(operatorsrep/operator-id op)} 
+                          ["replace-by-variable"
+                           ;"replace-by-exp"
+                           ;"add-directive-equals"
+                           ;"add-directive-equivalent"
+                           ;"add-directive-protect" 
+                           "add-directive-invokes" 
+                           ;"add-directive-invokedby" 
+                           ;"add-directive-constructs" 
+                           ;"add-directive-constructedby" 
+                           "add-directive-overrides" 
+                           ;"add-directive-refersto" 
+                           ;"add-directive-referredby" 
+                           "add-directive-type"
+                           ;"add-directive-type|qname" 
+                           ;"add-directive-type|sname" 
+                           ;"add-directive-subtype+" 
+                           ;"add-directive-subtype+|qname" 
+                           ;"add-directive-subtype+|sname" 
+                           ;"add-directive-subtype*"
+                           ;"isolate-expr-in-method"
+                           ;"add-directive-subtype*|qname" 
+                           ;"add-directive-subtype*|sname" 
+                           ;"restrict-scope-to-child" 
+                           ;"relax-scope-to-child+" 
+                           ;"relax-scope-to-child*" 
+                           ;"generalize-directive" 
+                           ;"remove-directive" 
+                           ;"relax-size-to-atleast" 
+                           ;"empty-body" 
+                           ;"or-block" 
+                           ;"relax-scope-to-member" 
+                           ;"add-directive-replace" 
+                           ;"add-directive-replace-value" 
+                           ;"add-directive-add-element" 
+                           ;"add-directive-insert-before" 
+                           ;"add-directive-insert-after" 
+                           ;"add-directive-remove-element" 
+                           ;"add-directive-remove-element-alt" 
+                           ;"add-directive-copy-node" 
+                           ;"add-directive-move-element" 
+                           ;"remove-node" 
+                           ;"replace-parent" 
+                           ;"replace-parent-stmt" 
+                           ;"isolate-stmt-in-block"
+                           ;"isolate-stmt-in-method" 
+                           "isolate-expr-in-method" 
+                           ;"insert-node-before" 
+                           ;"insert-node-after" 
+                           ;"insert-node-at" 
+                           ;"replace-node" 
+                           ;"replace-value" 
+                           ;"erase-list" 
+                           ;"erase-comments" 
+                           ;"ignore-comments" 
+                           ;"ignore-absentvalues" 
+                           "replace-by-wildcard" 
+                           ;"consider-set|lst" 
+                           ;"include-inherited" 
+                           ;"add-directive-orimplicit" 
+                           ;"add-directive-notnil" 
+                           ;"add-directive-orsimple" 
+                           ;"add-directive-orexpression" 
+                           ;"generalize-references" 
+                           ;"generalize-types" 
+                           ;"generalize-types|qname" 
+                           ;"extract-template" 
+                           ;"generalize-invocations" 
+                           ;"generalize-constructorinvocations"
+                           ]))
+                  (operatorsrep/registered-operators)))
   
   
   ; Reorder templates in a template group (for increased performance)
@@ -849,10 +914,11 @@
   (do
     (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/experiments/factorymethod-8/37/individual-31.ekt"))
     (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/timeout1455546559910.ekt"))
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/dbg/prototype-jhotdraw/initial-template.ekt"))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/initial-protected-reorder.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
                     (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-overrides")) (operatorsrep/registered-operators))))
+    (def mutant-template (individual/individual-templategroup mutant))
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))
@@ -869,11 +935,11 @@
   ; Calculate the fitness of one templategroup
   (do
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected.ekt"))
-    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt"))
+    (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt"))
     (def matches (into [] (fitness/templategroup-matches solution)))
     (def verifiedmatches (make-verified-matches matches []))
     (time (templategroup-fitness 
-           templategroup
+           mutant-template
            verifiedmatches
            :match-timeout 480000
            :fitness-weights [18/20 2/20 0/20]

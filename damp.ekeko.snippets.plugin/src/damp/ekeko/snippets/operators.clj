@@ -889,21 +889,16 @@ damp.ekeko.snippets.operators
   (let [typevar (util/gen-lvar "type")]
     (generic-generalize-types snippetgroup snippet node
                               (fn [snippetsofar resolvingnode]
-                                (if (snippet/has-directives? snippetsofar resolvingnode ["replaced-by-wildcard" "replaced-by-variable"])
-                                  snippetsofar
-                                  (add-directive-type
-                                    (replace-by-wildcard snippetsofar resolvingnode)
-                                    resolvingnode 
-                                    typevar)
-                                  )
-                                
-                                
 ;                                (add-directive-type
-;                                  (if (has-directives? snippetsofar resolvingnode ["replaced-by-wildcard" "replaced-by-variable"])
-;                                    snippetsofar
-;                                    (replace-by-wildcard snippetsofar resolvingnode))
+;                                  (replace-by-wildcard snippetsofar resolvingnode)
 ;                                  resolvingnode 
 ;                                  typevar)
+                                (add-directive-type
+                                  (if (snippet/has-directives? snippetsofar resolvingnode ["replaced-by-wildcard" "replaced-by-variable"])
+                                    snippetsofar
+                                    (replace-by-wildcard snippetsofar resolvingnode))
+                                  resolvingnode 
+                                  typevar)
                                 ))))
 
 (defn 

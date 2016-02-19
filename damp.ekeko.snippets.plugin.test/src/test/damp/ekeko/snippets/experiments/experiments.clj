@@ -19,13 +19,13 @@
 
 (def experiment-config-default
   {:max-generations 50
-   :fitness-weights [18/20 2/20]
+   :fitness-weights [12/20 8/20]
    :match-timeout 30000
    :selection-weight 1/4
-   :mutation-weight 2/4
-   :crossover-weight 1/4
+   :mutation-weight 3/4
+   :crossover-weight 0/4
    :population-size 20
-   :tournament-rounds 7})
+   :tournament-rounds 5})
 
 (def experiments-root "/resources/EkekoX-Specifications/experiments/")
 (def output-root "/Users/soft/Documents/experiments/")
@@ -96,7 +96,7 @@
   (let [tg (new ThreadGroup "Prototype")
         config {:max-generations 1200
                 :match-timeout 360000
-                :fitness-weights [18/20 2/20 0/20]
+                :fitness-weights [12/20 8/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
                 :quick-matching true
@@ -198,7 +198,7 @@
   (let [tg (new ThreadGroup "Template-group")
         config {:max-generations 1200
                 :match-timeout 240000
-                :fitness-weights [18/20 2/20 0/20]
+                :fitness-weights [12/20 8/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
                 :quick-matching false
@@ -300,7 +300,7 @@
   (let [tg (new ThreadGroup "observer")
         config {:max-generations 1200
                 :match-timeout 360000
-                :fitness-weights [18/20 2/20 0/20]
+                :fitness-weights [12/20 8/20 0/20]
                 :fitness-threshold 0.95
                 :population-size 30
                 :quick-matching false
@@ -308,7 +308,7 @@
                 :selection-weight 1/4
                 :mutation-weight 3/4
                 :crossover-weight 0/4
-                :tournament-rounds 7
+                :tournament-rounds 5
                 :mutation-operators
                 (filter 
                   (fn [op] 
@@ -322,13 +322,13 @@
                            ;"add-directive-invokedby" 
                            ;"add-directive-constructs" 
                            ;"add-directive-constructedby" 
-                           ;"add-directive-overrides" 
+                           "add-directive-overrides" 
                            ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
                            "add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
-                           ;"add-directive-subtype+" 
+                           "add-directive-subtype+" 
                            ;"add-directive-subtype+|qname" 
                            ;"add-directive-subtype+|sname" 
                            "add-directive-subtype*" 
@@ -525,7 +525,7 @@
                            "add-directive-overrides" 
                            ;"add-directive-refersto" 
                            ;"add-directive-referredby" 
-                           "add-directive-type" 
+                           ;"add-directive-type" 
                            ;"add-directive-type|qname" 
                            ;"add-directive-type|sname" 
                            ;"add-directive-subtype+" 
@@ -580,7 +580,7 @@
                            ]))
                   (operatorsrep/registered-operators))
                 :thread-group tg
-                :output-dir (find-last-experiment-folder "factorymethod")
+                :output-dir (find-new-experiment-folder "factorymethod")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
