@@ -37,7 +37,7 @@ Ekeko/X is a template-base search and transformation tool. As it sometimes isn't
 
 ## Running the experiments
 
-**[Experiment data](https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/experiments/experiment%20data.zip?raw=true) is available online.** This .zip file contains all template groups of each generation, configuration data, the results.csv file of several instances of the experiments.
+**[Experiment data](https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/experiments/experiment%20data.zip?raw=true) is available online.** (21-11-'15 version; will be updated soon) This .zip file contains all template groups of each generation, configuration data, the results.csv file of several instances of the experiments.
 
 * The experiments to evaluate the genetic search algorithm are defined in the /damp.ekeko.snippets.plugin.test/src/test/damp/ekeko/snippets/experiments/experiments.clj file. Load this file into the REPL.
 * Each experiment can be found in a test definition (i.e. a "deftest"). Simply call one of the tests in the REPL to run the corresponding experiment. For example, (jh-template-method) starts the experiment to generalize one template of the Template method design pattern into a template group that should match all instances of that design pattern. Note that the experiments require the "6 - JHotDraw v5.1" sample project to be imported. (can be found in damp.ekeko.snippets.plugin.test/resources/P-MARt)
