@@ -15,7 +15,7 @@ To assist Ekeko/X users in writing templates, the tool also provides a search-ba
 
 The following screencast provides a brief overview of Ekeko/X:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/jfek-paI9Ns/0.jpg)](https://www.youtube.com/watch?v=jfek-paI9Ns)
+[![Ekeko/X Overview](https://raw.githubusercontent.com/cderoove/damp.ekeko.snippets/master/damp.ekeko.snippets.plugin/resources/ekekox-movie.png)](https://www.youtube.com/watch?v=jfek-paI9Ns)
 
 Example program transformations can be found in directory [damp.ekeko.snippets.plugin.test/resources/TestCase-JDT-CompositeVisitor-Templates](
 https://github.com/cderoove/damp.ekeko.snippets/tree/master/damp.ekeko.snippets.plugin.test/resources/TestCase-JDT-CompositeVisitor-Templates). 
