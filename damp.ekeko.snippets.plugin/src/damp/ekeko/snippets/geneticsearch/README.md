@@ -41,7 +41,7 @@ To use the the genetic search algorithm, which performs automated generalization
 * If needed, you can also remove entries from the list of desired results (icon with a sheet of paper with a small "-").
 * If needed, you can tweak the configuration of the genetic search algorithm (button with a gear icon).
 * You're all set! Click the button with a DNA icon to start the algorithm.
-* Whenever the algorithm produces a new generation (can take a few seconds), the results table will be updated. You can inspect each generation by double-clicking its row in the table. You can also see how the best fitness evolves per generation with the "Fitness chart" button.
+* Whenever the algorithm produces a new generation (can take a few seconds up to a few minutes), the results table will be updated. You can inspect each generation by double-clicking its row in the table. You can also see how the best fitness evolves per generation with the "Fitness chart" button.
 
 Alternatively, the algorithm can also be started directly **via a Clojure REPL**:
 
