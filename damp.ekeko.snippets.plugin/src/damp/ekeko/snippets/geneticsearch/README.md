@@ -2,6 +2,8 @@
 
 Ekeko/X is a template-base search and transformation tool. As it sometimes isn't straightforward to design a template that produces exactly the desired code snippets, we have provided support to automatically generalize or refine a template group, such that it will match with a set of desired matching code snippets. This page details the process of setting up Ekeko/X and its support for automated generalization and refinement, and how to use it. We also explain how to reproduce the experiments that evaluate the effectiveness of this automated generalization and refinement approach.
 
+**[Download experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip)** (157 MB)
+
 ## Installation from source
 
 * If you haven't already, first install the [Eclipse](https://www.eclipse.org) IDE. (Ekeko/X has been tested using Eclipse Luna and Mars.) Note that the chosen Eclipse package should include the Eclipse Plugin Development Environment. (This is the case for e.g. "Eclipse IDE for Java EE Developers" and "Eclipse for RCP and RAP Developers")
@@ -37,7 +39,7 @@ Ekeko/X is a template-base search and transformation tool. As it sometimes isn't
 
 ## Running the experiments
 
-**[Experiment data](https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin.test/resources/EkekoX-Specifications/experiments/experiment%20data.zip?raw=true) is available online.** (21-11-'15 version; will be updated soon) This .zip file contains all template groups of each generation, configuration data, the results.csv file of several instances of the experiments.
+**[Experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip) is available online.** (157 MB ; updated Feb. 2016) This .zip file contains all measurements in .csv format, fitness and performance charts for each run, all template groups of each generation of all runs.
 
 * The experiments to evaluate the genetic search algorithm are defined in the /damp.ekeko.snippets.plugin.test/src/test/damp/ekeko/snippets/experiments/experiments.clj file. Load this file into the REPL.
 * Each experiment can be found in a test definition (i.e. a "deftest"). Simply call one of the tests in the REPL to run the corresponding experiment. For example, (jh-template-method) starts the experiment to generalize one template of the Template method design pattern into a template group that should match all instances of that design pattern. Note that the experiments require the "6 - JHotDraw v5.1" sample project to be imported. (can be found in damp.ekeko.snippets.plugin.test/resources/P-MARt)
