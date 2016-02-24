@@ -7,7 +7,9 @@ Ekeko/X owes its peculiar name to our meta-programming library for Clojure on wh
 
 ## Automated template generalization and refinement + experiments
 
-To assist Ekeko/X users in writing templates, the tool also provides a search-based approach to automatically generalize/refine a template, such that it produces a given desired set of source code snippets. Usage information, as well as how to [reproduce the experiments]((https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch/README.md)) that evaluate the approach are available in the [genetic algorithm documentation](https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch/README.md). 
+To assist Ekeko/X users in writing templates, the tool also provides a search-based approach to automatically generalize/refine a template, such that it produces a given desired set of source code snippets. Usage information, as well as how to [reproduce the experiments]((https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch/README.md)) that evaluate the approach are available in the [genetic algorithm documentation](https://github.com/cderoove/damp.ekeko.snippets/blob/master/damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch/README.md).
+
+[Download experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip) (157 MB)
 
 ## Demo
 
