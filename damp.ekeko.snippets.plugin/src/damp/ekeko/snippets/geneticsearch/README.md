@@ -1,12 +1,14 @@
 # Automated generalization and refinement
 
-Ekeko/X is a template-base search and transformation tool. As it sometimes isn't straightforward to design a template that produces exactly the desired code snippets, we have provided support to automatically generalize or refine a template group, such that it will match with a set of desired matching code snippets. This page details the process of setting up Ekeko/X and its support for automated generalization and refinement, and how to use it. We also explain how to reproduce the experiments that evaluate the effectiveness of this automated generalization and refinement approach.
+Ekeko/X is a template-based search and transformation tool. As it sometimes isn't straightforward to design a template that produces exactly the desired code snippets, we have provided support to automatically generalize or refine a template group, such that it will match with a set of desired matching code snippets. This page details the process of setting up Ekeko/X and its support for automated generalization and refinement, and how to use it. We also explain how to reproduce the experiments that evaluate the effectiveness of this automated generalization and refinement approach.
 
 **[Download experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip)** (157 MB)
 
+[![Genetic search overview](https://raw.githubusercontent.com/cderoove/damp.ekeko.snippets/master/damp.ekeko.snippets.plugin/resources/gensearch-movie.png)](https://www.youtube.com/watch?v=mWslpM8WuPs)
+
 ## Installation from source
 
-* If you haven't already, first install the [Eclipse](https://www.eclipse.org) IDE. (Ekeko/X has been tested using Eclipse Luna and Mars.) Note that the chosen Eclipse package should include the Eclipse Plugin Development Environment. (This is the case for e.g. "Eclipse IDE for Java EE Developers" and "Eclipse for RCP and RAP Developers")
+* If you haven't already, first install the [Eclipse](https://www.eclipse.org) IDE. (Ekeko/X has been tested using Eclipse Luna, Mars and Mars.1.) Note that the chosen Eclipse package should include the Eclipse Plugin Development Environment. (This is the case for e.g. "Eclipse IDE for Java EE Developers" and "Eclipse for RCP and RAP Developers")
 * Install the Counterclockwise Eclipse plugin, which adds support for the Clojure language. Counterclockwise can be found in the Eclipse marketplace. (Help > Eclipse Marketplace...)
 * Clone the Github repositories of [Ekeko](https://github.com/cderoove/damp.ekeko) and [Ekeko/X](https://github.com/cderoove/damp.ekeko.snippets) to your computer.
 * Import the following four Eclipse projects from the damp.ekeko directory (via File > Import... > General > Existing Projects into Workspace): 
@@ -23,15 +25,27 @@ Ekeko/X is a template-base search and transformation tool. As it sometimes isn't
 
 * To start Ekeko/X in a separate Eclipse instance, right-click the damp.ekeko.snippet.plugin project > Run As > Eclipse Application. Before starting, it may be necessary to change the run configuration: (Right-click the project > Run As > Run Configurations...) In the Main tab, check the "Location:" textbox. In the Arguments tab, check the "Working directory:" and the "VM arguments:". Our experiments were executed with the following VM arguments:
 
-  -Dosgi.requiredJavaVersion=1.8 -Dhelp.lucene.tokenizer=standard -Xms128m -Xmx4192m -Xdock:icon=../Resources/Eclipse.icns -XstartOnFirstThread  -Dorg.eclipse.swt.internal.carbon.smallFonts -XX:MaxMetaspaceSize=4096m -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC
+``-Dosgi.requiredJavaVersion=1.8 -Dhelp.lucene.tokenizer=standard -Xms128m -Xmx4192m -Xdock:icon=../Resources/Eclipse.icns -XstartOnFirstThread  -Dorg.eclipse.swt.internal.carbon.smallFonts -XX:MaxMetaspaceSize=4096m -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC``
 
-* Once Ekeko/X has started in the new Eclipse instance, new templates can be created and edited via the Ekeko > Ekeko/X menu. (A small [demonstration screencast](https://www.youtube.com/watch?v=CXNKyBIuAv8&feature=youtu.be) is available.)
+* Once Ekeko/X has started in the new Eclipse instance, new templates can be created and edited via the Ekeko > Ekeko/X menu. (A short [demonstration screencast](https://www.youtube.com/watch?v=CXNKyBIuAv8&feature=youtu.be) is available.)
 * Several sample Java projects are also included to try out program searches. They can be found in the damp.ekeko.snippets/damp.ekeko.snippets/resources directory. In order to match templates in a project, it should be Ekeko-enabled. (Right-click a project > Configure > Include in Ekeko Queries) Several sample templates and transformations can also be found in the damp.ekeko.snippets/damp.ekeko.snippets/resources/EkekoX-Specifications directory.
 * Aside from the graphical user interface, Ekeko/X can also be controlled via a Clojure REPL. To start one, go to Ekeko > Start nREPL. Now go to the other Eclipse instance (from which Ekeko/X was launched) and check its console. It should show a link to the new REPL. Click this link to open the REPL.
 
 ## Running the genetic search algorithm
 
-* Once the REPL is up and running, the code related to the genetic search algorithm, which performs automated generalization and refinement of templates, can be found in the damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch package. To start the algorithm, first open search.clj in this package. This file can be loaded into the REPL via Clojure > Load file in REPL. You may also want to switch to the file's namespace via Clojure > Switch REPL to file's namespace.
+To use the the genetic search algorithm, which performs automated generalization and refinement of templates, **via the user interface**:
+
+* Go to the Ekeko menu > Ekeko/X > Template Recommendation Editor.
+* Click the "+" button to select an input template to be generalized/refined. Note that you can only choose among open template editors, so you may still need to open an .ekt file or create a new template.
+* Now click the button next to it (icon with a sheet of paper with a small "+"). Choose a template. The matches of this template will be added to the list of desired results. Note that you can do this several times if need to add additional desired results.
+* If needed, you can also remove entries from the list of desired results (icon with a sheet of paper with a small "-").
+* If needed, you can tweak the configuration of the genetic search algorithm (button with a gear icon).
+* You're all set! Click the button with a DNA icon to start the algorithm.
+* Whenever the algorithm produces a new generation (can take a few seconds), the results table will be updated. You can inspect each generation by double-clicking its row in the table. You can also see how the best fitness evolves per generation with the "Fitness chart" button.
+
+Alternatively, the algorithm can also be started directly **via a Clojure REPL**:
+
+* Once the REPL is up and running, the code related to the genetic search algorithm can be found in the damp.ekeko.snippets.plugin/src/damp/ekeko/snippets/geneticsearch package. To start the algorithm, first open search.clj in this package. This file can be loaded into the REPL via Clojure > Load file in REPL. You may also want to switch to the file's namespace via Clojure > Switch REPL to file's namespace.
 * Before running the algorithm, note the "config-default" definition. This map defines all options available to the genetic algorithm, and their default values. All of these options can be set via keyword arguments when invoking the algorithm.
 * The genetic algorithm can be started using the evolve function. The only required argument is verifiedmatches, the set of desired matches that the algorithm uses as an oracle. All other arguments are optional keyword arguments, and correspond to the options in the config-default map.
 * An example invocation of the evolve function can be found in the large (comment) block at the bottom of the search.clj file. This comment block contains the slurp-from-resource and run-example function definitions. To add these function definitions, select them and press Ctrl/Cmd+Enter. You can now call run-example in the REPL by simply entering (run-example). Note that this example uses the TestCase-JDT-CompositeVisitor sample project. It should be imported into the Eclipse instance running Ekeko/X. (The project can be found in damp.ekeko.snippets/damp.ekeko.snippets/resources) Once imported, it should also be Ekeko-enabled: Right-click the project > Configure > Include in Ekeko queries
