@@ -18,14 +18,70 @@
   (:use clojure.test))
 
 (def experiment-config-default
-  {:max-generations 50
-   :fitness-weights [12/20 8/20]
-   :match-timeout 30000
+  {:max-generations 1200
+   :match-timeout 240000
+   :fitness-weights [12/20 8/20 0/20]
+   :fitness-threshold 0.95
+   :population-size 30
+   :quick-matching false
+   :partial-matching true
    :selection-weight 1/4
    :mutation-weight 3/4
    :crossover-weight 0/4
-   :population-size 20
-   :tournament-rounds 5})
+   :tournament-rounds 5
+   :mutation-operators
+   (filter 
+     (fn [op] 
+       (some #{(operatorsrep/operator-id op)} 
+             ["replace-by-variable"
+              ;"replace-by-exp"
+              "add-directive-equals"
+              ;"add-directive-equivalent"
+              ;"add-directive-protect" 
+              "add-directive-invokes" 
+              ;"add-directive-invokedby" 
+              "add-directive-constructs" 
+              ;"add-directive-constructedby" 
+              "add-directive-overrides" 
+              "add-directive-refersto" 
+              ;"add-directive-referredby" 
+              "add-directive-type" 
+              ;"add-directive-type|qname" 
+              ;"add-directive-type|sname" 
+              "add-directive-subtype+" 
+              ;"add-directive-subtype+|qname" 
+              ;"add-directive-subtype+|sname" 
+              "add-directive-subtype*" 
+              ;"add-directive-subtype*|qname" 
+              ;"add-directive-subtype*|sname" 
+              ;"restrict-scope-to-child" 
+              ;"relax-scope-to-child+" 
+              "relax-scope-to-child*" 
+              ;"generalize-directive" 
+              ;"remove-directive" 
+              ;"relax-scope-to-member" 
+              ;"remove-node" 
+              ;"replace-parent" 
+              ;"replace-parent-stmt" 
+              ;"isolate-stmt-in-block"
+              ;"isolate-stmt-in-method" 
+              "isolate-expr-in-method" 
+              ;"erase-list" 
+              ;"erase-comments" 
+              ;"ignore-comments" 
+              ;"ignore-absentvalues" 
+              "replace-by-wildcard" 
+              "consider-set|lst" 
+              ;"include-inherited"
+              "generalize-references" 
+              "generalize-types" 
+              ;"generalize-types|qname" 
+              ;"extract-template" 
+              "generalize-invocations" 
+              ;"generalize-constructorinvocations"
+              ]))
+     (operatorsrep/registered-operators))
+   :thread-group (new ThreadGroup "Experiment")})
 
 (def experiments-root "/resources/EkekoX-Specifications/experiments/")
 (def output-root "/Users/soft/Documents/experiments/")
@@ -93,97 +149,7 @@
 (deftest
   ^{:doc "Prototype in JHotdraw"}
   jh-prototype
-  (let [tg (new ThreadGroup "Prototype")
-        config {:max-generations 1200
-                :match-timeout 360000
-                :fitness-weights [12/20 8/20 0/20]
-                :fitness-threshold 0.95
-                :population-size 30
-                :quick-matching true
-                :partial-matching true
-                :selection-weight 1/4
-                :mutation-weight 3/4
-                :crossover-weight 0/4
-                :tournament-rounds 5
-                :mutation-operators
-                (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           "add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           "add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           ;"add-directive-overrides" 
-                           ;"add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           "add-directive-type" 
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           "add-directive-subtype*" 
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
-                           ;"generalize-directive" 
-                           ;"remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           ;"remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
-                           ;"isolate-stmt-in-method" 
-                           ;"isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list" 
-                           ;"erase-comments" 
-                           ;"ignore-comments" 
-                           ;"ignore-absentvalues" 
-                           "replace-by-wildcard" 
-                           ;"replace-by-checked-wildcard" 
-                           ;"consider-regexp|list" 
-                           ;"consider-regexp|cfglist" 
-                           ;"update-multiplicity" 
-                           ;"consider-set|lst" 
-                           ;"include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           ;"generalize-references" 
-                           ;"generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           ;"generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators))
-                :thread-group tg
-                :output-dir (find-new-experiment-folder "prototype") ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
+  (let [config {:output-dir (find-new-experiment-folder "prototype") ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
@@ -191,103 +157,10 @@
       [(str experiments-root "prototype-jhotdraw/initial.ekt")]
       [(str experiments-root "prototype-jhotdraw/solution.ekt")])))
 
-
 (deftest
   ^{:doc "Template method in JHotdraw"}
   jh-template-method
-  (let [tg (new ThreadGroup "Template-group")
-        config {:max-generations 1200
-                :match-timeout 240000
-                :fitness-weights [12/20 8/20 0/20]
-                :fitness-threshold 0.95
-                :population-size 30
-                :quick-matching false
-                :partial-matching true
-                :selection-weight 1/4
-                :mutation-weight 3/4
-                :crossover-weight 0/4
-                :tournament-rounds 7
-                :mutation-operators
-                
-                (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           "add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           "add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           "add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           "add-directive-type" 
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           ;"add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           "add-directive-subtype*" 
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
-                           "generalize-directive" 
-                           "remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           "remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
-                           ;"isolate-stmt-in-method" 
-                           ;"isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list" 
-                           ;"erase-comments" 
-                           ;"ignore-comments" 
-                           ;"ignore-absentvalues" 
-                           "replace-by-wildcard" 
-                           ;"replace-by-checked-wildcard" 
-                           ;"consider-regexp|list" 
-                           ;"consider-regexp|cfglist" 
-                           ;"update-multiplicity" 
-                           "consider-set|lst" 
-                           "include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           "generalize-references" 
-                           "generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           "generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators))
-                :thread-group tg
-                :output-dir (find-new-experiment-folder "template-method")
-                }]
+  (let [config {:output-dir (find-new-experiment-folder "template-method")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
@@ -297,98 +170,7 @@
 (deftest
   ^{:doc "Observer in JHotdraw"}
   jh-observer
-  (let [tg (new ThreadGroup "observer")
-        config {:max-generations 1200
-                :match-timeout 360000
-                :fitness-weights [12/20 8/20 0/20]
-                :fitness-threshold 0.95
-                :population-size 30
-                :quick-matching false
-                :partial-matching true
-                :selection-weight 1/4
-                :mutation-weight 3/4
-                :crossover-weight 0/4
-                :tournament-rounds 5
-                :mutation-operators
-                (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           "add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           ;"add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           ;"add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           "add-directive-type" 
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           "add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           "add-directive-subtype*" 
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
-                           ;"generalize-directive" 
-                           ;"remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           ;"remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block" ; Bug in isolate-*? 
-                           ;"isolate-stmt-in-method" 
-                           ;"isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list" 
-                           ;"erase-comments" 
-                           ;"ignore-comments" 
-                           ;"ignore-absentvalues" 
-                           "replace-by-wildcard" 
-                           ;"replace-by-checked-wildcard" 
-                           ;"consider-regexp|list" 
-                           ;"consider-regexp|cfglist" 
-                           ;"update-multiplicity" 
-                           "consider-set|lst" 
-                           ;"include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           "generalize-references" 
-                           "generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           ;"generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators))
-                :thread-group tg
-                :output-dir (find-last-experiment-folder "observer")
-                }]
+  (let [config {:output-dir (find-last-experiment-folder "observer")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
@@ -399,95 +181,7 @@
 (deftest
   ^{:doc "Strategy in JHotdraw"}
   jh-strategy
-  (let [tg (new ThreadGroup "Strategy")
-        config {:max-generations 1200
-                :match-timeout 360000
-                :fitness-weights [12/20 8/20 0/20]
-                :fitness-threshold 0.95
-                :population-size 30
-                :quick-matching false
-                :partial-matching true
-                :selection-weight 1/4
-                :mutation-weight 3/4
-                :crossover-weight 0/4
-                :tournament-rounds 5
-                :mutation-operators
-                (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           ;"add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           ;"add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           ;"add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           "add-directive-type"
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           ;"add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           ;"add-directive-subtype*"
-                           ;"isolate-expr-in-method"
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
-                           ;"generalize-directive" 
-                           ;"remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           ;"remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block"
-                           ;"isolate-stmt-in-method" 
-                           "isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list" 
-                           ;"erase-comments" 
-                           ;"ignore-comments" 
-                           ;"ignore-absentvalues" 
-                           "replace-by-wildcard" 
-                           ;"consider-set|lst" 
-                           ;"include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           ;"generalize-references" 
-                           ;"generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           ;"generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators))
-                :thread-group tg
-                :output-dir (find-last-experiment-folder "strategy")
-                }]
+  (let [config {:output-dir (find-last-experiment-folder "strategy")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
@@ -497,91 +191,7 @@
 (deftest
   ^{:doc "Factory method in JHotdraw"}
   jh-factorymethod
-  (let [tg (new ThreadGroup "Factory method")
-        config {:max-generations 1200
-                :match-timeout 240000
-                :fitness-weights [12/20 8/20 0/20]
-                :fitness-threshold 0.95
-                :population-size 30
-                :quick-matching false
-                :partial-matching true
-                :selection-weight 1/4
-                :mutation-weight 3/4
-                :crossover-weight 0/4
-                :tournament-rounds 5
-                :mutation-operators
-                (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           "add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           ;"add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           ;"add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           ;"add-directive-type" 
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           ;"add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           ;"add-directive-subtype*"
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           "relax-scope-to-child*" 
-                           ;"generalize-directive" 
-                           ;"remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           ;"remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block"
-                           ;"isolate-stmt-in-method" 
-                           "isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list"   
-                           "replace-by-wildcard" 
-                           ;"consider-set|lst" 
-                           ;"include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           ;"generalize-references" 
-                           "generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           ;"generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators))
-                :thread-group tg
-                :output-dir (find-new-experiment-folder "factorymethod")
-                }]
+  (let [config {:output-dir (find-new-experiment-folder "factorymethod")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config

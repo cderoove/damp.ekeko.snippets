@@ -706,6 +706,81 @@
                   mutant-plus-fitness
                   best-template))))))))
 
+(defn
+  randomsearch
+  "Look for a template that is able to match with a number of snippets, using a random search algorithm
+   (We generate a random point in the search space by taking one of the verified matches, and applying 
+   a random number of mutations to it.)
+
+   @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
+   @param conf             Configuration keyword arguments; see config-default for all default values"
+  [initial-template verifiedmatches & {:as conf}]
+  (let
+    [config (merge config-default conf)
+     output-dir (if (nil? (:output-dir config))
+                  (str "evolve-" (util/current-date) "/")
+                  (:output-dir config))
+     csv-name (str output-dir "results.csv")
+     csv-columns ["Generation" "Total time" "Generation time"
+                  "Fitness" "Fscore" "Partial"]
+     start-time (. System (nanoTime))
+     fitness ((:fitness-function config) verifiedmatches config)]
+    (util/make-dir output-dir)
+    (util/append-csv csv-name csv-columns)
+    
+    (loop
+      [generation 0
+       generation-start-time start-time
+       best-template (individual/compute-fitness (individual/make-individual initial-template) fitness)]
+      (let [best-fitness (individual/individual-fitness best-template)]
+        
+        (println "Iteration:" generation)
+        (println "Current best fitness:" best-fitness)
+        
+        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
+                                   best-fitness ; Fitness 
+                                   (first (individual/individual-fitness-components best-template)) ; F-score
+                                   (second (individual/individual-fitness-components best-template)) ; Partial score
+                                   ])
+        (persistence/spit-snippetgroup (str output-dir "/iteration-" generation ".ekt") 
+                                       (individual/individual-templategroup best-template))
+        
+        (cond
+          (>= generation (:max-generations config))
+          (println "Maximum number of generations reached! Stopping search..")
+          
+          (> best-fitness (:fitness-threshold config))
+          (do
+              (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup best-template)))
+              (persistence/spit-snippetgroup (str output-dir "success.ekt") 
+                                             (individual/individual-templategroup best-template)))
+          
+          (util/metaspace-almost-full?)
+          (println "Java metaspace almost full! Stopping genetic search..")
+          
+          :rest 
+          (recur
+              (inc generation)
+              (. System (nanoTime))
+              
+              (let [; Mutate a template multiple times
+                    multi-mutate (fn [template count]
+                                   (if (= count 0)
+                                     template
+                                     (recur (mutate template) (dec count))))
+                    mutation-count (rand-int 300)
+                    
+                    
+                    mutant (multi-mutate initial-template mutation-count)
+                    mutant-plus-fitness (individual/compute-fitness mutant fitness)
+                    ;tmp (println (individual/individual-fitness mutant-plus-fitness))
+                    ]
+                (if (>= 
+                      (individual/individual-fitness mutant-plus-fitness)
+                      (individual/individual-fitness best-template))
+                  mutant-plus-fitness
+                  best-template))))))))
+
 (defn templategroup-fitness
   "Compute the fitness of a single template group"
   [templategroup verifiedmatches & {:as conf}]
