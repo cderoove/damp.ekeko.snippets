@@ -18,7 +18,8 @@
   (:use clojure.test))
 
 (def experiment-config-default
-  {:max-generations 1200
+  {:algorithm search/evolve
+   :max-generations 1200
    :match-timeout 240000
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
@@ -135,7 +136,7 @@
                                             verified)
                                     [])]
               (println "Finished construction of initial population; starting experiment..")
-              (apply search/evolve verifiedmatches (mapcat identity (vec merged-cfg2))))))))))
+              (apply (:algorithm merged-cfg2) verifiedmatches (mapcat identity (vec merged-cfg2))))))))))
 
 (defn run-experiment-from-files
   "@see run-experiment .. except that you now pass along paths to .ekt files, instead of template groups"
@@ -160,7 +161,8 @@
 (deftest
   ^{:doc "Template method in JHotdraw"}
   jh-template-method
-  (let [config {:output-dir (find-new-experiment-folder "template-method")}]
+  (let [config {;:algorithm search/randomsearch
+                :output-dir (find-last-experiment-folder "template-method")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config

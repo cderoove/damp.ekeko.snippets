@@ -641,9 +641,10 @@
   "Look for a template that is able to match with a number of snippets, using a simple hill climbing algorithm
    @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
    @param conf             Configuration keyword arguments; see config-default for all default values"
-  [initial-template verifiedmatches & {:as conf}]
+  [verifiedmatches & {:as conf}]
   (let
     [config (merge config-default conf)
+     initial-template (first (:initial-population config))
      output-dir (if (nil? (:output-dir config))
                   (str "evolve-" (util/current-date) "/")
                   (:output-dir config))
@@ -651,9 +652,7 @@
      csv-name (str output-dir "results.csv")
      csv-columns ["Generation" "Total time" "Generation time"
                   "Fitness" "Fscore" "Partial"]
-
      start-time (. System (nanoTime))
-          
      fitness ((:fitness-function config) verifiedmatches config)
 
     ]
@@ -663,7 +662,7 @@
     (loop
       [generation 0
        generation-start-time start-time
-       best-template (individual/compute-fitness (individual/make-individual initial-template) fitness)]
+       best-template (individual/compute-fitness initial-template fitness)]
       (let [best-fitness (individual/individual-fitness best-template)]
         
         (println "Iteration:" generation)
@@ -674,7 +673,6 @@
                                    (first (individual/individual-fitness-components best-template)) ; F-score
                                    (second (individual/individual-fitness-components best-template)) ; Partial score
                                    ])
-        
         (persistence/spit-snippetgroup (str output-dir "/iteration-" generation ".ekt") 
                                        (individual/individual-templategroup best-template))
         
@@ -714,9 +712,10 @@
 
    @param verifiedmatches  There are the snippets we want to match with (@see make-verified-matches)
    @param conf             Configuration keyword arguments; see config-default for all default values"
-  [initial-template verifiedmatches & {:as conf}]
+  [verifiedmatches & {:as conf}]
   (let
     [config (merge config-default conf)
+     initial-template (first (:initial-population config))
      output-dir (if (nil? (:output-dir config))
                   (str "evolve-" (util/current-date) "/")
                   (:output-dir config))
@@ -731,7 +730,7 @@
     (loop
       [generation 0
        generation-start-time start-time
-       best-template (individual/compute-fitness (individual/make-individual initial-template) fitness)]
+       best-template (individual/compute-fitness initial-template fitness)]
       (let [best-fitness (individual/individual-fitness best-template)]
         
         (println "Iteration:" generation)
@@ -767,14 +766,14 @@
                     multi-mutate (fn [template count]
                                    (if (= count 0)
                                      template
-                                     (recur (mutate template) (dec count))))
-                    mutation-count (rand-int 300)
-                    
+                                     (recur (mutate template (:mutation-operators config)) (dec count))))
+                    mutation-count (rand-int 30)
                     
                     mutant (multi-mutate initial-template mutation-count)
                     mutant-plus-fitness (individual/compute-fitness mutant fitness)
-                    ;tmp (println (individual/individual-fitness mutant-plus-fitness))
                     ]
+                (println "(Applied" mutation-count "mutations to initial template)")
+                (println "Current specification:" (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
                 (if (>= 
                       (individual/individual-fitness mutant-plus-fitness)
                       (individual/individual-fitness best-template))
@@ -891,78 +890,16 @@
              :fitness-threshold 0.95
              :mutation-operators
              (filter 
-                  (fn [op] 
-                    (some #{(operatorsrep/operator-id op)} 
-                          ["replace-by-variable"
-                           ;"replace-by-exp"
-                           ;"add-directive-equals"
-                           ;"add-directive-equivalent"
-                           ;"add-directive-protect" 
-                           "add-directive-invokes" 
-                           ;"add-directive-invokedby" 
-                           ;"add-directive-constructs" 
-                           ;"add-directive-constructedby" 
-                           "add-directive-overrides" 
-                           ;"add-directive-refersto" 
-                           ;"add-directive-referredby" 
-                           "add-directive-type"
-                           ;"add-directive-type|qname" 
-                           ;"add-directive-type|sname" 
-                           ;"add-directive-subtype+" 
-                           ;"add-directive-subtype+|qname" 
-                           ;"add-directive-subtype+|sname" 
-                           ;"add-directive-subtype*"
-                           ;"isolate-expr-in-method"
-                           ;"add-directive-subtype*|qname" 
-                           ;"add-directive-subtype*|sname" 
-                           ;"restrict-scope-to-child" 
-                           ;"relax-scope-to-child+" 
-                           ;"relax-scope-to-child*" 
-                           ;"generalize-directive" 
-                           ;"remove-directive" 
-                           ;"relax-size-to-atleast" 
-                           ;"empty-body" 
-                           ;"or-block" 
-                           ;"relax-scope-to-member" 
-                           ;"add-directive-replace" 
-                           ;"add-directive-replace-value" 
-                           ;"add-directive-add-element" 
-                           ;"add-directive-insert-before" 
-                           ;"add-directive-insert-after" 
-                           ;"add-directive-remove-element" 
-                           ;"add-directive-remove-element-alt" 
-                           ;"add-directive-copy-node" 
-                           ;"add-directive-move-element" 
-                           ;"remove-node" 
-                           ;"replace-parent" 
-                           ;"replace-parent-stmt" 
-                           ;"isolate-stmt-in-block"
-                           ;"isolate-stmt-in-method" 
-                           "isolate-expr-in-method" 
-                           ;"insert-node-before" 
-                           ;"insert-node-after" 
-                           ;"insert-node-at" 
-                           ;"replace-node" 
-                           ;"replace-value" 
-                           ;"erase-list" 
-                           ;"erase-comments" 
-                           ;"ignore-comments" 
-                           ;"ignore-absentvalues" 
-                           "replace-by-wildcard" 
-                           ;"consider-set|lst" 
-                           ;"include-inherited" 
-                           ;"add-directive-orimplicit" 
-                           ;"add-directive-notnil" 
-                           ;"add-directive-orsimple" 
-                           ;"add-directive-orexpression" 
-                           ;"generalize-references" 
-                           ;"generalize-types" 
-                           ;"generalize-types|qname" 
-                           ;"extract-template" 
-                           ;"generalize-invocations" 
-                           ;"generalize-constructorinvocations"
-                           ]))
-                  (operatorsrep/registered-operators)))
+               (fn [op] 
+                 (some #{(operatorsrep/operator-id op)} 
+                       ["replace-by-variable"
+                        "add-directive-invokes" 
+                        "add-directive-overrides" 
+                        "add-directive-type"
+                        "isolate-expr-in-method" 
+                        "replace-by-wildcard" 
+                        ]))
+               (operatorsrep/registered-operators)))
   
   
   ; Reorder templates in a template group (for increased performance)
