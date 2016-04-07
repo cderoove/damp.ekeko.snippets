@@ -516,6 +516,7 @@
                                       (:initial-population config))))
      tournament-size (:tournament-rounds config)]
     (util/make-dir output-dir)
+    (println "Writing results to:" output-dir)
     (util/append-csv csv-name csv-columns)
     
     (loop

@@ -7,40 +7,78 @@
 
 (defn launch-eclipse-pde-test-runner [port]
   (sh/sh "java"
-         "-Dosgi.requiredJavaVersion=1.7"
-         "-XstartOnFirstThread" "-Dorg.eclipse.swt.internal.carbon.smallFonts"
-         "-XX:MaxPermSize=256m" "-Xms40m" "-Xmx6144m" "-XX:MaxMetaspaceSize=4096m" "-XX:+CMSClassUnloadingEnabled" "-XX:+UseConcMarkSweepGC"
-         "-Xdock:icon=../Resources/Eclipse.icns" "-XstartOnFirstThread" "-Dorg.eclipse.swt.internal.carbon.smallFonts"
+         "-Dosgi.requiredJavaVersion=1.8"
+         "-Dhelp.lucene.tokenizer=standard"
+         "-Xms128m"
+         "-Xmx6144m"
+         "-Xdock:icon=../Resources/Eclipse.icns"
+         "-XstartOnFirstThread"
+         "-Dorg.eclipse.swt.internal.carbon.smallFonts"
+         "-XX:MaxMetaspaceSize=4096m" 
+         "-XX:+CMSClassUnloadingEnabled" 
+         "-XX:+UseConcMarkSweepGC"
+         
          "-Declipse.pde.launch=true"
-         "-Declipse.p2.data.area=@config.dir/p2"
+;         "-Declipse.p2.data.area=@config.dir/p2"
+         
          "-Dfile.encoding=UTF-8"
          
-         ; Eclipse Mars params .. doesn't work! (on OS X) Once Eclipse starts, it quits on SWT invalid thread access .. used to be fixed with -XstartOnFirstThread VM param, but that doesn't seem to work
-         ;"-Xbootclasspath/p:/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.jdt.debug_3.9.0.v20150528-1838/jdi.jar"
-         ;"-classpath" "/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.equinox.launcher_1.3.100.v20150511-1540.jar" "org.eclipse.equinox.launcher.Main"
-         
-         "-Xbootclasspath/p:/Applications/eclipse/plugins/org.eclipse.jdt.debug_3.8.102.v20150115-1323/jdi.jar"
-         "-classpath" "/Applications/eclipse/plugins/org.eclipse.equinox.launcher_1.3.0.v20140415-2008.jar" "org.eclipse.equinox.launcher.Main"
+         "-Xbootclasspath/p:/Applications/Eclipse_Mars_1.app/Contents/Eclipse/plugins/org.eclipse.jdt.debug_3.9.0.v20150528-1838/jdi.jar"
+         "-classpath" "/Applications/Eclipse_Mars_1.app/Contents/Eclipse/plugins/org.eclipse.equinox.launcher_1.3.100.v20150511-1540.jar" "org.eclipse.equinox.launcher.Main"
          "-os" "macosx" "-ws" "cocoa" "-arch" "x86_64" "-nl" "en_US"
+;         "-clean"
          "-consoleLog" "-version" "3"
          "-port" (str port)
          "-testLoaderClass" "org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader"
          "-loaderpluginname" "org.eclipse.jdt.junit4.runtime"
-         "-classNames" "test.damp.ekeko.snippets.experiments.GeneticSearchTest"
-         "-application" "org.eclipse.pde.junit.runtime.uitestapplication"
+         "-test" "test.damp.ekeko.snippets.experiments.GeneticSearchTest:testExperiments"
+         "-application" "org.eclipse.pde.junit.runtime.nonuithreadtestapplication"
          "-product" "org.eclipse.sdk.ide"
-         "-data" "/Users/soft/Documents/workspace-runtime2" ;"/Users/soft/Documents/workspace/../junit-workspace"
-         "-configuration" "file:/Users/soft/Documents/workspace2/.metadata/.plugins/org.eclipse.pde.core/pde-junit/"
-         "-dev" "file:/Users/soft/Documents/workspace2/.metadata/.plugins/org.eclipse.pde.core/pde-junit/dev.properties"
+         "-data" "/Users/soft/Documents/workspace-runtime2"
+         "-configuration" "file:/Users/soft/Documents/workspace-mars-1/.metadata/.plugins/org.eclipse.pde.core/GeneticSearchTest.testExperiments/"
+         "-dev" "file:/Users/soft/Documents/workspace-mars-1/.metadata/.plugins/org.eclipse.pde.core/GeneticSearchTest.testExperiments/dev.properties"
          "-os" "macosx" "-ws" "cocoa" "-arch" "x86_64" "-nl" "en_US" 
-         "-consoleLog" "-testpluginname" "damp.ekeko.snippets.plugin"))
+         "-consoleLog" 
+         "-testpluginname" "damp.ekeko.snippets.plugin"))
+
+; For previous Eclipse version..
+;(defn launch-eclipse-pde-test-runner [port]
+;  (sh/sh "java"
+;         "-Dosgi.requiredJavaVersion=1.7"
+;         "-XstartOnFirstThread" "-Dorg.eclipse.swt.internal.carbon.smallFonts"
+;         "-XX:MaxPermSize=256m" "-Xms40m" "-Xmx6144m" "-XX:MaxMetaspaceSize=4096m" "-XX:+CMSClassUnloadingEnabled" "-XX:+UseConcMarkSweepGC"
+;         "-Xdock:icon=../Resources/Eclipse.icns" "-XstartOnFirstThread" "-Dorg.eclipse.swt.internal.carbon.smallFonts"
+;         "-Declipse.pde.launch=true"
+;         "-Declipse.p2.data.area=@config.dir/p2"
+;         "-Dfile.encoding=UTF-8"
+;         
+;         ; Eclipse Mars params .. doesn't work! (on OS X) Once Eclipse starts, it quits on SWT invalid thread access .. used to be fixed with -XstartOnFirstThread VM param, but that doesn't seem to work
+;         ;"-Xbootclasspath/p:/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.jdt.debug_3.9.0.v20150528-1838/jdi.jar"
+;         ;"-classpath" "/Users/soft/Downloads/Eclipse_EkekoX.app/Contents/Eclipse/plugins/org.eclipse.equinox.launcher_1.3.100.v20150511-1540.jar" "org.eclipse.equinox.launcher.Main"
+;         
+;         "-Xbootclasspath/p:/Applications/eclipse/plugins/org.eclipse.jdt.debug_3.8.102.v20150115-1323/jdi.jar"
+;         "-classpath" "/Applications/eclipse/plugins/org.eclipse.equinox.launcher_1.3.0.v20140415-2008.jar" "org.eclipse.equinox.launcher.Main"
+;         "-os" "macosx" "-ws" "cocoa" "-arch" "x86_64" "-nl" "en_US"
+;         "-consoleLog" "-version" "3"
+;         "-port" (str port)
+;         "-testLoaderClass" "org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader"
+;         "-loaderpluginname" "org.eclipse.jdt.junit4.runtime"
+;         "-classNames" "test.damp.ekeko.snippets.experiments.GeneticSearchTest"
+;         "-application" "org.eclipse.pde.junit.runtime.uitestapplication"
+;         "-product" "org.eclipse.sdk.ide"
+;         "-data" "/Users/soft/Documents/workspace-runtime2" ;"/Users/soft/Documents/workspace/../junit-workspace"
+;         "-configuration" "file:/Users/soft/Documents/workspace2/.metadata/.plugins/org.eclipse.pde.core/pde-junit/"
+;         "-dev" "file:/Users/soft/Documents/workspace2/.metadata/.plugins/org.eclipse.pde.core/pde-junit/dev.properties"
+;         "-os" "macosx" "-ws" "cocoa" "-arch" "x86_64" "-nl" "en_US" 
+;         "-consoleLog" "-testpluginname" "damp.ekeko.snippets.plugin"))
 
 (defn launch-eclipse-pde-test-listener [port]
+  (println "Starting listener..")
   (sh/sh "java" 
          "-classpath" 
          (clojure.string/join ; TODO Probably don't need all of these jars...
                               ":"
-                              ["/Users/soft/Downloads/pde_automate_Junit_tests-master/pde.test.utils/bin"
+                              ["/Users/soft/Documents/Github/pde_automate_Junit_tests-master/pde.test.utils/bin"
                                "/Applications/eclipse/plugins/org.eclipse.jdt.junit_3.7.300.v20140418-0836.jar"
                                "/Applications/eclipse/plugins/org.eclipse.jdt.junit.core_3.7.300.v20140409-1618.jar"
                                "/Applications/eclipse/plugins/org.apache.ant_1.9.2.v201404171502/lib/ant-antlr.jar"
@@ -117,4 +155,8 @@
     ))
 
 (comment
-  (launch-experiment "JHotDraw-TemplateMethod-Experiment" true))
+  (launch-experiment "TemplateMethod-Experiment" false)
+  
+  (future (launch-eclipse-pde-test-listener "54974"))
+  (launch-eclipse-pde-test-runner "54974")
+  )
