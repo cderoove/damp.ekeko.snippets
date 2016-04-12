@@ -111,7 +111,15 @@
   [positionmap updatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
-      (let [new-positions (updatefn cur-position)]
+      (let [new-positions (updatefn cur-position)
+;            tmp (if (= 2 (count new-positions))
+;                  (println (reduce ; Assoc each of the new positions
+;                                   (fn [cur-posmap new-position]
+;                                     (assoc cur-posmap new-position (assoc props :parent cur-position)))
+;                                   cur-positionmap
+;                                   new-positions)))
+;            tmp (if (= 2 (count new-positions)) (println new-positions))
+            ]
         (reduce ; Assoc each of the new positions
                 (fn [cur-posmap new-position]
                   (assoc cur-posmap new-position (assoc props :parent cur-position)))
@@ -127,7 +135,7 @@
   (reduce
     (fn [cur-matchmap [match positionmap]]
       (let [new-pmap (positionmap-updatepositions positionmap updatefn)]
-        (if (empty? new-pmap) ; If new positions cannot be determined, there is no match
+        (if (empty? new-pmap) ; If new positions cannot be determined, there is no match!
           cur-matchmap
           (assoc cur-matchmap match new-pmap))))
     {}
@@ -143,13 +151,11 @@
     (cond 
       ; Child* (normal nodes only)
       (directives/bounddirective-for-directive bds matching/directive-child*)
-      (let []
-        (println "!!!")
-        (matchmap-updatepositions 
-         matchmap
-         (fn [ast-node]
-           (astnode/reachable-nodes-of-type ast-node (class ast-node))
-           )))
+      (matchmap-updatepositions 
+        matchmap
+        (fn [ast-node]
+          (astnode/reachable-nodes-of-type ast-node (class ast-node))
+          ))
       ; Match|set (list nodes only)
       (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
       (matchmap-updatepositions
@@ -162,6 +168,11 @@
       (matchmap-updatepositions 
         matchmap
         (fn [ast-node]
+          (if (= (.toString ast-node) "System")
+            (do
+              (println "%??%")
+;              (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] curpos)))
+              ))
           (if (snippet/snippet-value-list? template child-node) 
             (let [template-list (astnode/value-unwrapped child-node)
                   ast-list (astnode/node-property-value ast-node owner-prop)]
@@ -171,12 +182,16 @@
                       template-element (.get template-list index)
                       bds-element (snippet/snippet-bounddirectives-for-node template template-element)]
                   (if (directives/bounddirective-for-directive bds-element matching/directive-child*)
-                    (let [] 
-                      (println "???" (class ast-element))
+                    (let []
+;                      (store 1 (astnode/reachable-nodes-of-type ast-element (class template-element)))
+;                      (println "???" (count (astnode/reachable-nodes-of-type ast-element (class template-element))))
                       (astnode/reachable-nodes-of-type ast-element (class template-element)))
                     [ast-element])))
               )
-            [(astnode/node-property-value ast-node owner-prop)])))
+            (do
+              (if (= (.toString ast-node) "System")
+                (println owner-prop))
+              [(astnode/node-property-value ast-node owner-prop)]))))
       )))
 
 (defn- positionmap-return-to-previous-position
@@ -205,8 +220,23 @@
     matchmap)
   )
 
+; Debugging fns
 (def fst (atom true))
-(defn rst [] (swap! fst (fn [x] true)))
+(def obj (atom nil))
+(def counter (atom 0))
+
+(defn rst
+  "Reset"
+  [] 
+  (swap! fst (fn [x] true))
+  (swap! counter (fn [x] 0)))
+
+(defn store
+  "Store the given object in @obj, but only at the nth call to this function"
+  [n object]
+  (if (= @counter n)
+    (swap! obj (fn [x] object)))
+  (swap! counter inc))
 
 ; Println, but only on the first call to prf
 (defn- prf [txt]
@@ -232,11 +262,17 @@
                            Finally, each logic variable binding maps to a list of its potential values.
    @return                 The updated matchmap, after processing this node and its children"
   [template template-node matchmap]
+;  (if 
+;    (some (fn [match] (= 2 (count (get matchmap match)))) (keys matchmap))
+;    (println "???" template-node))
+  
   ; Dbg: The last entry printed is the problem-causing node
 ;  (if (not= 0 (count (keys matchmap)))
 ;    (do
 ;      (println (count (keys matchmap)))
-;      (println template-node)))
+;      (println template-node)
+;      (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
+;      ))
   
   (cond
     ; Regular AST nodes
@@ -256,8 +292,6 @@
                 (snippet/snippet-bounddirectives-for-node template template-node))
           matchmap-2 matchmap-1 ; TODO
           
-;          tmp (println (count (keys matchmap-2)))
-          
           ; 3 - Check node children (taking into account navigation directives!)
           matchmap-3
           (if check-directives-only
@@ -270,6 +304,9 @@
                   (reduce
                     (fn [cur-mmap [index list-element]]
                       (let [pos-matchmap (determine-next-positions template child cur-mmap index)
+;                            tmp (if 
+;                                  (some (fn [match] (= 2 (count (get pos-matchmap match)))) (keys pos-matchmap))
+;                                  (println "!!!!"))
                             new-mmap (process-node template list-element pos-matchmap)
                             final-mmap (return-to-previous-position new-mmap cur-mmap)]
                         final-mmap))
@@ -277,54 +314,47 @@
                     (let [elements (astnode/value-unwrapped child)]
                       (map-indexed (fn [idx elem] [idx elem]) elements )))
                   ; Regular nodes
-                  (or 
-                    (astnode/ast? child)
-                    (astnode/primitivevalue? child))
+                  (astnode/ast? child)
                   (let [pos-matchmap (determine-next-positions template child cur-matchmap 0)
-;                        tmp (prf child)
+;                        tmp (if (= (.toString template-node) "System")
+;                                  (do
+;                                    (inspector-jay.core/inspect cur-matchmap)
+;                                    (inspector-jay.core/inspect pos-matchmap)))
                         new-mmap (process-node template child pos-matchmap)
-                        ;tmp (inspector-jay.core/inspect new-mmap)
                         final-mmap (return-to-previous-position new-mmap cur-matchmap)]
-                    final-mmap
-                    )
+                    final-mmap)
+                  ; Primitive nodes
+                  (astnode/primitivevalue? child)
+                  (matchmap-filter 
+                    cur-matchmap 
+                    (fn [ast-node] 
+                      (let [owner-prop (astnode/owner-property child)
+                            ast-child (astnode/node-property-value ast-node owner-prop)] 
+                        (= ast-child (astnode/value-unwrapped child)))))
+                  ; Null values (are ignored)
                   (astnode/nilvalue? child)
-                  cur-matchmap ; Ignoring these
-                  ; Shouldn't happen!
-                  :rest (println "!!! 286")))
+                  cur-matchmap
+                  ; Anything else may not occur
+                  :rest
+                  (println "!!!286")))
               matchmap-2
               (snippet/snippet-node-children|conceptually-refs template template-node))
-            )
-          
-; Redundant; already checked by determine-new-positions..          
-;          properties (astnode/node-ekeko-properties template-node)
-;          matchmap-3__
-;          (if check-directives-only
-;            matchmap-2
-;            (reduce 
-;              (fn [cur-matchmap [property-keyw retrievalfn]]
-;                (let [prop-descriptor (astnode/node-property-descriptor-for-ekeko-keyword template-node property-keyw)]
-;                  (matchmap-filter 
-;                    cur-matchmap
-;                    (fn [ast-node]
-;                      (or
-;                        (not (astnode/property-descriptor-simple? prop-descriptor))
-;                        (not (nil? (retrievalfn ast-node) )))))))
-;              matchmap-2
-;              properties))
-          ]
+            )]
       matchmap-3
       )
     
     ; List nodes
     (astnode/lstvalue? template-node)
-    (println "314 May not occur!") ; May never occur!! Process-node is called directly with the list elements
+    (println "!!!314") ; May never occur!! Process-node is called directly with the list elements
     
     ; Primitive values (leafs)
     (astnode/primitivevalue? template-node)
     (let [;exp (matching/ast-primitive-as-expression (astnode/value-unwrapped template-node))
           val (astnode/value-unwrapped template-node)]
       (matchmap-filter matchmap 
-                       (fn [ast-node] (= ast-node val))))
+                       (fn [ast-node]
+;                         (println (.toString ast-node) "--" (.toString val))
+                         (= (.toString ast-node) (.toString val)))))
     
     ; Null values
     (astnode/nilvalue? template-node)
@@ -374,7 +404,8 @@
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout.ekt") ; OK!
@@ -389,6 +420,7 @@
   
   ; Tests for AST navigation..
   (def node (first (first (damp.ekeko/ekeko [?m] (ast/ast :MethodDeclaration ?m)))))
+  (println (.toString node))
   (def props (astnode/node-property-descriptors node) )
   
   ; SimpleProperty
