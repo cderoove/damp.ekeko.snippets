@@ -30,13 +30,16 @@
   "Is this a bound directive that alters how the template tree is explored?"
   [bd]
   (or
-      (directives/bounddirective-for-directive [bd] matching/directive-child*)
-      (directives/bounddirective-for-directive [bd] matching/directive-child+)
-      (directives/bounddirective-for-directive [bd] matching/directive-consider-as-set|lst)))
+    (directives/bounddirective-for-directive [bd] matching/directive-exact) ; Not really a navigation directive, but we can safely ignore these
+    (directives/bounddirective-for-directive [bd] matching/directive-replacedbywildcard) ; Can also be ignored..
+    (directives/bounddirective-for-directive [bd] matching/directive-child)
+    (directives/bounddirective-for-directive [bd] matching/directive-child*)
+    (directives/bounddirective-for-directive [bd] matching/directive-child+)
+    (directives/bounddirective-for-directive [bd] matching/directive-consider-as-set|lst)))
 
 (defn
   check-directives-only?
-  "Does this template node have any directives such that we should ignore its type and/or properties?"
+  "Does this template node have any directives such that we should ignore the node's type and its children?"
   [template node]
   (let [bds (snippet/snippet-bounddirectives-for-node template node)]
     (or
@@ -60,15 +63,49 @@
 (defn- lvarbindings-checkconstraint
   "Check a given constraint on one logic variable, and update
    the list of logic variable bindings accordingly.
-   @param bindings-list
+   Returns nil if the constraint isn't satisfied by any value.
+   @param bindings
    @param lvar            The logic variable involved in the constraint
-   @param constraintfn    Single-parameter function that tests whether or not
-                          a certain constraint holds for a concrete value
+   @param ast-node        The subject node to which the constraint is attached
+   @param constraintfn    Two-parameter function that tests whether or not
+                          a certain constraint holds for a concrete subject and logic variable value
    @param generatefn      If the logic variable has no values yet,
                           this function is used to produce all possible values
                           for which the constraint holds"
-  [bindings-list lvar constraintfn generatefn]
-  nil)
+  [bindings ast-node lvar constraintfn generatefn]
+  (let [values (get bindings lvar)
+        new-values (if (empty? values)
+                     (generatefn ast-node)
+                     (filter (fn [val] (constraintfn ast-node val)) values))
+        new-bindings (assoc bindings lvar new-values)]
+    (if (empty? new-values)
+      nil
+      (assoc bindings lvar new-values))))
+
+(defn- positionmap-checkconstraint
+  [positionmap lvar constraintfn generatefn]
+  (reduce 
+    (fn [cur-positionmap [cur-position props]]
+      (let [bindings-list (:bindings-list props) 
+            new-bindings-list (for [bindings bindings-list]
+                                (lvarbindings-checkconstraint bindings cur-position lvar constraintfn generatefn))
+            new-props (assoc props :bindings-list (remove nil? new-bindings-list))]
+        (if (empty? new-bindings-list) 
+          cur-positionmap
+          (assoc cur-positionmap cur-position new-props))))
+    {}
+    positionmap))
+
+(defn- matchmap-checkconstraint 
+  [matchmap lvar constraintfn generatefn]
+  (reduce
+    (fn [cur-matchmap [match positionmap]]
+      (let [new-pmap (positionmap-checkconstraint positionmap lvar constraintfn generatefn)]
+        (if (empty? new-pmap)
+          cur-matchmap
+          (assoc cur-matchmap match new-pmap))))
+    {}
+    matchmap))
 
 (defn- positionmap-filter
   "Keeps only those entries that pass the given filter function
@@ -111,15 +148,7 @@
   [positionmap updatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
-      (let [new-positions (updatefn cur-position)
-;            tmp (if (= 2 (count new-positions))
-;                  (println (reduce ; Assoc each of the new positions
-;                                   (fn [cur-posmap new-position]
-;                                     (assoc cur-posmap new-position (assoc props :parent cur-position)))
-;                                   cur-positionmap
-;                                   new-positions)))
-;            tmp (if (= 2 (count new-positions)) (println new-positions))
-            ]
+      (let [new-positions (updatefn cur-position)]
         (reduce ; Assoc each of the new positions
                 (fn [cur-posmap new-position]
                   (assoc cur-posmap new-position (assoc props :parent cur-position)))
@@ -168,11 +197,6 @@
       (matchmap-updatepositions 
         matchmap
         (fn [ast-node]
-          (if (= (.toString ast-node) "System")
-            (do
-              (println "%??%")
-;              (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] curpos)))
-              ))
           (if (snippet/snippet-value-list? template child-node) 
             (let [template-list (astnode/value-unwrapped child-node)
                   ast-list (astnode/node-property-value ast-node owner-prop)]
@@ -220,6 +244,41 @@
     matchmap)
   )
 
+(defn directive-constraints 
+  "Implements all directives (not relating to navigation)
+   Returns a pair: [constraintfn generatorfn]"
+  [directive]
+  (let 
+    [name (snippet/directive-name directive)
+     directives
+     {"replaced-by-variable"
+      [(fn [ast-node val] (= ast-node val))
+       (fn [ast-node] [ast-node])]
+      
+      "overrides"
+      nil
+      
+      "invokes"
+      nil
+      
+      "equals"
+      [(fn [ast-node val] (= ast-node val))
+       (fn [ast-node] [ast-node])]
+      
+      "type"
+      nil
+      
+      "subtype*"
+      nil
+      
+      "subtype+"
+      nil
+      
+      "refers-to"
+      nil
+      }]
+    (get directives name)))
+
 ; Debugging fns
 (def fst (atom true))
 (def obj (atom nil))
@@ -254,112 +313,93 @@
 (defn- process-node 
   "Process a template node and its children to perform template matching
    @param template         The template being processed
-   @param template-node    The current template node to be processed
+   @param template-node    The current template node to be processed 
+                           This can only be a plain AST node; this holds by construction!
+                           (i.e. not a list node, nor a primitive value nor null)
    @param matchmap         Contains a map of all potential matches.
                            Each potential match maps to a map containing the current positions within that match.
-                           
                            Each of those current positions then maps to a list of logic variable bindings for that position.
                            Finally, each logic variable binding maps to a list of its potential values.
    @return                 The updated matchmap, after processing this node and its children"
   [template template-node matchmap]
-;  (if 
-;    (some (fn [match] (= 2 (count (get matchmap match)))) (keys matchmap))
-;    (println "???" template-node))
-  
-  ; Dbg: The last entry printed is the problem-causing node
 ;  (if (not= 0 (count (keys matchmap)))
 ;    (do
 ;      (println (count (keys matchmap)))
 ;      (println template-node)
 ;      (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
 ;      ))
-  
-  (cond
-    ; Regular AST nodes
-    (astnode/ast? template-node)
-    (let [check-directives-only (check-directives-only? template template-node)
-          
-          ; 1 - Check node type
-          matchmap-1 
-          (if check-directives-only
-            matchmap
-            (matchmap-filter matchmap (fn [ast-node] (= (class ast-node) (class template-node)))))
-          
-          
-          ; 2 - Check directives (only considering directives that do not affect navigation!)
-          bds (remove
-                is-navigation-directive?
-                (snippet/snippet-bounddirectives-for-node template template-node))
-          matchmap-2 matchmap-1 ; TODO
-          
-          ; 3 - Check node children (taking into account navigation directives!)
-          matchmap-3
-          (if check-directives-only
-            matchmap-2
-            (reduce 
-              (fn [cur-matchmap child]
-                (cond
-                  ; For list nodes, process each element one after the other
-                  (astnode/lstvalue? child)
-                  (reduce
+  (let [check-directives-only (check-directives-only? template template-node)
+        
+        ; 1 - Check node type
+        matchmap-1 
+        (if check-directives-only
+          matchmap
+          (matchmap-filter matchmap (fn [ast-node] (= (class ast-node) (class template-node)))))
+        
+        
+        ; 2 - Check directives (only considering directives that do not affect navigation!)
+        bds (remove
+              is-navigation-directive?
+              (snippet/snippet-bounddirectives-for-node template template-node))
+        matchmap-2
+        (reduce
+          (fn [cur-matchmap bd]
+            (let 
+              [directive (snippet/bounddirective-directive bd)
+               lvar (.getOperand (first (.getOperandBindings bd)))
+               [constraintfn generatefn] (directive-constraints directive)]
+              (matchmap-checkconstraint cur-matchmap lvar constraintfn generatefn)))
+          matchmap-1
+          bds)
+        
+        ; 3 - Check node children (taking into account navigation directives!)
+        matchmap-3
+        (if check-directives-only
+          matchmap-2
+          (reduce 
+            (fn [cur-matchmap child]
+              (cond
+                ; For list nodes, process each element one after the other
+                ; TODO must still check directives! hm.. a bit of duplication with primitive nodes
+                (astnode/lstvalue? child)
+                (if (check-directives-only? template child)
+                  cur-matchmap
+                  (reduce 
                     (fn [cur-mmap [index list-element]]
                       (let [pos-matchmap (determine-next-positions template child cur-mmap index)
-;                            tmp (if 
-;                                  (some (fn [match] (= 2 (count (get pos-matchmap match)))) (keys pos-matchmap))
-;                                  (println "!!!!"))
                             new-mmap (process-node template list-element pos-matchmap)
                             final-mmap (return-to-previous-position new-mmap cur-mmap)]
                         final-mmap))
                     cur-matchmap
                     (let [elements (astnode/value-unwrapped child)]
-                      (map-indexed (fn [idx elem] [idx elem]) elements )))
-                  ; Regular nodes
-                  (astnode/ast? child)
-                  (let [pos-matchmap (determine-next-positions template child cur-matchmap 0)
-;                        tmp (if (= (.toString template-node) "System")
-;                                  (do
-;                                    (inspector-jay.core/inspect cur-matchmap)
-;                                    (inspector-jay.core/inspect pos-matchmap)))
-                        new-mmap (process-node template child pos-matchmap)
-                        final-mmap (return-to-previous-position new-mmap cur-matchmap)]
-                    final-mmap)
-                  ; Primitive nodes
-                  (astnode/primitivevalue? child)
+                      (map-indexed (fn [idx elem] [idx elem]) elements ))))
+                ; Regular nodes
+                (astnode/ast? child)
+                (let [pos-matchmap (determine-next-positions template child cur-matchmap 0)
+                      new-mmap (process-node template child pos-matchmap)
+                      final-mmap (return-to-previous-position new-mmap cur-matchmap)]
+                  final-mmap)
+                ; Primitive nodes ; TODO Should still check directives on primitives!
+                (astnode/primitivevalue? child)
+                (if (check-directives-only? template child)
+                  cur-matchmap
                   (matchmap-filter 
                     cur-matchmap 
                     (fn [ast-node] 
                       (let [owner-prop (astnode/owner-property child)
-                            ast-child (astnode/node-property-value ast-node owner-prop)] 
-                        (= ast-child (astnode/value-unwrapped child)))))
-                  ; Null values (are ignored)
-                  (astnode/nilvalue? child)
-                  cur-matchmap
-                  ; Anything else may not occur
-                  :rest
-                  (println "!!!286")))
-              matchmap-2
-              (snippet/snippet-node-children|conceptually-refs template template-node))
-            )]
-      matchmap-3
-      )
-    
-    ; List nodes
-    (astnode/lstvalue? template-node)
-    (println "!!!314") ; May never occur!! Process-node is called directly with the list elements
-    
-    ; Primitive values (leafs)
-    (astnode/primitivevalue? template-node)
-    (let [;exp (matching/ast-primitive-as-expression (astnode/value-unwrapped template-node))
-          val (astnode/value-unwrapped template-node)]
-      (matchmap-filter matchmap 
-                       (fn [ast-node]
-;                         (println (.toString ast-node) "--" (.toString val))
-                         (= (.toString ast-node) (.toString val)))))
-    
-    ; Null values
-    (astnode/nilvalue? template-node)
-    (matchmap-filter matchmap 
-                     (fn [ast-node] (astnode/nilvalue? ast-node)))))
+                            ast-child (astnode/node-property-value ast-node owner-prop)]
+                        (= ast-child (astnode/value-unwrapped child))))))
+                ; Null values (are ignored)
+                (astnode/nilvalue? child)
+                cur-matchmap
+                ; Anything else may not occur
+                :rest
+                (println "!!!286")))
+            matchmap-2
+            (snippet/snippet-node-children|conceptually-refs template template-node))
+          )]
+    matchmap-3
+    ))
 
 (defn query-template 
   "Look for matches of a template
@@ -367,10 +407,7 @@
    @param lvar-bindings  A map, mapping logic variables to their potential values.
                          This is useful in case this template is part of a group, and a previous
                          template in the group narrowed down the potential values of logic variables
-                         that may occur in this template as well.
-   @return               A pair consisting of:
-                         - a list of matches
-                         - an updated map of logic variable bindings"
+                         that may occur in this template as well."
   ([template]
     (query-template template {}))
   ([template lvar-bindings]
@@ -404,7 +441,10 @@
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-var.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-wcard.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar3.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
@@ -414,7 +454,8 @@
     )
 
   (query-templategroup templategroup)
-  (first (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
+  (inspector-jay.core/inspect
+    (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
   
   
   

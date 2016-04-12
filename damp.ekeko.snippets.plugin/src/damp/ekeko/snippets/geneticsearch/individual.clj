@@ -101,7 +101,7 @@
 ;                (-> errors (.add [id individual e]))
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
                 
-                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
+;                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 
                             "!!! " id " --- " (.getMessage e)
@@ -112,8 +112,8 @@
                             (individual-info individual :mutation-node)
                             "\n--- Mutation operand values\n"
                             (individual-info individual :mutation-opvals)
-                            "\n--- Template\n"
-                            (persistence/snippetgroup-string tg)
+;                            "\n--- Template\n"
+;                            (persistence/snippetgroup-string tg)
                             "\n--- Stacktrace\n"
                             (if (nil? (.getCause e))
                               "No cause available.."
