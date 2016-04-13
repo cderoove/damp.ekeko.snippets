@@ -59,11 +59,30 @@
 
 (defn- matchmap-create 
   "Create a blank matchmap based on an initial list of potential matches"
-  [matches]
-  (zipmap 
-    matches
-    (for [match matches]
-      {match (PositionProperties. nil [{}]) })))
+  ([matches]
+    (matchmap-create matches [{}]))
+  ([matches bindings-list]
+    (zipmap 
+      matches
+      (for [match matches]
+        {match (PositionProperties. nil bindings-list) }))))
+
+(defn- merge-bindings
+  "Merges all lists of lvar bindings within a matchmap into one list of bindings
+   Additionally, for each bindings map we also associate the corresponding match
+   under the logic variable templ-name"
+  [matchmap templ-name]
+  (reduce
+    (fn [bindings-list [match positionmap]]
+      (let [merged 
+            (apply concat 
+                   (for [position (keys positionmap)]
+                     (let [b-list (:bindings-list (get positionmap position))]
+                       (for [bindings b-list]
+                         (assoc bindings templ-name [match])))))]
+        (concat bindings-list merged)))
+    []
+    matchmap))
 
 (defn- lvarbindings-checkconstraint
   "Check a given constraint on one logic variable, and update
@@ -411,6 +430,13 @@
 ;      (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
 ;      ))
   (let [check-directives-only (check-directives-only? template template-node)
+        node-count (atom 0)
+        nci (fn [matchmap] 
+              (swap! node-count (fn [n] 
+                                  (if (nil? (:node-count (meta matchmap))) ; Only the return value of process-node has :node-count
+                                    (if (= 0 (count matchmap)) n (inc n)) ; For primitive/null nodes
+                                    (+ n (:node-count (meta matchmap)))))) 
+              matchmap)
         
         ; 1 - Check node type
         matchmap-1 
@@ -420,8 +446,7 @@
         
         
         ; 2 - Check directives (only considering directives that do not affect navigation!)
-        matchmap-2
-        (check-directives template template-node matchmap-1)
+        matchmap-2 (check-directives template template-node matchmap-1)
         
         ; 3 - Check node children (taking into account navigation directives!)
         matchmap-3
@@ -437,7 +462,7 @@
                   (reduce 
                     (fn [cur-mmap [index list-element]]
                       (let [pos-matchmap (determine-next-positions template child cur-mmap index)
-                            new-mmap (process-node template list-element pos-matchmap)
+                            new-mmap (nci (process-node template list-element pos-matchmap))
                             final-mmap (return-to-previous-position new-mmap cur-mmap)]
                         final-mmap))
                     cur-matchmap
@@ -446,38 +471,38 @@
                 ; Regular nodes
                 (astnode/ast? child)
                 (let [pos-matchmap (determine-next-positions template child cur-matchmap 0)
-                      new-mmap (process-node template child pos-matchmap)
+                      new-mmap (nci (process-node template child pos-matchmap))
                       final-mmap (return-to-previous-position new-mmap cur-matchmap)]
                   final-mmap)
-                ; Primitive nodes ; TODO Should still check directives
+                ; Primitive nodes
                 (astnode/primitivevalue? child)
-                (if (check-directives-only? template child)
-                  (check-directives template child cur-matchmap)
-                  (check-directives template child
-                    (matchmap-filter 
-                     cur-matchmap 
-                     (fn [ast-node] 
-                       (let [owner-prop (astnode/owner-property child)
-                             ast-child (astnode/node-property-value ast-node owner-prop)]
-                         (= ast-child (astnode/value-unwrapped child)))))))
-                ; Null values (are ignored)
+                (nci (if (check-directives-only? template child)
+                       (check-directives template child cur-matchmap)
+                       (check-directives template child
+                         (matchmap-filter 
+                           cur-matchmap 
+                           (fn [ast-node] 
+                             (let [owner-prop (astnode/owner-property child)
+                                   ast-child (astnode/node-property-value ast-node owner-prop)]
+                               (= ast-child (astnode/value-unwrapped child))))))))
+                ; Null values
                 (astnode/nilvalue? child)
-                (if (check-directives-only? template child)
-                  cur-matchmap
-                  (matchmap-filter 
-                    cur-matchmap 
-                    (fn [ast-node] 
-                      (let [owner-prop (astnode/owner-property child)
-                            ast-child (astnode/node-property-value ast-node owner-prop)]
-                        (nil? ast-child)))))
+                (nci (if (check-directives-only? template child)
+                      cur-matchmap
+                      (matchmap-filter 
+                        cur-matchmap 
+                        (fn [ast-node] 
+                          (let [owner-prop (astnode/owner-property child)
+                                ast-child (astnode/node-property-value ast-node owner-prop)]
+                            (nil? ast-child))))))
                 ; Anything else may not occur
-                :rest
-                (println "!!!286")))
+                :rest (println "!!!")))
             matchmap-2
             (snippet/snippet-node-children|conceptually-refs template template-node))
           )]
-    matchmap-3
-    ))
+    (with-meta 
+      matchmap-3 
+      {:node-count (if (= 0 (count matchmap-3)) @node-count (inc @node-count))})))
 
 (defn query-template 
   "Look for matches of a template
@@ -486,36 +511,39 @@
                          This is useful in case this template is part of a group, and a previous
                          template in the group narrowed down the potential values of logic variables
                          that may occur in this template as well."
-  [template]
-  (let [root (snippet/snippet-root template)
-        root-type (astnode/ekeko-keyword-for-class-of root)
-        matches (ast/nodes-of-type root-type) ; (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))
-        matchmap (matchmap-create matches)]
-    (process-node template root matchmap)))
+  ([template]
+    (query-template template [{}]))
+  ([template bindings-list]
+    (let [root (snippet/snippet-root template)
+         root-type (astnode/ekeko-keyword-for-class-of root)
+         matches (ast/nodes-of-type root-type) ; (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))
+         matchmap (with-meta 
+                    (matchmap-create matches bindings-list)
+                    {:node-count 0})]
+     (process-node template root matchmap))))
 
 (defn query-templategroup
   "Look for matches of a template group
-   @param templategroup  The template group to be matched
-   @return               A pair consisting of:
-                         - a list of matches
-                         - an updated map of logic variable bindings"
+   @param templategroup  The template group to be matched"
   [templategroup]
   (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)
-        process-template (fn [[template & rest-templates] prev-matches lvar-bindings]
-                           ; TODO still need to merge lvar-bindings from matches..
-                           (let [[matches new-lvar-bindings] (query-template template lvar-bindings)
-                                 new-matches (conj prev-matches matches)] 
+        process-template (fn [[template & rest-templates] bindings-list]
+                           (let [matchmap (query-template template bindings-list)
+                                 bindings-list (merge-bindings 
+                                                 matchmap 
+                                                 (util/gen-readable-lvar-for-value|classbased (snippet/snippet-root template)))] 
                              (if (nil? rest-templates)
-                               [new-matches new-lvar-bindings]
-                               (recur rest-templates new-matches new-lvar-bindings))))]
-    (process-template templates [] {})))
+                               bindings-list
+                               (recur rest-templates bindings-list))))]
+    (process-template templates [{}])))
 
 (comment ; All tests use the CompositeVisitor project
   
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-constructs.ekt") ; OK! (Artificial example.. must add constructor call in original source..)
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-constructs.ekt") ; OK! (Artificial example.. must add constructor call in original source..)
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-invokes2.ekt") ; OK! (Should not produce any matches)
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-invokes.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-metavar.ekt") ; OK!
@@ -526,13 +554,14 @@
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls.ekt") ; OK!
-;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/mini.ekt") ; OK! Also works correctly with diff prim values
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
     )
 
-  (query-templategroup templategroup)
+  (inspector-jay.core/inspect
+    (query-templategroup templategroup))
   (inspector-jay.core/inspect
     (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
   
