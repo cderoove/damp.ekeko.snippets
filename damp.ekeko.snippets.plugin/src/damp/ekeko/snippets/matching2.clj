@@ -345,6 +345,22 @@
       }]
     (get directives name)))
 
+(defn- check-directives 
+  "Check the non-navigation directives of the current template node"
+  [template template-node matchmap]
+  (let [bds (remove
+              is-navigation-directive?
+              (snippet/snippet-bounddirectives-for-node template template-node))]
+    (reduce 
+      (fn [cur-matchmap bd]
+        (let 
+          [directive (snippet/bounddirective-directive bd)
+           lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd))) ;(.getOperand (second (.getOperandBindings bd)))
+           [constraintfn generatefn] (directive-constraints directive)]
+          (matchmap-checkconstraint cur-matchmap lvar constraintfn generatefn)))
+      matchmap
+      bds)))
+
 ; Some debugging fns
 (def fst (atom true))
 (def obj (atom nil))
@@ -404,19 +420,8 @@
         
         
         ; 2 - Check directives (only considering directives that do not affect navigation!)
-        bds (remove
-              is-navigation-directive?
-              (snippet/snippet-bounddirectives-for-node template template-node))
         matchmap-2
-        (reduce
-          (fn [cur-matchmap bd]
-            (let 
-              [directive (snippet/bounddirective-directive bd)
-               lvar (.getOperand (first (.getOperandBindings bd)))
-               [constraintfn generatefn] (directive-constraints directive)]
-              (matchmap-checkconstraint cur-matchmap lvar constraintfn generatefn)))
-          matchmap-1
-          bds)
+        (check-directives template template-node matchmap-1)
         
         ; 3 - Check node children (taking into account navigation directives!)
         matchmap-3
@@ -425,8 +430,7 @@
           (reduce 
             (fn [cur-matchmap child]
               (cond
-                ; For list nodes, process each element one after the other
-                ; TODO must still check directives! hm.. a bit of duplication with primitive nodes
+                ; For list nodes, process each element one after the other ; TODO must still check directives!
                 (astnode/lstvalue? child)
                 (if (check-directives-only? template child)
                   cur-matchmap
@@ -445,8 +449,19 @@
                       new-mmap (process-node template child pos-matchmap)
                       final-mmap (return-to-previous-position new-mmap cur-matchmap)]
                   final-mmap)
-                ; Primitive nodes ; TODO Should still check directives on primitives!
+                ; Primitive nodes ; TODO Should still check directives
                 (astnode/primitivevalue? child)
+                (if (check-directives-only? template child)
+                  (check-directives template child cur-matchmap)
+                  (check-directives template child
+                    (matchmap-filter 
+                     cur-matchmap 
+                     (fn [ast-node] 
+                       (let [owner-prop (astnode/owner-property child)
+                             ast-child (astnode/node-property-value ast-node owner-prop)]
+                         (= ast-child (astnode/value-unwrapped child)))))))
+                ; Null values (are ignored)
+                (astnode/nilvalue? child)
                 (if (check-directives-only? template child)
                   cur-matchmap
                   (matchmap-filter 
@@ -454,10 +469,7 @@
                     (fn [ast-node] 
                       (let [owner-prop (astnode/owner-property child)
                             ast-child (astnode/node-property-value ast-node owner-prop)]
-                        (= ast-child (astnode/value-unwrapped child))))))
-                ; Null values (are ignored)
-                (astnode/nilvalue? child)
-                cur-matchmap
+                        (nil? ast-child)))))
                 ; Anything else may not occur
                 :rest
                 (println "!!!286")))
@@ -474,16 +486,12 @@
                          This is useful in case this template is part of a group, and a previous
                          template in the group narrowed down the potential values of logic variables
                          that may occur in this template as well."
-  ([template]
-    (query-template template {}))
-  ([template lvar-bindings]
-    (rst)
-    (let [root (snippet/snippet-root template)
-          root-type (astnode/ekeko-keyword-for-class-of root)
-          matches (for [result-vector (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))]
-                    (first result-vector))
-          matchmap (matchmap-create matches)]
-      (process-node template root matchmap))))
+  [template]
+  (let [root (snippet/snippet-root template)
+        root-type (astnode/ekeko-keyword-for-class-of root)
+        matches (ast/nodes-of-type root-type) ; (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))
+        matchmap (matchmap-create matches)]
+    (process-node template root matchmap)))
 
 (defn query-templategroup
   "Look for matches of a template group
@@ -507,7 +515,12 @@
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-var.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-constructs.ekt") ; OK! (Artificial example.. must add constructor call in original source..)
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-invokes2.ekt") ; OK! (Should not produce any matches)
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-invokes.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-metavar.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-metavar.ekt") ; OK! replace-by-metavar on diff types of nodes
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-var.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout-wcard.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar3.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt") ; OK!
