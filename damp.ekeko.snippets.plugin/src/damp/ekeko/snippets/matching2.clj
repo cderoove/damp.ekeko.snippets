@@ -15,15 +15,20 @@
              [persistence :as persistence]
              [matching :as matching]
              [runtime :as runtime]]
-            [damp.ekeko [logic :as el]]
+            [damp.ekeko 
+             [logic :as el]
+             [ekekomodel :as ekekomodel]]
             [damp.ekeko.jdt 
              [astnode :as astnode]
              [ast :as ast]
              [structure :as structure]
-             [aststructure :as aststructure]])
+             [aststructure :as aststructure]
+             [javaprojectmodel :as javaprojectmodel]])
   (:import [java.util List]
+           [org.eclipse.jdt.core ITypeHierarchy]
            [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
-           [org.eclipse.jdt.core.dom ASTNode MethodInvocation Expression Statement BodyDeclaration CompilationUnit ImportDeclaration]))
+           [org.eclipse.jdt.core.dom ASTNode Annotation MethodInvocation Expression 
+            FieldAccess SuperFieldAccess Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
 (defn
   is-navigation-directive?
@@ -206,17 +211,10 @@
                       template-element (.get template-list index)
                       bds-element (snippet/snippet-bounddirectives-for-node template template-element)]
                   (if (directives/bounddirective-for-directive bds-element matching/directive-child*)
-                    (let []
-;                      (store 1 (astnode/reachable-nodes-of-type ast-element (class template-element)))
-;                      (println "???" (count (astnode/reachable-nodes-of-type ast-element (class template-element))))
-                      (astnode/reachable-nodes-of-type ast-element (class template-element)))
+                    (astnode/reachable-nodes-of-type ast-element (class template-element))
                     [ast-element])))
               )
-            (do
-              (if (= (.toString ast-node) "System")
-                (println owner-prop))
-              [(astnode/node-property-value ast-node owner-prop)]))))
-      )))
+            [(astnode/node-property-value ast-node owner-prop)]))))))
 
 (defn- positionmap-return-to-previous-position
   [positionmap match old-matchmap]
@@ -250,36 +248,104 @@
   [directive]
   (let 
     [name (snippet/directive-name directive)
+     
+     get-type 
+     (fn [ast-node]
+       (.getJavaElement
+         (cond 
+           (instance? Expression ast-node)
+           (.resolveTypeBinding ast-node)
+           (instance? Annotation ast-node)
+           (.resolveAnnotationBinding ast-node)
+           :else
+           (.resolveBinding ast-node))))
+     
+     get-all-ancestors
+     (fn ancestors [itype]
+       (let [hierarchy (.getTypeHierarchy ^damp.ekeko.EkekoModel (ekekomodel/ekeko-model) itype)
+             supers (.getAllSupertypes ^ITypeHierarchy hierarchy itype)]
+         (concat supers 
+                 (apply concat 
+                        (for [super supers] (ancestors super))))))
+     
      directives
      {"replaced-by-variable"
       [(fn [ast-node val] (= ast-node val))
        (fn [ast-node] [ast-node])]
       
       "overrides"
-      nil
+      [(fn [ast-node val]
+         (some 
+           (fn [tgt] (= val tgt))
+           (javaprojectmodel/method-overriders ast-node)))
+       (fn [ast-node]
+         (javaprojectmodel/method-overriders ast-node))]
       
       "invokes"
-      nil
+      [(fn [ast-node val]
+         (some 
+           (fn [tgt] (= val tgt))
+           (javaprojectmodel/invocation-targets ast-node)))
+       (fn [ast-node]
+         (javaprojectmodel/invocation-targets ast-node))]
       
-      "equals"
+      "equals" ; Same as replaced-by-variable (only difference is that equals isn't mentioned in the check-directives-only? fn)
       [(fn [ast-node val] (= ast-node val))
        (fn [ast-node] [ast-node])]
       
       "type"
-      nil
+      [(fn [ast-node val] (= val (get-type ast-node) ))
+       (fn [ast-node] [(get-type ast-node)])]
       
       "subtype*"
-      nil
+      [(fn [ast-node val]
+         (let [itype (get-type ast-node)
+               ancestors (get-all-ancestors itype)]
+           (some
+             (fn [subtype] (= val subtype))
+             (conj itype ancestors))))
+        (fn [ast-node]
+          (let [itype (get-type ast-node)
+                ancestors (get-all-ancestors itype)]
+            (conj itype ancestors)))]
       
       "subtype+"
-      nil
+      [(fn [ast-node val]
+         (let [itype (get-type ast-node)
+               ancestors (get-all-ancestors itype)]
+           (some (fn [subtype] (= val subtype)) ancestors)))
+       (fn [ast-node]
+         (let [itype (get-type ast-node)]
+           (get-all-ancestors itype)))]
       
       "refers-to"
-      nil
+      [(fn [ast-node val]
+         (let [binding (cond
+                         (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
+                         (.resolveFieldBinding ast-node)
+                         :rest
+                         (.resolveBinding ast-node))]
+           (= val (javaprojectmodel/binding-to-declaration binding))))
+       (fn [ast-node]
+         (let [binding (cond
+                         (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
+                         (.resolveFieldBinding ast-node)
+                         :rest
+                         (.resolveBinding ast-node))
+               local-decl (javaprojectmodel/binding-to-declaration binding)]
+           [local-decl]))]
+      
+      "constructs" ; Same as invokes..
+      [(fn [ast-node val]
+         (some 
+           (fn [tgt] (= val tgt))
+           (javaprojectmodel/invocation-targets ast-node)))
+       (fn [ast-node]
+         (javaprojectmodel/invocation-targets ast-node))]
       }]
     (get directives name)))
 
-; Debugging fns
+; Some debugging fns
 (def fst (atom true))
 (def obj (atom nil))
 (def counter (atom 0))
