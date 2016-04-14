@@ -5,6 +5,7 @@ import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -116,12 +117,69 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 
 
 	static {
-		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+//		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+//		
+//		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
+//		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
+//		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
+//		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
+//		
+//		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
+//		IMG_TEMPLATE_ADD = getImageDescriptor("icons/notebook--plus.png").createImage();
+//		IMG_TEMPLATE_EDIT = getImageDescriptor("icons/notebook--pencil.png").createImage();
+//
+//		IMG_TEMPLATE_DELETE = getImageDescriptor("icons/notebook--minus.png").createImage();
+//		IMG_TEMPLATE_COPY_FROM_LHS = getImageDescriptor("icons/notebook--arrow.png").createImage();
+//				
+//		IMG_TEMPLATE_MATCH = getImageDescriptor("icons/occluder.png").createImage();
+//		IMG_TEMPLATE_INSPECT = getImageDescriptor("icons/magnifier.png").createImage();
+//		
+//		IMG_TRANSFORMATION = getImageDescriptor("icons/cog.png").createImage();
+//		IMG_TRANSFORM = getImageDescriptor("icons/cog_go.png").createImage();
+//		
+//		IMG_OPERATOR_APPLY = getImageDescriptor("icons/tick.png").createImage();
+//		
+//		IMG_INTENDED_RESULTS = getImageDescriptor("icons/spectacle.png").createImage();
+//		IMG_RECOMMENDATION = getImageDescriptor("icons/dna.png").createImage();
+//		IMG_HISTORY = getImageDescriptor("icons/history.png").createImage();
+//
+//		IMG_POSITIVE_EXAMPLE = getImageDescriptor("icons/plus-white.png").createImage();
+//		IMG_NEGATIVE_EXAMPLE = getImageDescriptor("icons/minus-white.png").createImage();
+//		
+//		IMG_COLUMN_ADD = getImageDescriptor("icons/table-insert-column.png").createImage();
+//		IMG_COLUMN_DELETE = getImageDescriptor("icons/table-delete-column.png").createImage();
+//
+//		IMG_SEARCH = getImageDescriptor("icons/brain.png").createImage();
+//		IMG_RESULTS_IMPORT = getImageDescriptor("icons/table-import.png").createImage();
+//		IMG_RESULTS_REFRESH = getImageDescriptor("icons/arrow_refresh.png").createImage();
+//		
+//		
+//		IMG_ANCHOR = getImageDescriptor("icons/anchor.png").createImage();
+//		IMG_PROPERTIES = getImageDescriptor("icons/property.png").createImage();
 		
-		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
-		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
-		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
-		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
+				
+	}
+	
+	public static Font getEditorFont() {
+		IThemeManager themeManager = PlatformUI.getWorkbench().getThemeManager();
+		ITheme currentTheme = themeManager.getCurrentTheme();
+		FontRegistry fontRegistry = currentTheme.getFontRegistry();
+		return fontRegistry.get(PreferenceConstants.EDITOR_TEXT_FONT);
+	}
+	
+	public void startClojureCode(BundleContext bundleContext) throws Exception {
+//		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+		
+
+		IMG_ADD = getImageDescriptor("icons/notebooks.png").createImage();
+		IMG_DELETE = getImageDescriptor("icons/notebooks.png").createImage();
+		IMG_DELETE_DISABLED = getImageDescriptor("icons/notebooks.png").createImage();
+		IMG_BACK = getImageDescriptor("icons/notebooks.png").createImage();
+		
+//		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
+//		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
+//		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
+//		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
 		
 		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
 		IMG_TEMPLATE_ADD = getImageDescriptor("icons/notebook--plus.png").createImage();
@@ -155,18 +213,11 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 		
 		IMG_ANCHOR = getImageDescriptor("icons/anchor.png").createImage();
 		IMG_PROPERTIES = getImageDescriptor("icons/property.png").createImage();
+	
 		
-				
-	}
-	
-	public static Font getEditorFont() {
-		IThemeManager themeManager = PlatformUI.getWorkbench().getThemeManager();
-		ITheme currentTheme = themeManager.getCurrentTheme();
-		FontRegistry fontRegistry = currentTheme.getFontRegistry();
-		return fontRegistry.get(PreferenceConstants.EDITOR_TEXT_FONT);
-	}
-	
-	public void startClojureCode(BundleContext bundleContext) throws Exception {
+		
+		
+		
 		Bundle b = bundleContext.getBundle();
 		String[] filenames= { "damp.ekeko", "damp.ekeko.snippets", "damp.ekeko.snippets.geneticsearch.search" };	
 		for(String filename : filenames) {

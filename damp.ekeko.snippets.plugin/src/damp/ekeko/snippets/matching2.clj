@@ -37,6 +37,7 @@
   (or
     (directives/bounddirective-for-directive [bd] matching/directive-exact) ; Not really a navigation directive, but we can safely ignore these
     (directives/bounddirective-for-directive [bd] matching/directive-replacedbywildcard) ; Can also be ignored..
+    (directives/bounddirective-for-directive [bd] matching/directive-ignore)
     (directives/bounddirective-for-directive [bd] matching/directive-child)
     (directives/bounddirective-for-directive [bd] matching/directive-child*)
     (directives/bounddirective-for-directive [bd] matching/directive-child+)
@@ -169,7 +170,7 @@
    according to an update-function.
    The update function takes a current position, and returns a list of new positions.
    This implies the new positionmap can have an increased number of current positions."
-  [positionmap updatefn]
+  [positionmap match updatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
       (let [new-positions (updatefn cur-position)]
@@ -187,7 +188,7 @@
   [matchmap updatefn]
   (reduce
     (fn [cur-matchmap [match positionmap]]
-      (let [new-pmap (positionmap-updatepositions positionmap updatefn)]
+      (let [new-pmap (positionmap-updatepositions positionmap match updatefn)]
         (if (empty? new-pmap) ; If new positions cannot be determined, there is no match!
           cur-matchmap
           (assoc cur-matchmap match new-pmap))))
@@ -199,8 +200,18 @@
    such that they correspond to that child template node.
    @param index           Only considered when child-node is a list node; retrieves the item at the given index of the list"
   [template child-node matchmap index]
+  ; TODO Maybe this fn can be cleaned up a bit..
   (let [bds (snippet/snippet-bounddirectives-for-node template child-node)
-        owner-prop (astnode/owner-property child-node)]
+        owner-prop (astnode/owner-property child-node)
+        ignore-test (fn [template-elem]
+                      (if (and 
+                            (astnode/ast? template-elem)
+                            (directives/bounddirective-for-directive 
+                              (snippet/snippet-bounddirectives-for-node template template-elem) 
+                              matching/directive-ignore))
+                        (first (snippet/snippet-node-children template template-elem))
+                        template-elem))
+        ]
     (cond 
       ; Child* (normal nodes only)
       (directives/bounddirective-for-directive bds matching/directive-child*)
@@ -213,9 +224,23 @@
       (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
       (matchmap-updatepositions
         matchmap
-        (fn [ast-node] nil) ; TODO Should first find the very first list item of the template node, which may appear anywhere
-        ; Any subsequent items should follow right behind it
-        )
+        (fn [ast-node]
+          (let [template-list (astnode/value-unwrapped child-node)
+                template-element (ignore-test (.get template-list index))
+                ast-list (astnode/node-property-value ast-node owner-prop)
+                bds-element (snippet/snippet-bounddirectives-for-node template template-element)
+                elements-of-type (if (directives/bounddirective-for-directive bds-element matching/directive-child*) ; May not filter on type if there's a child*
+                                   ast-list
+                                   (filter 
+                                     (fn [element] (= (class element) (class template-element)))
+                                     ast-list))
+                ]
+            (if (directives/bounddirective-for-directive bds-element matching/directive-child*)
+              (apply concat
+                     (for [ast-element elements-of-type] 
+                       (astnode/reachable-nodes-of-type ast-element (class template-element))))
+              
+              elements-of-type))))
       ; Normal navigation (normal and list nodes)
       :else
       (matchmap-updatepositions 
@@ -227,13 +252,52 @@
               (if (not= (.size template-list) (.size ast-list))
                 []
                 (let [ast-element (.get ast-list index)
-                      template-element (.get template-list index)
+                      template-element (ignore-test (.get template-list index))
                       bds-element (snippet/snippet-bounddirectives-for-node template template-element)]
                   (if (directives/bounddirective-for-directive bds-element matching/directive-child*)
                     (astnode/reachable-nodes-of-type ast-element (class template-element))
                     [ast-element])))
               )
             [(astnode/node-property-value ast-node owner-prop)]))))))
+
+;(defn- indexmap-match|set
+;  "If template-list-node has a match|set property, an index-map is produced. 
+;   For each current position, it determines which list index must be checked next
+;For each current position"
+;  [template template-list-node matchmap property]
+;  (let [bds (snippet/snippet-bounddirectives-for-node template template-list-node)
+;        owner-prop (astnode/owner-property template-list-node)]
+;    (if (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
+;      (reduce
+;        (fn [cur-indexmap [match positionmap]]
+;          (let [index-pmap
+;                (reduce 
+;                  (fn [cur-indexpmap [cur-position props]]
+;                    (let [parent (:parent props)
+;                          list-elements (astnode/node-property-value parent owner-prop)
+;                          
+;                          ; Find the list element of which this node is a descendant
+;                          determine-list-elem 
+;                          (fn [node]
+;                            (if (some (fn [elem] (= elem node)) list-elements)
+;                              node
+;                              (recur (.getParent node))))
+;                          
+;                          matched-index (.indexOf (determine-list-elem cur-position))
+;                          ]
+;                           )
+;                    
+;                    )
+;                  {}
+;                  positionmap)
+;                
+;                
+;                ]
+;            (assoc cur-indexmap match index-pmap)))
+;        {}
+;        matchmap)
+;      nil)
+;    ))
 
 (defn- positionmap-return-to-previous-position
   [positionmap match old-matchmap]
@@ -258,8 +322,7 @@
     (fn [cur-mm [match positionmap]]
       (assoc cur-mm match (positionmap-return-to-previous-position positionmap match old-matchmap)))
     {}
-    matchmap)
-  )
+    matchmap))
 
 (defn directive-constraints 
   "Implements all directives (not relating to navigation)
@@ -422,14 +485,25 @@
                            Each of those current positions then maps to a list of logic variable bindings for that position.
                            Finally, each logic variable binding maps to a list of its potential values.
    @return                 The updated matchmap, after processing this node and its children"
-  [template template-node matchmap]
-;  (if (not= 0 (count (keys matchmap)))
-;    (do
-;      (println (count (keys matchmap)))
-;      (println template-node)
-;      (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
-;      ))
-  (let [check-directives-only (check-directives-only? template template-node)
+  [template templ-node matchmap]
+  (let [template-node 
+        (if (and 
+              (astnode/ast? templ-node)
+              (directives/bounddirective-for-directive 
+                (snippet/snippet-bounddirectives-for-node template templ-node) 
+                matching/directive-ignore))
+          (first (snippet/snippet-node-children template templ-node))
+          templ-node)
+        
+;        dbg
+;        (if (not= 0 (count (keys matchmap)))
+;          (do
+;            (println "%%%" (count (keys matchmap)))
+;            (println template-node)
+;            (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
+;            ))
+        
+        check-directives-only (check-directives-only? template template-node)
         node-count (atom 0)
         nci (fn [matchmap] 
               (swap! node-count (fn [n] 
@@ -455,17 +529,17 @@
           (reduce 
             (fn [cur-matchmap child]
               (cond
-                ; For list nodes, process each element one after the other ; TODO must still check directives!
+                ; For list nodes, process each element one after the other
                 (astnode/lstvalue? child)
                 (if (check-directives-only? template child)
-                  cur-matchmap
+                  (check-directives template child cur-matchmap)
                   (reduce 
                     (fn [cur-mmap [index list-element]]
                       (let [pos-matchmap (determine-next-positions template child cur-mmap index)
                             new-mmap (nci (process-node template list-element pos-matchmap))
                             final-mmap (return-to-previous-position new-mmap cur-mmap)]
                         final-mmap))
-                    cur-matchmap
+                    (check-directives template child cur-matchmap)
                     (let [elements (astnode/value-unwrapped child)]
                       (map-indexed (fn [idx elem] [idx elem]) elements ))))
                 ; Regular nodes
@@ -542,6 +616,9 @@
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-setmatching.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-constructs.ekt") ; OK! (Artificial example.. must add constructor call in original source..)
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-invokes2.ekt") ; OK! (Should not produce any matches)
@@ -554,7 +631,7 @@
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar2.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-childstar.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls.ekt") ; OK!
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt") ; OK! Also works correctly if too many list items
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/sysout.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/mini.ekt") ; OK! Also works correctly with diff prim values
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
