@@ -19,6 +19,7 @@
              [persistence :as persistence]
              [querying :as querying]
              [matching :as matching]
+             [matching2 :as matching2]
              [operators :as operators]
              [operatorsrep :as operatorsrep]
              [util :as util]
@@ -37,6 +38,20 @@
 (def ^:dynamic matched-nodes (atom (MatchedNodes. #{} [])))
 
 (defn templategroup-matches
+  "Given a templategroup, look for all of its matches in the code"
+  [templategroup]
+  (let [bindings-list (matching2/query-templategroup templategroup)
+        uservars (querying/snippetgroup-uservars templategroup)]
+    (into #{} 
+          (for [bindings bindings-list]
+            (reduce
+              (fn [cur-list [lvar values]]
+                (if (not (some (fn [v] (= v lvar)) uservars))
+                  (conj cur-list (first values))))
+              []
+              bindings)))))
+
+(defn templategroup-matches-old
   "Given a templategroup, look for all of its matches in the code
    (An exception is thrown if matching takes longer than timeout milliseconds..)"
   [templategroup]
@@ -168,6 +183,42 @@
     partialmodel))
 
 (defn make-fitness-function
+  "Return a fitness function, used to measure how good/fit an individual is.
+   A fitness function returns a pair: [overall-fitness fitness-components]
+   ,where overall-fitness is a value between 0 (worst) and 1 (best)
+   and fitness-components is a list of components that were used to compute the overall fitness"
+  [verifiedmatches config]
+  
+  (let [
+        partialmodels (map
+                        (fn [match] (create-partial-model [match]))
+                        (:positives verifiedmatches))
+        partialmodel-merged (create-partial-model (:positives verifiedmatches))
+        ]
+    (fn [templategroup]
+      (let [matches (templategroup-matches templategroup)
+            fscore (double (fmeasure matches verifiedmatches))
+            node-count (matching2/templategroup-node-count templategroup)
+            
+            partialscore (double 
+                           (if (:partial-matching config)
+                             (/
+                               (reduce + (pmap (fn [partialmodel]
+                                                 (binding [damp.ekeko.ekekomodel/*queried-project-models* (atom [partialmodel])]
+                                                   (/ 
+                                                     (:node-count (meta (matching2/query-templategroup templategroup))) 
+                                                     node-count)))
+                                               partialmodels))
+                               (count partialmodels))
+                             0))
+            
+            weights (:fitness-weights config)]
+        [(+
+           (* (nth weights 0) fscore)
+           (* (nth weights 1) partialscore))
+         [fscore partialscore 0 0]]))))
+
+(defn make-fitness-function-old
   "Return a fitness function, used to measure how good/fit an individual is.
    A fitness function returns a pair: [overall-fitness fitness-components]
    ,where overall-fitness is a value between 0 (worst) and 1 (best)

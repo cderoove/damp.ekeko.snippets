@@ -31,13 +31,15 @@
             FieldAccess SuperFieldAccess Statement BodyDeclaration CompilationUnit ImportDeclaration]))
 
 (defn
-  is-navigation-directive?
-  "Is this a bound directive that alters how the template tree is explored?"
+  non-relation-directive?
+  "Tests that a BoundDirective is not a directive that establishes a relation 
+   (between an AST node and a logic variable)."
   [bd]
   (or
-    (directives/bounddirective-for-directive [bd] matching/directive-exact) ; Not really a navigation directive, but we can safely ignore these
-    (directives/bounddirective-for-directive [bd] matching/directive-replacedbywildcard) ; Can also be ignored..
+    (directives/bounddirective-for-directive [bd] matching/directive-exact) 
+    (directives/bounddirective-for-directive [bd] matching/directive-replacedbywildcard)
     (directives/bounddirective-for-directive [bd] matching/directive-ignore)
+    (directives/bounddirective-for-directive [bd] matching/directive-protect)
     (directives/bounddirective-for-directive [bd] matching/directive-child)
     (directives/bounddirective-for-directive [bd] matching/directive-child*)
     (directives/bounddirective-for-directive [bd] matching/directive-child+)
@@ -101,8 +103,7 @@
   (let [values (get bindings lvar)
         new-values (if (empty? values)
                      (generatefn ast-node)
-                     (filter (fn [val] (constraintfn ast-node val)) values))
-        new-bindings (assoc bindings lvar new-values)]
+                     (filter (fn [val] (constraintfn ast-node val)) values))]
     (if (empty? new-values)
       nil
       (assoc bindings lvar new-values))))
@@ -173,7 +174,11 @@
   [positionmap match updatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
-      (let [new-positions (updatefn cur-position)]
+      (let [new-positions (remove nil? (updatefn cur-position))
+;            tmp (if (some (fn [pos] (nil? pos)) new-positions)
+;                  (println "!!!!"))
+            
+            ]
         (reduce ; Assoc each of the new positions
                 (fn [cur-posmap new-position]
                   (assoc cur-posmap new-position (assoc props :parent cur-position)))
@@ -218,7 +223,8 @@
       (matchmap-updatepositions 
         matchmap
         (fn [ast-node]
-          (astnode/reachable-nodes-of-type ast-node (class ast-node))
+          (let [ast-child (astnode/node-property-value ast-node owner-prop)]
+            (astnode/reachable-nodes-of-type ast-child (class ast-child)))
           ))
       ; Match|set (list nodes only)
       (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
@@ -260,45 +266,6 @@
               )
             [(astnode/node-property-value ast-node owner-prop)]))))))
 
-;(defn- indexmap-match|set
-;  "If template-list-node has a match|set property, an index-map is produced. 
-;   For each current position, it determines which list index must be checked next
-;For each current position"
-;  [template template-list-node matchmap property]
-;  (let [bds (snippet/snippet-bounddirectives-for-node template template-list-node)
-;        owner-prop (astnode/owner-property template-list-node)]
-;    (if (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
-;      (reduce
-;        (fn [cur-indexmap [match positionmap]]
-;          (let [index-pmap
-;                (reduce 
-;                  (fn [cur-indexpmap [cur-position props]]
-;                    (let [parent (:parent props)
-;                          list-elements (astnode/node-property-value parent owner-prop)
-;                          
-;                          ; Find the list element of which this node is a descendant
-;                          determine-list-elem 
-;                          (fn [node]
-;                            (if (some (fn [elem] (= elem node)) list-elements)
-;                              node
-;                              (recur (.getParent node))))
-;                          
-;                          matched-index (.indexOf (determine-list-elem cur-position))
-;                          ]
-;                           )
-;                    
-;                    )
-;                  {}
-;                  positionmap)
-;                
-;                
-;                ]
-;            (assoc cur-indexmap match index-pmap)))
-;        {}
-;        matchmap)
-;      nil)
-;    ))
-
 (defn- positionmap-return-to-previous-position
   [positionmap match old-matchmap]
   (reduce 
@@ -334,18 +301,20 @@
      get-type 
      (fn [ast-node]
        (.getJavaElement
-         (cond 
-           (instance? Expression ast-node)
-           (.resolveTypeBinding ast-node)
-           (instance? Annotation ast-node)
-           (.resolveAnnotationBinding ast-node)
-           :else
-           (.resolveBinding ast-node))))
+          (cond 
+            (instance? Expression ast-node)
+            (.resolveTypeBinding ast-node)
+            (instance? Annotation ast-node)
+            (.resolveAnnotationBinding ast-node)
+            :else
+            (.resolveBinding ast-node))))
      
      get-all-ancestors
      (fn ancestors [itype]
        (let [hierarchy (.getTypeHierarchy ^damp.ekeko.EkekoModel (ekekomodel/ekeko-model) itype)
-             supers (.getAllSupertypes ^ITypeHierarchy hierarchy itype)]
+             supers (if (nil? hierarchy)
+                      []
+                      (.getAllSupertypes ^ITypeHierarchy hierarchy itype))]
          (concat supers 
                  (apply concat 
                         (for [super supers] (ancestors super))))))
@@ -359,9 +328,13 @@
       [(fn [ast-node val]
          (some 
            (fn [tgt] (= val tgt))
-           (javaprojectmodel/method-overriders ast-node)))
+           (javaprojectmodel/ancestor-methods ast-node)
+           ))
        (fn [ast-node]
-         (javaprojectmodel/method-overriders ast-node))]
+         (javaprojectmodel/ancestor-methods ast-node)
+         
+;         (javaprojectmodel/method-overriders ast-node)
+         )]
       
       "invokes"
       [(fn [ast-node val]
@@ -385,11 +358,11 @@
                ancestors (get-all-ancestors itype)]
            (some
              (fn [subtype] (= val subtype))
-             (conj itype ancestors))))
+             (conj ancestors itype))))
         (fn [ast-node]
           (let [itype (get-type ast-node)
                 ancestors (get-all-ancestors itype)]
-            (conj itype ancestors)))]
+            (conj ancestors itype)))]
       
       "subtype+"
       [(fn [ast-node val]
@@ -402,6 +375,7 @@
       
       "refers-to"
       [(fn [ast-node val]
+;         (print "?")
          (let [binding (cond
                          (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
                          (.resolveFieldBinding ast-node)
@@ -409,6 +383,7 @@
                          (.resolveBinding ast-node))]
            (= val (javaprojectmodel/binding-to-declaration binding))))
        (fn [ast-node]
+;         (print "!")
          (let [binding (cond
                          (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
                          (.resolveFieldBinding ast-node)
@@ -431,7 +406,7 @@
   "Check the non-navigation directives of the current template node"
   [template template-node matchmap]
   (let [bds (remove
-              is-navigation-directive?
+              non-relation-directive?
               (snippet/snippet-bounddirectives-for-node template template-node))]
     (reduce 
       (fn [cur-matchmap bd]
@@ -468,11 +443,11 @@
       (swap! fst (fn [x] false))
       (println txt))))
 
-(defn- inf [obj]
-  (if @fst
-    (do
-      (swap! fst (fn [x] false))
-      (inspector-jay.core/inspect obj))))
+;(defn- inf [obj]
+;  (if @fst
+;    (do
+;      (swap! fst (fn [x] false))
+;      (inspector-jay.core/inspect obj))))
 
 (defn- process-node 
   "Process a template node and its children to perform template matching
@@ -502,7 +477,13 @@
 ;            (println template-node)
 ;            (println (for [match (keys matchmap)] (for [curpos (keys (get matchmap match))] (str "$" (.toString curpos)))))
 ;            ))
-        
+;        
+;        dbg2
+;        (let [f (get (first (keys matchmap)) matchmap )
+;              p (get (first (keys f)) f)] 
+;          (if (empty? (:list-bindings p))
+;            (println "#" (:list-bindings p))))
+
         check-directives-only (check-directives-only? template template-node)
         node-count (atom 0)
         nci (fn [matchmap] 
@@ -553,22 +534,22 @@
                 (nci (if (check-directives-only? template child)
                        (check-directives template child cur-matchmap)
                        (check-directives template child
-                         (matchmap-filter 
-                           cur-matchmap 
-                           (fn [ast-node] 
-                             (let [owner-prop (astnode/owner-property child)
-                                   ast-child (astnode/node-property-value ast-node owner-prop)]
-                               (= ast-child (astnode/value-unwrapped child))))))))
+                                         (matchmap-filter 
+                                           cur-matchmap 
+                                           (fn [ast-node] 
+                                             (let [owner-prop (astnode/owner-property child)
+                                                   ast-child (astnode/node-property-value ast-node owner-prop)]
+                                               (= ast-child (astnode/value-unwrapped child))))))))
                 ; Null values
                 (astnode/nilvalue? child)
                 (nci (if (check-directives-only? template child)
-                      cur-matchmap
-                      (matchmap-filter 
-                        cur-matchmap 
-                        (fn [ast-node] 
-                          (let [owner-prop (astnode/owner-property child)
-                                ast-child (astnode/node-property-value ast-node owner-prop)]
-                            (nil? ast-child))))))
+                       cur-matchmap
+                       (matchmap-filter 
+                         cur-matchmap 
+                         (fn [ast-node] 
+                           (let [owner-prop (astnode/owner-property child)
+                                 ast-child (astnode/node-property-value ast-node owner-prop)]
+                             (nil? ast-child))))))
                 ; Anything else may not occur
                 :rest (println "!!!")))
             matchmap-2
@@ -588,6 +569,7 @@
   ([template]
     (query-template template [{}]))
   ([template bindings-list]
+    (rst)
     (let [root (snippet/snippet-root template)
          root-type (astnode/ekeko-keyword-for-class-of root)
          matches (ast/nodes-of-type root-type) ; (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))
@@ -596,6 +578,32 @@
                     {:node-count 0})]
      (process-node template root matchmap))))
 
+(defn template-node-count [template]
+  (let [visit-node 
+        (fn visit [node]
+          (let [node-count (atom 0)
+                ncp! (fn [n] (swap! node-count (fn [x] (+ x n))))]
+            (if (not (check-directives-only? template node))
+              (doseq [child (snippet/snippet-node-children|conceptually-refs template node)]
+                (cond 
+                  (astnode/lstvalue? child)
+                  (if (not (check-directives-only? template child)) 
+                    (doseq [element (astnode/value-unwrapped child)]
+                      (ncp! (visit element))))
+                  (astnode/ast? child)
+                  (ncp! (visit child))
+                  (astnode/primitivevalue? child)
+                  (ncp! 1)
+                  (astnode/nilvalue? child)
+                  (ncp! 1)
+                  )))
+            (inc @node-count)))]
+    (visit-node (snippet/snippet-root template))))
+
+(defn templategroup-node-count [templategroup]
+  (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)]
+    (reduce + (map template-node-count templates))))
+
 (defn query-templategroup
   "Look for matches of a template group
    @param templategroup  The template group to be matched"
@@ -603,21 +611,34 @@
   (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)
         process-template (fn [[template & rest-templates] bindings-list]
                            (let [matchmap (query-template template bindings-list)
-                                 bindings-list (merge-bindings 
-                                                 matchmap 
-                                                 (util/gen-readable-lvar-for-value|classbased (snippet/snippet-root template)))] 
+                                 new-bindings-list (with-meta 
+                                                     (merge-bindings 
+                                                      matchmap 
+                                                      (util/gen-readable-lvar-for-value|classbased (snippet/snippet-root template)))
+                                                     {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
                              (if (nil? rest-templates)
-                               bindings-list
-                               (recur rest-templates bindings-list))))]
-    (process-template templates [{}])))
+                               new-bindings-list
+                               (recur rest-templates new-bindings-list))))]
+    (process-template templates (with-meta [{}] {:node-count 0}))))
 
 (comment ; All tests use the CompositeVisitor project
   
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt")
-;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt") ; OK
+;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-combo.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-refersto.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-subtype.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-type.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-overrides.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt") ; OK!
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-setmatching.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot.ekt") ; OK!
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/cls-constructs.ekt") ; OK! (Artificial example.. must add constructor call in original source..)
@@ -636,13 +657,22 @@
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/mini.ekt") ; OK! Also works correctly with diff prim values
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt")
     )
-
+  (def templategroup 
+;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo0.ekx")) ; OK!
+;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo1.ekx")) ; OK!
+;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo2.ekx")) ; OK!
+    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo3.ekx"))
+    )
+  
   (inspector-jay.core/inspect
-    (query-templategroup templategroup))
+    (time (query-templategroup templategroup)))
   (inspector-jay.core/inspect
     (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
   
-  
+  (template-node-count (first (snippetgroup/snippetgroup-snippetlist templategroup)))
+  (templategroup-node-count templategroup)
+  (meta (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
+  (meta (query-templategroup templategroup))
   
   ; Tests for AST navigation..
   (def node (first (first (damp.ekeko/ekeko [?m] (ast/ast :MethodDeclaration ?m)))))

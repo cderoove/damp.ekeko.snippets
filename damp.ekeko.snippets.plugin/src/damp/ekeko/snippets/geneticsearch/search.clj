@@ -815,8 +815,8 @@
       "Run an example genetic search in a separate thread"
       []
       (println "Starting example run..")
-      (def tg (new ThreadGroup "invokedby"))
-      (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+      (def tg (new ThreadGroup "invokes"))
+      (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
       (def matches (into [] (fitness/templategroup-matches templategroup)))
       (def verifiedmatches (make-verified-matches matches []))
       (util/future-group tg (evolve verifiedmatches
@@ -826,9 +826,9 @@
                                     :selection-weight 1/4
                                     :mutation-weight 3/4
                                     :crossover-weight 0/4
-                                    :max-generations 50
+                                    :max-generations 100
                                     :match-timeout 12000
-                                    :fitness-threshold 0.8
+                                    :fitness-threshold 1.0
                                     :thread-group tg
                                     :population-size 4
                                     :tournament-rounds 5))))
@@ -854,9 +854,11 @@
   
   ; Test matching a templategroup  
   
-  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokedby.ekt"))
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4.ekt"))
   (def matches (into [] (fitness/templategroup-matches templategroup)))
+  
+  (inspector-jay.core/inspect (into [] (fitness/templategroup-matches templategroup)))
   
   (def snippet (first (snippetgroup/snippetgroup-snippetlist templategroup)))
   (snippet/snippet-node-parent|conceptually snippet (snippet/snippet-root snippet))
@@ -883,7 +885,7 @@
   (def matches (into [] (fitness/templategroup-matches solution)))
   (def verifiedmatches (make-verified-matches matches []))
   (hillclimb initial verifiedmatches
-             :output-dir "strategy-test2/"           
+             :output-dir "strategy-test2/"          
              :quick-matching false
              :partial-matching true
              :max-generations 400
@@ -949,13 +951,14 @@
   (do
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected.ekt"))
     (def solution (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt"))
-    (def matches (into [] (fitness/templategroup-matches solution)))
+    (def matches (into [] (fitness/templategroup-matches templategroup)))
     (def verifiedmatches (make-verified-matches matches []))
     (time (templategroup-fitness 
-           mutant-template
+           templategroup
            verifiedmatches
-           :match-timeout 480000
+           :match-timeout 48000
            :fitness-weights [18/20 2/20 0/20]
            :quick-matching false
-           :partial-matching true)))
+           :partial-matching true
+           :thread-group (new ThreadGroup "invokes"))))
   )
