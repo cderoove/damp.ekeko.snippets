@@ -78,14 +78,15 @@
               "generalize-types" 
               ;"generalize-types|qname" 
               ;"extract-template" 
-;              "generalize-invocations" 
-;              "generalize-constructorinvocations"
+              "generalize-invocations" 
+              "generalize-constructorinvocations"
               ]))
      (operatorsrep/registered-operators))
    :thread-group (new ThreadGroup "Experiment")})
 
 (def experiments-root "/resources/EkekoX-Specifications/experiments/")
 (def output-root "/Users/soft/Documents/experiments/")
+;(def output-root "/home/tmoldere/Experiments/results/") ; Bertha server
 
 (defn slurp-from-resource
   "Retrieve a resource file, relative to the root of the damp.ekeko.snippets.plugin.test project"

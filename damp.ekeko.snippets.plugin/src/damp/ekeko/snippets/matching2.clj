@@ -180,25 +180,19 @@
         (assoc cur-positionmap cur-position lvar-map)
         cur-positionmap))
     {}
-    positionmap)
-  )
+    positionmap))
 
 (defn- matchmap-filter
   "Keeps only those matches that pass the given filter function
    @param matchmap  The matchmap to be filtered
    @param filterfn  Filter function"
   [matchmap filterfn]
-  ; Iterate over each match in the matchmap
   (reduce
     (fn [cur-matchmap [match positionmap]]
-      ; Iterate over each current position
       (let [new-positionmap (positionmap-filter positionmap filterfn)]
         (if (empty? new-positionmap)
           cur-matchmap
-          (assoc cur-matchmap match new-positionmap)
-          )
-        )
-      )
+          (assoc cur-matchmap match new-positionmap))))
     {}
     matchmap))
 
@@ -350,8 +344,6 @@
 
 (defn directive-constraints 
   "Implements all directives (not relating to navigation)
-   Note: Keep in mind that directives can be attached to wildcards .. which match with anything
-     This implies that a directives's constraint/generatefn can be called with the wrong type of node! 
    Returns a triplet of functions that implement the requested directive: [typefn constraintfn generatefn]"
   [directive]
   (let 
@@ -461,9 +453,9 @@
       "constructs"
       [(fn [ast-node] 
          (or 
-           (instance? ast-node ClassInstanceCreation)
-           (instance? ast-node ConstructorInvocation) 
-           (instance? ast-node SuperConstructorInvocation)))
+           (instance? ClassInstanceCreation ast-node)
+           (instance? ConstructorInvocation ast-node) 
+           (instance? SuperConstructorInvocation ast-node)))
        (fn [ast-node val]
          (some 
            (fn [tgt] (= val tgt))
@@ -543,10 +535,10 @@
           matchmap
           (matchmap-filter matchmap (fn [ast-node] (= (class ast-node) (class template-node)))))
         
-        ; 2 - Check directives (only considering directives that do not affect navigation!)
+        ; 2 - Check directives (only considering directives that do not affect navigation)
         matchmap-2 (check-directives template template-node matchmap-1)
         
-        ; 3 - Check node children (taking into account navigation directives!)
+        ; 3 - Check node children (taking into account navigation directives)
         matchmap-3
         (if check-directives-only
           matchmap-2
@@ -559,25 +551,13 @@
                   (check-directives template child cur-matchmap)
                   (reduce 
                     (fn [cur-mmap [index list-element]]
-                      (process-child cur-mmap child list-element index)
-                      
-;                      (let [pos-matchmap (determine-next-positions template child cur-mmap index)
-;                            new-mmap (nci (process-node template list-element pos-matchmap))
-;                            final-mmap (return-to-previous-position new-mmap cur-mmap)]
-;                        final-mmap)
-                      )
+                      (process-child cur-mmap child list-element index))
                     (check-directives template child cur-matchmap)
                     (let [elements (astnode/value-unwrapped child)]
                       (map-indexed (fn [idx elem] [idx elem]) elements ))))
                 ; Regular nodes
                 (astnode/ast? child)
                 (process-child cur-matchmap child child 0)
-;                (if (pure-wildcard? template child)
-;                  cur-matchmap
-;                  (let [pos-matchmap (determine-next-positions template child cur-matchmap 0)
-;                       new-mmap (nci (process-node template child pos-matchmap))
-;                       final-mmap (return-to-previous-position new-mmap cur-matchmap)]
-;                   final-mmap))
                 ; Primitive nodes
                 (astnode/primitivevalue? child)
                 (nci (if (check-directives-only? template child)
@@ -716,17 +696,17 @@
       ])
   
   (run-test-batch ; JHotDraw project
-    [["/resources/EkekoX-Specifications/matching2/jhot.ekt" not-empty]
+    [["/resources/EkekoX-Specifications/matching2/jhot2.ekt" #(= 35 (count %))]
      ["/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" not-empty]
-     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt" not-empty]])
+;     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt" not-empty]
+     ])
   
   (def templategroup
 ;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt")
 ;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo3.ekx"))
-;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt")
     (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot2.ekt")
     )
   
@@ -734,8 +714,4 @@
     (time (query-templategroup templategroup)))
   (inspector-jay.core/inspect
     (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
-  
-  (template-node-count (first (snippetgroup/snippetgroup-snippetlist templategroup)))
-  (templategroup-node-count templategroup)
-  (meta (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
-  (meta (query-templategroup templategroup)))
+  )
