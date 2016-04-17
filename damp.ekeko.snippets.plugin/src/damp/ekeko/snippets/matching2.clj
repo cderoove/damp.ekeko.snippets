@@ -255,7 +255,11 @@
           (if (directives/bounddirective-for-directive 
                 (snippet/snippet-bounddirectives-for-node template template-node) 
                 matching/directive-child*)
-            (astnode/reachable-nodes-of-type ast-node (class template-node))
+            (if (check-directives-only? template template-node)
+              (astnode/reachable-nodes ast-node) ; May only filter on node type if it's not a wildcard or replace-by-variable
+              (filter 
+                (fn [node] (= (class node) (class template-node)))
+                (astnode/reachable-nodes ast-node)))
             [ast-node]))
         ]
     (if 
@@ -269,8 +273,10 @@
                 template-element (ignore-test (.get template-list index))
                 ast-list (astnode/node-property-value ast-node owner-prop)
                 bds-element (snippet/snippet-bounddirectives-for-node template template-element)
-                elements-of-type (if (directives/bounddirective-for-directive bds-element matching/directive-child*)
-                                   ast-list ; May not filter on element type if there's a child*
+                elements-of-type (if (or
+                                       (directives/bounddirective-for-directive bds-element matching/directive-child*)
+                                       (check-directives-only? template template-element))
+                                   ast-list ; May not filter on element type if it has a child*, wildcard or replace-by-variable
                                    (filter (fn [element] (= (class element) (class template-element))) ast-list))]
             (apply 
               concat 
@@ -523,11 +529,11 @@
         process-child ; "Move" to a child node, processes it, then move back to this node
         (fn [mmap pos-node child index]
           (if (pure-wildcard? template child)
-                  mmap
-                  (let [pos-mmap (determine-next-positions template pos-node mmap index)
-                       new-mmap (nci (process-node template child pos-mmap))
-                       final-mmap (return-to-previous-position new-mmap mmap)]
-                   final-mmap)))
+            mmap
+            (let [pos-mmap (determine-next-positions template pos-node mmap index)
+                  new-mmap (nci (process-node template child pos-mmap))
+                  final-mmap (return-to-previous-position new-mmap mmap)]
+              final-mmap)))
         
         ; 1 - Check node type
         matchmap-1 
@@ -563,12 +569,12 @@
                 (nci (if (check-directives-only? template child)
                        (check-directives template child cur-matchmap)
                        (check-directives template child
-                                         (matchmap-filter 
-                                           cur-matchmap 
-                                           (fn [ast-node] 
-                                             (let [owner-prop (astnode/owner-property child)
-                                                   ast-child (astnode/node-property-value ast-node owner-prop)]
-                                               (= ast-child (astnode/value-unwrapped child))))))))
+                                          (matchmap-filter 
+                                            cur-matchmap 
+                                            (fn [ast-node] 
+                                              (let [owner-prop (astnode/owner-property child)
+                                                    ast-child (astnode/node-property-value ast-node owner-prop)]
+                                                (= ast-child (astnode/value-unwrapped child))))))))
                 ; Null values
                 (astnode/nilvalue? child)
                 (nci (if (check-directives-only? template child)
@@ -686,6 +692,8 @@
       ["/resources/EkekoX-Specifications/matching2/cls-setmatching.ekt" not-empty]
       ["/resources/EkekoX-Specifications/matching2/cls-setmatching2.ekt" not-empty]
       ["/resources/EkekoX-Specifications/matching2/cls-setmatching3.ekt" empty?]
+      ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching.ekt" not-empty]
+      ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching2.ekt" not-empty]
       ["/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt" not-empty]
       ["/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt" not-empty]
       ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" not-empty]
@@ -705,9 +713,9 @@
      ])
   
   (def templategroup
-;    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt")
 ;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo3.ekx"))
-    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot2.ekt")
+;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot-factory.ekt")
     )
   
   (inspector-jay.core/inspect

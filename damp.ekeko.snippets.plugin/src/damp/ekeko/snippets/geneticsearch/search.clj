@@ -839,26 +839,24 @@
   (run-example) ; To start
   (.interrupt tg) ; To stop
   
-  (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460727087166.ekt"))
+  (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
   
   (let [path 
 ;        "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" ; OK!
 ;        "/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" ; OK! 21 VS 16 matches .. it's actually the new impl that's correct!
 ;        "/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" ; OK!
 ;        "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" ; OK!
-        "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt" ; 3 VS 15 matches
+;        "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt" ; OK! 22 VS 17 matches .. new impl gets more correct results
         
         matches-new (time (fitness/templategroup-matches (slurp-from-resource path)))
         matches-old (time (fitness/templategroup-matches-old (slurp-from-resource path)))
         ]
     (println "New:" (count matches-new) "VS Old:" (count matches-old))
-    (inspector-jay.core/inspect matches-new)
-    (inspector-jay.core/inspect matches-old)
-    
+;    (inspector-jay.core/inspect matches-new)
+;    (inspector-jay.core/inspect matches-old)
     (inspector-jay.core/inspect (clojure.set/difference matches-old matches-new))
     (inspector-jay.core/inspect (clojure.set/difference matches-new matches-old))
-    nil
-    )
+    nil)
   
   (inspector-jay.core/inspect
     (count (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
