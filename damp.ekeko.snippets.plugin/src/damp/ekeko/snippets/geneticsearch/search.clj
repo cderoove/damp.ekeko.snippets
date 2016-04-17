@@ -852,8 +852,8 @@
         matches-old (time (fitness/templategroup-matches-old (slurp-from-resource path)))
         ]
     (println "New:" (count matches-new) "VS Old:" (count matches-old))
-;    (inspector-jay.core/inspect matches-new)
-;    (inspector-jay.core/inspect matches-old)
+    (inspector-jay.core/inspect matches-new)
+    (inspector-jay.core/inspect matches-old)
     
     (inspector-jay.core/inspect (clojure.set/difference matches-old matches-new))
     (inspector-jay.core/inspect (clojure.set/difference matches-new matches-old))

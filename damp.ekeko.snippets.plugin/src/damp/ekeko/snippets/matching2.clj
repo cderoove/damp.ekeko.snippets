@@ -28,7 +28,9 @@
            [org.eclipse.jdt.core ITypeHierarchy]
            [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
            [org.eclipse.jdt.core.dom ASTNode Annotation MethodInvocation Expression 
-            FieldAccess SuperFieldAccess Statement BodyDeclaration CompilationUnit ImportDeclaration]))
+            FieldAccess SuperFieldAccess Statement BodyDeclaration CompilationUnit ImportDeclaration
+            MethodDeclaration SuperMethodInvocation ClassInstanceCreation ConstructorInvocation
+            SuperConstructorInvocation]))
 
 (defn
   non-relation-directive?
@@ -124,27 +126,31 @@
    @param bindings
    @param lvar            The logic variable involved in the constraint
    @param ast-node        The subject node to which the constraint is attached
+   @param typefn          One-parameter function that checks the type of the directive's subject.
+                          Needed because directives can be attached to wildcards, which match with any type of node.
+                          Similar to the applicability checks in operatorsrep.clj .. in this case
+                          it's just used to prevent constraintfn/generatefn from throwing exceptions..
    @param constraintfn    Two-parameter function that tests whether or not
                           a certain constraint holds for a concrete subject and logic variable value
    @param generatefn      If the logic variable has no values yet,
                           this function is used to produce all possible values
                           for which the constraint holds"
-  [bindings ast-node lvar constraintfn generatefn]
+  [bindings ast-node lvar typefn constraintfn generatefn]
   (let [values (get bindings lvar)
         new-values (if (empty? values)
-                     (generatefn ast-node)
-                     (filter (fn [val] (constraintfn ast-node val)) values))]
+                     (if (typefn ast-node) (generatefn ast-node) [])
+                     (filter (fn [val] (and (typefn ast-node) (constraintfn ast-node val))) values))]
     (if (empty? new-values)
       nil
       (assoc bindings lvar new-values))))
 
 (defn- positionmap-checkconstraint
-  [positionmap lvar constraintfn generatefn]
+  [positionmap lvar typefn constraintfn generatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
       (let [bindings-list (:bindings-list props) 
             new-bindings-list (for [bindings bindings-list]
-                                (lvarbindings-checkconstraint bindings cur-position lvar constraintfn generatefn))
+                                (lvarbindings-checkconstraint bindings cur-position lvar typefn constraintfn generatefn))
             new-props (assoc props :bindings-list (remove nil? new-bindings-list))]
         (if (empty? new-bindings-list) 
           cur-positionmap
@@ -153,10 +159,10 @@
     positionmap))
 
 (defn- matchmap-checkconstraint 
-  [matchmap lvar constraintfn generatefn]
+  [matchmap lvar typefn constraintfn generatefn]
   (reduce
     (fn [cur-matchmap [match positionmap]]
-      (let [new-pmap (positionmap-checkconstraint positionmap lvar constraintfn generatefn)]
+      (let [new-pmap (positionmap-checkconstraint positionmap lvar typefn constraintfn generatefn)]
         (if (empty? new-pmap)
           cur-matchmap
           (assoc cur-matchmap match new-pmap))))
@@ -344,7 +350,9 @@
 
 (defn directive-constraints 
   "Implements all directives (not relating to navigation)
-   Returns a pair: [constraintfn generatorfn]"
+   Note: Keep in mind that directives can be attached to wildcards .. which match with anything
+     This implies that a directives's constraint/generatefn can be called with the wrong type of node! 
+   Returns a triplet of functions that implement the requested directive: [typefn constraintfn generatefn]"
   [directive]
   (let 
     [name (snippet/directive-name directive)
@@ -372,11 +380,13 @@
      
      directives
      {"replaced-by-variable"
-      [(fn [ast-node val] (= ast-node val))
+      [(fn [ast-node] true)
+       (fn [ast-node val] (= ast-node val))
        (fn [ast-node] [ast-node])]
       
       "overrides"
-      [(fn [ast-node val]
+      [(fn [ast-node] (instance? MethodDeclaration ast-node))
+       (fn [ast-node val]
          (some 
            (fn [tgt] (= val tgt))
            (javaprojectmodel/method-ancestors ast-node)
@@ -385,23 +395,26 @@
          (javaprojectmodel/method-ancestors ast-node))]
       
       "invokes"
-      [(fn [ast-node val]
+      [(fn [ast-node] (or (instance? MethodInvocation ast-node) (instance? SuperMethodInvocation ast-node)))
+       (fn [ast-node val]
          (some 
            (fn [tgt] (= val tgt))
            (javaprojectmodel/invocation-targets ast-node)))
-       (fn [ast-node]
-         (javaprojectmodel/invocation-targets ast-node))]
+       (fn [ast-node] (javaprojectmodel/invocation-targets ast-node))]
       
       "equals" ; Same as replaced-by-variable (only difference is that equals isn't mentioned in the check-directives-only? fn)
-      [(fn [ast-node val] (= ast-node val))
+      [(fn [ast-node] true)
+       (fn [ast-node val] (= ast-node val))
        (fn [ast-node] [ast-node])]
       
       "type"
-      [(fn [ast-node val] (= val (get-type ast-node) ))
+      [(fn [ast-node] true)
+       (fn [ast-node val] (= val (get-type ast-node) ))
        (fn [ast-node] [(get-type ast-node)])]
       
       "subtype*"
-      [(fn [ast-node val]
+      [(fn [ast-node] true)
+       (fn [ast-node val]
          (let [itype (get-type ast-node)]
            (if (nil? itype) ; Because ast-node may be a SimpleName that doesn't represent a type..
              false
@@ -415,7 +428,8 @@
              (conj (get-all-ancestors itype) itype))))]
       
       "subtype+"
-      [(fn [ast-node val]
+      [(fn [ast-node] true)
+       (fn [ast-node val]
          (let [itype (get-type ast-node)]
            (if (nil? itype)
              false
@@ -427,7 +441,8 @@
            (if (nil? itype) [] (get-all-ancestors itype))))]
       
       "refers-to"
-      [(fn [ast-node val]
+      [(fn [ast-node] true)
+       (fn [ast-node val]
          (let [binding (cond
                          (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
                          (.resolveFieldBinding ast-node)
@@ -443,8 +458,13 @@
                local-decl (javaprojectmodel/binding-to-declaration binding)]
            [local-decl]))]
       
-      "constructs" ; Same as invokes..
-      [(fn [ast-node val]
+      "constructs"
+      [(fn [ast-node] 
+         (or 
+           (instance? ast-node ClassInstanceCreation)
+           (instance? ast-node ConstructorInvocation) 
+           (instance? ast-node SuperConstructorInvocation)))
+       (fn [ast-node val]
          (some 
            (fn [tgt] (= val tgt))
            (javaprojectmodel/invocation-targets ast-node)))
@@ -464,8 +484,8 @@
         (let 
           [directive (snippet/bounddirective-directive bd)
            lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd))) ;(.getOperand (second (.getOperandBindings bd)))
-           [constraintfn generatefn] (directive-constraints directive)]
-          (matchmap-checkconstraint cur-matchmap lvar constraintfn generatefn)))
+           [typefn constraintfn generatefn] (directive-constraints directive)]
+          (matchmap-checkconstraint cur-matchmap lvar typefn constraintfn generatefn)))
       matchmap
       bds)))
 
@@ -598,17 +618,19 @@
   ([template]
     (query-template template [{}]))
   ([template bindings-list]
-    (rst)
     (let [root (snippet/snippet-root template)
          root-type (astnode/ekeko-keyword-for-class-of root)
-         matches (ast/nodes-of-type root-type) 
-         ; (damp.ekeko/ekeko [?m] (ast/ast root-type ?m))
+         matches (ast/nodes-of-type root-type)
          matchmap (with-meta 
                     (matchmap-create matches bindings-list)
                     {:node-count 0})]
      (process-node template root matchmap))))
 
-(defn template-node-count [template]
+(defn template-node-count
+  "Count the total number of nodes in template (to be able to measure matching progress, partial score, ..)
+   (Count includes ast nodes, null nodes, primitive nodes
+    ; excluding list nodes as they don't exist in plain ASTs)"
+  [template]
   (let [visit-node 
         (fn visit [node]
           (let [node-count (atom 0)
