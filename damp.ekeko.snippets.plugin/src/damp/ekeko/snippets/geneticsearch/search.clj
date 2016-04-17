@@ -112,9 +112,9 @@
    
    :output-dir nil
    :partial-matching true
-   :quick-matching true ; If enabled, template matching only considers the classes occuring in verified matches. Matching will be much faster, but the resulting templates can produce false positives.
-   :match-timeout 960000
-   :thread-group (new ThreadGroup "Evolve")
+   :quick-matching false ; If enabled, template matching only considers the classes occuring in verified matches. Matching will be much faster, but the resulting templates can produce false positives.
+   :match-timeout 960000 ; DEPRECATED
+   :thread-group nil ; DEPRECATED
    :tournament-rounds 7
    :mutation-operators registered-operators|search
    :gui-editor nil ; If set to a RecommendationEditor instance, the results of each generation are pushed to this GUI component
@@ -888,20 +888,6 @@
   
   (def snippet (first (snippetgroup/snippetgroup-snippetlist templategroup)))
   (snippet/snippet-node-parent|conceptually snippet (snippet/snippet-root snippet))
-  
-  (inspector-jay.core/inspect (matching/reachable-nodes snippet (snippet/snippet-root snippet)))
-  
-  (inspector-jay.core/inspect (time (querying/query-by-snippetgroup-fast templategroup 'damp.ekeko/ekeko)))
-  
-  (let [tmp-ns2 (util/gen-ns)
-        tvar (gensym)] 
-    (set (util/eval-in-ns
-           `(let [~tvar ~templategroup]
-              (damp.ekeko.snippets.querying/query-by-snippetgroup-fast-roots ~tvar))
-           tmp-ns2)))
-  
-  (time
-    (def bla (querying/query-by-snippetgroup-fast-roots templategroup)))
   
   ; Hillclimbing test
   (defn slurp-from-resource [pathrelativetobundle]

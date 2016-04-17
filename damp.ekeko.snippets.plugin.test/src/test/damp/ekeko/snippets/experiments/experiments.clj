@@ -19,12 +19,10 @@
 
 (def experiment-config-default
   {:algorithm search/evolve
-   :max-generations 50
-   :match-timeout 360000
+   :max-generations 150 
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :population-size 30
-   :quick-matching false
    :partial-matching true
    :selection-weight 1/4
    :mutation-weight 3/4
@@ -81,8 +79,7 @@
               "generalize-invocations" 
               "generalize-constructorinvocations"
               ]))
-     (operatorsrep/registered-operators))
-   :thread-group (new ThreadGroup "Experiment")})
+     (operatorsrep/registered-operators))})
 
 (def experiments-root "/resources/EkekoX-Specifications/experiments/")
 (def output-root "/Users/soft/Documents/experiments/")
@@ -99,8 +96,7 @@
     (let [folder-path (str output-root experiment-name "-" i "/")] 
       (if (.exists (clojure.java.io/as-file folder-path))
         (recur (inc i))
-        folder-path
-       ))))
+        folder-path))))
 
 (defn find-last-experiment-folder [experiment-name]
   "Returns the folder of the last run of an experiment
@@ -110,8 +106,7 @@
           next-folder-path (str output-root experiment-name "-" (inc i) "/")] 
       (if (.exists (clojure.java.io/as-file next-folder-path))
         (recur (inc i))
-        folder-path
-       ))))
+        folder-path))))
 
 (defn run-experiment
   "Given a set of verified matches, use the genetic search algorithm to find a template to match them all.
@@ -174,7 +169,7 @@
 (deftest
   ^{:doc "Observer in JHotdraw"}
   jh-observer
-  (let [config {:output-dir (slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt") ;(find-last-experiment-folder "observer")
+  (let [config {:output-dir (find-new-experiment-folder "observer"); (slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
@@ -186,7 +181,7 @@
 (deftest
   ^{:doc "Strategy in JHotdraw"}
   jh-strategy
-  (let [config {:output-dir (find-last-experiment-folder "strategy")}]
+  (let [config {:output-dir (find-new-experiment-folder "strategy")}]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
       config
@@ -201,7 +196,7 @@
       [(pmart/projects :jhotdraw)]
       config
       [(str experiments-root "factorymethod-jhotdraw/initial-protected-reorder.ekt")]
-      [(str experiments-root "factorymethod-jhotdraw/solution_take4-reorder.ekt")])))
+      [(str experiments-root "factorymethod-jhotdraw/solution_take4-reorder2.ekt")])))
 
 (deftest 
   dummy

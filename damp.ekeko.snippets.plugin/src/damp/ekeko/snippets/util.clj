@@ -11,10 +11,7 @@
            [org.eclipse.jdt.core  IMember IJavaElement ITypeHierarchy JavaCore IType IJavaModel IJavaProject IPackageFragment ICompilationUnit]
            [org.eclipse.ui PlatformUI IWorkingSet IWorkingSetManager]
            [org.eclipse.core.runtime.jobs Job]
-           [org.eclipse.core.runtime Status Path]
-           ;[damp.ekeko EkekoModel JavaProjectModel ProjectModel]
-           )
-  )
+           [org.eclipse.core.runtime Status Path]))
 
 (defn
   class-simplename
@@ -50,8 +47,6 @@
 (defn 
   gen-readable-lvar-for-value
   [value]
-  ;(if-let [ownerprop (astnode/owner-property value)]
-  ;  (gen-lvar (astnode/property-descriptor-id ownerprop))
   (gen-readable-lvar-for-value|classbased value))
 
 
@@ -203,18 +198,7 @@
          (if (test-func result)
            result 
            (recur)))))
-    (range 0 cnt))
-;  (pmap-group
-;    (fn [idx]
-;      (loop []
-;       (let [result (func)]
-;         (print ".")
-;         (if (test-func result)
-;           result 
-;           (recur)))))
-;    (range 0 cnt)
-;    thread-group)
-  )
+    (range 0 cnt)))
 
 (defn average
   "Calculate the average in a collection of numbers"
@@ -264,9 +248,7 @@
          (catch Exception e
            (.cancel task true)
            (.stop thr) 
-           (throw e))
-;         (finally (when tg (.stop tg)))
-         ))))
+           (throw e))))))
 
 (defmacro with-timeout
   "Apply this macro to an expression and an exception is thrown if it takes longer than a given time to evaluate the expression"
@@ -366,15 +348,7 @@
   "Performs an eval in another namespace."
   [expr namespace]
   (binding [*ns* namespace]
-    (eval expr))
-  
-;         (let [cur *ns*]
-;           (try ; needed to prevent failures in the eval code from skipping ns rollback
-;             (ns namespace)   
-;             (eval expr)
-;             (finally 
-;               (in-ns (ns-name cur)))))
-         )
+    (eval expr)))
 
 (defn gen-ns
   "Generate a new namespace (with a random name)"
@@ -382,53 +356,3 @@
   (let [namespace (create-ns (gensym "gen-ns-"))]
     (eval-in-ns '(clojure.core/use 'clojure.core) namespace)
     namespace))
-
-;(defn reset-protocol-cache []
-;  (doseq [protocol
-;          [clojure.core.logic.protocols/IUninitialized
-;           damp.ekeko.logic/ISupportContains
-;           damp.ekeko.jdt.astbindings/IResolveToFieldBinding
-;           damp.ekeko.jdt.astbindings/IResolveToMethodBinding
-;           astnode/IHasProperties
-;           astnode/IHasOwner
-;           astnode/IAST
-;           astnode/IIdentifiesProjectValue
-;           ]]
-;    (-reset-methods protocol)))
-
-;(defn protocol? [x]
-;  (and (instance? clojure.lang.PersistentArrayMap x)
-;       (boolean (:on-interface x))))
-
-;(defn protocols
-;  "Get a seq of protocols in the given namespace."
-;  ([namespace]
-;    (binding [*ns* (if (symbol? namespace)
-;                     (find-ns namespace)
-;                     namespace)]
-;      (doall (filter protocol?
-;                     (map var-get
-;                          (filter var?
-;                                  (map second
-;                                       (ns-map *ns*))))))))
-;  ([]
-;    (protocols *ns*)))
-
-;(defonce simple-protocol-cache-cleaner
-;  ;; Starts a simple daemon thread that purges the caches for all protocols in the current namespace.
-;  (let [interval 1000 ;; ms
-;        ps (protocols *ns*)]
-;    (doto (new Thread (fn []
-;                        (loop [i 0]
-;                          (doseq [p ps] (-reset-methods p))
-;                          (Thread/sleep interval)
-;                          (recur (inc i)))))
-;      (.setDaemon true)
-;      (.start))))
-
-;(defn clean-protocol-cache [ps]
-;  (doseq [p ps] (-reset-methods p)))
-
-;(comment
-;  (doseq [ns (all-ns)]
-;            (clean-protocol-cache (protocols ns))))

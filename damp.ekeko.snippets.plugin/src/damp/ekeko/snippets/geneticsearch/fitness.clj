@@ -62,9 +62,7 @@
           'damp.ekeko/ekeko 
           `((damp.ekeko.logic/perform (new-match)))
           '() 
-          true))
-;  (into #{} (querying/query-by-snippetgroup-fast-roots templategroup))
-  )
+          true)))
 
 (defn 
   truep
@@ -158,18 +156,9 @@
   "Compute the partial matching score of the last templategroup that we tried to match
    @param node-count number of nodes in that last templategroup"
   [node-count]
-  (let [partial-matches (first (:done @matched-nodes))
-;        (remove 
-;          (fn [x] (= x node-count))
-;          (:done @matched-nodes))
-        ]
+  (let [partial-matches (first (:done @matched-nodes))]
     (reset-matched-nodes)
-    (let [score (/ partial-matches node-count)
-;            (/ 
-;              (reduce + (map (fn [x] (/ x node-count)) partial-matches))
-;              (count partial-matches))
-;            (/ (apply max partial-matches) node-count)
-            ]
+    (let [score (/ partial-matches node-count)]
         (if (> score 1)
           (println "!Partial matching score cannot > 1" @matched-nodes)
           score))))
@@ -189,13 +178,10 @@
    ,where overall-fitness is a value between 0 (worst) and 1 (best)
    and fitness-components is a list of components that were used to compute the overall fitness"
   [verifiedmatches config]
-  
-  (let [
-        partialmodels (map
+  (let [partialmodels (map
                         (fn [match] (create-partial-model [match]))
                         (:positives verifiedmatches))
-        partialmodel-merged (create-partial-model (:positives verifiedmatches))
-        ]
+        partialmodel-merged (create-partial-model (:positives verifiedmatches))]
     (fn [templategroup]
       (let [matches (templategroup-matches templategroup)
             fscore (double (fmeasure matches verifiedmatches))

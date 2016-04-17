@@ -704,13 +704,11 @@
       ])
   
   (run-test-batch ; JHotDraw project
-    [["/resources/EkekoX-Specifications/matching2/jhot2.ekt" #(= 35 (count %))]
-     ["/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" not-empty]
+    [["/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" not-empty]
      ["/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" not-empty]
-;     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt" not-empty]
-     ])
+     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt" not-empty]])
   
   (def templategroup
     (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt")
