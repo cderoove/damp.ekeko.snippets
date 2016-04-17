@@ -99,6 +99,18 @@ damp.ekeko.snippets.operatorsrep
     (= :MethodDeclaration (astnode/ekeko-keyword-for-class-of value))
     (not (.isConstructor value))))
 
+(defn 
+  applicability|refersto
+  [snippetgroup snippet value]
+  (and
+    (applicability|node snippetgroup snippet value)
+    (let [cls (astnode/ekeko-keyword-for-class-of value)] 
+      (or 
+       (= :SimpleName cls)
+       (= :QualifiedName cls)
+       (= :FieldAccess cls)
+       (= :SuperFieldAccess cls)))))
+
 (defn
   applicability|methoddeclarationorname
   [snippetgroup snippet value]
@@ -319,6 +331,7 @@ damp.ekeko.snippets.operatorsrep
   applicability|child+*
   [snippetgroup snippet value]
   (and
+    (astnode/ast? value) ; To reduce the search space.. since we never seem to use child* on list nodes
     (applicability|nonroot snippetgroup snippet value)
     (not (snippet/snippet-value-primitive? snippet value)) ; Causes stack overflows for some reason?
     (not (applicability|nullvalue snippetgroup snippet value))
@@ -410,7 +423,13 @@ damp.ekeko.snippets.operatorsrep
       (or 
        (applicability|node-classkeywords snippetgroup snippet node typeclasskeywords)
        (applicability|absentvalue-classkeywords snippetgroup snippet node  typeclasskeywords)))))
-  
+
+(defn applicability|type-nonprimitive
+  [snippetgroup snippet node]
+  (and
+    (not= :PrimitiveType (astnode/ekeko-keyword-for-class-of node))
+    (applicability|type snippetgroup snippet node)))
+
 (defn
   applicability|typename
   [snippetgroup snippet node]
@@ -871,7 +890,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive constructed-by."
      opscope-subject
-     applicability|constructororname
+     applicability|constructor
      "Requires matches to be constructors invoked by the meta-variable binding."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -893,7 +912,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive refers-to."
      opscope-subject
-     applicability|always
+     applicability|refersto
      "Requires matches to lexically refer to the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -915,7 +934,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive type."
      opscope-subject
-     applicability|typeortypename
+     applicability|type;ortypename
      "Match should resolve to a type, given by meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -926,7 +945,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive type|qname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type;ortypename
      "Match should resolve to a type with the given qualified name."
      [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)]
      false)
@@ -937,7 +956,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive type|sname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type;ortypename
      "Match should resolve to a type with the given simple name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)]
      false)
@@ -948,7 +967,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype+."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to a transitive subtype of the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -959,7 +978,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype+|qname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to a transitive subtype with the given string as qualified name."
      [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)]
      false)
@@ -970,7 +989,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype+|sname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to a transitive subtype with the given string as simlpe name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)]
      false)
@@ -981,7 +1000,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype*."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to the type or a transitive subtype of the binding for the meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -992,7 +1011,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype*|qname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to the type or a transitive subtype with the given string as qualified name."
      [(make-operand "Qualified name (e.g., java.lang.Object)" opscope-string validity|string)]
      false)
@@ -1003,7 +1022,7 @@ damp.ekeko.snippets.operatorsrep
      :refinement
      "Add directive subtype*|sname."
      opscope-subject
-     applicability|typeortypename
+     applicability|type-nonprimitive
      "Match should resolve to the type or a transitive subtype with the given string as simlpe name."
      [(make-operand "Simple name (e.g., Integer)" opscope-string validity|string)]
      false)
@@ -1598,7 +1617,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Generalize type references."
      opscope-subject
-     applicability|typeortypename
+     applicability|type;ortypename
      "Generalizes all references to given type in template group."
      []
      true)
@@ -1609,7 +1628,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Generalize type references, preserve qualified name."
      opscope-subject
-     applicability|typeortypename
+     applicability|type;ortypename
      "Generalizes all references to given type in the template group, while preserving its qualified name."
      []
      true)
@@ -1631,7 +1650,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Generalize method invocations."
      opscope-subject
-     applicability|methoddeclarationorname
+     applicability|methoddeclaration
      "Generalizes invocations to selected method declaration."
      []
      true)
@@ -1642,7 +1661,7 @@ damp.ekeko.snippets.operatorsrep
      :generalization
      "Generalize constructor invocations."
      opscope-subject
-     applicability|constructororname
+     applicability|constructor
      "Generalizes invocations of selected constructor declaration."
      []
      true)

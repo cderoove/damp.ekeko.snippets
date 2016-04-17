@@ -45,11 +45,12 @@
     (into #{} 
           (for [bindings bindings-list]
             (reduce
-              (fn [cur-list [lvar values]]
+              (fn [cur-list lvar]
                 (if (not (some (fn [v] (= v lvar)) uservars))
-                  (conj cur-list (first values))))
+                  (conj cur-list (first (get bindings lvar)))
+                  cur-list))
               []
-              bindings)))))
+              (keys bindings))))))
 
 (defn templategroup-matches-old
   "Given a templategroup, look for all of its matches in the code

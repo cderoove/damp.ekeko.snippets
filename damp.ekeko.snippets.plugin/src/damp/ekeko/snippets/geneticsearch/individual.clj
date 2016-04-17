@@ -20,10 +20,6 @@
            [java.util.concurrent TimeoutException]
            [org.eclipse.jdt.core.dom AST]))
 
-;(def errors (new java.util.Vector))
-;(defn clear-errors [] 
-;  (-> errors .clear))
-
 (defrecord 
   ^{:doc "An individual in a population"}
   Individual
@@ -101,23 +97,23 @@
 ;                (-> errors (.add [id individual e]))
 ;                (damp.ekeko.snippets/open-editor-on-snippetgroup tg)
                 
-;                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
+                (persistence/spit-snippetgroup (str "error" id ".ekt") tg)
                 (util/log "error"
                           (str 
                             "!!! " id " --- " (.getMessage e)
-                            (snippetgroup/snippetgroup-name tg) 
                             "\n--- Mutation operator\n"
                             (individual-info individual :mutation-operator)
                             "\n--- Mutation subject\n"
                             (individual-info individual :mutation-node)
-                            "\n--- Mutation operand values\n"
-                            (individual-info individual :mutation-opvals)
+;                            "\n--- Mutation operand values\n"
+;                            (individual-info individual :mutation-opvals)
 ;                            "\n--- Template\n"
 ;                            (persistence/snippetgroup-string tg)
                             "\n--- Stacktrace\n"
-                            (if (nil? (.getCause e))
-                              "No cause available.."
-                              (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
+                            (util/stacktrace-to-string e)
+;                            (if (nil? (.getCause e))
+;                              "No cause available.."
+;                              (util/stacktrace-to-string (.getCause e))) ; Because the future in util/with-timeout will wrap the exception..
                             "\n################\n\n"))
                 (if (instance? java.lang.UnsupportedOperationException (.getCause e))
                   (throw e))

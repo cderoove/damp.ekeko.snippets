@@ -58,11 +58,12 @@
 ;             "add-directive-invokedby"
 ;             "restrict-scope-to-child"
 ;             "relax-scope-to-child+"
-;             "relax-scope-to-child*"
+             "relax-scope-to-child*"
 ;             "relax-size-to-atleast"
 ;             "relax-scope-to-member"
-;             "consider-set|lst"
+             "consider-set|lst"
              "add-directive-type"
+             "add-directive-subtype*"
 ;             "add-directive-type|qname"
 ;             "add-directive-type|sname"
              "add-directive-refersto"
@@ -77,10 +78,10 @@
 ;             "generalize-directive"
 ;             "remove-directive"
 ;             "extract-template" ; ! Don't use this for genetic search, as it expects a certain number of templates in a templategroup/individual
-;             "generalize-references"
-;             "generalize-types"
+             "generalize-references"
+             "generalize-types"
 ;             "generalize-types|qname"
-;             "generalize-invocations"
+;             "generalize-invocations" ; Bug?
 ;             "generalize-constructorinvocations"
 ;             "isolate-stmt-in-method"
              "isolate-expr-in-method"
@@ -328,7 +329,9 @@
                                       ))
                                   (matching/reachable-nodes snippet (snippet/snippet-root snippet)))]
             (if (empty? all-valid-nodes)
-              (recur) ; Try again if there are no valid subjects..
+              (do
+                (print ".")
+                (recur)) ; Try again if there are no valid subjects..
               (let [subject (rand-nth all-valid-nodes)
                     operands (operatorsrep/operator-operands operator)
                     op-id (operatorsrep/operator-id operator)
@@ -544,8 +547,8 @@
         ; First print and store as much info as possible on the current generation
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
-        (println "Fitnesses:" (map individual/individual-fitness-components population))
-        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
+;        (println "Fitnesses:" (map individual/individual-fitness-components population))
+;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
         
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
@@ -571,8 +574,9 @@
                                      (individual/individual-info (nth population idx) :mutation-operator)
                                      (pr-str (type (individual/individual-info (nth population idx) :mutation-node)))
                                      (pr-str (individual/individual-info (nth population idx) :mutation-opvals))])
-                   (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
-                                                  (individual/individual-templategroup individual))) 
+;                   (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
+;                                                  (individual/individual-templategroup individual))
+                   ) 
                  population))
         
         (if (not (nil? (:gui-editor config)))
@@ -820,21 +824,45 @@
       (def matches (into [] (fitness/templategroup-matches templategroup)))
       (def verifiedmatches (make-verified-matches matches []))
       (util/future-group tg (evolve verifiedmatches
-                                    ; :initial-population (population-from-templates [templategroup] 4) ; Directly puts the solution in the initial population
                                     :quick-matching false
                                     :partial-matching true
                                     :selection-weight 1/4
                                     :mutation-weight 3/4
                                     :crossover-weight 0/4
-                                    :max-generations 100
+                                    :max-generations 30
                                     :match-timeout 12000
                                     :fitness-threshold 1.0
                                     :thread-group tg
-                                    :population-size 4
-                                    :tournament-rounds 5))))
+                                    :population-size 50
+                                    :tournament-rounds 3))))
   
   (run-example) ; To start
   (.interrupt tg) ; To stop
+  
+  (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460727087166.ekt"))
+  
+  (let [path 
+;        "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" ; OK!
+;        "/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" ; OK! 21 VS 16 matches .. it's actually the new impl that's correct!
+;        "/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" ; OK!
+;        "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" ; OK!
+        "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt" ; 3 VS 15 matches
+        
+        matches-new (time (fitness/templategroup-matches (slurp-from-resource path)))
+        matches-old (time (fitness/templategroup-matches-old (slurp-from-resource path)))
+        ]
+    (println "New:" (count matches-new) "VS Old:" (count matches-old))
+;    (inspector-jay.core/inspect matches-new)
+;    (inspector-jay.core/inspect matches-old)
+    
+    (inspector-jay.core/inspect (clojure.set/difference matches-old matches-new))
+    (inspector-jay.core/inspect (clojure.set/difference matches-new matches-old))
+    nil
+    )
+  
+  (inspector-jay.core/inspect
+    (count (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
+           (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt")))))
   
   (defn transform-by-snippetgroups
     "Performs the program transformation defined by the lhs and rhs snippetgroups." 
@@ -932,7 +960,7 @@
     (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/initial-protected-reorder.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
-                    (filter (fn [op] (= (operatorsrep/operator-id op) "add-directive-overrides")) (operatorsrep/registered-operators))))
+                    (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-invocations")) (operatorsrep/registered-operators))))
     (def mutant-template (individual/individual-templategroup mutant))
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))

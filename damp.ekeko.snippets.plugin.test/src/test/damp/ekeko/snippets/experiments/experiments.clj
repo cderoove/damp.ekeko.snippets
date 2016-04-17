@@ -19,7 +19,7 @@
 
 (def experiment-config-default
   {:algorithm search/evolve
-   :max-generations 1000
+   :max-generations 50
    :match-timeout 360000
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
@@ -78,8 +78,8 @@
               "generalize-types" 
               ;"generalize-types|qname" 
               ;"extract-template" 
-              "generalize-invocations" 
-              "generalize-constructorinvocations"
+;              "generalize-invocations" 
+;              "generalize-constructorinvocations"
               ]))
      (operatorsrep/registered-operators))
    :thread-group (new ThreadGroup "Experiment")})
@@ -162,7 +162,7 @@
   ^{:doc "Template method in JHotdraw"}
   jh-template-method
   (let [config {;:algorithm search/randomsearch
-                :output-dir (slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt") ;(find-last-experiment-folder "template-method")
+                :output-dir (find-new-experiment-folder "template-method") ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt") 
                 }]
     (run-experiment-from-files
       [(pmart/projects :jhotdraw)]
