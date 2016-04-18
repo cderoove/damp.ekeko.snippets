@@ -214,4 +214,9 @@
 
 (comment  
   ; Run *all* experiments (This will take several hours!)
-  (run-tests))
+  (run-tests)
+  
+  (do
+    (repeatedly 10 jh-observer)
+    (repeatedly 10 jh-strategy)
+    (repeatedly 10 jh-factorymethod)))

@@ -549,7 +549,7 @@
         (println "Highest fitness:" (individual/individual-fitness (last population)))
 ;        (println "Fitnesses:" (map individual/individual-fitness-components population))
 ;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
-        
+
         (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
@@ -562,6 +562,8 @@
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))
                                    ])
         (util/make-dir (str output-dir generation))
+        (persistence/spit-snippetgroup (str output-dir generation "/best.ekt") 
+                                       (individual/individual-templategroup (last population)))
         (util/append-csv (str output-dir generation "/" gen-csv-name) gen-csv-columns)
         (doall (map-indexed
                  (fn [idx individual]
