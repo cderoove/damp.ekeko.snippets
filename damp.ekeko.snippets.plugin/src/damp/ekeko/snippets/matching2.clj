@@ -27,7 +27,7 @@
   (:import [java.util List]
            [org.eclipse.jdt.core ITypeHierarchy]
            [org.eclipse.jdt.core.dom.rewrite ASTRewrite]
-           [org.eclipse.jdt.core.dom ASTNode Annotation MethodInvocation Expression 
+           [org.eclipse.jdt.core.dom ASTNode Annotation MethodInvocation Expression Name
             FieldAccess SuperFieldAccess Statement BodyDeclaration CompilationUnit ImportDeclaration
             MethodDeclaration SuperMethodInvocation ClassInstanceCreation ConstructorInvocation
             SuperConstructorInvocation]))
@@ -263,7 +263,7 @@
             [ast-node]))
         ]
     (if 
-      ; Match|set (list nodes only) ; TODO Two template elems can map to the same AST node in the current impl!
+      ; Match|set (list nodes only)
       (directives/bounddirective-for-directive bds matching/directive-consider-as-set|lst)
       (matchmap-updatepositions
         matchmap
@@ -364,7 +364,7 @@
             (instance? Annotation ast-node)
             (.resolveAnnotationBinding ast-node)
             :else
-            (.resolveBinding ast-node)))) ; TODO Double-check!
+            (.resolveBinding ast-node))))
      
      get-all-ancestors
      (fn ancestors [itype]
@@ -439,7 +439,11 @@
            (if (nil? itype) [] (get-all-ancestors itype))))]
       
       "refers-to"
-      [(fn [ast-node] true)
+      [(fn [ast-node] 
+         (or 
+           (instance? FieldAccess ast-node) 
+           (instance? SuperFieldAccess ast-node)
+           (instance? Name ast-node)))
        (fn [ast-node val]
          (let [binding (cond
                          (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
