@@ -63,7 +63,7 @@
               ;"replace-parent" 
               ;"replace-parent-stmt" 
               ;"isolate-stmt-in-block"
-              ;"isolate-stmt-in-method" 
+;              "isolate-stmt-in-method" 
               "isolate-expr-in-method" 
               ;"erase-list" 
               ;"erase-comments" 
@@ -217,6 +217,7 @@
   (run-tests)
   
   (do
+    (repeatedly 5 jh-template-method)
     (repeatedly 10 jh-observer)
     (repeatedly 10 jh-strategy)
     (repeatedly 10 jh-factorymethod)))

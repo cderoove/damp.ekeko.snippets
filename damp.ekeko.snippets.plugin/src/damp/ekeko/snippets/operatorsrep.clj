@@ -195,13 +195,7 @@ damp.ekeko.snippets.operatorsrep
         (cond
           (nil? parent) false
           (astnode/block? parent) true
-          :else (recur parent))))
-    ; None of the ancestors may have a protect directive
-    (loop [node value]
-      (let [parent (snippet/snippet-node-parent|conceptually snippet node)]
-        (cond
-          (nil? parent) true
-          (has-directives? snippet parent ["protect"]) false
+;          (has-directives? snippet parent ["protect"]) false
           :else (recur parent))))    
     ))
 
@@ -1280,7 +1274,7 @@ damp.ekeko.snippets.operatorsrep
    (Operator.
      "isolate-stmt-in-block"
      operators/isolate-list-element
-     :destructive
+     :generalization
      "Isolate statement in block."
      opscope-subject
      applicability|non-block-stmt ; TODO Parent should be a block.. not the case in a single-stmt if/else-branch..
@@ -1291,7 +1285,7 @@ damp.ekeko.snippets.operatorsrep
    (Operator.
      "isolate-stmt-in-method"
      operators/isolate-stmt-in-method
-     :destructive
+     :generalization
      "Isolate statement in method."
      opscope-subject
      applicability|non-block-stmt 
@@ -1302,7 +1296,7 @@ damp.ekeko.snippets.operatorsrep
    (Operator.
      "isolate-expr-in-method"
      operators/isolate-expr-in-method
-     :destructive
+     :generalization
      "Isolate expression in method."
      opscope-subject
      applicability|expr-in-body 
