@@ -664,6 +664,7 @@
 
     ]
     (util/make-dir output-dir)
+    (spit (str output-dir "hillclimb.txt") "Hillclimbing run")
     (util/append-csv csv-name csv-columns)
     
     (loop
@@ -732,6 +733,7 @@
      start-time (. System (nanoTime))
      fitness ((:fitness-function config) verifiedmatches config)]
     (util/make-dir output-dir)
+    (spit (str output-dir "random.txt") "Random search run")
     (util/append-csv csv-name csv-columns)
     
     (loop

@@ -195,7 +195,7 @@ damp.ekeko.snippets.operatorsrep
         (cond
           (nil? parent) false
           (astnode/block? parent) true
-;          (has-directives? snippet parent ["protect"]) false
+          (has-directives? snippet parent ["protect"]) false
           :else (recur parent))))    
     ))
 

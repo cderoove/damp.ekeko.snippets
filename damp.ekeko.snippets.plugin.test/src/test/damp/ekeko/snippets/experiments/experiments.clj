@@ -18,8 +18,8 @@
   (:use clojure.test))
 
 (def experiment-config-default
-  {:algorithm search/evolve
-   :max-generations 150 
+  {:algorithm search/randomsearch
+   :max-generations 500
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :population-size 30
@@ -217,7 +217,9 @@
   (run-tests)
   
   (do
-    (repeatedly 5 jh-template-method)
+    (repeatedly 10 jh-template-method)
     (repeatedly 10 jh-observer)
+    (repeatedly 10 jh-prototype)
+    (repeatedly 10 jh-factorymethod)
     (repeatedly 10 jh-strategy)
-    (repeatedly 10 jh-factorymethod)))
+    ))
