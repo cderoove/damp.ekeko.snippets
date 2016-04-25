@@ -846,7 +846,7 @@
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
   
   (let [path 
-;        "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" ; OK!
+        "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" ; OK!
 ;        "/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" ; OK! 21 VS 16 matches .. it's actually the new impl that's correct!
 ;        "/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" ; OK!
 ;        "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" ; OK!
@@ -863,8 +863,8 @@
     nil)
   
   (inspector-jay.core/inspect
-    (count (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
-           (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt")))))
+    (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
+           (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-nutch/solution2.ekt"))))
   
   (defn transform-by-snippetgroups
     "Performs the program transformation defined by the lhs and rhs snippetgroups." 

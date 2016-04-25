@@ -18,8 +18,8 @@
   (:use clojure.test))
 
 (def experiment-config-default
-  {:algorithm search/randomsearch
-   :max-generations 500
+  {:algorithm search/evolve
+   :max-generations 150
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :population-size 30
@@ -165,6 +165,17 @@
       config
       [(str experiments-root "templatemethod-jhotdraw/initial.ekt")]
       [(str experiments-root "templatemethod-jhotdraw/solution.ekt")])))
+
+(deftest
+  ^{:doc "Template method in Nutch"}
+  nutch-template-method
+  (let [config {:output-dir (find-new-experiment-folder "template-method-nutch") ;(slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt") 
+                }]
+    (run-experiment-from-files
+      [(pmart/projects :nutch)]
+      config
+      [(str experiments-root "templatemethod-nutch/initial3.ekt")]
+      [(str experiments-root "templatemethod-nutch/solution3.ekt")])))
 
 (deftest
   ^{:doc "Observer in JHotdraw"}
