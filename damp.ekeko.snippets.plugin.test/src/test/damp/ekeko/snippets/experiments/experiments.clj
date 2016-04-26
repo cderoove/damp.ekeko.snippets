@@ -19,7 +19,7 @@
 
 (def experiment-config-default
   {:algorithm search/evolve
-   :max-generations 300
+   :max-generations 150
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :population-size 30
@@ -210,6 +210,16 @@
       [(str experiments-root "strategy-jhotdraw/solution3.ekt")])))
 
 (deftest
+  ^{:doc "Strategy in Nutch"}
+  nutch-strategy
+  (let [config {:output-dir (find-new-experiment-folder "strategy-nutch")}]
+    (run-experiment-from-files
+      [(pmart/projects :nutch)]
+      config
+      [(str experiments-root "strategy-nutch/initial.ekt")]
+      [(str experiments-root "strategy-nutch/solution.ekt")])))
+
+(deftest
   ^{:doc "Factory method in JHotdraw"}
   jh-factorymethod
   (let [config {:output-dir (find-new-experiment-folder "factorymethod")}]
@@ -244,5 +254,7 @@
     (repeatedly 10 jh-factorymethod)
     (repeatedly 10 jh-strategy)
     
+    (repeatedly 10 nutch-template-method)
     (repeatedly 10 nutch-bridge)
+    (repeatedly 10 nutch-strategy)
     ))
