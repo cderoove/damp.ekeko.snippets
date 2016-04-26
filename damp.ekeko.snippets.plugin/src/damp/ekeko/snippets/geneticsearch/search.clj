@@ -864,7 +864,7 @@
   
   (inspector-jay.core/inspect
     (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
-           (slurp-from-resource "/resources/EkekoX-Specifications/experiments/templatemethod-nutch/solution2.ekt"))))
+           (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution.ekt"))))
   
   (defn transform-by-snippetgroups
     "Performs the program transformation defined by the lhs and rhs snippetgroups." 
