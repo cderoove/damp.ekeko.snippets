@@ -19,7 +19,7 @@
 
 (def experiment-config-default
   {:algorithm search/evolve
-   :max-generations 150
+   :max-generations 300
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :population-size 30
@@ -178,6 +178,16 @@
       [(str experiments-root "templatemethod-nutch/solution3.ekt")])))
 
 (deftest
+  ^{:doc "Bridge in Nutch"}
+  nutch-bridge
+  (let [config {:output-dir (find-new-experiment-folder "bridge-nutch")}]
+    (run-experiment-from-files
+      [(pmart/projects :nutch)]
+      config
+      [(str experiments-root "bridge-nutch/initial.ekt")]
+      [(str experiments-root "bridge-nutch/solution3.ekt")])))
+
+(deftest
   ^{:doc "Observer in JHotdraw"}
   jh-observer
   (let [config {:output-dir (find-new-experiment-folder "observer"); (slurp "/Users/soft/Documents/workspace-runtime2/experiment-config.txt")
@@ -233,4 +243,6 @@
     (repeatedly 10 jh-prototype)
     (repeatedly 10 jh-factorymethod)
     (repeatedly 10 jh-strategy)
+    
+    (repeatedly 10 nutch-bridge)
     ))
