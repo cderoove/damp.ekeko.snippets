@@ -216,8 +216,8 @@
     (run-experiment-from-files
       [(pmart/projects :nutch)]
       config
-      [(str experiments-root "strategy-nutch/initial.ekt")]
-      [(str experiments-root "strategy-nutch/solution.ekt")])))
+      [(str experiments-root "strategy-nutch/initial2.ekt")]
+      [(str experiments-root "strategy-nutch/solution3.ekt")])))
 
 (deftest
   ^{:doc "Factory method in JHotdraw"}

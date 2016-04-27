@@ -864,7 +864,7 @@
   
   (inspector-jay.core/inspect
     (count (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
-                 (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution.ekt")))))
+                 (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution3.ekt")))))
   
   (defn transform-by-snippetgroups
     "Performs the program transformation defined by the lhs and rhs snippetgroups." 
@@ -885,8 +885,8 @@
   ; Test matching a templategroup  
   
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
-  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4.ekt"))
-  (def matches (into [] (fitness/templategroup-matches templategroup)))
+  (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution3.ekt"))
+  (time (def matches (into [] (fitness/templategroup-matches templategroup))))
   
   (inspector-jay.core/inspect (into [] (fitness/templategroup-matches templategroup)))
   
@@ -922,10 +922,10 @@
   
   
   ; Reorder templates in a template group (for increased performance)
-  (let [path "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder.ekt"
+  (let [path "/resources/EkekoX-Specifications/experiments/strategy-nutch/initial2.ekt"
         tgroup (slurp-from-resource path)
         templates (snippetgroup/snippetgroup-snippetlist tgroup)
-        reordered (replace templates [1 2 0])
+        reordered (replace templates [2 0 1])
         reordered-tgroup (snippetgroup/snippetgroup-update-snippetlist tgroup reordered)]
     (persistence/spit-snippetgroup 
       (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile path) reordered-tgroup))
@@ -945,7 +945,7 @@
   (do
     (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/experiments/factorymethod-8/37/individual-31.ekt"))
     (def templategroup (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/timeout1455546559910.ekt"))
-    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/initial-protected-reorder.ekt"))
+    (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution.ekt"))
     (def mutant
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
                     (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-invocations")) (operatorsrep/registered-operators))))
