@@ -1,6 +1,12 @@
 package damp.ekeko.snippets.gui;
 
+import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.core.commands.operations.UndoContext;
@@ -10,6 +16,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.ITypeRoot;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.ui.JavaUI;
@@ -118,7 +125,29 @@ public class TemplateEditor extends EditorPart {
 
 		tltmAdd.setImage(EkekoSnippetsPlugin.IMG_ADD);
 		tltmAdd.setToolTipText("Add template");
+		
+		ToolItem tltmAddFromText = new ToolItem(toolBar, SWT.NONE);
+		tltmAddFromText.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
 
+				try {
+					String data[] = {(String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)};
+					System.out.println(data[0]);
+					Object nodes = TemplateGroup.parseStringsToNodes(data);
+					ASTNode node = ((List<ASTNode>) nodes).get(0); 
+					templateGroup.addSnippetCode(node);
+					templateGroupViewer.clearSelection();
+					refreshWidgets();
+					becomeDirty();
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				} 
+			}
+		});
+
+		tltmAddFromText.setImage(EkekoSnippetsPlugin.IMG_ADD);
+		tltmAddFromText.setToolTipText("Add template from clipboard");
 
 		tltmRemove = new ToolItem(toolBar, SWT.NONE);
 		tltmRemove.addSelectionListener(new SelectionAdapter() {
