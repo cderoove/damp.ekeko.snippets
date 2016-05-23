@@ -323,6 +323,15 @@
             combo rest-combinations]
         (cons val combo)))))
 
+(defn cartesian
+  "Produce the cartesian product of multiple collections"
+  [colls]
+  (if (empty? colls)
+    '(())
+    (for [x (first colls)
+          more (cartesian (rest colls))]
+      (cons x more))))
+
 (defn printStackTrace []
   "Prints the current stack trace"
   (try 

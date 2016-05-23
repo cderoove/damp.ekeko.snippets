@@ -485,7 +485,7 @@
       (fn [cur-matchmap bd]
         (let 
           [directive (snippet/bounddirective-directive bd)
-           lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd))) ;(.getOperand (second (.getOperandBindings bd)))
+           lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd)))
            [typefn constraintfn generatefn] (directive-constraints directive)]
           (matchmap-checkconstraint cur-matchmap lvar typefn constraintfn generatefn)))
       matchmap

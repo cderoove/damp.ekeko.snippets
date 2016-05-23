@@ -25,7 +25,7 @@ damp.ekeko.snippets.operatorsrep
     [org.eclipse.jdt.core IJavaElement ITypeHierarchy IType IPackageFragment IClassFile ICompilationUnit
      IJavaProject WorkingCopyOwner IMethod]
     [org.eclipse.jdt.core.dom Expression IVariableBinding ASTParser AST IBinding Type TypeDeclaration 
-     QualifiedName SimpleName ITypeBinding MethodDeclaration 
+     QualifiedName SimpleName ITypeBinding MethodDeclaration PrimitiveType
      MethodInvocation ClassInstanceCreation SuperConstructorInvocation SuperMethodInvocation
      SuperFieldAccess FieldAccess ConstructorInvocation ASTNode ASTNode$NodeList CompilationUnit
      Annotation IAnnotationBinding TypeLiteral Statement]))
@@ -421,7 +421,7 @@ damp.ekeko.snippets.operatorsrep
 (defn applicability|type-nonprimitive
   [snippetgroup snippet node]
   (and
-    (not= :PrimitiveType (astnode/ekeko-keyword-for-class-of node))
+    (not (instance? PrimitiveType node)) ; Can be called with null when opening a blank transfo editor .. not sure why
     (applicability|type snippetgroup snippet node)))
 
 (defn

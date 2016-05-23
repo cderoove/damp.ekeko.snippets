@@ -93,7 +93,6 @@
   (cond 
     (astnode/lstvalue? cu-var)
     (.getRoot (astnode/owner cu-var))
-;    (.getRoot (first (astnode/value-unwrapped cu-var)))
     
     (astnode/ast? cu-var)
     (.getRoot cu-var)
@@ -175,8 +174,7 @@
   ([cu-var lst newnode idx]
 (let [owner (astnode/owner lst)
       ownerproperty (astnode/owner-property lst)]
-      (add-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) newnode idx))
-    ))
+      (add-node cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) newnode idx))))
 
 (defn insert-before-or-after [rewrite cu-var lst-or-elem before-after-node newnode after]
   (let [owner (astnode/owner lst-or-elem)
