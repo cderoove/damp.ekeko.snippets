@@ -339,6 +339,13 @@
     (catch Exception e
       (.printStackTrace e))))
 
+(defn clipboard-string
+  "Retrieve the current contents of the system's clipboard as a string"
+  []
+  (.getData 
+    (.getSystemClipboard (java.awt.Toolkit/getDefaultToolkit)) 
+    java.awt.datatransfer.DataFlavor/stringFlavor))
+
 (defn metaspace-usage []
   (let [mx-beans (java.lang.management.ManagementFactory/getMemoryPoolMXBeans)]
     (some (fn [mx-bean]

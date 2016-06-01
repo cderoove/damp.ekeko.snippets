@@ -5,8 +5,7 @@
   (:import 
     [org.eclipse.jdt.core.dom ASTParser AST ASTNode ASTNode$NodeList
      CompilationUnit TypeDeclaration Block Expression]
-    [damp.ekeko JavaProjectModel]
-    ))
+    [damp.ekeko JavaProjectModel]))
 
 (defn 
   jdt-node-malformed?
@@ -165,8 +164,6 @@
   [arr-string]
   (map parse-string-ast (filter (fn [x] (not (nil? x))) arr-string)))
 
-
-
 (def
   jdt-modifier-keywords
   [org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/ABSTRACT_KEYWORD
@@ -181,17 +178,7 @@
    org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/TRANSIENT_KEYWORD
    org.eclipse.jdt.core.dom.Modifier$ModifierKeyword/VOLATILE_KEYWORD])
 
-
-
-
-(defn
-  register-callbacks 
-  []
-  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_NODES) parse-strings-to-nodes)
-
-  
-  )
+(defn register-callbacks []
+  (set! (damp.ekeko.snippets.data.TemplateGroup/FN_PARSE_TO_NODES) parse-strings-to-nodes))
 
 (register-callbacks)
-
-

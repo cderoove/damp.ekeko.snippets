@@ -1611,7 +1611,6 @@ damp.ekeko.snippets.matching
     constrain-subtype*|sname
     "Match resolves to the type or a transitive subtype with the given string as simple name."))
 
-
 (def 
   directive-consider-as-set|lst
   (directives/make-directive
