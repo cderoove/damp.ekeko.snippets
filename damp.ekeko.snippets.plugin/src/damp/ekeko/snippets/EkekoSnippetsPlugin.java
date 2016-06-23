@@ -168,18 +168,18 @@ public class EkekoSnippetsPlugin extends AbstractUIPlugin {
 	}
 	
 	public void startClojureCode(BundleContext bundleContext) throws Exception {
-//		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
+		ISharedImages sharedImages = PlatformUI.getWorkbench().getSharedImages();
 		
 
-		IMG_ADD = getImageDescriptor("icons/notebooks.png").createImage();
-		IMG_DELETE = getImageDescriptor("icons/notebooks.png").createImage();
-		IMG_DELETE_DISABLED = getImageDescriptor("icons/notebooks.png").createImage();
-		IMG_BACK = getImageDescriptor("icons/notebooks.png").createImage();
+//		IMG_ADD = getImageDescriptor("icons/notebooks.png").createImage();
+//		IMG_DELETE = getImageDescriptor("icons/notebooks.png").createImage();
+//		IMG_DELETE_DISABLED = getImageDescriptor("icons/notebooks.png").createImage();
+//		IMG_BACK = getImageDescriptor("icons/notebooks.png").createImage();
 		
-//		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
-//		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
-//		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
-//		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
+		IMG_ADD = sharedImages.getImage(ISharedImages.IMG_OBJ_ADD);
+		IMG_DELETE = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE);
+		IMG_DELETE_DISABLED = sharedImages.getImage(ISharedImages.IMG_ETOOL_DELETE_DISABLED);
+		IMG_BACK = sharedImages.getImage(ISharedImages.IMG_TOOL_BACK);
 		
 		IMG_TEMPLATE = getImageDescriptor("icons/notebooks.png").createImage();
 		IMG_TEMPLATE_ADD = getImageDescriptor("icons/notebook--plus.png").createImage();
