@@ -53,7 +53,7 @@ Alternatively, the algorithm can also be started directly **via a Clojure REPL**
 
 ## Running the experiments
 
-**[Experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip) is available online.** (157 MB ; updated Feb. 2016) This .zip file contains all measurements in .csv format, fitness and performance charts for each run, all template groups of each generation of all runs.
+**[Experiment data](http://soft.vub.ac.be/~tmoldere/ekekox/experiment%20data.zip) is available online.** (157 MB ; updated July 2016) This .zip file contains all measurements in .csv format, fitness and performance charts for each run, all template groups of each generation of all runs.
 
 * The experiments to evaluate the genetic search algorithm are defined in the /damp.ekeko.snippets.plugin.test/src/test/damp/ekeko/snippets/experiments/experiments.clj file. Load this file into the REPL.
 * Each experiment can be found in a test definition (i.e. a "deftest"). Simply call one of the tests in the REPL to run the corresponding experiment. For example, (jh-template-method) starts the experiment to generalize one template of the Template method design pattern into a template group that should match all instances of that design pattern. Note that the experiments require the "6 - JHotDraw v5.1" sample project to be imported. (can be found in damp.ekeko.snippets.plugin.test/resources/P-MARt)
