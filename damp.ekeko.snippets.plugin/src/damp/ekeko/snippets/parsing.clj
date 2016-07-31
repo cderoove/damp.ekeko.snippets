@@ -87,6 +87,20 @@
       (= (count list) 1)
       (first list))))
 
+(defn extract-unit
+  "If the given AST represents a list of nodes, and there's only one element, return the element.
+   (Otherwise, just return the AST)"
+  [ast string-kind]
+  (cond 
+    (= string-kind ASTParser/K_STATEMENTS)
+    (let [stmts (.statements ast)]
+      (if (= (count stmts) 1) (first stmts) ast))
+    (= string-kind ASTParser/K_CLASS_BODY_DECLARATIONS)
+    (let [decls (.bodyDeclarations ast)]
+      (if (= (count decls) 1) (first decls) ast))
+    :rest
+    ast))
+
 (defn 
   parse-string-declarations 
   "Parses the given string as a sequence of Java class body declarations (type, method, field)."

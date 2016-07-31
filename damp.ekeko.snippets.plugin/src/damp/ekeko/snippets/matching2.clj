@@ -11,7 +11,7 @@
              [util :as util]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
-             [parsing :as parsing]
+             [parsing-template :as parsing-template]
              [persistence :as persistence]
              [matching :as matching]
              [runtime :as runtime]]
@@ -42,6 +42,8 @@
     (directives/bounddirective-for-directive [bd] matching/directive-protect) ; Does not add any constraints
     (directives/bounddirective-for-directive [bd] matching/directive-replacedbywildcard) ; Does not add any constraints
     ; Directives that only affect tree navigation
+    (directives/bounddirective-for-directive [bd] matching/directive-multiplicity)
+    (directives/bounddirective-for-directive [bd] matching/directive-consider-as-regexp|lst)
     (directives/bounddirective-for-directive [bd] matching/directive-ignore)
     (directives/bounddirective-for-directive [bd] matching/directive-child)
     (directives/bounddirective-for-directive [bd] matching/directive-child*)
@@ -56,6 +58,13 @@
     (or
       (directives/bounddirective-for-directive bds matching/directive-replacedbywildcard)
       (directives/bounddirective-for-directive bds matching/directive-replacedbyvariable))))
+
+(defn has-directive? 
+  "Does this template node have the given directive?"
+  [template node directive]
+  (directives/bounddirective-for-directive 
+    (snippet/snippet-bounddirectives-for-node template node) 
+    directive))
 
 (defn
   pure-wildcard?
@@ -229,12 +238,13 @@
     matchmap))
 
 (defn- determine-next-positions
-  "Given a child template node, adjust all the current positions of the potential matches
-   such that they correspond to that child template node.
-   @param index           Only considered when child-node is a list node; retrieves the item at the given index of the list"
-  [template child-node matchmap index]
-  (let [bds (snippet/snippet-bounddirectives-for-node template child-node)
-        owner-prop (astnode/owner-property child-node)
+  "Given a template node, adjust all the current positions of the potential matches
+   such that they correspond to that template node.
+   @param 
+   @param index           Only considered when cur-node is a list node; retrieves the item at the given index of the list"
+  [ matchmap template cur-node child-node index]
+  (let [bds (snippet/snippet-bounddirectives-for-node template cur-node)
+        owner-prop (astnode/owner-property cur-node)
         
         ; If template-elem has an ignore directive, return its first child
         ; Otherwise, return template-elem
@@ -269,8 +279,8 @@
         matchmap
         (fn [ast-node props]
           (let [bindings-list (:bindings-list props)
-                template-list (astnode/value-unwrapped child-node)
-                template-element (ignore-test (.get template-list index))
+                template-list (astnode/value-unwrapped cur-node)
+                template-element (ignore-test child-node)
                 ast-list (astnode/node-property-value ast-node owner-prop)
                 bds-element (snippet/snippet-bounddirectives-for-node template template-element)
                 elements-of-type (if (or
@@ -284,7 +294,7 @@
                 (let [; We use a special logic variable, which has as its value(s) the list elements already matched
                       ; This is necessary to make sure multiple template list elements don't map to the same ast list element.
                       new-bindings-list-1
-                      (lvarbindings-updatevalue bindings-list child-node
+                      (lvarbindings-updatevalue bindings-list cur-node
                         (fn [vals]
                           (let [elements-seen-so-far-list (if (empty? vals) [[]] vals)]
                             (remove nil?
@@ -295,33 +305,43 @@
                       
                       new-bindings-list-2 ; If we're at the end of the list, remove the special logic variable, as it's not needed anymore
                       (if (and (= index (dec (.size template-list))))
-                        (lvarbindings-updatevalue new-bindings-list-1 child-node (fn [vals] nil))
+                        (lvarbindings-updatevalue new-bindings-list-1 cur-node (fn [vals] nil))
                         new-bindings-list-1)]
                   (if (empty? new-bindings-list-2)
                     [] ; In case there are no valid new positions
                     (for [new-position (child*-test template-element element)]
-                      [new-position (assoc props :bindings-list new-bindings-list-2)])
-                    ))
-                ))
-            )))
+                      [new-position (assoc props :bindings-list new-bindings-list-2)]))))))))
       ; Normal navigation (normal and list nodes)
       (matchmap-updatepositions 
         matchmap
         (fn [ast-node props]
           (let [new-positions
-                (if (snippet/snippet-value-list? template child-node) 
-                  (let [template-list (astnode/value-unwrapped child-node)
+                (if (snippet/snippet-value-list? template cur-node) 
+                  (let [template-list (astnode/value-unwrapped cur-node)
                         ast-list (astnode/node-property-value ast-node owner-prop)]
-                    (if (not= (.size template-list) (.size ast-list))
+                    (if (and
+                          (not (has-directive? template cur-node matching/directive-consider-as-regexp|lst))
+                          (not= (.size template-list) (.size ast-list)))
                       []
                       (let [ast-element (.get ast-list index)
-                            template-element (ignore-test (.get template-list index))
+                            template-element (ignore-test child-node)
                             bds-element (snippet/snippet-bounddirectives-for-node template template-element)]
                         (child*-test template-element ast-element))))
-                  (child*-test child-node (astnode/node-property-value ast-node owner-prop))
-                  )]
+                  (child*-test cur-node (astnode/node-property-value ast-node owner-prop)))]
             (for [new-position new-positions]
               [new-position props])))))))
+
+(defn- max-list-length-of-cur-positions 
+  "Assuming the current position of a match map is a list node, 
+   find the length of the longest list among potential matches"
+  [mmap list-node]
+  (let [prop (astnode/owner-property list-node)
+        all-cur-positions (apply concat (for [pmap (vals mmap)] (keys pmap)))]
+    (apply 
+      max
+      (for [cur-position all-cur-positions]
+        (let [ast-list (astnode/node-property-value cur-position prop)]
+          (.size ast-list))))))
 
 (defn- positionmap-return-to-previous-position
   [positionmap match old-matchmap]
@@ -534,10 +554,61 @@
         (fn [mmap pos-node child index]
           (if (pure-wildcard? template child)
             mmap
-            (let [pos-mmap (determine-next-positions template pos-node mmap index)
+            (let [pos-mmap (determine-next-positions mmap template pos-node child index)
                   new-mmap (nci (process-node template child pos-mmap))
                   final-mmap (return-to-previous-position new-mmap mmap)]
               final-mmap)))
+        
+        process-list
+        (fn [list-node mmap]
+          (if (has-directive? template list-node matching/directive-consider-as-regexp|lst)
+            
+            ; Regex list
+            (let [max-match-length (max-list-length-of-cur-positions mmap list-node)
+                  process-elements
+                  (fn process-elements [init-mmap init-index elements]
+;                    (println (process-child init-mmap list-node (first elements) init-index))
+                    
+                    (cond
+                      ; We've finished the list
+                      (empty? elements) init-mmap
+                      
+                      ; Current element is a kleene-*
+                      (has-directive? template (first elements) matching/directive-multiplicity)
+                      (loop [match-length 0] ; See if the regex matches if the *-element appears 0 times.. If not, try 1, then 2, 3, 4,...
+                        (let [after-star-mmap
+                              (loop [cur-length 0
+                                     cur-mmap init-mmap]
+                                (if (= cur-length match-length)
+                                  cur-mmap
+                                  (recur 
+                                    (inc cur-length) 
+                                    (process-child cur-mmap list-node (first elements) (+ init-index cur-length)))))
+                              
+                              full-regex-mmap (process-elements after-star-mmap (+ init-index match-length 1) (rest elements))]
+                          (if (and (= 0 (count full-regex-mmap)) (< match-length max-match-length))
+                            (recur (inc match-length)) ; No matches, try again..
+                            full-regex-mmap)))
+                      
+                      ; Current element has no regex quantifiers
+                      :else
+                      (recur 
+                        (process-child init-mmap list-node (first elements) init-index)
+                        (inc init-index)
+                        (rest elements))))]
+              
+              (process-elements 
+                (check-directives template list-node mmap) 
+                0 
+                (astnode/value-unwrapped list-node)))
+            
+            ; Normal (non-regex) list
+            (reduce 
+              (fn [cur-mmap [index list-element]]
+                (process-child cur-mmap list-node list-element index))
+              (check-directives template list-node mmap)
+              (let [elements (astnode/value-unwrapped list-node)]
+                (map-indexed (fn [idx elem] [idx elem]) elements )))))
         
         ; 1 - Check node type
         matchmap-1 
@@ -559,12 +630,7 @@
                 (astnode/lstvalue? child)
                 (if (check-directives-only? template child)
                   (check-directives template child cur-matchmap)
-                  (reduce 
-                    (fn [cur-mmap [index list-element]]
-                      (process-child cur-mmap child list-element index))
-                    (check-directives template child cur-matchmap)
-                    (let [elements (astnode/value-unwrapped child)]
-                      (map-indexed (fn [idx elem] [idx elem]) elements ))))
+                  (process-list child (check-directives template child cur-matchmap)))
                 ; Regular nodes
                 (astnode/ast? child)
                 (process-child cur-matchmap child child 0)
@@ -651,77 +717,128 @@
    @param templategroup  The template group to be matched"
   [templategroup]
   (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)
-        process-template (fn [[template & rest-templates] bindings-list]
+        process-template (fn [[template & rest-templates] bindings-list index]
                            (let [matchmap (query-template template bindings-list)
                                  new-bindings-list (with-meta 
                                                      (merge-bindings 
                                                       matchmap 
-                                                      (util/gen-readable-lvar-for-value|classbased (snippet/snippet-root template)))
+                                                      ; Generate a unique variable name for the root, but should be the same every time this template is queried
+                                                      (str "?" (util/classname (snippet/snippet-root template)) index) 
+                                                      )
                                                      {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
                              (if (nil? rest-templates)
                                new-bindings-list
-                               (recur rest-templates new-bindings-list))))]
-    (process-template templates (with-meta [{}] {:node-count 0}))))
+                               (recur rest-templates new-bindings-list (inc index)))))]
+    (process-template templates (with-meta [{}] {:node-count 0}) 0)))
+
+(defn query-templategroup-txt
+  "Look for matches of a template group, in its textual form"
+  [templategroup-string]
+  (let [[var-map templategroup-string-novars] (parsing-template/parse-var-defs templategroup-string)
+        value-combinations (if (empty? var-map) [[]] (util/combinations var-map))
+        
+        inline-values ; Inline concrete values for all predetermined metavariables 
+        (fn [values]
+          (reduce 
+            (fn [inlined-string [idx value]]
+              (let [var (nth (keys var-map) idx)]
+                (if (coll? value)
+                  ; Is this variable a list type?
+                  (let [list-size (count value)]
+                    (reduce
+                      (fn [inlined-string [idx element]]
+                        (clojure.string/replace 
+                          inlined-string 
+                          (re-pattern (str "\\" var "_" idx)) ; TODO Don't replace occurences that appear in a directives list!
+                          (str "[" element "]@[equals " var "_" idx "]")))
+                      inlined-string
+                      (map-indexed (fn [idx element] [idx element]) value)))
+                  ; Non-list variables
+                  (clojure.string/replace 
+                    inlined-string 
+                    (re-pattern (str "\\" var)) ; TODO Don't replace occurences that appear in a directives list!
+                    (str "[" value "]@[equals " var "]"))))) ; Also attach an equals directive, such that it becomes a normal metavariable
+                
+                
+            templategroup-string-novars
+            (map-indexed (fn [idx value] [idx value]) values)))]
+    (reduce 
+      (fn [matches values]
+        (let [inlined-templategroup-string (inline-values values)
+              inlined-templategroup (parsing-template/parse-templategroup inlined-templategroup-string)]
+          (clojure.set/union matches (into #{} (query-templategroup inlined-templategroup))))) ; Should make a custom union that ignores variable names.. cause the roots' names are gen-symmed
+      #{}
+      value-combinations)
+    ))
 
 (comment
   
   (defn slurp-from-resource [pathrelativetobundle]
     (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
-  (defn run-test-batch [path-testfn-pairs]
-    (doseq [[path testfn] path-testfn-pairs]
-      (let [templategroup (slurp-from-resource path)
+  
+  (defn run-test-batch [path-testfn-triples]
+    (doseq [[path queryfn testfn] path-testfn-triples]
+      (let [input (if (or (.endsWith path ".ekt") (.endsWith path ".ekx"))
+                    (slurp-from-resource path)
+                    (slurp (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile path))
+                    )
             start (. System (nanoTime))
-            matches (query-templategroup templategroup)
+            matches (queryfn input)
             end (/ (double (- (. System (nanoTime)) start)) 1000000.0)
             test-result (testfn matches)]
         (if test-result
           (println "pass (" (count matches) "matches -" end "ms -" path ")")
           (println "FAIL (" (count matches) "matches -" end "ms -"  path ")")))))
   
-  (run-test-batch ; Composite visitor project
-     [
-      ["/resources/EkekoX-Specifications/matching2/mini.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/sysout.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-childstar.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-childstar2.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-childstar3.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/sysout-wcard.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/sysout-var.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-metavar.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-invokes.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-invokes2.ekt" empty?]
-      ["/resources/EkekoX-Specifications/matching2/cls-constructs.ekt" empty?] ; Artificial example; should add ctor to make this produce matches..
-      ["/resources/EkekoX-Specifications/matching2/cls-setmatching.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-setmatching2.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-setmatching3.ekt" empty?]
-      ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching2.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-type.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/cls-refersto.ekt" not-empty]
-      ["/resources/EkekoX-Specifications/matching2/method-combo.ekt" not-empty]
-      ])
+  ; Matching2 tests - composite visitor project
+  (run-test-batch
+    [["/resources/EkekoX-Specifications/matching2/mini.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/sysout.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-childstar.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-childstar2.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-childstar3.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/sysout-wcard.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/sysout-var.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-metavar.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-invokes.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-invokes2.ekt" query-templategroup empty?]
+     ["/resources/EkekoX-Specifications/matching2/cls-constructs.ekt" query-templategroup empty?]
+     ["/resources/EkekoX-Specifications/matching2/cls-setmatching.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-setmatching2.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-setmatching3.ekt" query-templategroup empty?]
+     ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-nestedsetmatching2.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-isolateexpr.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-type.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-refersto.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-combo.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-regex.ekt" query-templategroup not-empty]])
+  
+  ; Text parser tests - composite visitor project
+  (run-test-batch
+    [["/resources/EkekoX-Specifications/parsing/sysout.ekt.txt" query-templategroup-txt not-empty]
+      ["/resources/EkekoX-Specifications/parsing/sysout_wcard.ekt.txt" query-templategroup-txt not-empty]
+      ["/resources/EkekoX-Specifications/parsing/sysout_predef.ekt.txt" query-templategroup-txt not-empty]
+      ["/resources/EkekoX-Specifications/parsing/sysout_predeflist.ekt.txt" query-templategroup-txt not-empty]])
   
   (run-test-batch ; JHotDraw project
-    [["/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" not-empty]
-     ["/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" not-empty]
-     ["/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" not-empty]
-     ["/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" not-empty]
-     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt" not-empty]])
+    [["/resources/EkekoX-Specifications/experiments/templatemethod-jhotdraw/solution.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/experiments/prototype-jhotdraw/solution.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt" query-templategroup not-empty]])
   
   (def templategroup
-    (slurp-from-resource "/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt")
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt")
 ;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo3.ekx"))
-;    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/jhot-factory.ekt")
     )
   
-  (inspector-jay.core/inspect
-    (time (query-templategroup templategroup)))
-  (inspector-jay.core/inspect
-    (query-template (first (snippetgroup/snippetgroup-snippetlist templategroup))))
+  (def templ-txt (slurp (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile 
+                         "/resources/EkekoX-Specifications/parsing/sysout_predef.ekt.txt")))
+  (inspector-jay.core/inspect (query-templategroup-txt templ-txt))
   )

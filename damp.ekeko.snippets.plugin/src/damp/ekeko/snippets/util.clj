@@ -26,23 +26,25 @@
   ([] (gen-lvar "?v"))
   ([prefix] (gensym (str "?" prefix))))
 
-(defn
-  gen-readable-lvar-for-value|classbased
+(defn classname [value]
+  (cond
+    (nil? value)
+    "NullShouldNotBeHere"
+    (astnode/lstvalue? value)
+    "ListVal"
+    (astnode/primitivevalue? value)
+    "PrimVal"
+    (astnode/nilvalue? value)
+    "NilVal"
+    (astnode/ast? value)
+    (class-simplename (class value))))
+
+(defn gen-readable-lvar-for-value|classbased
   "Generates a unique logic variable, of which the name 
    gives a hint about the class of the given JDT property value."
-  [value]
-  (gen-lvar
-    (cond
-      (nil? value)
-      "NullShouldNotBeHere"
-      (astnode/lstvalue? value)
-      "ListVal"
-      (astnode/primitivevalue? value)
-      "PrimVal"
-      (astnode/nilvalue? value)
-      "NilVal"
-      (astnode/ast? value)
-      (class-simplename (class value)))))
+  [value] (gen-lvar (classname value)))
+
+
 
 (defn 
   gen-readable-lvar-for-value
@@ -315,11 +317,11 @@
 
    For example {:a [1 2 3] :b [5 6]}
    Returns [[1 5] [1 6] [2 5] [2 6] [3 5] [3 6]]"
-  (if (= 1 (count (keys coll)))
-    (for [val ((first (keys coll)) coll)]
+  (if (= (count (keys coll)) 1)
+    (for [val (get coll (first (keys coll)))]
       [val])  
     (let [rest-combinations (combinations (dissoc coll (first (keys coll))))]
-      (for [val ((first (keys coll)) coll)
+      (for [val (get coll (first (keys coll)))
             combo rest-combinations]
         (cons val combo)))))
 

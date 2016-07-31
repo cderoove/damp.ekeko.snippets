@@ -1,0 +1,5 @@
+?txt = ["Must alias." "Only logging." "Prototypical."]
+
+---
+
+System.out.println("?txt");

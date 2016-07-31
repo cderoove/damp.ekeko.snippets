@@ -863,6 +863,14 @@
     nil)
   
   (inspector-jay.core/inspect
+    (.parameters (first (nth (damp.ekeko/ekeko [?m]
+                                           ( damp.ekeko.jdt.ast/ast :MethodDeclaration ?m)) 2) )))
+  
+  (let [all-method-declarations (damp.ekeko/ekeko [?m] (damp.ekeko.jdt.ast/ast :MethodDeclaration ?m))
+        some-method-declaration (first (first all-method-declarations))]
+    (.parameters some-method-declaration))
+  
+  (inspector-jay.core/inspect
     (count (into #{} (damp.ekeko.snippets.matching2/query-templategroup 
                  (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution3.ekt")))))
   
@@ -950,6 +958,52 @@
       (mutate (damp.ekeko.snippets.geneticsearch.individual/make-individual templategroup)
                     (filter (fn [op] (= (operatorsrep/operator-id op) "generalize-invocations")) (operatorsrep/registered-operators))))
     (def mutant-template (individual/individual-templategroup mutant))
+    
+    (def paths [["obs1" "Documents/experiments/observer-6"]
+                ["obs2" "Documents/experiments/observer-7"]
+                ["obs3" "Documents/experiments/observer-8"]
+                ["obs4" "Documents/experiments/observer-10"]
+                ["obs5" "Documents/experiments/observer-11"]
+                ["obs6" "Documents/experiments/observer-12"]
+                ["obs7" "Documents/experiments/observer-14"]
+                
+                ["proto1" "Documents/experiments/prototype-3"]
+                ["proto2" "Documents/experiments/prototype-4"]
+                ["proto3" "Documents/experiments/prototype-6"]
+                ["proto4" "Documents/experiments/prototype-10"]
+                
+                ["tmp1" "Documents/experiments-bertha/template-method-12"]
+                ["tmp2" "Documents/experiments-bertha/template-method-11"]
+                ["tmp3" "Documents/experiments-bertha/template-method-10"]
+                ["tmp4" "Documents/experiments-bertha/template-method-9"]
+                ["tmp5" "Documents/experiments-bertha/template-method-6"]
+                
+                ["strat1" "Documents/experiments/strategy-14"]
+                ["strat2" "Documents/experiments-bertha/strategy-3"]
+                
+                ["fac1" "Documents/experiments/factorymethod-11"]
+                ["fac2" "Documents/experiments/factorymethod-2"]
+                
+                ["ntmp1" "Documents/experiments-bertha2/template-method-nutch-1"]
+                ["ntmp2" "Documents/experiments-bertha2/template-method-nutch-2"]
+                ["ntmp3" "Documents/experiments-bertha2/template-method-nutch-4"]
+                ["ntmp4" "Documents/experiments-bertha2/template-method-nutch-5"]
+                ["ntmp5" "Documents/experiments-bertha2/template-method-nutch-6"]
+                ["ntmp6" "Documents/experiments-bertha2/template-method-nutch-7"]
+                ["ntmp7" "Documents/experiments-bertha2/template-method-nutch-8"]
+                ["ntmp8" "Documents/experiments-bertha2/template-method-nutch-9"]
+                ["ntmp9" "Documents/experiments-bertha2/template-method-nutch-10"]
+                
+                ["nstrat1" "Documents/experiments-bertha4/strategy-nutch-4"]])
+    
+    (doseq [pair paths]
+      (spit (str (first pair) ".txt")
+            (persistence/snippetgroup-string
+              (persistence/slurp-snippetgroup (str "/Users/soft/" (second pair) "/success.ekt")))
+            ))
+    
+    (let [group (persistence/slurp-snippetgroup (str "/Users/soft/" (second (first paths)) "/success.ekt"))])
+    
     
     (println (persistence/snippetgroup-string (individual/individual-templategroup mutant)))
     (fitness/templategroup-matches (individual/individual-templategroup mutant))

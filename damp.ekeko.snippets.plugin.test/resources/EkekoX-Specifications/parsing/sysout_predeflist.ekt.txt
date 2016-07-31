@@ -1,0 +1,6 @@
+; System.err("Only logging"); shouldn't match
+?txt = [["out" "Must alias."] ["err" "Only logging."] ["out" "Prototypical."]]
+
+---
+
+System.?txt_0.println("?txt_1");
