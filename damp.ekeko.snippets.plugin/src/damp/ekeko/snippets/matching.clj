@@ -1433,6 +1433,15 @@ damp.ekeko.snippets.matching
     ))
 
 (def 
+  directive-if
+  (directives/make-directive
+    "if"
+    [(directives/make-directiveoperand "Clojure expression")]
+    constrain-identity
+    "Match should satisfy the given Clojure boolean expression."
+    ))
+
+(def 
   directive-equivalent
   (directives/make-directive
     "equivalent"
@@ -1733,7 +1742,8 @@ damp.ekeko.snippets.matching
    directive-subtype*
    directive-subtype*|qname
    directive-subtype*|sname
-   directive-protect])
+   directive-protect
+   directive-if])
 
 
 (def 

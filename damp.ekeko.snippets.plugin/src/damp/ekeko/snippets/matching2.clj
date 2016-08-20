@@ -82,6 +82,21 @@
 ;                   It's a list of maps. Each map maps a logic variable to its potential values.
 (defrecord PositionProperties [parent bindings-list])
 
+(defn def-hmap-fn 
+  "(Re)defines a function called hmap. It works just like the standard map function, but is suited for hashmaps.
+   When used with a hashmap, the standard map function will return a list of key-value pairs. Ours returns a hashmap.
+
+   @param parallel-flag Should the mapping function run in parallel? (like pmap)
+   @param threads"
+  [parallel-flag threads]
+  (if parallel-flag
+    (defn hmap [function data]
+      (into {} (util/pmap-custom function data threads)))
+    (defn hmap [function data]
+      (into {} (map function data)))))
+
+(def-hmap-fn true 8)
+
 (defn- matchmap-create
   "Create a blank matchmap based on an initial list of potential matches
    @param matches           List of potential matches
@@ -169,14 +184,26 @@
 
 (defn- matchmap-checkconstraint 
   [matchmap lvar typefn constraintfn generatefn]
-  (reduce
-    (fn [cur-matchmap [match positionmap]]
+  (hmap
+    (fn [[match positionmap]]
       (let [new-pmap (positionmap-checkconstraint positionmap lvar typefn constraintfn generatefn)]
         (if (empty? new-pmap)
-          cur-matchmap
-          (assoc cur-matchmap match new-pmap))))
-    {}
-    matchmap))
+          nil
+          [match new-pmap])))
+    matchmap)
+  
+  
+  
+  
+  ;  (reduce
+  ;    (fn [cur-matchmap [match positionmap]]
+  ;      (let [new-pmap (positionmap-checkconstraint positionmap lvar typefn constraintfn generatefn)]
+  ;        (if (empty? new-pmap)
+  ;          cur-matchmap
+  ;          (assoc cur-matchmap match new-pmap))))
+  ;    {}
+  ;    matchmap)
+  )
 
 (defn- positionmap-filter
   "Keeps only those entries that pass the given filter function
@@ -196,14 +223,23 @@
    @param matchmap  The matchmap to be filtered
    @param filterfn  Filter function"
   [matchmap filterfn]
-  (reduce
-    (fn [cur-matchmap [match positionmap]]
+  (hmap
+    (fn [[match positionmap]]
       (let [new-positionmap (positionmap-filter positionmap filterfn)]
         (if (empty? new-positionmap)
-          cur-matchmap
-          (assoc cur-matchmap match new-positionmap))))
-    {}
-    matchmap))
+          nil
+          [match new-positionmap])))
+    matchmap)
+  
+;  (reduce
+;    (fn [cur-matchmap [match positionmap]]
+;      (let [new-positionmap (positionmap-filter positionmap filterfn)]
+;        (if (empty? new-positionmap)
+;          cur-matchmap
+;          (assoc cur-matchmap match new-positionmap))))
+;    {}
+;    matchmap)
+  )
 
 (defn- positionmap-updatepositions 
   "Updates each of the current positions within a positionmap
@@ -228,14 +264,23 @@
   "Updates each of the current positions within each potential match
    according to an update-function"
   [matchmap updatefn]
-  (reduce
-    (fn [cur-matchmap [match positionmap]]
+  (hmap
+    (fn [[match positionmap]]
       (let [new-pmap (positionmap-updatepositions positionmap match updatefn)]
         (if (empty? new-pmap) ; If new positions cannot be determined, there is no match!
-          cur-matchmap
-          (assoc cur-matchmap match new-pmap))))
-    {}
-    matchmap))
+          nil
+          [match new-pmap])))
+    matchmap)
+  
+;  (reduce
+;    (fn [cur-matchmap [match positionmap]]
+;      (let [new-pmap (positionmap-updatepositions positionmap match updatefn)]
+;        (if (empty? new-pmap) ; If new positions cannot be determined, there is no match!
+;          cur-matchmap
+;          (assoc cur-matchmap match new-pmap))))
+;    {}
+;    matchmap)
+  )
 
 (defn- determine-next-positions
   "Given a template node, adjust all the current positions of the potential matches
@@ -507,7 +552,14 @@
           [directive (snippet/bounddirective-directive bd)
            lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd)))
            [typefn constraintfn generatefn] (directive-constraints directive)]
-          (matchmap-checkconstraint cur-matchmap lvar typefn constraintfn generatefn)))
+          (if (directives/bounddirective-for-directive [bd] matching/directive-if)
+            ; The if-directive currently is the odd-one-out, as it doesn't establish a relation with a logic variable..
+            (matchmap-filter 
+              cur-matchmap
+              (fn [ast-node]
+                (eval (read-string 
+                        (str "(let [subj \"" (.toString ast-node) "\"] " lvar ")"))))) ; TODO Would be neat if subj could be the actual ast-node object..
+            (matchmap-checkconstraint cur-matchmap lvar typefn constraintfn generatefn))))
       matchmap
       bds)))
 
@@ -721,10 +773,10 @@
                            (let [matchmap (query-template template bindings-list)
                                  new-bindings-list (with-meta 
                                                      (merge-bindings 
-                                                      matchmap 
-                                                      ; Generate a unique variable name for the root, but should be the same every time this template is queried
-                                                      (str "?" (util/classname (snippet/snippet-root template)) index) 
-                                                      )
+                                                       matchmap 
+                                                       ; Generate a unique variable name for the root, but should be the same every time this template is queried
+                                                       (str "?" (util/classname (snippet/snippet-root template)) index) 
+                                                       )
                                                      {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
                              (if (nil? rest-templates)
                                new-bindings-list
@@ -814,10 +866,11 @@
      ["/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-type.ekt" query-templategroup not-empty]
-     ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
+;     ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-refersto.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/method-combo.ekt" query-templategroup not-empty]
-     ["/resources/EkekoX-Specifications/matching2/cls-regex.ekt" query-templategroup not-empty]])
+     ["/resources/EkekoX-Specifications/matching2/cls-regex.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/method-if.ekt" query-templategroup not-empty]])
   
   ; Text parser tests - composite visitor project
   (run-test-batch

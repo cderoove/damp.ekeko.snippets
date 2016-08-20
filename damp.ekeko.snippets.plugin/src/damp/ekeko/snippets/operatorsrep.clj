@@ -824,6 +824,17 @@ damp.ekeko.snippets.operatorsrep
      false)
    
    (Operator. 
+     "add-directive-if"
+     operators/add-directive-if
+     :refinement
+     "Add directive if."
+     opscope-subject
+     applicability|always
+     "Only matches if the given Clojure expression returns true, where the subject is available as the subj variable."
+     [(make-operand "Clojure expression" opscope-string validity|string)]
+     false)
+   
+   (Operator. 
      "add-directive-equivalent"
      operators/add-directive-equivalent
      :neutral

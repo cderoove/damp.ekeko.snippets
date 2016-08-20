@@ -20,6 +20,7 @@
              [persistence :as persistence]
              [querying :as querying]
              [matching :as matching]
+             [matching2 :as matching2]
              [operators :as operators]
              [operatorsrep :as operatorsrep]
              [util :as util]
@@ -109,6 +110,11 @@
    :fitness-weights [12/20 8/20 0/20]
    :fitness-threshold 0.95
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
+   
+   :parallel-individuals true ; Generate + test the fitness of each individual in a generation in parallel
+   :parallel-individuals-threads 8
+   :parallel-matching true ; Process each potential match in parallel
+   :parallel-matching-threads 8
    
    :output-dir nil
    :partial-matching true
@@ -522,6 +528,9 @@
     (println "Writing results to:" output-dir)
     (util/append-csv csv-name csv-columns)
     
+    ; Set up the map function used when matching templates to enable/disable concurrency
+    (matching2/def-hmap-fn (:parallel-matching config) (:parallel-matching-threads config))
+    
     (loop
       [generation resume-generation
        generation-start-time start-time
@@ -542,7 +551,12 @@
                              (swap! new-history
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
                              (if (pos? filter-score) ind))))
-            best-fitness (individual/individual-fitness (last population))]
+            best-fitness (individual/individual-fitness (last population))
+            repeat-fn (if (:parallel-individuals config) 
+                        (fn [cnt func test-func]
+                          (util/parallel-viable-repeat cnt func test-func (:parallel-individuals-threads config))) 
+                        util/viable-repeat)
+            ]
         
         ; First print and store as much info as possible on the current generation
         (println "Generation:" generation)
@@ -559,8 +573,11 @@
                                    (util/average (map (fn [ind] (first (individual/individual-fitness-components ind))) population))
                                    (second (individual/individual-fitness-components (last population))) ; Partial score
                                    (second (individual/individual-fitness-components (first population)))
-                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))
-                                   ])
+                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
+        
+        (println "Total time:" (util/time-elapsed start-time))
+        (println "Generation time:" (util/time-elapsed generation-start-time))
+        
         (util/make-dir (str output-dir generation))
         (persistence/spit-snippetgroup (str output-dir generation "/best.ekt") 
                                        (individual/individual-templategroup (last population)))
@@ -598,6 +615,7 @@
           (do 
             (println "Maximum number of generations reached! Stopping genetic search..")
             (spit (str output-dir "done.txt") "Done!"))
+          
           (> best-fitness (:fitness-threshold config))
           (do
               (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
@@ -616,30 +634,27 @@
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
                   ; Mutation
-                  (util/parallel-viable-repeat
+                  (repeat-fn
                     (* (:mutation-weight config) (count population))
                     #(preprocess (mutate (select population tournament-size) (:mutation-operators config)))
-                    (fn [x] (not (nil? x)))
-                    (:thread-group config))
+                    some?)
                   
                   ; Crossover (Note that each crossover operation produces a pair)
                   (apply concat
-                         (util/parallel-viable-repeat 
+                         (repeat-fn 
                            (* (/ (:crossover-weight config) 2) (count population))
                            #(map preprocess
                                  (crossover
                                    (select population tournament-size)
                                    (select population tournament-size)))
-                           (fn [x]
-                             (not-any? nil? x))
-                           (:thread-group config)))
+                           (fn [[f s]]
+                             (and f s))))
                   
                   ; Selection
-                  (util/parallel-viable-repeat 
+                  (repeat-fn 
                     (* (:selection-weight config) (count population)) 
                     #(select-with-new-id population tournament-size) 
-                    (fn [ind] (pos? (individual/individual-fitness ind)))
-                    (:thread-group config))))
+                    (fn [ind] (pos? (individual/individual-fitness ind))))))
               @new-history))))))
 
 
@@ -820,30 +835,31 @@
       (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
     
     (defn run-example 
-      "Run an example genetic search in a separate thread"
+      "Runs an example genetic search"
       []
-      (println "Starting example run..")
-      (def tg (new ThreadGroup "invokes"))
       (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt"))
       (def matches (into [] (fitness/templategroup-matches templategroup)))
       (def verifiedmatches (make-verified-matches matches []))
-      (util/future-group tg (evolve verifiedmatches
-                                    :quick-matching false
-                                    :partial-matching true
-                                    :selection-weight 1/4
-                                    :mutation-weight 3/4
-                                    :crossover-weight 0/4
-                                    :max-generations 30
-                                    :match-timeout 12000
-                                    :fitness-threshold 1.0
-                                    :thread-group tg
-                                    :population-size 50
-                                    :tournament-rounds 3))))
-  
-  (run-example) ; To start
-  (.interrupt tg) ; To stop
+      (evolve verifiedmatches
+              :parallel-individuals true
+              :parallel-individuals-threads 8
+              :parallel-matching true
+              :parallel-matching-threads 2
+              :quick-matching false
+              :partial-matching true
+              :selection-weight 1/4
+              :mutation-weight 3/4
+              :crossover-weight 0/4
+              :max-generations 25
+              :fitness-threshold 0.99
+              :population-size 100
+              :tournament-rounds 3)))
+  (run-example)
   
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
+  
+  
+  
   
   (let [path 
         "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" ; OK!
@@ -896,7 +912,6 @@
   (def templategroup (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-nutch/solution3.ekt"))
   (time (def matches (into [] (fitness/templategroup-matches templategroup))))
   
-  (inspector-jay.core/inspect (into [] (fitness/templategroup-matches templategroup)))
   
   (def snippet (first (snippetgroup/snippetgroup-snippetlist templategroup)))
   (snippet/snippet-node-parent|conceptually snippet (snippet/snippet-root snippet))

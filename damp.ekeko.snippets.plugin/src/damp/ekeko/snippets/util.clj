@@ -184,23 +184,47 @@
                    (map run vs))))]
     (step rets (drop n rets))))
 
+; Jan-Willem's macros
+(defmacro for-all [seq-exprs body-expr]
+  `(doall
+     (for ~seq-exprs
+       ~body-expr)))
+
+(defmacro parallel-for-all [seq-exprs body-expr]
+ `(map deref (doall
+               (for ~seq-exprs
+                 (future ~body-expr)))))
+
+(defn pmap-custom [mapfn data threads]
+  "Custom version of pmap that lets you control how many threads to use 
+   (rather than defaulting to the number of CPU threads)"
+  (let [partition-size (max (int (/ (count data) threads)) 1)
+        partitions (doall (partition partition-size partition-size (list) data))]
+    (reduce concat 
+            (parallel-for-all [partition partitions]
+                             (for-all [element partition]
+                                      (mapfn element))))))
+
 (defn parallel-viable-repeat
   "Keep on applying func until we get cnt results for which test-func is true
    (This variation of viable-repeat produces all results concurrently.)
    @param cnt  We want this many viable results
    @param func  The function to apply repeatedly (has no args)
    @param test-func  This test-function determines whether a return value of func is viable (has 1 arg, returns a boolean)
+   @param threads  How many threads to use to produce the results in parallel
    @return a list of cnt viable results"
-  [cnt func test-func thread-group]
-  (pmap
-    (fn [idx]
-      (loop []
-       (let [result (func)]
-         (print ".")
-         (if (test-func result)
-           result 
-           (recur)))))
-    (range 0 cnt)))
+  [cnt func test-func threads]
+  (let [partition-size (int (/ cnt threads))
+        partitions (doall (partition partition-size partition-size (list) (range 0 cnt)))]
+    (reduce concat 
+            (parallel-for-all [partition partitions]
+                              (for-all [i partition]
+                                       (loop []
+                                         (let [result (func)]
+                                           (print ".")
+                                           (if (test-func result)
+                                             result 
+                                             (recur)))))))))
 
 (defn average
   "Calculate the average in a collection of numbers"
