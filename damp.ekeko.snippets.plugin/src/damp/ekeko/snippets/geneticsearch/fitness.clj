@@ -40,29 +40,7 @@
 (defn templategroup-matches
   "Given a templategroup, look for all of its matches in the code"
   [templategroup]
-  (let [bindings-list (matching2/query-templategroup templategroup)
-        uservars (querying/snippetgroup-uservars templategroup)]
-    (into #{} 
-          (for [bindings bindings-list]
-            (reduce
-              (fn [cur-list lvar]
-                (if (not (some (fn [v] (= v lvar)) uservars))
-                  (conj cur-list (first (get bindings lvar)))
-                  cur-list))
-              []
-              (keys bindings))))))
-
-(defn templategroup-matches-old
-  "Given a templategroup, look for all of its matches in the code
-   (An exception is thrown if matching takes longer than timeout milliseconds..)"
-  [templategroup]
-  (into #{}
-        (querying/query-by-snippetgroup
-          templategroup 
-          'damp.ekeko/ekeko 
-          `((damp.ekeko.logic/perform (new-match)))
-          '() 
-          true)))
+  (matching2/query-templategroup-list templategroup false))
 
 (defn 
   truep

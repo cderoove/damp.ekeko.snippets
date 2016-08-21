@@ -11,9 +11,10 @@
              [util :as util]
              [snippet :as snippet]
              [snippetgroup :as snippetgroup]
-             [parsing-template :as parsing-template]
+;             [parsing-template :as parsing-template]
              [persistence :as persistence]
              [matching :as matching]
+             [querying :as querying]
              [runtime :as runtime]]
             [damp.ekeko 
              [logic :as el]
@@ -465,6 +466,14 @@
            (javaprojectmodel/invocation-targets ast-node)))
        (fn [ast-node] (javaprojectmodel/invocation-targets ast-node))]
       
+;      "invoked-by" ; TODO Trickier to find the callers of an IMethodDeclaration it seems, not sure how Eclipse does it..
+;      [(fn [ast-node] (instance? MethodDeclaration ast-node))
+;       (fn [ast-node val]
+;         (some 
+;           (fn [src] (= val src))
+;           (javaprojectmodel/targets-of-invocation ast-node)))
+;       (fn [ast-node] (javaprojectmodel/targets-of-invocation ast-node))]
+      
       "equals" ; Same as replaced-by-variable (only difference is that equals isn't mentioned in the check-directives-only? fn)
       [(fn [ast-node] true)
        (fn [ast-node val] (= ast-node val))
@@ -775,7 +784,7 @@
                                                      (merge-bindings 
                                                        matchmap 
                                                        ; Generate a unique variable name for the root, but should be the same every time this template is queried
-                                                       (str "?" (util/classname (snippet/snippet-root template)) index) 
+                                                       (symbol (str "?" (util/classname (snippet/snippet-root template)) index)) 
                                                        )
                                                      {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
                              (if (nil? rest-templates)
@@ -783,45 +792,69 @@
                                (recur rest-templates new-bindings-list (inc index)))))]
     (process-template templates (with-meta [{}] {:node-count 0}) 0)))
 
-(defn query-templategroup-txt
-  "Look for matches of a template group, in its textual form"
-  [templategroup-string]
-  (let [[var-map templategroup-string-novars] (parsing-template/parse-var-defs templategroup-string)
-        value-combinations (if (empty? var-map) [[]] (util/combinations var-map))
-        
-        inline-values ; Inline concrete values for all predetermined metavariables 
-        (fn [values]
-          (reduce 
-            (fn [inlined-string [idx value]]
-              (let [var (nth (keys var-map) idx)]
-                (if (coll? value)
-                  ; Is this variable a list type?
-                  (let [list-size (count value)]
-                    (reduce
-                      (fn [inlined-string [idx element]]
-                        (clojure.string/replace 
-                          inlined-string 
-                          (re-pattern (str "\\" var "_" idx)) ; TODO Don't replace occurences that appear in a directives list!
-                          (str "[" element "]@[equals " var "_" idx "]")))
-                      inlined-string
-                      (map-indexed (fn [idx element] [idx element]) value)))
-                  ; Non-list variables
-                  (clojure.string/replace 
-                    inlined-string 
-                    (re-pattern (str "\\" var)) ; TODO Don't replace occurences that appear in a directives list!
-                    (str "[" value "]@[equals " var "]"))))) ; Also attach an equals directive, such that it becomes a normal metavariable
-                
-                
-            templategroup-string-novars
-            (map-indexed (fn [idx value] [idx value]) values)))]
-    (reduce 
-      (fn [matches values]
-        (let [inlined-templategroup-string (inline-values values)
-              inlined-templategroup (parsing-template/parse-templategroup inlined-templategroup-string)]
-          (clojure.set/union matches (into #{} (query-templategroup inlined-templategroup))))) ; Should make a custom union that ignores variable names.. cause the roots' names are gen-symmed
-      #{}
-      value-combinations)
-    ))
+(defn query-templategroup-list 
+  "Query the templategroup and return match results as a list
+   (as required in the Ekeko/X GUI)"
+  [templategroup include-uservars]
+  (let [bindings-list (query-templategroup templategroup)
+        column-names (if (empty? bindings-list)
+                       []
+                       (into [] (keys (first bindings-list))))
+        uservars (querying/snippetgroup-uservars templategroup)]
+    (with-meta
+      (into #{} 
+           (for [bindings bindings-list]
+             (reduce
+               (fn [cur-list lvar]
+                 (if (or
+                       include-uservars
+                       (not (some (fn [v] (= v lvar)) uservars)))
+                   (conj cur-list (first (get bindings lvar)) )
+                   cur-list))
+               []
+               (keys bindings))))
+      {:columns column-names}))
+  )
+
+;(defn query-templategroup-txt
+;  "Look for matches of a template group, in its textual form"
+;  [templategroup-string]
+;  (let [[var-map templategroup-string-novars] (parsing-template/parse-var-defs templategroup-string)
+;        value-combinations (if (empty? var-map) [[]] (util/combinations var-map))
+;        
+;        inline-values ; Inline concrete values for all predetermined metavariables 
+;        (fn [values]
+;          (reduce 
+;            (fn [inlined-string [idx value]]
+;              (let [var (nth (keys var-map) idx)]
+;                (if (coll? value)
+;                  ; Is this variable a list type?
+;                  (let [list-size (count value)]
+;                    (reduce
+;                      (fn [inlined-string [idx element]]
+;                        (clojure.string/replace 
+;                          inlined-string 
+;                          (re-pattern (str "\\" var "_" idx)) ; TODO Don't replace occurences that appear in a directives list!
+;                          (str "[" element "]@[equals " var "_" idx "]")))
+;                      inlined-string
+;                      (map-indexed (fn [idx element] [idx element]) value)))
+;                  ; Non-list variables
+;                  (clojure.string/replace 
+;                    inlined-string 
+;                    (re-pattern (str "\\" var)) ; TODO Don't replace occurences that appear in a directives list!
+;                    (str "[" value "]@[equals " var "]"))))) ; Also attach an equals directive, such that it becomes a normal metavariable
+;                
+;                
+;            templategroup-string-novars
+;            (map-indexed (fn [idx value] [idx value]) values)))]
+;    (reduce 
+;      (fn [matches values]
+;        (let [inlined-templategroup-string (inline-values values)
+;              inlined-templategroup (parsing-template/parse-templategroup inlined-templategroup-string)]
+;          (clojure.set/union matches (into #{} (query-templategroup inlined-templategroup))))) ; Should make a custom union that ignores variable names.. cause the roots' names are gen-symmed
+;      #{}
+;      value-combinations)
+;    ))
 
 (comment
   

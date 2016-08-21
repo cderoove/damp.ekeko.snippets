@@ -7,6 +7,7 @@
   (:require [damp.ekeko.snippets 
              [snippet :as snippet]
              [matching :as matching]
+             [matching2 :as matching2]
              [querying :as querying]
              [snippetgroup :as snippetgroup]
              [parsing :as parsing]
@@ -25,43 +26,60 @@
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:require [damp.ekeko
-             [gui]
+             [gui :as gui]
              [logic :as el]]))
 
-
-(defn
-  query-by-snippet*
-  "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
-  [snippet]
-  (querying/query-by-snippet snippet 'damp.ekeko/ekeko*))
-
-(defn
-  query-by-snippet
-  "Queries the Ekeko projects for matches for the given snippet."
-  [snippet]
-  (querying/query-by-snippet snippet 'damp.ekeko/ekeko))
-
-   
 (defn
   query-by-snippetgroup*
   "Queries the Ekeko projects for matches for the given snippetgroup. Opens Eclipse view on results."
   [snippetgroup]
-  (binding [querying/*print-queries-to-console* true]
-    (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko*)))
-
+  (binding [querying/*print-queries-to-console* true]    
+    (let [start (System/nanoTime)
+          results (matching2/query-templategroup-list snippetgroup true)
+          elapsed  (/ (double (- (System/nanoTime) start)) 1000000.0)
+          vars (:columns (meta results))]
+      (gui/eclipse-uithread-return 
+        (fn [] (gui/open-barista-results-viewer* 
+                 "-" 
+                 vars 
+                 results
+                 elapsed 
+                 (count results)))))
+    
+    ;    (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko*)
+    ))
 
 (defn
   query-by-snippetgroup
   "Queries the Ekeko projects for matches for the given snippetgroup."
   [snippetgroup]
-  (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko))
+  (matching2/query-templategroup-list snippetgroup true)
+;  (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko)
+  )
 
 
 (defn
   query-by-snippetgroup|java
   [snippetgroup]
-  (let [solutions (querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko '() '() true)]
+  (let [solutions (matching2/query-templategroup-list snippetgroup true) 
+        ;(querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko '() '() true)
+        ]
     (into #{} solutions)))
+
+(defn
+  query-by-snippet*
+  "Queries the Ekeko projects for matches for the given snippet. Opens Eclipse view on results."
+  [snippet]
+  (query-by-snippetgroup* (snippetgroup/make-snippetgroup "" [snippet]))
+  )
+
+(defn
+  query-by-snippet
+  "Queries the Ekeko projects for matches for the given snippet."
+  [snippet]
+  (query-by-snippetgroup (snippetgroup/make-snippetgroup "" [snippet]))
+  ;(querying/query-by-snippet snippet 'damp.ekeko/ekeko)
+  )
 
 (defn
   transform-by-snippetgroups
