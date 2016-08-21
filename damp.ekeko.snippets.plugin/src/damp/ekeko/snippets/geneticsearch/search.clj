@@ -556,6 +556,9 @@
                         (fn [cnt func test-func]
                           (util/parallel-viable-repeat cnt func test-func (:parallel-individuals-threads config))) 
                         util/viable-repeat)
+            
+            total-elapsed (util/time-elapsed start-time)
+            generation-elapsed (util/time-elapsed generation-start-time)
             ]
         
         ; First print and store as much info as possible on the current generation
@@ -564,7 +567,7 @@
 ;        (println "Fitnesses:" (map individual/individual-fitness-components population))
 ;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
 
-        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
+        (util/append-csv csv-name [generation total-elapsed generation-elapsed
                                    best-fitness ; Fitness 
                                    (individual/individual-fitness (first population))
                                    (util/average (map (fn [ind] (individual/individual-fitness ind)) population))
@@ -575,8 +578,8 @@
                                    (second (individual/individual-fitness-components (first population)))
                                    (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
         
-        (println "Total time:" (util/time-elapsed start-time))
-        (println "Generation time:" (util/time-elapsed generation-start-time))
+        (println "Total time:" total-elapsed)
+        (println "Generation time:" generation-elapsed)
         
         (util/make-dir (str output-dir generation))
         (persistence/spit-snippetgroup (str output-dir generation "/best.ekt") 
@@ -614,14 +617,16 @@
           (>= generation (:max-generations config))
           (do 
             (println "Maximum number of generations reached! Stopping genetic search..")
-            (spit (str output-dir "done.txt") "Done!"))
+            (spit (str output-dir "done.txt") "Done!")
+            total-elapsed)
           
           (> best-fitness (:fitness-threshold config))
           (do
               (println "Success:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
               (persistence/spit-snippetgroup (str output-dir "success.ekt") 
                                              (individual/individual-templategroup (last population)))
-              (spit (str output-dir "done.txt") "Done!"))
+              (spit (str output-dir "done.txt") "Done!")
+              total-elapsed)
           
           (util/metaspace-almost-full?)
           (println "Java metaspace almost full! Stopping genetic search..")
@@ -843,7 +848,7 @@
       (evolve verifiedmatches
               :parallel-individuals true
               :parallel-individuals-threads 8
-              :parallel-matching true
+              :parallel-matching false
               :parallel-matching-threads 2
               :quick-matching false
               :partial-matching true
@@ -851,10 +856,55 @@
               :mutation-weight 3/4
               :crossover-weight 0/4
               :max-generations 25
-              :fitness-threshold 0.99
+              :fitness-threshold 0.999
               :population-size 100
-              :tournament-rounds 3)))
+              :tournament-rounds 3))
+    )
+  
   (run-example)
+  
+  
+  (defn 
+    benchmark-parallel
+    [maxevo maxmatch repetition]
+    (let [templategroup 
+          (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
+          matches 
+          (into [] (fitness/templategroup-matches templategroup))
+          verifiedmatches 
+          (make-verified-matches matches [])
+          options
+          {:parallel-individuals true
+           :parallel-individuals-threads 8
+           :parallel-matching true
+           :parallel-matching-threads 2
+           :quick-matching false
+           :partial-matching true
+           :selection-weight 1/4
+           :mutation-weight 3/4
+           :crossover-weight 0/4
+           :max-generations 25
+           :fitness-threshold 0.99
+           :population-size 100
+           :tournament-rounds 3}]
+      (for [evot (range 1 (inc maxevo))]
+        [evot 
+         (for [matcht (range 1 (inc maxmatch))]
+           [matcht
+            (for [_ (range 0 repetition)]
+              (apply evolve verifiedmatches
+                     (apply concat 
+                            (merge options
+                                   {:parallel-individuals-threads evot
+                                    :parallel-matching-threads matcht}))))
+            ])])))
+         
+          
+ (benchmark-parallel 10 10 10)
+    
+    
+  
+  
   
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
   
