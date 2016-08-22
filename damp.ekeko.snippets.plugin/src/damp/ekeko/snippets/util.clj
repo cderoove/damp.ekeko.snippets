@@ -3,7 +3,8 @@
     :author "Coen De Roover, Siltvani, Tim Molderez."}
   damp.ekeko.snippets.util
   (:require [damp.ekeko.jdt [astnode :as astnode]]
-            [damp.ekeko.workspace [workspace :as ws]])
+            [damp.ekeko.workspace [workspace :as ws]]
+            [clojure.core.reducers :as reducers])
   (:import 
     (java.util.concurrent TimeoutException TimeUnit FutureTask)
     (clojure.lang LispReader$ReaderException)
@@ -205,6 +206,13 @@
                              (for-all [element partition]
                                       (mapfn element))))))
 
+(defn pmap-reducer [mapfn data]
+  "Custom version of pmap using Clojure reducers
+   (When using a hashmap, use into [] to convert it to vector first!)"  
+  (reducers/fold 1 reducers/cat reducers/append! 
+          (reducers/map mapfn data)))
+
+
 (defn parallel-viable-repeat
   "Keep on applying func until we get cnt results for which test-func is true
    (This variation of viable-repeat produces all results concurrently.)
@@ -225,6 +233,18 @@
                                            (if (test-func result)
                                              result 
                                              (recur)))))))))
+
+(defn reducer-viable-repeat
+  [cnt func test-func]
+  (pmap-reducer
+    (fn [_]
+      (loop []
+        (let [result (func)]
+          (print ".")
+          (if (test-func result)
+            result 
+            (recur)))))
+    (range 0 cnt)))
 
 (defn average
   "Calculate the average in a collection of numbers"

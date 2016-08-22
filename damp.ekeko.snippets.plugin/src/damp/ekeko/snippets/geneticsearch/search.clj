@@ -111,9 +111,9 @@
    :fitness-threshold 0.95
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
-   :parallel-individuals true ; Generate + test the fitness of each individual in a generation in parallel
+   :parallel-individuals :reducer ; Generate + test the fitness of each individual in a generation in parallel (either :sequential, :partitioned or :reducer)
    :parallel-individuals-threads 8
-   :parallel-matching true ; Process each potential match in parallel
+   :parallel-matching :reducer ; Process each potential match in parallel (either :sequential, :partitioned or :reducer)
    :parallel-matching-threads 8
    
    :output-dir nil
@@ -552,11 +552,12 @@
                                     (fn [x] (clojure.set/union x #{(history-hash individual)})))
                              (if (pos? filter-score) ind))))
             best-fitness (individual/individual-fitness (last population))
-            repeat-fn (if (:parallel-individuals config) 
+            repeat-fn (case (:parallel-individuals config)
+                        :sequential util/viable-repeat
+                        :partitioned
                         (fn [cnt func test-func]
-                          (util/parallel-viable-repeat cnt func test-func (:parallel-individuals-threads config))) 
-                        util/viable-repeat)
-            ]
+                          (util/parallel-viable-repeat cnt func test-func (:parallel-individuals-threads config)))
+                        :reducer util/reducer-viable-repeat)]
         
         ; First print and store as much info as possible on the current generation
         (println "Generation:" generation)
@@ -841,9 +842,9 @@
       (def matches (into [] (fitness/templategroup-matches templategroup)))
       (def verifiedmatches (make-verified-matches matches []))
       (evolve verifiedmatches
-              :parallel-individuals true
+              :parallel-individuals :partitioned
               :parallel-individuals-threads 8
-              :parallel-matching true
+              :parallel-matching :partitioned
               :parallel-matching-threads 2
               :quick-matching false
               :partial-matching true

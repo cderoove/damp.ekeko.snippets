@@ -87,16 +87,21 @@
   "(Re)defines a function called hmap. It works just like the standard map function, but is suited for hashmaps.
    When used with a hashmap, the standard map function will return a list of key-value pairs. Ours returns a hashmap.
 
-   @param parallel-flag Should the mapping function run in parallel? (like pmap)
+   @param parallel-keyw Indicate the desired type of parallellism, either :sequential, :partioned or :reducer
    @param threads"
-  [parallel-flag threads]
-  (if parallel-flag
+  [parallel-keyw threads]
+  (case parallel-keyw
+    :sequential
+    (defn hmap [function data]
+      (into {} (map function data)))
+    :partitioned
     (defn hmap [function data]
       (into {} (util/pmap-custom function data threads)))
+    :reducer
     (defn hmap [function data]
-      (into {} (map function data)))))
+      (into {} (util/pmap-reducer function (into [] data))))))
 
-(def-hmap-fn true 8)
+(def-hmap-fn :partitioned 8)
 
 (defn- matchmap-create
   "Create a blank matchmap based on an initial list of potential matches
