@@ -206,10 +206,10 @@
                              (for-all [element partition]
                                       (mapfn element))))))
 
-(defn pmap-reducer [mapfn data]
+(defn pmap-reducer [mapfn data partition-size]
   "Custom version of pmap using Clojure reducers
    (When using a hashmap, use into [] to convert it to vector first!)"  
-  (reducers/fold 1 reducers/cat reducers/append! 
+  (reducers/fold partition-size reducers/cat reducers/append! 
           (reducers/map mapfn data)))
 
 
@@ -235,7 +235,7 @@
                                              (recur)))))))))
 
 (defn reducer-viable-repeat
-  [cnt func test-func]
+  [cnt func test-func partition-size]
   (pmap-reducer
     (fn [_]
       (loop []
@@ -244,7 +244,8 @@
           (if (test-func result)
             result 
             (recur)))))
-    (range 0 cnt)))
+    (range 0 cnt)
+    partition-size))
 
 (defn average
   "Calculate the average in a collection of numbers"

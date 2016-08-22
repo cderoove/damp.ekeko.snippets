@@ -89,7 +89,7 @@
 
    @param parallel-keyw Indicate the desired type of parallellism, either :sequential, :partioned or :reducer
    @param threads"
-  [parallel-keyw threads]
+  [parallel-keyw threads psize]
   (case parallel-keyw
     :sequential
     (defn hmap [function data]
@@ -99,9 +99,9 @@
       (into {} (util/pmap-custom function data threads)))
     :reducer
     (defn hmap [function data]
-      (into {} (util/pmap-reducer function (into [] data))))))
+      (into {} (util/pmap-reducer function (into [] data) psize)))))
 
-(def-hmap-fn :partitioned 8)
+(def-hmap-fn :partitioned 8 512)
 
 (defn- matchmap-create
   "Create a blank matchmap based on an initial list of potential matches

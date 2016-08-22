@@ -112,9 +112,11 @@
    :fitness-filter-comp 0 ; This is the index of the fitness component that must be strictly positive; otherwise the individual will be filtered out. If -1, the overall fitness must be positive.
    
    :parallel-individuals :reducer ; Generate + test the fitness of each individual in a generation in parallel (either :sequential, :partitioned or :reducer)
-   :parallel-individuals-threads 8
+   :parallel-individuals-threads 8 ; Number of threads used by :partitioned
+   :parallel-individuals-psize 512 ; Reducer partition size
    :parallel-matching :reducer ; Process each potential match in parallel (either :sequential, :partitioned or :reducer)
    :parallel-matching-threads 8
+   :parallel-matching-psize 512
    
    :output-dir nil
    :partial-matching true
@@ -529,7 +531,7 @@
     (util/append-csv csv-name csv-columns)
     
     ; Set up the map function used when matching templates to enable/disable concurrency
-    (matching2/def-hmap-fn (:parallel-matching config) (:parallel-matching-threads config))
+    (matching2/def-hmap-fn (:parallel-matching config) (:parallel-matching-threads config) (:parallel-matching-psize config))
     
     (loop
       [generation resume-generation
@@ -557,7 +559,9 @@
                         :partitioned
                         (fn [cnt func test-func]
                           (util/parallel-viable-repeat cnt func test-func (:parallel-individuals-threads config)))
-                        :reducer util/reducer-viable-repeat)
+                        :reducer 
+                        (fn [cnt func test-func]
+                          (util/reducer-viable-repeat cnt func test-func (:parallel-individuals-psize config))))
             
             total-elapsed (util/time-elapsed start-time)
             generation-elapsed (util/time-elapsed generation-start-time)]
@@ -849,8 +853,10 @@
       (evolve verifiedmatches
               :parallel-individuals :reducer
               :parallel-individuals-threads 8
+              :parallel-individuals-psize 512
               :parallel-matching :reducer
               :parallel-matching-threads 2
+              :parallel-matching-psize 512
               :quick-matching false
               :partial-matching true
               :selection-weight 1/4
