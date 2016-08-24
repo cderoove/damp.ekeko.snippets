@@ -509,6 +509,13 @@
      gen-csv-columns ["Id" "Original" "Fitness" "F1" "Partial" "Operator" "Subject" "Operands"]
      start-time (. System (nanoTime))
      
+     update-avg-time 
+     (fn [generation generation-elapsed prev-avg]
+       (if (= generation 0)
+         generation-elapsed
+         (+
+           (* (/ generation (inc generation)) prev-avg)
+           (* (/ 1 (inc generation)) generation-elapsed))))
      
      fitness ((:fitness-function config) verifiedmatches config)
      sort-by-fitness (fn [population]
@@ -536,6 +543,8 @@
     (loop
       [generation resume-generation
        generation-start-time start-time
+       avg-generation-time 0
+       
        population initial-pop
        history #{}]
       (let [new-history (atom history)
@@ -569,6 +578,7 @@
         ; First print and store as much info as possible on the current generation
         (println "Generation:" generation)
         (println "Highest fitness:" (individual/individual-fitness (last population)))
+;        (println "Average generation time:" avg-generation-time)
 ;        (println "Fitnesses:" (map individual/individual-fitness-components population))
 ;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
 
@@ -623,7 +633,8 @@
           (do 
             (println "Maximum number of generations reached! Stopping genetic search..")
             (spit (str output-dir "done.txt") "Done!")
-            total-elapsed)
+            (update-avg-time generation generation-elapsed avg-generation-time) ;total-elapsed
+            )
           
           (> best-fitness (:fitness-threshold config))
           (do
@@ -631,7 +642,8 @@
               (persistence/spit-snippetgroup (str output-dir "success.ekt") 
                                              (individual/individual-templategroup (last population)))
               (spit (str output-dir "done.txt") "Done!")
-              total-elapsed)
+              (update-avg-time generation generation-elapsed avg-generation-time) ;total-elapsed
+              )
           
           (util/metaspace-almost-full?)
           (println "Java metaspace almost full! Stopping genetic search..")
@@ -640,6 +652,14 @@
           (recur
               (inc generation)
               (. System (nanoTime))
+              
+              (update-avg-time generation generation-elapsed avg-generation-time)
+;              (if (= generation 0)
+;                generation-elapsed
+;                (+
+;                 (* (/ generation (inc generation)) avg-generation-time)
+;                 (* (/ 1 (inc generation)) generation-elapsed)))
+              
               (sort-by-fitness
                 ; Produce the next generation using mutation, crossover and tournament selection
                 (concat
@@ -853,10 +873,10 @@
       (evolve verifiedmatches
               :parallel-individuals :reducer
               :parallel-individuals-threads 8
-              :parallel-individuals-psize 512
+              :parallel-individuals-psize 1
               :parallel-matching :reducer
               :parallel-matching-threads 2
-              :parallel-matching-psize 512
+              :parallel-matching-psize 10
               :quick-matching false
               :partial-matching true
               :selection-weight 1/4

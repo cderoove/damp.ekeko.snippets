@@ -244,7 +244,7 @@
           (if (test-func result)
             result 
             (recur)))))
-    (range 0 cnt)
+    (vec (range 0 cnt))
     partition-size))
 
 (defn average
