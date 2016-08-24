@@ -113,10 +113,10 @@
    
    :parallel-individuals :reducer ; Generate + test the fitness of each individual in a generation in parallel (either :sequential, :partitioned or :reducer)
    :parallel-individuals-threads 8 ; Number of threads used by :partitioned
-   :parallel-individuals-psize 512 ; Reducer partition size
+   :parallel-individuals-psize 2 ; Reducer partition size
    :parallel-matching :reducer ; Process each potential match in parallel (either :sequential, :partitioned or :reducer)
    :parallel-matching-threads 8
-   :parallel-matching-psize 512
+   :parallel-matching-psize 10 ;(min, tasks are small: checking of 1 directive on 1 potential match)
    
    :output-dir nil
    :partial-matching true
@@ -893,7 +893,7 @@
   
   (defn 
     benchmark-parallel
-    [maxevo maxmatch repetition]
+    [maxevo maxmatch repetition csvfile]
     (let [templategroup 
           (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
           matches 
@@ -901,10 +901,10 @@
           verifiedmatches 
           (make-verified-matches matches [])
           options
-          {:parallel-individuals true
-           :parallel-individuals-threads 8
-           :parallel-matching true
-           :parallel-matching-threads 2
+          {:parallel-individuals :sequential
+           ;:parallel-individuals-threads 8
+           :parallel-matching :sequential
+           ;:parallel-matching-threads 2
            :quick-matching false
            :partial-matching true
            :selection-weight 1/4
@@ -914,23 +914,31 @@
            :fitness-threshold 0.99
            :population-size 100
            :tournament-rounds 3}]
-      (for [evot (range 1 (inc maxevo))]
-        [evot 
-         (for [matcht (range 1 (inc maxmatch))]
-           [matcht
-            (for [_ (range 0 repetition)]
-              (apply evolve verifiedmatches
-                     (apply concat 
-                            (merge options
-                                   {:parallel-individuals-threads evot
-                                    :parallel-matching-threads matcht}))))
-            ])])))
-         
-          
- (benchmark-parallel 10 10 10)
-    
-    
+      (letfn [(run [overrides]
+                (apply evolve verifiedmatches
+                       (apply concat 
+                              (merge options overrides))))]
+        (println "Warmup")
+        ;warmup
+        (run {})
+        (println "Run: 0, 0")
+        ;sequential results
+        (util/append-csv csvfile (concat [0 0 ]
+                                   (for [_ (range 0 repetition)] (run {}))))
+        ;nested pmap 
+        (doseq [evot (range 1 (inc maxevo))]
+          (doseq [matcht (range 1 (inc maxmatch))]
+            (println "Run: " evot ", " matcht)
+            (util/append-csv csvfile 
+                             (concat 
+                               [evot matcht] 
+                               (for [_ (range 0 repetition)]
+                                 (run {:parallel-individuals :partitioned
+                                       :parallel-matching :partitioned
+                                       :parallel-individuals-threads evot
+                                       :parallel-matching-threads matcht})))))))))
   
+  (benchmark-parallel 2 2 2 "timings.csv")
   
   
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
