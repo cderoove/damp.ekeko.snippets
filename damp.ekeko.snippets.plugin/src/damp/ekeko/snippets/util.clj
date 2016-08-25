@@ -206,10 +206,18 @@
                              (for-all [element partition]
                                       (mapfn element))))))
 
-(defn pmap-reducer [mapfn data partition-size]
+;(defn pmap-reducer [mapfn data partition-size]
+;  "Custom version of pmap using Clojure reducers
+;   (When using a hashmap, use into [] to convert it to vector first!)"  
+;  (reducers/fold partition-size reducers/cat reducers/append! 
+;          (reducers/map mapfn data)))
+
+(defn pmap-reducer [mapfn data partitions]
   "Custom version of pmap using Clojure reducers
    (When using a hashmap, use into [] to convert it to vector first!)"  
-  (reducers/fold partition-size reducers/cat reducers/append! 
+  (reducers/fold 
+    (max (int (/ (count data) partitions)) 1) 
+    reducers/cat reducers/append! 
           (reducers/map mapfn data)))
 
 

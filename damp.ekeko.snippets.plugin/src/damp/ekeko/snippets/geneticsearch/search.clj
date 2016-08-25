@@ -582,40 +582,40 @@
 ;        (println "Fitnesses:" (map individual/individual-fitness-components population))
 ;        (println "Best specification:" (persistence/snippetgroup-string (individual/individual-templategroup (last population))))
 
-        (util/append-csv csv-name [generation total-elapsed generation-elapsed
-                                   best-fitness ; Fitness 
-                                   (individual/individual-fitness (first population))
-                                   (util/average (map (fn [ind] (individual/individual-fitness ind)) population))
-                                   (first (individual/individual-fitness-components (last population))) ; F-score
-                                   (first (individual/individual-fitness-components (first population)))
-                                   (util/average (map (fn [ind] (first (individual/individual-fitness-components ind))) population))
-                                   (second (individual/individual-fitness-components (last population))) ; Partial score
-                                   (second (individual/individual-fitness-components (first population)))
-                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
+;        (util/append-csv csv-name [generation total-elapsed generation-elapsed
+;                                   best-fitness ; Fitness 
+;                                   (individual/individual-fitness (first population))
+;                                   (util/average (map (fn [ind] (individual/individual-fitness ind)) population))
+;                                   (first (individual/individual-fitness-components (last population))) ; F-score
+;                                   (first (individual/individual-fitness-components (first population)))
+;                                   (util/average (map (fn [ind] (first (individual/individual-fitness-components ind))) population))
+;                                   (second (individual/individual-fitness-components (last population))) ; Partial score
+;                                   (second (individual/individual-fitness-components (first population)))
+;                                   (util/average (map (fn [ind] (second (individual/individual-fitness-components ind))) population))])
         
         (println "Total time:" total-elapsed)
         (println "Generation time:" generation-elapsed)
         
-        (util/make-dir (str output-dir generation))
-        (persistence/spit-snippetgroup (str output-dir generation "/best.ekt") 
-                                       (individual/individual-templategroup (last population)))
-        (util/append-csv (str output-dir generation "/" gen-csv-name) gen-csv-columns)
-        (doall (map-indexed
-                 (fn [idx individual]
-                   (util/append-csv (str output-dir generation "/" gen-csv-name)
-                                    [(individual/individual-info (nth population idx) :id) 
-                                     (individual/individual-info (nth population idx) :original)
-                                     (individual/individual-fitness (nth population idx))
-                                     (first (individual/individual-fitness-components (nth population idx)))
-                                     (second (individual/individual-fitness-components (nth population idx)))
-                                     (individual/individual-info (nth population idx) :mutation-operator)
-                                     (pr-str (type (individual/individual-info (nth population idx) :mutation-node)))
-                                     (pr-str (individual/individual-info (nth population idx) :mutation-opvals))])
+;        (util/make-dir (str output-dir generation))
+;        (persistence/spit-snippetgroup (str output-dir generation "/best.ekt") 
+;                                       (individual/individual-templategroup (last population)))
+;        (util/append-csv (str output-dir generation "/" gen-csv-name) gen-csv-columns)
+;        (doall (map-indexed
+;                 (fn [idx individual]
+;                   (util/append-csv (str output-dir generation "/" gen-csv-name)
+;                                    [(individual/individual-info (nth population idx) :id) 
+;                                     (individual/individual-info (nth population idx) :original)
+;                                     (individual/individual-fitness (nth population idx))
+;                                     (first (individual/individual-fitness-components (nth population idx)))
+;                                     (second (individual/individual-fitness-components (nth population idx)))
+;                                     (individual/individual-info (nth population idx) :mutation-operator)
+;                                     (pr-str (type (individual/individual-info (nth population idx) :mutation-node)))
+;                                     (pr-str (individual/individual-info (nth population idx) :mutation-opvals))])
 ;                   (persistence/spit-snippetgroup (str output-dir generation "/individual-" idx ".ekt") 
 ;                                                  (individual/individual-templategroup individual))
-                   ) 
-                 population))
-        
+;                   ) 
+;                 population))
+;        
         (if (not (nil? (:gui-editor config)))
           (let [editor (:gui-editor config)]
             (.onNewGeneration editor 
@@ -721,13 +721,13 @@
         (println "Iteration:" generation)
         (println "Current best fitness:" best-fitness)
         
-        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
-                                   best-fitness ; Fitness 
-                                   (first (individual/individual-fitness-components best-template)) ; F-score
-                                   (second (individual/individual-fitness-components best-template)) ; Partial score
-                                   ])
-        (persistence/spit-snippetgroup (str output-dir "/iteration-" generation ".ekt") 
-                                       (individual/individual-templategroup best-template))
+;        (util/append-csv csv-name [generation (util/time-elapsed start-time) (util/time-elapsed generation-start-time) 
+;                                   best-fitness ; Fitness 
+;                                   (first (individual/individual-fitness-components best-template)) ; F-score
+;                                   (second (individual/individual-fitness-components best-template)) ; Partial score
+;                                   ])
+;        (persistence/spit-snippetgroup (str output-dir "/iteration-" generation ".ekt") 
+;                                       (individual/individual-templategroup best-template))
         
         
         (cond
@@ -891,7 +891,7 @@
   (run-example)
   
   
-  (defn 
+    (defn 
     benchmark-parallel
     [maxevo maxmatch repetition csvfile]
     (let [;templategroup 
@@ -963,7 +963,81 @@
                                        :parallel-individuals-threads evot
                                        :parallel-matching-threads matcht})))))))))
   
-  (benchmark-parallel 10 10 4 "timings_strategy.csv")
+  (defn 
+    benchmark-parallel-reducer
+    [repetition csvfile]
+    (let [;templategroup 
+          ;(slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
+          templategroup 
+          (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt")
+          ;/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt
+          matches 
+          (into [] (fitness/templategroup-matches templategroup))
+          verifiedmatches 
+          (make-verified-matches matches [])
+          
+          
+          options-invokes
+          {:parallel-individuals :sequential
+           ;:parallel-individuals-threads 8
+           :parallel-matching :sequential
+           ;:parallel-matching-threads 2
+           :quick-matching false
+           :partial-matching true
+           :selection-weight 1/4
+           :mutation-weight 3/4
+           :crossover-weight 0/4
+           :max-generations 25
+           :fitness-threshold 0.99
+           :population-size 100
+           :tournament-rounds 3}
+          options-strategy
+          {:parallel-individuals :sequential
+           ;:parallel-individuals-threads 8
+           :parallel-matching :sequential
+           ;:parallel-matching-threads 2
+           :quick-matching false
+           :partial-matching true
+           :selection-weight 1/4
+           :mutation-weight 3/4
+           :crossover-weight 0/4
+           :max-generations 4 ;;;; small 10
+           :fitness-threshold 0.99
+           :population-size 100
+           :tournament-rounds 3
+            :initial-population
+           (population-from-templates [(slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected2.ekt")] 100)
+           }
+          options
+          options-strategy
+          ]
+      (letfn [(run [overrides]
+                (apply evolve verifiedmatches
+                       (apply concat 
+                              (merge options overrides))))]
+        (println "Warmup")
+        ;warmup
+        (run {})
+        (println "Run: 0, 0")
+        ;sequential results
+        (util/append-csv csvfile (concat [0 0 ]
+                                   (for [_ (range 0 repetition)] (run {}))))
+        ;nested pmap 
+        (doseq [ipsize (range 6 10)]
+          (doseq [mpsize (range 10 100 10)]
+            (println "Run: " ipsize ", " mpsize)
+            (util/append-csv csvfile 
+                             (concat 
+                               [ipsize mpsize] 
+                               (for [_ (range 0 repetition)]
+                                 (run {:parallel-individuals :reducer
+                                       :parallel-matching :reducer
+                                       :parallel-individuals-psize ipsize
+                                       :parallel-matching-psize mpsize})))))))))
+  
+  (benchmark-parallel-reducer 4 "timings_strategy4.csv")
+  
+  (benchmark-parallel 10 10 4 "timings_strategy3_ctd.csv")
   
   
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
