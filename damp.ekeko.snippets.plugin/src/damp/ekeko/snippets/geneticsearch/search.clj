@@ -894,13 +894,18 @@
   (defn 
     benchmark-parallel
     [maxevo maxmatch repetition csvfile]
-    (let [templategroup 
-          (slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
+    (let [;templategroup 
+          ;(slurp-from-resource "/resources/EkekoX-Specifications/invokes.ekt")
+          templategroup 
+          (slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt")
+          ;/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt
           matches 
           (into [] (fitness/templategroup-matches templategroup))
           verifiedmatches 
           (make-verified-matches matches [])
-          options
+          
+          
+          options-invokes
           {:parallel-individuals :sequential
            ;:parallel-individuals-threads 8
            :parallel-matching :sequential
@@ -913,7 +918,27 @@
            :max-generations 25
            :fitness-threshold 0.99
            :population-size 100
-           :tournament-rounds 3}]
+           :tournament-rounds 3}
+          options-strategy
+          {:parallel-individuals :sequential
+           ;:parallel-individuals-threads 8
+           :parallel-matching :sequential
+           ;:parallel-matching-threads 2
+           :quick-matching false
+           :partial-matching true
+           :selection-weight 1/4
+           :mutation-weight 3/4
+           :crossover-weight 0/4
+           :max-generations 5 ;;;; small 10
+           :fitness-threshold 0.99
+           :population-size 100
+           :tournament-rounds 3
+            :initial-population
+           (population-from-templates [(slurp-from-resource "/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/initial-protected2.ekt")] 100)
+           }
+          options
+          options-strategy
+          ]
       (letfn [(run [overrides]
                 (apply evolve verifiedmatches
                        (apply concat 
@@ -938,7 +963,7 @@
                                        :parallel-individuals-threads evot
                                        :parallel-matching-threads matcht})))))))))
   
-  (benchmark-parallel 2 2 2 "timings.csv")
+  (benchmark-parallel 10 10 4 "timings_strategy.csv")
   
   
   (fitness/templategroup-matches (persistence/slurp-snippetgroup "/Users/soft/Documents/workspace-runtime2/error1460860107148.ekt"))
