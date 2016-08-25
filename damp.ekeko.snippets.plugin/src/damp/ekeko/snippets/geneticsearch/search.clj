@@ -929,7 +929,7 @@
            :selection-weight 1/4
            :mutation-weight 3/4
            :crossover-weight 0/4
-           :max-generations 5 ;;;; small 10
+           :max-generations 4 ;;;; small 10
            :fitness-threshold 0.99
            :population-size 100
            :tournament-rounds 3
