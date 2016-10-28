@@ -9,22 +9,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.eclipse.birt.chart.model.Chart;
-import org.eclipse.birt.chart.model.ChartWithAxes;
-import org.eclipse.birt.chart.model.attribute.ChartDimension;
-import org.eclipse.birt.chart.model.attribute.LegendItemType;
-import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
-import org.eclipse.birt.chart.model.component.Axis;
-import org.eclipse.birt.chart.model.component.Series;
-import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
-import org.eclipse.birt.chart.model.data.NumberDataSet;
-import org.eclipse.birt.chart.model.data.SeriesDefinition;
-import org.eclipse.birt.chart.model.data.impl.NumberDataElementImpl;
-import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
-import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
-import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
-import org.eclipse.birt.chart.model.type.LineSeries;
-import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
+//import org.eclipse.birt.chart.model.Chart;
+//import org.eclipse.birt.chart.model.ChartWithAxes;
+//import org.eclipse.birt.chart.model.attribute.ChartDimension;
+//import org.eclipse.birt.chart.model.attribute.LegendItemType;
+//import org.eclipse.birt.chart.model.attribute.impl.ColorDefinitionImpl;
+//import org.eclipse.birt.chart.model.component.Axis;
+//import org.eclipse.birt.chart.model.component.Series;
+//import org.eclipse.birt.chart.model.component.impl.SeriesImpl;
+//import org.eclipse.birt.chart.model.data.NumberDataSet;
+//import org.eclipse.birt.chart.model.data.SeriesDefinition;
+//import org.eclipse.birt.chart.model.data.impl.NumberDataElementImpl;
+//import org.eclipse.birt.chart.model.data.impl.NumberDataSetImpl;
+//import org.eclipse.birt.chart.model.data.impl.SeriesDefinitionImpl;
+//import org.eclipse.birt.chart.model.impl.ChartWithAxesImpl;
+//import org.eclipse.birt.chart.model.type.LineSeries;
+//import org.eclipse.birt.chart.model.type.impl.LineSeriesImpl;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Platform;
@@ -123,23 +123,22 @@ public class RecommendationEditor extends EditorPart {
 	
 	// Default options of the underlying genetic search algorithm; see search.clj/config-default for more information
 	private String evolveConfig = ":max-generations 100\n"
-			+ ":population-size 20\n"
+			+ ":population-size 50\n"
 			+ ":selection-weight 1/4\n"
 			+ ":mutation-weight 3/4\n"
 			+ ":crossover-weight 0/4\n"
 			+ ":fitness-weights [18/20 2/20 0/20]\n"
-			+ ":fitness-threshold 0.95\n"
+			+ ":fitness-threshold 0.99\n"
 			+ ":output-dir nil\n"
 			+ ":partial-matching true\n"
 			+ ":quick-matching false\n"
-			+ ":match-timeout 10000\n"
 			+ ":tournament-rounds 7";
 	private String outputDir = "";
 
 	// Components of the fitness chart
-	private Series generationAxis;
-	private LineSeries f1Data;
-	private LineSeries partialData;
+//	private Series generationAxis;
+//	private LineSeries f1Data;
+//	private LineSeries partialData;
 	private ChartCanvas canvasView;
 
 	private TextViewer bestTemplateTextArea;
@@ -417,79 +416,79 @@ public class RecommendationEditor extends EditorPart {
 		resultsTableViewer.setInput(evolveResults);
 	}
 	
-	private Chart createChart() {
-		ChartWithAxes chart = ChartWithAxesImpl.create();
-		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
-		chart.getPlot().setBackground(ColorDefinitionImpl.WHITE());
-		chart.getLegend().setItemType(LegendItemType.SERIES_LITERAL);
-		chart.getLegend().setVisible(true);
-		chart.getTitle().setVisible(false);
-
-		Axis xAxis = ((ChartWithAxes) chart).getPrimaryBaseAxes()[0];
-        xAxis.getTitle().setVisible(true);
-        xAxis.getTitle().getCaption().setValue("Generation");
-        
-        Axis yAxis = ((ChartWithAxes) chart).getPrimaryOrthogonalAxis(xAxis);
-        yAxis.getTitle().setVisible(false);
-        yAxis.getScale().setStep(0.2);
-        yAxis.getScale().setMin(NumberDataElementImpl.create(0.0));
-        yAxis.getScale().setMax(NumberDataElementImpl.create(1.0));
-
-        NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{});
-        generationAxis = SeriesImpl.create();
-        generationAxis.setDataSet(xValues);
-        SeriesDefinition sdX = SeriesDefinitionImpl.create();
-        sdX.getSeriesPalette().update(1);
-        xAxis.getSeriesDefinitions().add(sdX);
-        sdX.getSeries().add(generationAxis);
-        
-        NumberDataSet y1DataSet = NumberDataSetImpl.create(new Double[]{});
-        f1Data = (LineSeries) LineSeriesImpl.create();
-        f1Data.setDataSet(y1DataSet);
-        
-        NumberDataSet y2DataSet = NumberDataSetImpl.create(new Double[]{});
-        partialData = (LineSeries) LineSeriesImpl.create();
-        partialData.setDataSet(y2DataSet);
-        
-        SeriesDefinition sdY = SeriesDefinitionImpl.create();
-        yAxis.getSeriesDefinitions().add(sdY);
-        f1Data.setSeriesIdentifier("F1 score");
-        partialData.setSeriesIdentifier("Partial score");
-        sdY.getSeries().add(f1Data);
-        sdY.getSeries().add(partialData);
-        
-        return chart;
-		
-	}
+//	private Chart createChart() {
+//		ChartWithAxes chart = ChartWithAxesImpl.create();
+//		chart.setDimension(ChartDimension.TWO_DIMENSIONAL_LITERAL);
+//		chart.getPlot().setBackground(ColorDefinitionImpl.WHITE());
+//		chart.getLegend().setItemType(LegendItemType.SERIES_LITERAL);
+//		chart.getLegend().setVisible(true);
+//		chart.getTitle().setVisible(false);
+//
+//		Axis xAxis = ((ChartWithAxes) chart).getPrimaryBaseAxes()[0];
+//        xAxis.getTitle().setVisible(true);
+//        xAxis.getTitle().getCaption().setValue("Generation");
+//        
+//        Axis yAxis = ((ChartWithAxes) chart).getPrimaryOrthogonalAxis(xAxis);
+//        yAxis.getTitle().setVisible(false);
+//        yAxis.getScale().setStep(0.2);
+//        yAxis.getScale().setMin(NumberDataElementImpl.create(0.0));
+//        yAxis.getScale().setMax(NumberDataElementImpl.create(1.0));
+//
+//        NumberDataSet xValues = NumberDataSetImpl.create(new Integer[]{});
+//        generationAxis = SeriesImpl.create();
+//        generationAxis.setDataSet(xValues);
+//        SeriesDefinition sdX = SeriesDefinitionImpl.create();
+//        sdX.getSeriesPalette().update(1);
+//        xAxis.getSeriesDefinitions().add(sdX);
+//        sdX.getSeries().add(generationAxis);
+//        
+//        NumberDataSet y1DataSet = NumberDataSetImpl.create(new Double[]{});
+//        f1Data = (LineSeries) LineSeriesImpl.create();
+//        f1Data.setDataSet(y1DataSet);
+//        
+//        NumberDataSet y2DataSet = NumberDataSetImpl.create(new Double[]{});
+//        partialData = (LineSeries) LineSeriesImpl.create();
+//        partialData.setDataSet(y2DataSet);
+//        
+//        SeriesDefinition sdY = SeriesDefinitionImpl.create();
+//        yAxis.getSeriesDefinitions().add(sdY);
+//        f1Data.setSeriesIdentifier("F1 score");
+//        partialData.setSeriesIdentifier("Partial score");
+//        sdY.getSeries().add(f1Data);
+//        sdY.getSeries().add(partialData);
+//        
+//        return chart;
+//		
+//	}
 	
 	private void addToChart(Integer generation, Double bestFitness, Double bestPartial) {
 		if (!birtInstalled) {
 			return;
 		}
 		
-		Chart chart = canvasView.getChart();
-		if (chart==null) {
-			chart=createChart();
-			canvasView.setChart(chart);
-		}
-		
-		NumberDataSetImpl xData = (NumberDataSetImpl)generationAxis.getDataSet();
-		Integer[] rawVals = (Integer[])(xData.getValues());
-		List<Integer> vals = new ArrayList<Integer>(Arrays.asList(rawVals));
-		vals.add(generation);
-		generationAxis.setDataSet(NumberDataSetImpl.create(vals.toArray(new Integer[0])));
-		
-		NumberDataSetImpl y1Data = (NumberDataSetImpl)f1Data.getDataSet();
-		Double[] rawY1Vals = (Double[])(y1Data.getValues());
-		List<Double> y1vals = new ArrayList<Double>(Arrays.asList(rawY1Vals));
-		y1vals.add(bestFitness);
-		f1Data.setDataSet(NumberDataSetImpl.create(y1vals.toArray(new Double[0])));
-
-		NumberDataSetImpl y2Data = (NumberDataSetImpl)partialData.getDataSet();
-		Double[] rawY2Vals = (Double[])(y2Data.getValues());
-		List<Double> y2vals = new ArrayList<Double>(Arrays.asList(rawY2Vals));
-		y2vals.add(bestPartial);
-		partialData.setDataSet(NumberDataSetImpl.create(y2vals.toArray(new Double[0])));
+//		Chart chart = canvasView.getChart();
+//		if (chart==null) {
+//			chart=createChart();
+//			canvasView.setChart(chart);
+//		}
+//		
+//		NumberDataSetImpl xData = (NumberDataSetImpl)generationAxis.getDataSet();
+//		Integer[] rawVals = (Integer[])(xData.getValues());
+//		List<Integer> vals = new ArrayList<Integer>(Arrays.asList(rawVals));
+//		vals.add(generation);
+//		generationAxis.setDataSet(NumberDataSetImpl.create(vals.toArray(new Integer[0])));
+//		
+//		NumberDataSetImpl y1Data = (NumberDataSetImpl)f1Data.getDataSet();
+//		Double[] rawY1Vals = (Double[])(y1Data.getValues());
+//		List<Double> y1vals = new ArrayList<Double>(Arrays.asList(rawY1Vals));
+//		y1vals.add(bestFitness);
+//		f1Data.setDataSet(NumberDataSetImpl.create(y1vals.toArray(new Double[0])));
+//
+//		NumberDataSetImpl y2Data = (NumberDataSetImpl)partialData.getDataSet();
+//		Double[] rawY2Vals = (Double[])(y2Data.getValues());
+//		List<Double> y2vals = new ArrayList<Double>(Arrays.asList(rawY2Vals));
+//		y2vals.add(bestPartial);
+//		partialData.setDataSet(NumberDataSetImpl.create(y2vals.toArray(new Double[0])));
 
 		canvasView.redraw();
 	}

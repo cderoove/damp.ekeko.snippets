@@ -61,7 +61,7 @@
 (defn
   query-by-snippetgroup|java
   [snippetgroup]
-  (let [solutions (matching2/query-templategroup-list snippetgroup true) 
+  (let [solutions (matching2/query-templategroup-list snippetgroup false) 
         ;(querying/query-by-snippetgroup snippetgroup 'damp.ekeko/ekeko '() '() true)
         ]
     (into #{} solutions)))
