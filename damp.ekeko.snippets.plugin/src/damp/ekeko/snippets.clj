@@ -21,8 +21,6 @@
              [transformation]
              [rewrites :as rewrites]
              [rewriting :as rewriting]])
-  (:require [damp.ekeko.snippets.geneticsearch 
-             [search :as search]])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:require [damp.ekeko
@@ -132,10 +130,6 @@
   "Returns the snippetgroup persisted in the given file."
   [file]
   (damp.ekeko.snippets.persistence/slurp-snippetgroup file))
-
-
-
-
 
   (defn
     register-callbacks
