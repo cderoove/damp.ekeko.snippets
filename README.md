@@ -28,7 +28,7 @@ The Ekeko/X plugin can be built from source ([EkekoSnippets](https://github.com/
 
 The installation instructions for [Ekeko](https://github.com/cderoove/damp.ekeko/tree/master/EkekoPlugin) should be consulted as well: [README.md](https://github.com/cderoove/damp.ekeko/blob/master/damp.ekeko.plugin/README.md)
 
-Ekeko/X has been tested against [Eclipse](http://www.eclipse.org) Kepler, Luna, Mars and Mars.1.
+Ekeko/X has been tested against [Eclipse](http://www.eclipse.org) Kepler, Luna, Mars, Mars.1 and Neon.
 
 
 ## License  
