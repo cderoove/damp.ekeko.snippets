@@ -422,7 +422,7 @@
 (defn directive-constraints 
   "Implements all directives (not relating to navigation)
    Returns a triplet of functions that implement the requested directive: [typefn constraintfn generatefn]"
-  [directive]
+  [directive template-node]
   (let 
     [name (snippet/directive-name directive)
      
@@ -450,8 +450,18 @@
      directives
      {"replaced-by-variable"
       [(fn [ast-node] true)
-       (fn [ast-node val] (= ast-node val))
-       (fn [ast-node] [ast-node])]
+       (fn [ast-node val] 
+         (if (astnode/lstvalue? template-node)
+           (let [owner-prop (astnode/owner-property template-node)
+                 ;ast-list (astnode/node-property-value ast-node owner-prop)
+                 wrapper (astnode/make-value|lst ast-node owner-prop)
+                 ]
+             (= wrapper val))
+           (= ast-node val)))
+       (fn [ast-node]
+         [(if (astnode/lstvalue? template-node)
+            (astnode/make-value|lst ast-node (astnode/owner-property template-node))
+            ast-node)])]
       
       "overrides"
       [(fn [ast-node] (instance? MethodDeclaration ast-node))
@@ -481,8 +491,28 @@
       
       "equals" ; Same as replaced-by-variable (only difference is that equals isn't mentioned in the check-directives-only? fn)
       [(fn [ast-node] true)
+       (fn [ast-node val] 
+         (if (astnode/lstvalue? template-node)
+           (let [owner-prop (astnode/owner-property template-node)
+                 ;ast-list (astnode/node-property-value ast-node owner-prop)
+                 wrapper (astnode/make-value|lst ast-node owner-prop)
+                 ]
+             (= wrapper val))
+           (= ast-node val)))
+       (fn [ast-node]
+         [(if (astnode/lstvalue? template-node)
+            (astnode/make-value|lst ast-node (astnode/owner-property template-node))
+            ast-node)])]
+;      [(fn [ast-node] true)
+;       (fn [ast-node val] (= ast-node val))
+;       (fn [ast-node] 
+;         [ast-node])]
+      
+      "equals-list" ; Variant for list nodes
+      [(fn [ast-node] true)
        (fn [ast-node val] (= ast-node val))
-       (fn [ast-node] [ast-node])]
+       (fn [ast-node] 
+         [ast-node])]
       
       "type"
       [(fn [ast-node] true)
@@ -560,12 +590,12 @@
   (let [bds (remove
               non-relation-directive?
               (snippet/snippet-bounddirectives-for-node template template-node))]
-    (reduce 
+    (reduce
       (fn [cur-matchmap bd]
         (let 
           [directive (snippet/bounddirective-directive bd)
            lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings bd)))
-           [typefn constraintfn generatefn] (directive-constraints directive)]
+           [typefn constraintfn generatefn] (directive-constraints directive template-node)]
           (if (directives/bounddirective-for-directive [bd] matching/directive-if)
             ; The if-directive currently is the odd-one-out, as it doesn't establish a relation with a logic variable..
             (matchmap-filter 

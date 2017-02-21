@@ -105,7 +105,6 @@
                   (let [seperated-values (for [var uservars] (get bindings var))]
                     (util/cartesian seperated-values)))
                 bindings-list))
-        
         ]
     ; Do a rewrite for each valid combination of the uservars' values
     (doseq [var-values var-values-list]
@@ -132,13 +131,29 @@
   [transformation]
   (let [lhs-templategroup (transfo/transformation-lhs transformation)
         rhs-templategroup (transfo/transformation-rhs transformation)
-        lhs-bindings-list (matching2/query-templategroup lhs-templategroup)]
+        lhs-bindings-list (matching2/query-templategroup lhs-templategroup)
+;        tmp (inspector-jay.core/inspect lhs-bindings-list)
+        ]
     (doseq [rhs-template (snippetgroup/snippetgroup-snippetlist rhs-templategroup)]
       (apply-rhs-template rhs-template lhs-bindings-list))
     (rewrites/apply-and-reset-rewrites)))
 
 (comment
   (defn slurp-from-resource [pathrelativetobundle] (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
+  
+  (defn run-test-batch [path-testfn]
+    (doseq [[path testfn] path-testfn]
+      (let [input (slurp-from-resource path)
+            start (. System (nanoTime))
+            matches (apply-transformation input)
+            end (/ (double (- (. System (nanoTime)) start)) 1000000.0)
+            test-result true]
+        (if test-result
+          (println "pass (" end "ms -" path ")")
+          (println "FAIL (" end "ms -"  path ")")))))
+  
+  (run-test-batch
+    [["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]])
   
   (apply-transformation (persistence/slurp-transformation "/Users/soft/Desktop/addParam.ekx"))
   )
