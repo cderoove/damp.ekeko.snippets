@@ -434,8 +434,8 @@ damp.ekeko.snippets.operators
 
 (defn 
   add-directive-remove-element
-  [snippet subject idx]
-  (add-unary-directive-opname-opvalue snippet subject rewriting/directive-remove-element "Target index" idx))
+  [snippet subject element]
+  (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-remove-element element))
 
 (defn 
   add-directive-remove-element-alt

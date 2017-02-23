@@ -195,7 +195,7 @@
   ([cu-var lst-or-elem before-node newnode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
-      (insert-before cu-var lst-or-elem before-node newnode)))
+      (insert-before rewrite cu-var lst-or-elem before-node newnode)))
   ([rewrite cu-var lst-or-elem before-node newnode]
     (insert-before-or-after rewrite cu-var lst-or-elem before-node newnode false)))
 
@@ -205,7 +205,7 @@
   ([cu-var lst-or-elem after-node newnode]
     (let [cu (determine-rewrite-cu cu-var)
           rewrite (current-rewrite-for-cu cu)]
-      (insert-after cu-var lst-or-elem after-node newnode)))
+      (insert-after rewrite cu-var lst-or-elem after-node newnode)))
   ([rewrite cu-var lst-or-elem after-node newnode]
     (insert-before-or-after rewrite cu-var lst-or-elem after-node newnode true)))
 

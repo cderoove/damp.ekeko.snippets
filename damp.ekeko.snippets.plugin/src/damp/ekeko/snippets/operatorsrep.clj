@@ -793,8 +793,7 @@ damp.ekeko.snippets.operatorsrep
      "Replace by meta-variable."
      opscope-subject
      (fn [snippetgroup snippet value]
-       (and (applicability|node|nonroot snippetgroup snippet value) ; TODO Should allow this for RHS snippets!!
-            (applicability|notprotected snippetgroup snippet value)))
+       (applicability|notprotected snippetgroup snippet value))
      "Replaces selection by a meta-variable."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
@@ -1199,20 +1198,31 @@ damp.ekeko.snippets.operatorsrep
      "Add directive remove-element."
      opscope-subject 
      applicability|node
-     "Removes the element at the given index from the list in the subject."
-     [(make-operand "Index" opscope-string validity|integer)]
-     false)
-   
-   (Operator. 
-     "add-directive-remove-element-alt"
-     operators/add-directive-remove-element-alt
-     :rewrite
-     "Add directive remove-element-alt."
-     opscope-subject 
-     applicability|node
-     "Removes the instantiated template from its list operand."
+     "Removes the given list element."
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
+   
+;   (Operator. 
+;     "add-directive-remove-element"
+;     operators/add-directive-remove-element
+;     :rewrite
+;     "Add directive remove-element."
+;     opscope-subject 
+;     applicability|node
+;     "Removes the element at the given index from the list in the subject."
+;     [(make-operand "Index" opscope-string validity|integer)]
+;     false)
+   
+;   (Operator. 
+;     "add-directive-remove-element-alt"
+;     operators/add-directive-remove-element-alt
+;     :rewrite
+;     "Add directive remove-element-alt."
+;     opscope-subject 
+;     applicability|node
+;     "Removes the instantiated template from its list operand."
+;     [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
+;     false)
    
    (Operator. 
      "add-directive-copy-node"

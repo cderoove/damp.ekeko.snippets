@@ -26,14 +26,14 @@
 
 (defn apply-rewrite-directive! 
   [directive cu concrete-subject concrete-rhs params]
+  (inspector-jay.core/inspect concrete-subject)
   (case (snippet/directive-name directive)
       "replace" (rewrites/replace-node cu concrete-subject concrete-rhs) ; OK
       "replace-value" (rewrites/replace-node cu concrete-subject concrete-rhs)
       "add-element" (rewrites/add-element cu concrete-subject concrete-rhs -1) ; OK
-      "insert-before" (rewrites/insert-before cu concrete-subject concrete-rhs)
-      "insert-after" (rewrites/insert-after cu concrete-subject concrete-rhs)
-      "remove-element" (rewrites/remove-element cu concrete-subject (first params))
-      "remove-element-alt" (rewrites/remove-element-alt cu concrete-subject concrete-rhs)
+      "insert-before" (rewrites/insert-before cu concrete-subject concrete-subject concrete-rhs)
+      "insert-after" (rewrites/insert-after cu concrete-subject concrete-subject concrete-rhs)
+      "remove-element" (rewrites/remove-element-alt cu concrete-subject concrete-subject)
       "move-element" (let [tgt-cu (rewriting/determine-rewrite-cu concrete-rhs)]
                        (rewrites/move-element cu tgt-cu concrete-subject concrete-rhs (first params)))
       "copy-node" (let [tgt-cu (rewriting/determine-rewrite-cu concrete-rhs)]
@@ -50,6 +50,15 @@
               (directives/bounddirective-for-directive [bd] matching/directive-child)))
         bd))
     (snippet/snippet-bounddirectives-for-node template (snippet/snippet-root template))))
+
+;(defn list-subject? [template]
+;  (some
+;    (fn [bd]
+;      (if 
+;        (or
+;          (directives/bounddirective-for-directive [bd] rewriting/directive-remove-element))
+;        true))
+;    (snippet/snippet-bounddirectives-for-node template (snippet/snippet-root template))))
 
 (defn apply-rhs-instance
   [rhs-template])
@@ -91,12 +100,15 @@
   (let [rw-bd (rewrite-bd rhs-template)
         rw-dir (snippet/bounddirective-directive rw-bd)
         
-        lvar (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings rw-bd)))
+        lvar-binding (second (directives/bounddirective-operandbindings rw-bd))
+        lvar (if (nil? lvar-binding)
+               nil
+               (directives/directiveoperandbinding-value (second (directives/bounddirective-operandbindings rw-bd))))
         params (map 
                  (fn [binding] (directives/directiveoperandbinding-value binding))
                  (drop 2 (directives/bounddirective-operandbindings rw-bd)))
         uservars (querying/snippet-uservars rhs-template)
-        lvar-index (.indexOf uservars lvar)
+        lvar-index (.indexOf uservars lvar) ; Is -1 if there are no parameters!
         
         var-values-list 
         (into #{} 
@@ -104,8 +116,7 @@
                 (fn [bindings]
                   (let [seperated-values (for [var uservars] (get bindings var))]
                     (util/cartesian seperated-values)))
-                bindings-list))
-        ]
+                bindings-list))]
     ; Do a rewrite for each valid combination of the uservars' values
     (doseq [var-values var-values-list]
       (let [ast (snippet/snippet-root rhs-template)
@@ -122,7 +133,8 @@
                   (replace-nodes cur-template nodes value)
                   ))
               template-copy
-              (range 0 (count uservars)))]
+              (range 0 (count uservars)))
+            ]
         (apply-rewrite-directive! rw-dir rewrite-cu subject (snippet/snippet-root concrete-rhs) params)))))
 
 (defn
@@ -132,7 +144,6 @@
   (let [lhs-templategroup (transfo/transformation-lhs transformation)
         rhs-templategroup (transfo/transformation-rhs transformation)
         lhs-bindings-list (matching2/query-templategroup lhs-templategroup)
-;        tmp (inspector-jay.core/inspect lhs-bindings-list)
         ]
     (doseq [rhs-template (snippetgroup/snippetgroup-snippetlist rhs-templategroup)]
       (apply-rhs-template rhs-template lhs-bindings-list))
@@ -153,7 +164,13 @@
           (println "FAIL (" end "ms -"  path ")")))))
   
   (run-test-batch
-    [["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]])
+    [
+;     ["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]
+     ["/resources/EkekoX-Specifications/rewriting2/remove-element.ekx" not-empty] ; WONTFIX - Requires a list as root node, which is an invalid template.. need to choose a better interface
+;     ["/resources/EkekoX-Specifications/rewriting2/insert-before.ekx" not-empty]
+;     ["/resources/EkekoX-Specifications/rewriting2/insert-after.ekx" not-empty]
+;     ["/resources/EkekoX-Specifications/rewriting2/replace.ekx" not-empty]
+     ])
   
   (apply-transformation (persistence/slurp-transformation "/Users/soft/Desktop/addParam.ekx"))
   )
