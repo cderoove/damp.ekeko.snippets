@@ -18,9 +18,11 @@
              [querying]
              [gui]
              [runtime]
-             [transformation]
+             [transformation :as transformation]
              [rewrites :as rewrites]
-             [rewriting :as rewriting]])
+             [rewriting :as rewriting]
+             [rewriting2 :as rewriting2]
+             ])
   (:require [damp.ekeko.jdt 
              [astnode :as astnode]])
   (:require [damp.ekeko
@@ -83,17 +85,20 @@
   transform-by-snippetgroups
   "Performs the program transformation defined by the lhs and rhs snippetgroups." 
   [snippetgroup|lhs snippetgroup|rhs]
-  (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
-        defines (:preddefs qinfo)
-        lhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|lhs))
-        rhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|rhs))
-        rhsconditions (querying/snippetgroup-conditions|rewrite snippetgroup|rhs lhsuservars)
-        query (querying/snippetgroupqueryinfo-query qinfo 'damp.ekeko/ekeko rhsconditions rhsuservars false)] ;should these be hidden?
-     (querying/pprint-sexps (conj defines query))
-    (doseq [define defines]
-      (eval define))
-    (eval query)
-    (rewrites/apply-and-reset-rewrites)))
+  (rewriting2/apply-transformation
+    (transformation/make-transformation snippetgroup|lhs snippetgroup|rhs)) 
+;  (let [qinfo (querying/snippetgroup-snippetgroupqueryinfo snippetgroup|lhs)
+;        defines (:preddefs qinfo)
+;        lhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|lhs))
+;        rhsuservars (into #{} (querying/snippetgroup-uservars snippetgroup|rhs))
+;        rhsconditions (querying/snippetgroup-conditions|rewrite snippetgroup|rhs lhsuservars)
+;        query (querying/snippetgroupqueryinfo-query qinfo 'damp.ekeko/ekeko rhsconditions rhsuservars false)] ;should these be hidden?
+;     (querying/pprint-sexps (conj defines query))
+;    (doseq [define defines]
+;      (eval define))
+;    (eval query)
+;    (rewrites/apply-and-reset-rewrites))
+  )
 
 
 (defn

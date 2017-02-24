@@ -231,8 +231,7 @@
   ([cu-var lst removenode]
     (let [owner (astnode/owner lst)
           ownerproperty (astnode/owner-property lst)]
-      (remove-node-alt cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))
-    ))
+      (remove-node-alt cu-var owner (astnode/ekeko-keyword-for-property-descriptor ownerproperty) removenode))))
 
 (defn
   move-element

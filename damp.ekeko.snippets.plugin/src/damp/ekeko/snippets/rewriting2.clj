@@ -26,7 +26,6 @@
 
 (defn apply-rewrite-directive! 
   [directive cu concrete-subject concrete-rhs params]
-  (inspector-jay.core/inspect concrete-subject)
   (case (snippet/directive-name directive)
       "replace" (rewrites/replace-node cu concrete-subject concrete-rhs) ; OK
       "replace-value" (rewrites/replace-node cu concrete-subject concrete-rhs)
@@ -166,11 +165,11 @@
   (run-test-batch
     [
 ;     ["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]
-     ["/resources/EkekoX-Specifications/rewriting2/remove-element.ekx" not-empty] ; WONTFIX - Requires a list as root node, which is an invalid template.. need to choose a better interface
+     ["/resources/EkekoX-Specifications/rewriting2/remove-element.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/insert-before.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/insert-after.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/replace.ekx" not-empty]
      ])
   
-  (apply-transformation (persistence/slurp-transformation "/Users/soft/Desktop/addParam.ekx"))
+  (apply-transformation (persistence/slurp-transformation "/Users/soft/Desktop/Inventive/inventive2.ekx"))
   )
