@@ -101,7 +101,8 @@
     (defn hmap [function data]
       (into {} (util/pmap-reducer function (into [] data) psize)))))
 
-(def-hmap-fn :partitioned 8 512)
+;(def-hmap-fn :partitioned 8 512)
+(def-hmap-fn :sequential 8 512)
 
 (defn- matchmap-create
   "Create a blank matchmap based on an initial list of potential matches
@@ -174,17 +175,27 @@
       nil
       (assoc bindings lvar new-values))))
 
+(defn logicvar? [lvar]
+  (and (string? lvar) (.startsWith lvar "?")))
+
 (defn- positionmap-checkconstraint
   [positionmap lvar typefn constraintfn generatefn]
   (reduce 
     (fn [cur-positionmap [cur-position props]]
-      (let [bindings-list (:bindings-list props) 
-            new-bindings-list (for [bindings bindings-list]
-                                (lvarbindings-checkconstraint bindings cur-position lvar typefn constraintfn generatefn))
-            new-props (assoc props :bindings-list (remove nil? new-bindings-list))]
-        (if (empty? new-bindings-list) 
+      (if (logicvar? lvar)
+        ; The parameter is a logic var
+        (let [bindings-list (:bindings-list props) 
+             new-bindings-list (for [bindings bindings-list]
+                                 (lvarbindings-checkconstraint bindings cur-position lvar typefn constraintfn generatefn))
+             new-props (assoc props :bindings-list (remove nil? new-bindings-list))]
+         (if (empty? new-bindings-list) 
+           cur-positionmap
+           (assoc cur-positionmap cur-position new-props)))
+        ; Not a logic var
+        (if (and (typefn cur-position) (constraintfn cur-position lvar))
+          (assoc cur-positionmap cur-position props)
           cur-positionmap
-          (assoc cur-positionmap cur-position new-props))))
+          )))
     {}
     positionmap))
 
@@ -533,6 +544,25 @@
            (if (nil? itype)
              []
              (conj (get-all-ancestors itype) itype))))]
+      
+      "subtype*|qname"
+      [(fn [ast-node] true)
+       
+       (fn [ast-node val]
+         (let [itype (get-type ast-node)
+               jmodel (.getJavaProject itype)
+;               _ (inspector-jay.core/inspect (.findType jmodel val))
+               tmp (.findType jmodel val)
+               val-itype (.findType jmodel val)
+               ]
+           (if (nil? itype) ; Because ast-node may be a SimpleName that doesn't represent a type..
+             false
+             (some
+               (fn [subtype] (= val-itype subtype))
+               (conj (get-all-ancestors itype) itype)))))
+       (fn [ast-node]
+         false ; Should not occur..
+         )]
       
       "subtype+"
       [(fn [ast-node] true)
@@ -910,6 +940,10 @@
           (println "pass (" (count matches) "matches -" end "ms -" path ")")
           (println "FAIL (" (count matches) "matches -" end "ms -"  path ")")))))
   
+  
+  (run-test-batch
+    [["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]])
+  
   ; Matching2 tests - composite visitor project
   (run-test-batch
     [["/resources/EkekoX-Specifications/matching2/mini.ekt" query-templategroup not-empty]
@@ -934,6 +968,7 @@
      ["/resources/EkekoX-Specifications/matching2/cls-isolateexpr.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-type.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]
 ;     ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-refersto.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/method-combo.ekt" query-templategroup not-empty]
