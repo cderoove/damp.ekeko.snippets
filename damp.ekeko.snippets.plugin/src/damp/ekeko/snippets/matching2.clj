@@ -175,8 +175,9 @@
       nil
       (assoc bindings lvar new-values))))
 
-(defn logicvar? [lvar]
-  (and (string? lvar) (.startsWith lvar "?")))
+(defn logicvar? 
+  [lvar]
+  (symbol? lvar))
 
 (defn- positionmap-checkconstraint
   [positionmap lvar typefn constraintfn generatefn]
@@ -942,7 +943,8 @@
   
   
   (run-test-batch
-    [["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]])
+    [["/resources/EkekoX-Specifications/matching2/method-metavar.ekt" query-templategroup not-empty]
+     ["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]])
   
   ; Matching2 tests - composite visitor project
   (run-test-batch

@@ -296,7 +296,7 @@
     "remove-element-alt"
     [(directives/make-directiveoperand "Target list")]
     rewrite-remove-element-alt
-    "Removes the given template to the list operand."))
+    "Removes the given list element."))
 
 (def
   directive-move-element

@@ -1198,7 +1198,7 @@ damp.ekeko.snippets.operatorsrep
      "Add directive remove-element."
      opscope-subject 
      applicability|node
-     "Removes the given list element."
+     "Removes the given list element. (list element specified as parameter; subject is ignored)"
      [(make-operand "Meta-variable (e.g., ?v)" opscope-variable validity|variable)]
      false)
    
