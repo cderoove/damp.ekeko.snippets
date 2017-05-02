@@ -462,12 +462,10 @@
      directives
      {"replaced-by-variable"
       [(fn [ast-node] true)
-       (fn [ast-node val] 
+       (fn [ast-node val]
          (if (astnode/lstvalue? template-node)
            (let [owner-prop (astnode/owner-property template-node)
-                 ;ast-list (astnode/node-property-value ast-node owner-prop)
-                 wrapper (astnode/make-value|lst ast-node owner-prop)
-                 ]
+                 wrapper (astnode/make-value|lst ast-node owner-prop)]
              (= wrapper val))
            (= ast-node val)))
        (fn [ast-node]
@@ -764,14 +762,14 @@
                 ; Primitive nodes
                 (astnode/primitivevalue? child)
                 (nci (if (check-directives-only? template child)
-                       (check-directives template child cur-matchmap)
-                       (check-directives template child
-                                          (matchmap-filter 
-                                            cur-matchmap 
-                                            (fn [ast-node] 
-                                              (let [owner-prop (astnode/owner-property child)
-                                                    ast-child (astnode/node-property-value ast-node owner-prop)]
-                                                (= ast-child (astnode/value-unwrapped child))))))))
+                        (check-directives template child cur-matchmap)
+                        (check-directives template child
+                                           (matchmap-filter 
+                                             cur-matchmap 
+                                             (fn [ast-node] 
+                                               (let [owner-prop (astnode/owner-property child)
+                                                     ast-child (astnode/node-property-value ast-node owner-prop)]
+                                                 (= ast-child (astnode/value-unwrapped child))))))))
                 ; Null values
                 (astnode/nilvalue? child)
                 (nci (if (check-directives-only? template child)
@@ -842,21 +840,23 @@
 (defn query-templategroup
   "Look for matches of a template group
    @param templategroup  The template group to be matched"
-  [templategroup]
-  (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)
-        process-template (fn [[template & rest-templates] bindings-list index]
-                           (let [matchmap (query-template template bindings-list)
-                                 new-bindings-list (with-meta 
-                                                     (merge-bindings 
-                                                       matchmap 
-                                                       ; Generate a unique variable name for the root, but should be the same every time this template is queried
-                                                       (symbol (str "?" (util/classname (snippet/snippet-root template)) index)) 
-                                                       )
-                                                     {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
-                             (if (nil? rest-templates)
-                               new-bindings-list
-                               (recur rest-templates new-bindings-list (inc index)))))]
-    (process-template templates (with-meta [{}] {:node-count 0}) 0)))
+  ([templategroup]
+    (query-templategroup templategroup [{}]))
+  ([templategroup bindings-list]
+    (let [templates (snippetgroup/snippetgroup-snippetlist templategroup)
+         process-template (fn [[template & rest-templates] bindings-list index]
+                            (let [matchmap (query-template template bindings-list)
+                                  new-bindings-list (with-meta 
+                                                      (merge-bindings 
+                                                        matchmap 
+                                                        ; Generate a unique variable name for the root, but should be the same every time this template is queried
+                                                        (symbol (str "?" (util/classname (snippet/snippet-root template)) index)) 
+                                                        )
+                                                      {:node-count (+ (:node-count (meta bindings-list)) (:node-count (meta matchmap)))})] 
+                              (if (nil? rest-templates)
+                                new-bindings-list
+                                (recur rest-templates new-bindings-list (inc index)))))]
+     (process-template templates (with-meta bindings-list {:node-count 0}) 0))))
 
 (defn query-templategroup-list 
   "Query the templategroup and return match results as a list
@@ -941,6 +941,17 @@
           (println "pass (" (count matches) "matches -" end "ms -" path ")")
           (println "FAIL (" (count matches) "matches -" end "ms -"  path ")")))))
   
+  (let [tgroup (slurp-from-resource "/resources/EkekoX-Specifications/prebind/findcall.ekt")
+        find-simplename (fn [name]
+                          (let [simple-names (ast/nodes-of-type :SimpleName)]
+                            (filter
+                              (fn [sname] (= (.toString sname) name))
+                              simple-names)))
+        matches (query-templategroup tgroup [{(symbol "?cls") (find-simplename "Test")
+                                              (symbol "?meth") (find-simplename "hello")
+                                              (symbol "?call") (find-simplename "println")}])]
+    (inspector-jay.core/inspect matches)
+    )
   
   (run-test-batch
     [["/resources/EkekoX-Specifications/matching2/method-metavar.ekt" query-templategroup not-empty]
