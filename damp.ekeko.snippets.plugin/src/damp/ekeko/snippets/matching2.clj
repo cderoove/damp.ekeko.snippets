@@ -941,18 +941,6 @@
           (println "pass (" (count matches) "matches -" end "ms -" path ")")
           (println "FAIL (" (count matches) "matches -" end "ms -"  path ")")))))
   
-  (let [tgroup (slurp-from-resource "/resources/EkekoX-Specifications/prebind/findcall.ekt")
-        find-simplename (fn [name]
-                          (let [simple-names (ast/nodes-of-type :SimpleName)]
-                            (filter
-                              (fn [sname] (= (.toString sname) name))
-                              simple-names)))
-        matches (query-templategroup tgroup [{(symbol "?cls") (find-simplename "Test")
-                                              (symbol "?meth") (find-simplename "hello")
-                                              (symbol "?call") (find-simplename "println")}])]
-    (inspector-jay.core/inspect matches)
-    )
-  
   (run-test-batch
     [["/resources/EkekoX-Specifications/matching2/method-metavar.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]])

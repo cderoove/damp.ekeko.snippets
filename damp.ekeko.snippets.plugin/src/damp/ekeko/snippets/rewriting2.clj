@@ -21,7 +21,8 @@
   (:require
     [damp.ekeko [logic :as el]]
     [damp.ekeko.jdt 
-     [astnode :as astnode]])
+     [astnode :as astnode]
+     [ast :as ast]])
   (:import [org.eclipse.jdt.core.dom ASTNode]))
 
 (defn apply-rewrite-directive! 
@@ -138,15 +139,16 @@
 
 (defn
   apply-transformation
-  "Performs the given program transformation." 
-  [transformation]
-  (let [lhs-templategroup (transfo/transformation-lhs transformation)
-        rhs-templategroup (transfo/transformation-rhs transformation)
-        lhs-bindings-list (matching2/query-templategroup lhs-templategroup)
-        ]
-    (doseq [rhs-template (snippetgroup/snippetgroup-snippetlist rhs-templategroup)]
-      (apply-rhs-template rhs-template lhs-bindings-list))
-    (rewrites/apply-and-reset-rewrites)))
+  "Performs the given program transformation."
+  ([transformation]
+    (apply-transformation transformation [{}]))
+  ([transformation initial-bindings]
+    (let [lhs-templategroup (transfo/transformation-lhs transformation)
+          rhs-templategroup (transfo/transformation-rhs transformation)
+          lhs-bindings-list (matching2/query-templategroup lhs-templategroup initial-bindings)]
+      (doseq [rhs-template (snippetgroup/snippetgroup-snippetlist rhs-templategroup)]
+        (apply-rhs-template rhs-template lhs-bindings-list))
+      (rewrites/apply-and-reset-rewrites))))
 
 (comment
   (defn slurp-from-resource [pathrelativetobundle] (persistence/slurp-snippetgroup (test.damp.ekeko.snippets.EkekoSnippetsTest/getResourceFile pathrelativetobundle)))
@@ -172,4 +174,48 @@
      ])
   
   (apply-transformation (persistence/slurp-transformation "/Users/soft/Desktop/Inventive/inventive2.ekx"))
+  
+  
+    ; Test for Jonas's resource usage analysis (which requires some logic vars to be prebound)
+    (let [src-cls "Test"
+          src-meth "hello"
+          src-call "println"
+          
+          tgt-cls "Test"
+          tgt-meth "bye"
+          
+          src-tgroup (slurp-from-resource "/resources/EkekoX-Specifications/prebind/findcall.ekt")
+          tgt-tgroup (slurp-from-resource "/resources/EkekoX-Specifications/prebind/findmethod.ekt")
+          
+          transfo (slurp-from-resource "/resources/EkekoX-Specifications/prebind/movestmt.ekx")
+          
+          find-simplename (fn [name]
+                            (let [simple-names (ast/nodes-of-type :SimpleName)]
+                              (filter
+                                (fn [sname] (= (.toString sname) name))
+                                simple-names)))
+          src-matches (matching2/query-templategroup src-tgroup [{(symbol "?cls") (find-simplename src-cls)
+                                                                  (symbol "?meth") (find-simplename src-meth)
+                                                                  (symbol "?call") (find-simplename src-call)}])
+          
+          call (-> (first (get (first src-matches) (symbol "?call")))
+                 (.getParent)
+                 (.getParent))
+          
+          tgt-matches (matching2/query-templategroup tgt-tgroup [{(symbol "?cls") (find-simplename tgt-cls)
+                                                        (symbol "?meth") (find-simplename tgt-meth)}])
+          
+          method (-> (first (get (first tgt-matches) (symbol "?meth")))
+                   (.getParent))
+          
+;          transfo-matches (matching2/query-templategroup (:lhs transfo)
+;                                               [{(symbol "?meth") [method]
+;                                                 (symbol "?call") [call]}])
+          ]
+      (apply-transformation 
+        transfo 
+        [{(symbol "?meth") [method]
+          (symbol "?call") [call]}])
+      )
+  
   )
