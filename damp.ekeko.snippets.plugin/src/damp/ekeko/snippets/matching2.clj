@@ -577,7 +577,7 @@
            (if (nil? itype) [] (get-all-ancestors itype))))]
       
       "refers-to"
-      [(fn [ast-node] 
+      [(fn [ast-node]
          (or 
            (instance? FieldAccess ast-node) 
            (instance? SuperFieldAccess ast-node)
@@ -588,15 +588,21 @@
                          (.resolveFieldBinding ast-node)
                          :rest
                          (.resolveBinding ast-node))]
-           (= val (javaprojectmodel/binding-to-declaration binding))))
+           (let [local-decl (javaprojectmodel/binding-to-declaration binding)] 
+             (or 
+              (= val local-decl)
+              (= val (.getName local-decl))
+              (= val (.getParent local-decl))))))
        (fn [ast-node]
          (let [binding (cond
                          (or (instance? FieldAccess ast-node) (instance? SuperFieldAccess ast-node))
                          (.resolveFieldBinding ast-node)
                          :rest
-                         (.resolveBinding ast-node))
+                         (let []
+;                           (println (type (.resolveBinding ast-node)))
+                           (.resolveBinding ast-node)))
                local-decl (javaprojectmodel/binding-to-declaration binding)]
-           [local-decl]))]
+           [local-decl (.getName local-decl) (.getParent local-decl)]))]
       
       "constructs"
       [(fn [ast-node] 

@@ -157,7 +157,11 @@
     (doseq [[path testfn] path-testfn]
       (let [input (slurp-from-resource path)
             start (. System (nanoTime))
-            matches (apply-transformation input)
+            
+             lhs-templategroup (transfo/transformation-lhs input)  
+;            matches (apply-transformation input)
+             bindings (matching2/query-templategroup lhs-templategroup [{}])
+;             _ (println bindings)
             end (/ (double (- (. System (nanoTime)) start)) 1000000.0)
             test-result true]
         (if test-result
@@ -168,6 +172,15 @@
     [
 ;     ["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]
      ["/resources/EkekoX-Specifications/rewriting2/remove-element.ekx" not-empty]
+;     ["/resources/EkekoX-Specifications/rewriting2/insert-before.ekx" not-empty]
+;     ["/resources/EkekoX-Specifications/rewriting2/insert-after.ekx" not-empty]
+;     ["/resources/EkekoX-Specifications/rewriting2/replace.ekx" not-empty]
+     ])
+  
+  (run-test-batch
+    [
+;     ["/resources/EkekoX-Specifications/rewriting2/add-element.ekx" not-empty]
+     ["/resources/EkekoX-Specifications/chaq_demo/chaq-demo8.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/insert-before.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/insert-after.ekx" not-empty]
 ;     ["/resources/EkekoX-Specifications/rewriting2/replace.ekx" not-empty]
