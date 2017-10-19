@@ -1192,6 +1192,17 @@ damp.ekeko.snippets.operatorsrep
      false)
    
    (Operator. 
+     "add-directive-create-file"
+     operators/add-directive-create-file
+     :rewrite
+     "Add directive create-file."
+     opscope-subject 
+     applicability|node
+     "Adds the subject into a new file (at the path specified in its package declaration)"
+     []
+     false)
+   
+   (Operator. 
      "add-directive-remove-element"
      operators/add-directive-remove-element
      :rewrite

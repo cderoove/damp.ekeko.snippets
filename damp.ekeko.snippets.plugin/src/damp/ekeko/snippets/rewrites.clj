@@ -11,7 +11,8 @@
   [org.eclipse.jdt.core.dom BodyDeclaration Expression Statement ASTNode ASTParser AST CompilationUnit SimpleName ASTNode$NodeList]
   [org.eclipse.jdt.core.dom.rewrite ASTRewrite])
   (:require [damp.ekeko.jdt
-             [astnode :as astnode]]
+             [astnode :as astnode]
+             [javaprojectmodel :as jpm]]
             [damp.ekeko.snippets
              [snippet :as snippet]
              [directives :as directives]]))
@@ -208,6 +209,15 @@
       (insert-after rewrite cu-var lst-or-elem after-node newnode)))
   ([rewrite cu-var lst-or-elem after-node newnode]
     (insert-before-or-after rewrite cu-var lst-or-elem after-node newnode true)))
+
+(defn
+  create-file
+  "Creates a new file for the given CompilationUnit" [cu-node]
+  (let [projects (jpm/java-project-models)
+        _ (assert (= (count projects) 1) "More than one project Ekeko enabled! (or none) Ambiguous use of create-file directive")
+        project (first projects)]
+    (.addNewCompilationUnit project cu-node)
+    ))
 
 (defn
   remove-element

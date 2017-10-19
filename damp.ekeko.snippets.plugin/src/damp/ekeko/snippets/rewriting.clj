@@ -20,6 +20,7 @@
 (declare directive-replace)
 (declare directive-insert-after)
 (declare directive-insert-before)
+(declare directive-create-file)
 (declare directive-add-element)
 (declare directive-move-element)
 (declare directive-remove-element)
@@ -283,6 +284,14 @@
     "Adds the instantiated template after the operand, a list element."))
 
 (def
+  directive-create-file
+  (directives/make-directive
+    "create-file"
+    []
+    nil ; Behaviour implemented in rewriting2.clj
+    "Adds a new file with the instantiated template."))
+
+(def
   directive-remove-element
   (directives/make-directive
     "remove-element"
@@ -326,7 +335,8 @@
    directive-remove-element
    directive-remove-element-alt
    directive-move-element
-   directive-copy-node])
+   directive-copy-node
+   directive-create-file])
 
 (defn 
   registered-directives

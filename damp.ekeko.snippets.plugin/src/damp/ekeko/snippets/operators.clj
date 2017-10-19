@@ -432,6 +432,14 @@ damp.ekeko.snippets.operators
   [snippet subject tgt]
   (add-unary-directive-opname-opvalue|rewriting snippet subject rewriting/directive-insert-after tgt))
 
+(defn
+  add-directive-create-file
+  [snippet subject]
+  (snippet/add-bounddirective 
+    snippet
+    subject
+    (directives/make-bounddirective rewriting/directive-create-file [(make-directiveoperandbinding-for-match subject)])))
+
 (defn 
   add-directive-remove-element
   [snippet subject element]

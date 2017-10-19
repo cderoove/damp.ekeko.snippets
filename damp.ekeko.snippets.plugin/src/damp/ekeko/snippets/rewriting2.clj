@@ -28,9 +28,10 @@
 (defn apply-rewrite-directive! 
   [directive cu concrete-subject concrete-rhs params]
   (case (snippet/directive-name directive)
-      "replace" (rewrites/replace-node cu concrete-subject concrete-rhs) ; OK
+      "create-file" (rewrites/create-file concrete-rhs)
+      "replace" (rewrites/replace-node cu concrete-subject concrete-rhs)
       "replace-value" (rewrites/replace-node cu concrete-subject concrete-rhs)
-      "add-element" (rewrites/add-element cu concrete-subject concrete-rhs -1) ; OK
+      "add-element" (rewrites/add-element cu concrete-subject concrete-rhs -1)
       "insert-before" (rewrites/insert-before cu concrete-subject concrete-subject concrete-rhs)
       "insert-after" (rewrites/insert-after cu concrete-subject concrete-subject concrete-rhs)
       "remove-element" (rewrites/remove-element-alt cu concrete-subject concrete-subject)
@@ -109,6 +110,7 @@
                  (drop 2 (directives/bounddirective-operandbindings rw-bd)))
         uservars (querying/snippet-uservars rhs-template)
         lvar-index (.indexOf uservars lvar) ; Is -1 if there are no parameters!
+        has-params (> lvar-index -1)
         
         var-values-list 
         (into #{} 
@@ -121,8 +123,8 @@
     (doseq [var-values var-values-list]
       (let [ast (snippet/snippet-root rhs-template)
             template-copy (persistence/copy-snippet rhs-template)
-            subject (nth var-values lvar-index)
-            rewrite-cu (rewrites/determine-rewrite-cu subject)
+            subject (if has-params (nth var-values lvar-index))
+            rewrite-cu (if has-params (rewrites/determine-rewrite-cu subject))
             
             ; Fill in the metavariables of the template
             concrete-rhs
