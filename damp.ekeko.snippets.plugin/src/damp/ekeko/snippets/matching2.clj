@@ -513,11 +513,28 @@
          [(if (astnode/lstvalue? template-node)
             (astnode/make-value|lst ast-node (astnode/owner-property template-node))
             ast-node)])]
+      "equivalent"
+      [(fn [ast-node] true)
+       (fn [ast-node val]
+         (if (astnode/lstvalue? template-node)
+           (let [owner-prop (astnode/owner-property template-node)
+                 wrapper (astnode/make-value|lst ast-node owner-prop)
+                 ]
+             (= (.toString wrapper) (.toString val)))
+           (= (.toString ast-node) (.toString val))))
+       (fn [ast-node] ; TODO Should technically check *all* other AST-nodes with the same String representation? .. but that may result in terrible performance ..
+         [(if (astnode/lstvalue? template-node)
+            (astnode/make-value|lst ast-node (astnode/owner-property template-node))
+            ast-node)])
+       ]
+      
+      
 ;      [(fn [ast-node] true)
 ;       (fn [ast-node val] (= ast-node val))
 ;       (fn [ast-node] 
 ;         [ast-node])]
-      
+
+
       "equals-list" ; Variant for list nodes
       [(fn [ast-node] true)
        (fn [ast-node val] (= ast-node val))
@@ -976,7 +993,7 @@
      ["/resources/EkekoX-Specifications/matching2/cls-overrides.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-type.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-subtype-qname.ekt" query-templategroup not-empty]
-;     ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
+;    ["/resources/EkekoX-Specifications/matching2/cls-subtype.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-refersto.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/method-combo.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/matching2/cls-regex.ekt" query-templategroup not-empty]
@@ -995,6 +1012,16 @@
      ["/resources/EkekoX-Specifications/experiments/observer-jhotdraw/solution.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/experiments/strategy-jhotdraw/solution3.ekt" query-templategroup not-empty]
      ["/resources/EkekoX-Specifications/experiments/factorymethod-jhotdraw/solution_take4-reorder2.ekt" query-templategroup not-empty]])
+  
+  
+  (query-templategroup (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt"))
+  
+  (inspector-jay.core/inspect (query-templategroup (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt")))
+  
+  (def templategroup
+    (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt")
+;    (:lhs (slurp-from-resource "/resources/EkekoX-Specifications/scam-demo/scam_demo3.ekx"))
+    )
   
   (def templategroup
     (slurp-from-resource "/resources/EkekoX-Specifications/matching2/method.ekt")
